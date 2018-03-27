@@ -1,0 +1,642 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>datacompy.core module &mdash; datacompy 0.5.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="datacompy 0.5.0 documentation" href="../index.html"/>
+        <link rel="up" title="datacompy" href="modules.html"/>
+        <link rel="next" title="datacompy.SparkCompare" href="sparkcompare.html"/>
+        <link rel="prev" title="datacompy" href="modules.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> datacompy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pandas_usage.html">Pandas Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_instructions.html">Developer Instructions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Module Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">datacompy.core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sparkcompare.html">datacompy.SparkCompare</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">datacompy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">datacompy</a> &raquo;</li>
+        
+      <li>datacompy.core module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/core.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-datacompy.core">
+<span id="datacompy-core-module"></span><h1>datacompy.core module<a class="headerlink" href="#module-datacompy.core" title="Permalink to this headline">¶</a></h1>
+<p>Compare two Pandas DataFrames</p>
+<p>Originally this package was meant to provide similar functionality to
+PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
+two dataframes.</p>
+<dl class="class">
+<dt id="datacompy.core.Compare">
+<em class="property">class </em><code class="descclassname">datacompy.core.</code><code class="descname">Compare</code><span class="sig-paren">(</span><em>df1</em>, <em>df2</em>, <em>join_columns=None</em>, <em>on_index=False</em>, <em>abs_tol=0</em>, <em>rel_tol=0</em>, <em>df1_name='df1'</em>, <em>df2_name='df2'</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Comparison class to be used to compare whether two dataframes as equal.</p>
+<p>Both df1 and df2 should be dataframes containing all of the join_columns,
+with unique column names. Differences between values are compared to
+abs_tol + rel_tol * abs(df2[‘value’]).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>df1</strong> : pandas <code class="docutils literal"><span class="pre">DataFrame</span></code></p>
+<blockquote>
+<div><p>First dataframe to check</p>
+</div></blockquote>
+<p><strong>df2</strong> : pandas <code class="docutils literal"><span class="pre">DataFrame</span></code></p>
+<blockquote>
+<div><p>Second dataframe to check</p>
+</div></blockquote>
+<p><strong>join_columns</strong> : list or str, optional</p>
+<blockquote>
+<div><p>Column(s) to join dataframes on.  If a string is passed in, that one
+column will be used.</p>
+</div></blockquote>
+<p><strong>on_index</strong> : bool, optional</p>
+<blockquote>
+<div><p>If True, the index will be used to join the two dataframes.  If both
+<code class="docutils literal"><span class="pre">join_columns</span></code> and <code class="docutils literal"><span class="pre">on_index</span></code> are provided, an exception will be
+raised.</p>
+</div></blockquote>
+<p><strong>abs_tol</strong> : float, optional</p>
+<blockquote>
+<div><p>Absolute tolerance between two values.</p>
+</div></blockquote>
+<p><strong>rel_tol</strong> : float, optional</p>
+<blockquote>
+<div><p>Relative tolerance between two values.</p>
+</div></blockquote>
+<p><strong>df1_name</strong> : str, optional</p>
+<blockquote>
+<div><p>A string name for the first dataframe.  This allows the reporting to
+print out an actual name instead of “df1”, and allows human users to
+more easily track the dataframes.</p>
+</div></blockquote>
+<p><strong>df2_name</strong> : str, optional</p>
+<blockquote class="last">
+<div><p>A string name for the second dataframe</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="15%" />
+<col width="85%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>df1_unq_rows</strong></td>
+<td>(pandas <code class="docutils literal"><span class="pre">DataFrame</span></code>) All records that are only in df1 (based on a join on join_columns)</td>
+</tr>
+<tr class="row-even"><td><strong>df2_unq_rows</strong></td>
+<td>(pandas <code class="docutils literal"><span class="pre">DataFrame</span></code>) All records that are only in df2 (based on a join on join_columns)</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="datacompy.core.Compare.all_columns_match">
+<code class="descname">all_columns_match</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.all_columns_match" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the columns all match in the dataframes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="datacompy.core.Compare.all_rows_overlap">
+<code class="descname">all_rows_overlap</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.all_rows_overlap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the rows are all present in both dataframes</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">bool</p>
+<blockquote class="last">
+<div><p>True if all rows in df1 are in df2 and vice versa (based on
+existence for join option)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="datacompy.core.Compare.count_matching_rows">
+<code class="descname">count_matching_rows</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.count_matching_rows" title="Permalink to this definition">¶</a></dt>
+<dd><p>Count the number of rows match (on overlapping fields)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">int</p>
+<blockquote class="last">
+<div><p>Number of matching rows</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="datacompy.core.Compare.df1">
+<code class="descname">df1</code><a class="headerlink" href="#datacompy.core.Compare.df1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="datacompy.core.Compare.df1_unq_columns">
+<code class="descname">df1_unq_columns</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.df1_unq_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get columns that are unique to df1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="datacompy.core.Compare.df2">
+<code class="descname">df2</code><a class="headerlink" href="#datacompy.core.Compare.df2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="datacompy.core.Compare.df2_unq_columns">
+<code class="descname">df2_unq_columns</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.df2_unq_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get columns that are unique to df2</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="datacompy.core.Compare.intersect_columns">
+<code class="descname">intersect_columns</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.intersect_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get columns that are shared between the two dataframes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="datacompy.core.Compare.intersect_rows_match">
+<code class="descname">intersect_rows_match</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.intersect_rows_match" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check whether the intersect rows all match</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="datacompy.core.Compare.matches">
+<code class="descname">matches</code><span class="sig-paren">(</span><em>ignore_extra_columns=False</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.matches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True or False if the dataframes match.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>ignore_extra_columns</strong> : bool</p>
+<blockquote class="last">
+<div><p>Ignores any columns in one dataframe and not in the other.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="datacompy.core.Compare.report">
+<code class="descname">report</code><span class="sig-paren">(</span><em>sample_count=10</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.report" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string representation of a report.  The representation can
+then be printed or saved to a file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>sample_count</strong> : int, optional</p>
+<blockquote>
+<div><p>The number of sample records to return.  Defaults to 10.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">str</p>
+<blockquote class="last">
+<div><p>The report, formatted kinda nicely.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="datacompy.core.Compare.sample_mismatch">
+<code class="descname">sample_mismatch</code><span class="sig-paren">(</span><em>column</em>, <em>sample_count=10</em>, <em>for_display=False</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.sample_mismatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a sample sub-dataframe which contains the identifying
+columns, and df1 and df2 versions of the column.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>column</strong> : str</p>
+<blockquote>
+<div><p>The raw column name (i.e. without <code class="docutils literal"><span class="pre">_df1</span></code> appended)</p>
+</div></blockquote>
+<p><strong>sample_count</strong> : int, optional</p>
+<blockquote>
+<div><p>The number of sample records to return.  Defaults to 10.</p>
+</div></blockquote>
+<p><strong>for_display</strong> : bool, optional</p>
+<blockquote>
+<div><p>Whether this is just going to be used for display (overwrite the
+column names)</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Pandas.DataFrame</p>
+<blockquote class="last">
+<div><p>A sample of the intersection dataframe, containing only the
+“pertinent” columns, for rows that don’t match on the provided
+column.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="datacompy.core.Compare.subset">
+<code class="descname">subset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.subset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if dataframe 2 is a subset of dataframe 1.</p>
+<p>Dataframe 2 is considered a subset if all of its columns are in
+dataframe 1, and all of its rows match rows in dataframe 1 for the
+shared columns.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="datacompy.core.columns_equal">
+<code class="descclassname">datacompy.core.</code><code class="descname">columns_equal</code><span class="sig-paren">(</span><em>col_1</em>, <em>col_2</em>, <em>rel_tol=0</em>, <em>abs_tol=0</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.columns_equal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compares two columns from a dataframe, returning a True/False series,
+with the same index as column 1.</p>
+<ul class="simple">
+<li>Two nulls (np.nan) will evaluate to True.</li>
+<li>A null and a non-null value will evaluate to False.</li>
+<li>Numeric values will use the relative and absolute tolerances.</li>
+<li>Decimal values (decimal.Decimal) will attempt to be converted to floats
+before comparing</li>
+<li>Non-numeric values (i.e. where np.isclose can’t be used) will just
+trigger True on two nulls or exact matches.</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>col_1</strong> : Pandas.Series</p>
+<blockquote>
+<div><p>The first column to look at</p>
+</div></blockquote>
+<p><strong>col_2</strong> : Pandas.Series</p>
+<blockquote>
+<div><p>The second column</p>
+</div></blockquote>
+<p><strong>rel_tol</strong> : float, optional</p>
+<blockquote>
+<div><p>Relative tolerance</p>
+</div></blockquote>
+<p><strong>abs_tol</strong> : float, optional</p>
+<blockquote>
+<div><p>Absolute tolerance</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">pandas.Series</p>
+<blockquote class="last">
+<div><p>A series of Boolean values.  True == the values match, False == the
+values don’t match.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="datacompy.core.compare_string_and_date_columns">
+<code class="descclassname">datacompy.core.</code><code class="descname">compare_string_and_date_columns</code><span class="sig-paren">(</span><em>col_1</em>, <em>col_2</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.compare_string_and_date_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compare a string column and date column, value-wise.  This tries to
+convert a string column to a date column and compare that way.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>col_1</strong> : Pandas.Series</p>
+<blockquote>
+<div><p>The first column to look at</p>
+</div></blockquote>
+<p><strong>col_2</strong> : Pandas.Series</p>
+<blockquote>
+<div><p>The second column</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">pandas.Series</p>
+<blockquote class="last">
+<div><p>A series of Boolean values.  True == the values match, False == the
+values don’t match.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="datacompy.core.get_merged_columns">
+<code class="descclassname">datacompy.core.</code><code class="descname">get_merged_columns</code><span class="sig-paren">(</span><em>original_df</em>, <em>merged_df</em>, <em>suffix</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.get_merged_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the columns from an original dataframe, in the new merged dataframe</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>original_df</strong> : Pandas.DataFrame</p>
+<blockquote>
+<div><p>The original, pre-merge dataframe</p>
+</div></blockquote>
+<p><strong>merged_df</strong> : Pandas.DataFrame</p>
+<blockquote>
+<div><p>Post-merge with another dataframe, with suffixes added in.</p>
+</div></blockquote>
+<p><strong>suffix</strong> : str</p>
+<blockquote class="last">
+<div><p>What suffix was used to distinguish when the original dataframe was
+overlapping with the other merged dataframe.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="datacompy.core.render">
+<code class="descclassname">datacompy.core.</code><code class="descname">render</code><span class="sig-paren">(</span><em>filename</em>, <em>*fields</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.render" title="Permalink to this definition">¶</a></dt>
+<dd><p>Renders out an individual template.  This basically just reads in a
+template file, and applies <code class="docutils literal"><span class="pre">.format()</span></code> on the fields.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>filename</strong> : str</p>
+<blockquote>
+<div><p>The file that contains the template.  Will automagically prepend the
+templates directory before opening</p>
+</div></blockquote>
+<p><strong>fields</strong> : list</p>
+<blockquote>
+<div><p>Fields to be rendered out in the template</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">str</p>
+<blockquote class="last">
+<div><p>The fully rendered out file.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="datacompy.core.temp_column_name">
+<code class="descclassname">datacompy.core.</code><code class="descname">temp_column_name</code><span class="sig-paren">(</span><em>*dataframes</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.temp_column_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a temp column name that isn’t included in columns of any dataframes</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>dataframes</strong> : list of Pandas.DataFrame</p>
+<blockquote>
+<div><p>The DataFrames to create a temporary column name for</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">str</p>
+<blockquote class="last">
+<div><p>String column name that looks like ‘_temp_x’ for some integer x</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="sparkcompare.html" class="btn btn-neutral float-right" title="datacompy.SparkCompare" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="modules.html" class="btn btn-neutral" title="datacompy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Capital One.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.5.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
