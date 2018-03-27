@@ -13,3 +13,5 @@ spark-warehouse/
 derby.log
 
 *.ipynb*
+docs/doctrees
+docs/.buildinfo

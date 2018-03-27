@@ -1,0 +1,423 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>datacompy.SparkCompare &mdash; datacompy 0.5.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="datacompy 0.5.0 documentation" href="../index.html"/>
+        <link rel="up" title="datacompy" href="modules.html"/>
+        <link rel="prev" title="datacompy.core module" href="core.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> datacompy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pandas_usage.html">Pandas Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_instructions.html">Developer Instructions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Module Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="core.html">datacompy.core</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">datacompy.SparkCompare</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">datacompy</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">datacompy</a> &raquo;</li>
+        
+      <li>datacompy.SparkCompare</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/sparkcompare.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="datacompy-sparkcompare">
+<h1>datacompy.SparkCompare<a class="headerlink" href="#datacompy-sparkcompare" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="datacompy.SparkCompare">
+<em class="property">class </em><code class="descclassname">datacompy.</code><code class="descname">SparkCompare</code><span class="sig-paren">(</span><em>spark_session</em>, <em>base_df</em>, <em>compare_df</em>, <em>join_columns</em>, <em>column_mapping=None</em>, <em>cache_intermediates=False</em>, <em>known_differences=None</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.SparkCompare" title="Permalink to this definition">¶</a></dt>
+<dd><p>Comparison class used to compare two Spark Dataframes.</p>
+<p>Extends the <code class="docutils literal"><span class="pre">Compare</span></code> functionality to the wide world of Spark and
+out-of-memory data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>spark_session</strong> : <code class="docutils literal"><span class="pre">pyspark.sql.SparkSession</span></code></p>
+<blockquote>
+<div><p>A <code class="docutils literal"><span class="pre">SparkSession</span></code> to be used to execute Spark commands in the
+comparison.</p>
+</div></blockquote>
+<p><strong>base_df</strong> : <code class="docutils literal"><span class="pre">pyspark.sql.DataFrame</span></code></p>
+<blockquote>
+<div><p>The dataframe to serve as a basis for comparison. While you will
+ultimately get the same results comparing A to B as you will comparing
+B to A, by convention <code class="docutils literal"><span class="pre">base_df</span></code> should be the canonical, gold
+standard reference dataframe in the comparison.</p>
+</div></blockquote>
+<p><strong>compare_df</strong> : <code class="docutils literal"><span class="pre">pyspark.sql.DataFrame</span></code></p>
+<blockquote>
+<div><p>The dataframe to be compared against <code class="docutils literal"><span class="pre">base_df</span></code>.</p>
+</div></blockquote>
+<p><strong>join_columns</strong> : list</p>
+<blockquote>
+<div><p>A list of columns comprising the join key(s) of the two dataframes.
+If the column names are the same in the two dataframes, the names of
+the columns can be given as strings. If the names differ, the
+<code class="docutils literal"><span class="pre">join_columns</span></code> list should include tuples of the form
+(base_column_name, compare_column_name).</p>
+</div></blockquote>
+<p><strong>column_mapping</strong> : list[tuple], optional</p>
+<blockquote>
+<div><p>If columns to be compared have different names in the base and compare
+dataframes, a list should be provided in <code class="docutils literal"><span class="pre">columns_mapping</span></code> consisting
+of tuples of the form (base_column_name, compare_column_name) for each
+set of differently-named columns to be compared against each other.</p>
+</div></blockquote>
+<p><strong>cache_intermediates</strong> : bool, optional</p>
+<blockquote>
+<div><p>Whether or not <code class="docutils literal"><span class="pre">SparkCompare</span></code> will cache intermediate dataframes
+(such as the deduplicated version of dataframes, or the joined
+comparison). This will take a large amount of cache, proportional to
+the size of your dataframes, but will significantly speed up
+performance, as multiple steps will not have to recompute
+transformations. False by default.</p>
+</div></blockquote>
+<p><strong>known_differences</strong> : list[dict], optional</p>
+<blockquote>
+<div><p>A list of dictionaries that define transformations to apply to the
+compare dataframe to match values when there are known differences
+between base and compare. The dictionaries should contain:</p>
+<blockquote>
+<div><ul class="simple">
+<li>name: A name that describes the transformation</li>
+<li><dl class="first docutils">
+<dt>types: The types that the transformation should be applied to.</dt>
+<dd>This prevents certain transformations from being applied to
+types that don’t make sense and would cause exceptions.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>transformation: A Spark SQL statement to apply to the column</dt>
+<dd>in the compare dataset. The string “{input}” will be replaced
+by the variable in question.</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">SparkCompare</p>
+<blockquote class="last">
+<div><p>Instance of a <code class="docutils literal"><span class="pre">SparkCompare</span></code> object, ready to do some comparin’.
+Note that if <code class="docutils literal"><span class="pre">cache_intermediates=True</span></code>, this instance will already
+have done some work deduping the input dataframes. If
+<code class="docutils literal"><span class="pre">cache_intermediates=False</span></code>, the instantiation of this object is lazy.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="datacompy.SparkCompare.base_row_count">
+<code class="descname">base_row_count</code><a class="headerlink" href="#datacompy.SparkCompare.base_row_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>int: Get the count of rows in the de-duped base dataframe</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="datacompy.SparkCompare.columns_compared">
+<code class="descname">columns_compared</code><a class="headerlink" href="#datacompy.SparkCompare.columns_compared" title="Permalink to this definition">¶</a></dt>
+<dd><p>list[str]: Get columns to be compared in both dataframes (all
+columns in both excluding the join key(s)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="datacompy.SparkCompare.columns_in_both">
+<code class="descname">columns_in_both</code><a class="headerlink" href="#datacompy.SparkCompare.columns_in_both" title="Permalink to this definition">¶</a></dt>
+<dd><p>set[str]: Get columns in both dataframes</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="datacompy.SparkCompare.columns_only_base">
+<code class="descname">columns_only_base</code><a class="headerlink" href="#datacompy.SparkCompare.columns_only_base" title="Permalink to this definition">¶</a></dt>
+<dd><p>set[str]: Get columns that are unique to the base dataframe</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="datacompy.SparkCompare.columns_only_compare">
+<code class="descname">columns_only_compare</code><a class="headerlink" href="#datacompy.SparkCompare.columns_only_compare" title="Permalink to this definition">¶</a></dt>
+<dd><p>set[str]: Get columns that are unique to the compare dataframe</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="datacompy.SparkCompare.common_row_count">
+<code class="descname">common_row_count</code><a class="headerlink" href="#datacompy.SparkCompare.common_row_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>int: Get the count of rows in common between base and compare dataframes</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="datacompy.SparkCompare.compare_row_count">
+<code class="descname">compare_row_count</code><a class="headerlink" href="#datacompy.SparkCompare.compare_row_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>int: Get the count of rows in the de-duped compare dataframe</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="datacompy.SparkCompare.report">
+<code class="descname">report</code><span class="sig-paren">(</span><em>file=&lt;_io.TextIOWrapper name='&lt;stdout&gt;' mode='w' encoding='UTF-8'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.SparkCompare.report" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a comparison report and prints it to the file specified
+(stdout by default).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>file</strong> : <code class="docutils literal"><span class="pre">file</span></code>, optional</p>
+<blockquote class="last">
+<div><p>A filehandle to write the report to. By default, this is
+sys.stdout, printing the report to stdout. You can also redirect
+this to an output file, as in the example.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;my_report.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">report_file</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">comparison</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">report_file</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="datacompy.SparkCompare.rows_both_all">
+<code class="descname">rows_both_all</code><a class="headerlink" href="#datacompy.SparkCompare.rows_both_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>pyspark.sql.DataFrame: Returns all rows in both dataframes</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="datacompy.SparkCompare.rows_both_mismatch">
+<code class="descname">rows_both_mismatch</code><a class="headerlink" href="#datacompy.SparkCompare.rows_both_mismatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>pyspark.sql.DataFrame: Returns all rows in both dataframes that have mismatches</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="datacompy.SparkCompare.rows_only_base">
+<code class="descname">rows_only_base</code><a class="headerlink" href="#datacompy.SparkCompare.rows_only_base" title="Permalink to this definition">¶</a></dt>
+<dd><p>pyspark.sql.DataFrame: Returns rows only in the base dataframe</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="datacompy.SparkCompare.rows_only_compare">
+<code class="descname">rows_only_compare</code><a class="headerlink" href="#datacompy.SparkCompare.rows_only_compare" title="Permalink to this definition">¶</a></dt>
+<dd><p>pyspark.sql.DataFrame: Returns rows only in the compare dataframe</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="core.html" class="btn btn-neutral" title="datacompy.core module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Capital One.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.5.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
