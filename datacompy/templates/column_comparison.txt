@@ -1,0 +1,7 @@
+Column Comparison
+-----------------
+
+Number of columns compared with some values unequal: {0:,}
+Number of columns compared with all values equal: {1:,}
+Total number of values which compare unequal: {2:,}
+

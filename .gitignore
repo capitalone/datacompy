@@ -1,0 +1,14 @@
+.cache
+build/
+dist/
+*.egg-info/
+*/__pycache__/
+.idea/
+*.pyc
+
+# Spark junk
+metastore_db/
+spark-warehouse/
+derby.log
+
+*.ipynb*

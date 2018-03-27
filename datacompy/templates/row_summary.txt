@@ -1,0 +1,14 @@
+Row Summary
+-----------
+
+Matched on: {0}
+Any duplicates on match values: {10}
+Absolute Tolerance: {1}
+Relative Tolerance: {2}
+Number of rows in common: {3:,}
+Number of rows in {8} but not in {9}: {4:,}
+Number of rows in {9} but not in {8}: {5:,}
+
+Number of rows with some compared columns unequal: {6:,}
+Number of rows with all compared columns equal: {7:,}
+

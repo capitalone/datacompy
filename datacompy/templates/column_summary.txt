@@ -1,0 +1,7 @@
+Column Summary
+--------------
+
+Number of columns in common: {0}
+Number of columns in {3} but not in {4}: {1}
+Number of columns in {4} but not in {3}: {2}
+
