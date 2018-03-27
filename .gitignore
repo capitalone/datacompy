@@ -5,6 +5,7 @@ dist/
 */__pycache__/
 .idea/
 *.pyc
+.DS_Store
 
 # Spark junk
 metastore_db/
