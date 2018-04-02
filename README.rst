@@ -1,3 +1,6 @@
+.. image:: https://travis-ci.org/capitalone/datacompy.svg?branch=master
+    :target: https://travis-ci.org/capitalone/datacompy
+
 =========
 DataComPy
 =========
@@ -76,7 +79,7 @@ See docs for more detailed usage instructions and an example of the report outpu
 Things that are happening behind the scenes
 -------------------------------------------
 
-- You pass in two dataframes (``df1``, ``df2``) to ``datacompy.Compare`` and a 
+- You pass in two dataframes (``df1``, ``df2``) to ``datacompy.Compare`` and a
   column to join on (or list of columns) to ``join_columns``.  By default the
   comparison needs to match values exactly, but you can pass in ``abs_tol``
   and/or ``rel_tol`` to apply absolute and/or relative tolerances for numeric columns.
