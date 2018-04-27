@@ -131,7 +131,7 @@ def compare_df3_fixture(spark):
 
     return spark.createDataFrame(mock_data2)
 
-#####NEW dataframe fixture for tolerance
+
 @pytest.fixture(scope='module', name='base_tol')
 def base_tol_fixture(spark):
     tol_data1 = [
@@ -165,6 +165,7 @@ def base_tol_fixture(spark):
 
     return spark.createDataFrame(tol_data1)
 
+
 @pytest.fixture(scope='module', name='compare_abs_tol')
 def compare_tol2_fixture(spark):
     tol_data2 = [
@@ -197,6 +198,7 @@ def compare_tol2_fixture(spark):
     ]
 
     return spark.createDataFrame(tol_data2)
+
 
 @pytest.fixture(scope='module', name='compare_rel_tol')
 def compare_tol3_fixture(spark):
@@ -264,8 +266,6 @@ def compare_tol4_fixture(spark):
     ]
 
     return spark.createDataFrame(tol_data4)
-###############
-
 
 
 @pytest.fixture(scope='module', name='base_td')
@@ -331,15 +331,15 @@ def comparison_abs_tol_fixture(base_tol, compare_abs_tol, spark):
 def comparison_rel_tol_fixture(base_tol, compare_rel_tol, spark):
     return SparkCompare(spark, base_tol, compare_rel_tol, join_columns=['account_identifier'],rel_tol=0.1)
 
+
 @pytest.fixture(scope='module', name='comparison_both_tol')
 def comparison_both_tol_fixture(base_tol, compare_both_tol, spark):
     return SparkCompare(spark, base_tol, compare_both_tol, join_columns=['account_identifier'],rel_tol=0.1,abs_tol=0.01)
 
+
 @pytest.fixture(scope='module', name='comparison_neg_tol')
 def comparison_neg_tol_fixture(base_tol, compare_both_tol, spark):
     return SparkCompare(spark, base_tol, compare_both_tol, join_columns=['account_identifier'],rel_tol=-0.2,abs_tol=0.01)
-
-
 
 
 @pytest.fixture(scope='module', name='comparison_kd1')
@@ -409,7 +409,7 @@ def comparison4_fixture(base_df2, compare_df1, spark):
 def comparison_decimal_fixture(base_decimal, compare_decimal, spark):
     return SparkCompare(spark, base_decimal, compare_decimal, join_columns=['acct'])
 
-############### added tests for tolerances
+
 def test_absolute_tolerances(comparison_abs_tol):
     stdout = six.StringIO()
 
