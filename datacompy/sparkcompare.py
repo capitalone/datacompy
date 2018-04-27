@@ -131,6 +131,7 @@ class SparkCompare(object):
         have done some work deduping the input dataframes. If
         ``cache_intermediates=False``, the instantiation of this object is lazy.
     """
+
     def __init__(self, spark_session, base_df, compare_df, join_columns,column_mapping=None,
                  cache_intermediates=False, known_differences=None,rel_tol=0, abs_tol=0,
                  show_all_columns=False,match_rates=False):
