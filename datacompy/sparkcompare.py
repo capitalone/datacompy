@@ -113,6 +113,15 @@ class SparkCompare(object):
             * transformation: A Spark SQL statement to apply to the column
                 in the compare dataset. The string "{input}" will be replaced
                 by the variable in question.
+    abs_tol : float, optional
+        Absolute tolerance between two values.
+    rel_tol : float, optional
+        Relative tolerance between two values.
+    show_all_columns : bool, optional
+        If true, all columns will be shown in the report including columns
+        with a 100% match rate
+    match_rates : bool, optional
+        If true, match rates by column will be shown in the column summary
 
     Returns
     -------
@@ -122,8 +131,9 @@ class SparkCompare(object):
         have done some work deduping the input dataframes. If
         ``cache_intermediates=False``, the instantiation of this object is lazy.
     """
-    def __init__(self, spark_session, base_df, compare_df, join_columns,rel_tol=0, abs_tol=0,column_mapping=None,
-                 cache_intermediates=False, known_differences=None,show_all_columns=False,match_rates=False):
+    def __init__(self, spark_session, base_df, compare_df, join_columns,column_mapping=None,
+                 cache_intermediates=False, known_differences=None,rel_tol=0, abs_tol=0,
+                 show_all_columns=False,match_rates=False):
         self.rel_tol = rel_tol
         self.abs_tol = abs_tol
         if self.rel_tol<0 or self.abs_tol<0:
