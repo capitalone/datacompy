@@ -483,8 +483,6 @@ class SparkCompare(object):
         compare_dtype = [d[1] for d in self.compare_df.dtypes if d[0] == name][0]
 
         if _is_comparable(base_dtype, compare_dtype):
-
-            #equal_comparisons.append('(A.{name}=B.{name})')
             if (base_dtype in NUMERIC_SPARK_TYPES) and (compare_dtype in NUMERIC_SPARK_TYPES ):#numeric tolerance comparison
                 equal_comparisons.append('((A.{name}=B.{name}) OR ((abs(A.{name}-B.{name}))<=('+str(self.abs_tol)+'+('+str(self.rel_tol)+'*abs(A.{name})))))')
             else:#non-numeric comparison
