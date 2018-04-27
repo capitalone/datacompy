@@ -119,9 +119,9 @@ class SparkCompare(object):
         Relative tolerance between two values.
     show_all_columns : bool, optional
         If true, all columns will be shown in the report including columns
-        with a 100% match rate
+        with a 100% match rate.
     match_rates : bool, optional
-        If true, match rates by column will be shown in the column summary
+        If true, match rates by column will be shown in the column summary.
 
     Returns
     -------
