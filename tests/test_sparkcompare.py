@@ -132,6 +132,142 @@ def compare_df3_fixture(spark):
     return spark.createDataFrame(mock_data2)
 
 
+@pytest.fixture(scope='module', name='base_tol')
+def base_tol_fixture(spark):
+    tol_data1 = [
+        Row(account_identifier=10000001234, dollar_amount=123.4, name='Franklin Delano Bluth', float_field=14530.155,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),
+        Row(account_identifier=10000001235, dollar_amount=500.0, name='Surely Funke', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),
+        Row(account_identifier=10000001236, dollar_amount=-1100.0, name='Nichael Bluth', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),
+        Row(account_identifier=10000001237, dollar_amount=0.45, name='Mr. F', float_field=1.0,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),
+        Row(account_identifier=10000001238, dollar_amount=1345.0, name='Steve Holt!', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),
+        Row(account_identifier=10000001239, dollar_amount=123456.0, name='Blue Man Group', float_field=345.12,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),
+        Row(account_identifier=10000001240, dollar_amount=1.1, name='Her?', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),
+        Row(account_identifier=10000001241, dollar_amount=0.0, name='Mrs. Featherbottom', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),
+        Row(account_identifier=10000001242, dollar_amount=0.0, name='Ice', float_field=345.12,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),
+        Row(account_identifier=10000001243, dollar_amount=-10.0, name='Frank Wrench', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),
+        Row(account_identifier=10000001244, dollar_amount=None, name='Lucille 2', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),
+        Row(account_identifier=10000001245, dollar_amount=0.009999, name='Gene Parmesan', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),
+        Row(account_identifier=10000001246, dollar_amount=None, name='Motherboy', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True)
+    ]
+
+    return spark.createDataFrame(tol_data1)
+
+
+@pytest.fixture(scope='module', name='compare_abs_tol')
+def compare_tol2_fixture(spark):
+    tol_data2 = [
+        Row(account_identifier=10000001234, dollar_amount=123.4, name='Franklin Delano Bluth', float_field=14530.155,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#full match
+        Row(account_identifier=10000001235, dollar_amount=500.01, name='Surely Funke', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),#off by 0.01
+        Row(account_identifier=10000001236, dollar_amount=-1100.01, name='Nichael Bluth', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),#off by -0.01
+        Row(account_identifier=10000001237, dollar_amount=0.46000000001, name='Mr. F', float_field=1.0,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#off by 0.01000000001
+        Row(account_identifier=10000001238, dollar_amount=1344.8999999999, name='Steve Holt!', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#off by -0.01000000001
+        Row(account_identifier=10000001239, dollar_amount=123456.0099999999, name='Blue Man Group', float_field=345.12,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#off by 0.00999999999
+        Row(account_identifier=10000001240, dollar_amount=1.090000001, name='Her?', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True), #off by -0.00999999999
+        Row(account_identifier=10000001241, dollar_amount=0.0, name='Mrs. Featherbottom', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),#both zero
+        Row(account_identifier=10000001242, dollar_amount=1.0, name='Ice', float_field=345.12,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#base 0, compare 1
+        Row(account_identifier=10000001243, dollar_amount=0.0, name='Frank Wrench', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True), #base -10, compare 0
+        Row(account_identifier=10000001244, dollar_amount=-1.0, name='Lucille 2', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True), #base NULL, compare -1
+        Row(account_identifier=10000001245, dollar_amount=None, name='Gene Parmesan', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True), #base 0.009999, compare NULL
+        Row(account_identifier=10000001246, dollar_amount=None, name='Motherboy', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True) #both NULL
+    ]
+
+    return spark.createDataFrame(tol_data2)
+
+
+@pytest.fixture(scope='module', name='compare_rel_tol')
+def compare_tol3_fixture(spark):
+    tol_data3 = [
+        Row(account_identifier=10000001234, dollar_amount=123.4, name='Franklin Delano Bluth', float_field=14530.155,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#full match   #MATCH
+        Row(account_identifier=10000001235, dollar_amount=550.0, name='Surely Funke', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),#off by 10%   #MATCH
+        Row(account_identifier=10000001236, dollar_amount=-1000.0, name='Nichael Bluth', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),#off by -10%    #MATCH
+        Row(account_identifier=10000001237, dollar_amount=0.49501, name='Mr. F', float_field=1.0,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#off by greater than 10%
+        Row(account_identifier=10000001238, dollar_amount=1210.001, name='Steve Holt!', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#off by greater than -10%
+        Row(account_identifier=10000001239, dollar_amount=135801.59999, name='Blue Man Group', float_field=345.12,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#off by just under 10%   #MATCH
+        Row(account_identifier=10000001240, dollar_amount=1.000001, name='Her?', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True), #off by just under -10%   #MATCH
+        Row(account_identifier=10000001241, dollar_amount=0.0, name='Mrs. Featherbottom', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),#both zero   #MATCH
+        Row(account_identifier=10000001242, dollar_amount=1.0, name='Ice', float_field=345.12,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#base 0, compare 1
+        Row(account_identifier=10000001243, dollar_amount=0.0, name='Frank Wrench', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True), #base -10, compare 0
+        Row(account_identifier=10000001244, dollar_amount=-1.0, name='Lucille 2', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True), #base NULL, compare -1
+        Row(account_identifier=10000001245, dollar_amount=None, name='Gene Parmesan', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True), #base 0.009999, compare NULL
+        Row(account_identifier=10000001246, dollar_amount=None, name='Motherboy', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True) #both NULL  #MATCH
+    ]
+
+    return spark.createDataFrame(tol_data3)
+
+
+@pytest.fixture(scope='module', name='compare_both_tol')
+def compare_tol4_fixture(spark):
+    tol_data4 = [
+        Row(account_identifier=10000001234, dollar_amount=123.4, name='Franklin Delano Bluth', float_field=14530.155,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#full match
+        Row(account_identifier=10000001235, dollar_amount=550.01, name='Surely Funke', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),#off by 10% and +0.01
+        Row(account_identifier=10000001236, dollar_amount=-1000.01, name='Nichael Bluth', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),#off by -10% and -0.01
+        Row(account_identifier=10000001237, dollar_amount=0.505000000001, name='Mr. F', float_field=1.0,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#off by greater than 10% and +0.01
+        Row(account_identifier=10000001238, dollar_amount=1209.98999, name='Steve Holt!', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#off by greater than -10% and -0.01
+        Row(account_identifier=10000001239, dollar_amount=135801.609999, name='Blue Man Group', float_field=345.12,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#off by just under 10% and just under +0.01
+        Row(account_identifier=10000001240, dollar_amount=0.99000001, name='Her?', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True), #off by just under -10% and just under -0.01
+        Row(account_identifier=10000001241, dollar_amount=0.0, name='Mrs. Featherbottom', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True),#both zero
+        Row(account_identifier=10000001242, dollar_amount=1.0, name='Ice', float_field=345.12,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=False),#base 0, compare 1
+        Row(account_identifier=10000001243, dollar_amount=0.0, name='Frank Wrench', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True), #base -10, compare 0
+        Row(account_identifier=10000001244, dollar_amount=-1.0, name='Lucille 2', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True), #base NULL, compare -1
+        Row(account_identifier=10000001245, dollar_amount=None, name='Gene Parmesan', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True), #base 0.009999, compare NULL
+        Row(account_identifier=10000001246, dollar_amount=None, name='Motherboy', float_field=None,
+            date_field=datetime.date(2017, 1, 1), accnt_purge=True) #both NULL
+    ]
+
+    return spark.createDataFrame(tol_data4)
+
+
 @pytest.fixture(scope='module', name='base_td')
 def base_td_fixture(spark):
     mock_data = [
@@ -184,6 +320,26 @@ def compare_decimal_fixture(spark):
     ]
 
     return spark.createDataFrame(mock_data)
+
+
+@pytest.fixture(scope='module', name='comparison_abs_tol')
+def comparison_abs_tol_fixture(base_tol, compare_abs_tol, spark):
+    return SparkCompare(spark, base_tol, compare_abs_tol, join_columns=['account_identifier'],abs_tol=0.01)
+
+
+@pytest.fixture(scope='module', name='comparison_rel_tol')
+def comparison_rel_tol_fixture(base_tol, compare_rel_tol, spark):
+    return SparkCompare(spark, base_tol, compare_rel_tol, join_columns=['account_identifier'],rel_tol=0.1)
+
+
+@pytest.fixture(scope='module', name='comparison_both_tol')
+def comparison_both_tol_fixture(base_tol, compare_both_tol, spark):
+    return SparkCompare(spark, base_tol, compare_both_tol, join_columns=['account_identifier'],rel_tol=0.1,abs_tol=0.01)
+
+
+@pytest.fixture(scope='module', name='comparison_neg_tol')
+def comparison_neg_tol_fixture(base_tol, compare_both_tol, spark):
+    return SparkCompare(spark, base_tol, compare_both_tol, join_columns=['account_identifier'],rel_tol=-0.2,abs_tol=0.01)
 
 
 @pytest.fixture(scope='module', name='comparison_kd1')
@@ -253,6 +409,47 @@ def comparison4_fixture(base_df2, compare_df1, spark):
 def comparison_decimal_fixture(base_decimal, compare_decimal, spark):
     return SparkCompare(spark, base_decimal, compare_decimal, join_columns=['acct'])
 
+
+def test_absolute_tolerances(comparison_abs_tol):
+    stdout = six.StringIO()
+
+    comparison_abs_tol.report(file=stdout)
+    stdout.seek(0)
+    assert '****** Row Comparison ******' in stdout.getvalue()
+    assert 'Number of rows with some columns unequal: 6' in stdout.getvalue()
+    assert 'Number of rows with all columns equal: 7' in stdout.getvalue()
+    assert 'Number of columns compared with some values unequal: 1' in stdout.getvalue()
+    assert 'Number of columns compared with all values equal: 4' in stdout.getvalue()
+
+def test_relative_tolerances(comparison_rel_tol):
+    stdout = six.StringIO()
+
+    comparison_rel_tol.report(file=stdout)
+    stdout.seek(0)
+    assert '****** Row Comparison ******' in stdout.getvalue()
+    assert 'Number of rows with some columns unequal: 6' in stdout.getvalue()
+    assert 'Number of rows with all columns equal: 7' in stdout.getvalue()
+    assert 'Number of columns compared with some values unequal: 1' in stdout.getvalue()
+    assert 'Number of columns compared with all values equal: 4' in stdout.getvalue()
+
+
+def test_both_tolerances(comparison_both_tol):
+    stdout = six.StringIO()
+
+    comparison_both_tol.report(file=stdout)
+    stdout.seek(0)
+    assert '****** Row Comparison ******' in stdout.getvalue()
+    assert 'Number of rows with some columns unequal: 6' in stdout.getvalue()
+    assert 'Number of rows with all columns equal: 7' in stdout.getvalue()
+    assert 'Number of columns compared with some values unequal: 1' in stdout.getvalue()
+    assert 'Number of columns compared with all values equal: 4' in stdout.getvalue()
+
+
+def test_negative_tolerances(comparison_neg_tol):
+    #stdout = six.StringIO()
+    with pytest.raises(ValueError, message="Please enter positive valued tolerances"):
+        comparison_neg_tol.report()#file=stdout)
+        pass
 
 def test_decimal_comparisons():
     true_decimals = ["decimal", "decimal()", "decimal(20, 10)"]
