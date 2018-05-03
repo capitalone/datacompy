@@ -591,12 +591,18 @@ class SparkCompare(object):
                 len(columns_fully_matching)), file=myfile)
 
         # If all columns matched, don't print columns with unequal values
-        if (self.show_all_columns==False) and (len(columns_fully_matching) == len(self.columns_compared)):
-            return
-
+        if (not self.show_all_columns) and (len(columns_fully_matching) == len(self.columns_compared)):
+            return maxlen(self.columns_match_dict[key] for key in self.columns_match_dict)
+        
+        #if show_all_columns is set, set column name length maximum to max of ALL columns(with minimum)
+        if self.show_all_columns:
+            base_name_max = max([len(key) for key in columns_match_dict] + [16])
+            compare_name_max = max([len(_base_to_compare_name(key)) for key in columns_match_dict] + [19])
+        
         # For columns with any differences, what are the longest base and compare column name lengths (with minimums)?
-        base_name_max = max([len(key) for key in columns_with_any_diffs] + [16])
-        compare_name_max = max([len(self._base_to_compare_name(key)) for key in columns_with_any_diffs] + [19])
+        else:
+            base_name_max = max([len(key) for key in columns_with_any_diffs] + [16])
+            compare_name_max = max([len(self._base_to_compare_name(key)) for key in columns_with_any_diffs] + [19])
 
         """ list of (header, condition, width, align)
                 where
