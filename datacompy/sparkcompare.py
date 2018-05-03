@@ -591,7 +591,7 @@ class SparkCompare(object):
                 len(columns_fully_matching)), file=myfile)
 
         # If all columns matched, don't print columns with unequal values
-        if not self.show_all_columns and len(columns_fully_matching) == len(self.columns_compared):
+        if (not self.show_all_columns) and (len(columns_fully_matching) == len(self.columns_compared)):
             return
 
         # For columns with any differences, what are the longest base and compare column name lengths (with minimums)?
