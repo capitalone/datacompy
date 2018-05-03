@@ -619,7 +619,7 @@ class SparkCompare(object):
         headers_columns_unequal_valid = [h for h in headers_columns_unequal if h[1]]
         padding = 2  # spaces to add to left and right of each column
         
-        if show_all_columns:    
+        if self.show_all_columns:    
             print("\n****** Columns with Equal/Unequal Values ******", file=myfile)
         else:
             print("\n****** Columns with Unequal Values ******", file=myfile)
