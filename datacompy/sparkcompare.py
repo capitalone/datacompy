@@ -592,7 +592,7 @@ class SparkCompare(object):
 
         # If all columns matched, don't print columns with unequal values
         if (not self.show_all_columns) and (len(columns_fully_matching) == len(self.columns_compared)):
-            return maxlen(self.columns_match_dict[key] for key in self.columns_match_dict)
+            return
         
         #if show_all_columns is set, set column name length maximum to max of ALL columns(with minimum)
         if self.show_all_columns:
