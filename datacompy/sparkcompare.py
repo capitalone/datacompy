@@ -591,7 +591,7 @@ class SparkCompare(object):
                 len(columns_fully_matching)), file=myfile)
 
         # If all columns matched, don't print columns with unequal values
-        if not show_all_columns and len(columns_fully_matching) == len(self.columns_compared):
+        if not self.show_all_columns and len(columns_fully_matching) == len(self.columns_compared):
             return
 
         # For columns with any differences, what are the longest base and compare column name lengths (with minimums)?
@@ -623,6 +623,7 @@ class SparkCompare(object):
             print("\n****** Columns with Equal/Unequal Values ******", file=myfile)
         else:
             print("\n****** Columns with Unequal Values ******", file=myfile)
+            
         format_pattern = (" "*padding).join(
             [('{:' + ('>' if h[3] else '') + str(h[2]) + '}') for h in headers_columns_unequal_valid])
         print(format_pattern.format(*[h[0] for h in headers_columns_unequal_valid]), file=myfile)
