@@ -596,8 +596,8 @@ class SparkCompare(object):
         
         #if show_all_columns is set, set column name length maximum to max of ALL columns(with minimum)
         if self.show_all_columns:
-            base_name_max = max([len(key) for key in columns_match_dict] + [16])
-            compare_name_max = max([len(_base_to_compare_name(key)) for key in columns_match_dict] + [19])
+            base_name_max = max([len(key) for key in self.columns_match_dict] + [16])
+            compare_name_max = max([len(self._base_to_compare_name(key)) for key in self.columns_match_dict] + [19])
         
         # For columns with any differences, what are the longest base and compare column name lengths (with minimums)?
         else:
