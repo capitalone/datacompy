@@ -342,6 +342,11 @@ def comparison_neg_tol_fixture(base_tol, compare_both_tol, spark):
     return SparkCompare(spark, base_tol, compare_both_tol, join_columns=['account_identifier'],rel_tol=-0.2,abs_tol=0.01)
 
 
+@pytest.fixture(scope='module', name='show_all_columns_and_match_rate')
+def show_all_columns_and_match_rate_fixture(base_tol, compare_both_tol, spark):
+    return SparkCompare(spark, base_tol, compare_both_tol, join_columns=['account_identifier'],show_all_columns=True,match_rates=True)
+
+
 @pytest.fixture(scope='module', name='comparison_kd1')
 def comparison_known_diffs1(base_td, compare_source, spark):
     return SparkCompare(spark, base_td, compare_source,
@@ -450,6 +455,18 @@ def test_negative_tolerances(comparison_neg_tol):
     with pytest.raises(ValueError, message="Please enter positive valued tolerances"):
         comparison_neg_tol.report()#file=stdout)
         pass
+
+def test_show_all_columns_and_match_rate(show_all_columns_and_match_rate):
+    stdout = six.StringIO()
+
+    show_all_columns_and_match_rate.report(file=stdout)
+
+    assert '****** Columns with Equal/Unequal Values ******' in stdout.getvalue()
+    assert 'accnt_purge       accnt_purge          boolean        boolean               13             0     100.00000' in stdout.getvalue()
+    assert 'date_field        date_field           date           date                  13             0     100.00000' in stdout.getvalue()
+    assert 'dollar_amount     dollar_amount        double         double                 3            10      23.07692' in stdout.getvalue()
+    assert 'float_field       float_field          double         double                13             0     100.00000' in stdout.getvalue()
+    assert 'name              name                 string         string                13             0     100.00000' in stdout.getvalue()
 
 def test_decimal_comparisons():
     true_decimals = ["decimal", "decimal()", "decimal(20, 10)"]
