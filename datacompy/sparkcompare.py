@@ -591,12 +591,18 @@ class SparkCompare(object):
                 len(columns_fully_matching)), file=myfile)
 
         # If all columns matched, don't print columns with unequal values
-        if len(columns_fully_matching) == len(self.columns_compared):
+        if (not self.show_all_columns) and (len(columns_fully_matching) == len(self.columns_compared)):
             return
-
+        
+        #if show_all_columns is set, set column name length maximum to max of ALL columns(with minimum)
+        if self.show_all_columns:
+            base_name_max = max([len(key) for key in self.columns_match_dict] + [16])
+            compare_name_max = max([len(self._base_to_compare_name(key)) for key in self.columns_match_dict] + [19])
+        
         # For columns with any differences, what are the longest base and compare column name lengths (with minimums)?
-        base_name_max = max([len(key) for key in columns_with_any_diffs] + [16])
-        compare_name_max = max([len(self._base_to_compare_name(key)) for key in columns_with_any_diffs] + [19])
+        else:
+            base_name_max = max([len(key) for key in columns_with_any_diffs] + [16])
+            compare_name_max = max([len(self._base_to_compare_name(key)) for key in columns_with_any_diffs] + [19])
 
         """ list of (header, condition, width, align)
                 where
@@ -618,8 +624,12 @@ class SparkCompare(object):
             headers_columns_unequal.append(("Match Rate %",True, 12, True))
         headers_columns_unequal_valid = [h for h in headers_columns_unequal if h[1]]
         padding = 2  # spaces to add to left and right of each column
-
-        print("\n****** Columns with Unequal Values ******", file=myfile)
+        
+        if self.show_all_columns:    
+            print("\n****** Columns with Equal/Unequal Values ******", file=myfile)
+        else:
+            print("\n****** Columns with Unequal Values ******", file=myfile)
+            
         format_pattern = (" "*padding).join(
             [('{:' + ('>' if h[3] else '') + str(h[2]) + '}') for h in headers_columns_unequal_valid])
         print(format_pattern.format(*[h[0] for h in headers_columns_unequal_valid]), file=myfile)
@@ -631,7 +641,7 @@ class SparkCompare(object):
             num_mismatches = column_values[MatchType.MISMATCH.value]
             compare_column = self._base_to_compare_name(column_name)
 
-            if num_mismatches or num_known_diffs:
+            if num_mismatches or num_known_diffs or self.show_all_columns:
                 output_row = [column_name, compare_column, base_types.get(column_name),
                               compare_types.get(column_name), str(num_matches), str(num_mismatches)]
                 if  self.match_rates:
