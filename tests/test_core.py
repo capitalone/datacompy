@@ -85,6 +85,28 @@ something||False
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+def test_string_columns_equal_with_ignore_spaces():
+    data = '''a|b|expected
+Hi|Hi|True
+Yo|Yo|True
+Hey|Hey |True
+résumé|resume|False
+résumé|résumé|True
+💩|💩|True
+💩|🤔|False
+ | |True
+  |       |True
+datacompy|DataComPy|False
+something||False
+|something|False
+||True'''
+    df = pd.read_csv(six.StringIO(data), sep='|')
+    actual_out = datacompy.columns_equal(
+        df.a, df.b, rel_tol=0.2, ignore_spaces=True)
+    expect_out = df['expected']
+    assert_series_equal(expect_out, actual_out, check_names=False)
+
+
 def test_date_columns_equal():
     data = '''a|b|expected
 2017-01-01|2017-01-01|True
@@ -107,6 +129,34 @@ def test_date_columns_equal():
     assert_series_equal(expect_out, actual_out, check_names=False)
     #and reverse
     actual_out_rev = datacompy.columns_equal(df.b, df.a, rel_tol=0.2)
+    assert_series_equal(expect_out, actual_out_rev, check_names=False)
+
+
+def test_date_columns_equal_with_ignore_spaces():
+    data = '''a|b|expected
+2017-01-01|2017-01-01   |True
+2017-01-02  |2017-01-02|True
+2017-10-01  |2017-10-10   |False
+2017-01-01||False
+|2017-01-01|False
+||True'''
+    df = pd.read_csv(six.StringIO(data), sep='|')
+    #First compare just the strings
+    actual_out = datacompy.columns_equal(
+        df.a, df.b, rel_tol=0.2, ignore_spaces=True)
+    expect_out = df['expected']
+    assert_series_equal(expect_out, actual_out, check_names=False)
+
+    #Then compare converted to datetime objects
+    df['a'] = pd.to_datetime(df['a'])
+    df['b'] = pd.to_datetime(df['b'])
+    actual_out = datacompy.columns_equal(
+        df.a, df.b, rel_tol=0.2, ignore_spaces=True)
+    expect_out = df['expected']
+    assert_series_equal(expect_out, actual_out, check_names=False)
+    #and reverse
+    actual_out_rev = datacompy.columns_equal(
+        df.b, df.a, rel_tol=0.2, ignore_spaces=True)
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
@@ -246,6 +296,20 @@ def test_mixed_column():
         {'a': 1, 'b': 'yo', 'expected': False}
         ])
     actual_out = datacompy.columns_equal(df.a, df.b)
+    expect_out = df['expected']
+    assert_series_equal(expect_out, actual_out, check_names=False)
+
+
+def test_mixed_column_with_ignore_spaces():
+    df = pd.DataFrame([
+        {'a': 'hi', 'b': 'hi ', 'expected': True},
+        {'a': 1, 'b': 1, 'expected': True},
+        {'a': np.inf, 'b': np.inf, 'expected': True},
+        {'a': Decimal('1'), 'b': Decimal('1'), 'expected': True},
+        {'a': 1, 'b': '1 ', 'expected': False},
+        {'a': 1, 'b': 'yo ', 'expected': False}
+        ])
+    actual_out = datacompy.columns_equal(df.a, df.b, ignore_spaces=True)
     expect_out = df['expected']
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -566,3 +630,51 @@ def test_dupes_from_real_data():
     #Just render the report to make sure it renders.
     t = compare_acct.report()
     r = compare_unq.report()
+
+
+def test_strings_with_joins_with_ignore_spaces():
+    df1 = pd.DataFrame([{'a': 'hi', 'b': ' A'}, {'a': 'bye', 'b': 'A'}])
+    df2 = pd.DataFrame([{'a': 'hi', 'b': 'A'}, {'a': 'bye', 'b': 'A '}])
+    compare = datacompy.Compare(df1, df2, 'a', ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert not compare.intersect_rows_match()
+
+    compare = datacompy.Compare(df1, df2, 'a', ignore_spaces=True)
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+
+
+def test_decimal_with_joins_with_ignore_spaces():
+    df1 = pd.DataFrame([{'a': 1, 'b': ' A'}, {'a': 2, 'b': 'A'}])
+    df2 = pd.DataFrame([{'a': 1, 'b': 'A'}, {'a': 2, 'b': 'A '}])
+    compare = datacompy.Compare(df1, df2, 'a', ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert not compare.intersect_rows_match()
+
+    compare = datacompy.Compare(df1, df2, 'a', ignore_spaces=True)
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+
+
+def test_index_with_joins_with_ignore_spaces():
+    df1 = pd.DataFrame([{'a': 1, 'b': ' A'}, {'a': 2, 'b': 'A'}])
+    df2 = pd.DataFrame([{'a': 1, 'b': 'A'}, {'a': 2, 'b': 'A '}])
+    compare = datacompy.Compare(df1, df2, on_index=True, ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert not compare.intersect_rows_match()
+
+    compare = datacompy.Compare(df1, df2, 'a', ignore_spaces=True)
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()

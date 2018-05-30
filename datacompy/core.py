@@ -59,6 +59,8 @@ class Compare(object):
         more easily track the dataframes.
     df2_name : str, optional
         A string name for the second dataframe
+    ignore_spaces : bool, optional
+        Flag to strip whitespace (including newlines) from string columns
 
     Attributes
     ----------
@@ -70,7 +72,7 @@ class Compare(object):
 
     def __init__(
         self, df1, df2, join_columns=None, on_index=False, abs_tol=0,
-        rel_tol=0, df1_name='df1', df2_name='df2'):
+        rel_tol=0, df1_name='df1', df2_name='df2', ignore_spaces=False):
 
         if on_index and join_columns is not None:
             raise Exception('Only provide on_index or join_columns')
@@ -93,7 +95,7 @@ class Compare(object):
         self.rel_tol = rel_tol
         self.df1_unq_rows = self.df2_unq_rows = self.intersect_rows = None
         self.column_stats = []
-        self._compare()
+        self._compare(ignore_spaces)
 
     @property
     def df1(self):
@@ -143,7 +145,7 @@ class Compare(object):
             if len(dataframe.drop_duplicates(subset=self.join_columns)) < len(dataframe):
                 self._any_dupes = True
 
-    def _compare(self):
+    def _compare(self, ignore_spaces):
         """Actually run the comparison.  This tries to run df1.equals(df2)
         first so that if they're truly equal we can tell.
 
@@ -167,8 +169,8 @@ class Compare(object):
         LOG.info('Number of columns in df2 and not in df1: {}'.format(
             len(self.df2_unq_columns())))
         LOG.debug('Merging dataframes')
-        self._dataframe_merge()
-        self._intersect_compare()
+        self._dataframe_merge(ignore_spaces)
+        self._intersect_compare(ignore_spaces)
         if self.matches():
             LOG.info('df1 matches df2')
         else:
@@ -186,7 +188,7 @@ class Compare(object):
         """Get columns that are shared between the two dataframes"""
         return set(self.df1.columns) & set(self.df2.columns)
 
-    def _dataframe_merge(self):
+    def _dataframe_merge(self, ignore_spaces):
         """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
         and df1 & df2
 
@@ -262,7 +264,7 @@ class Compare(object):
             'Number of rows in df1 and df2 (not necessarily equal): {}'.format(
                 len(self.intersect_rows)))
 
-    def _intersect_compare(self):
+    def _intersect_compare(self, ignore_spaces):
         """Run the comparison on the intersect dataframe
 
         This loops through all columns that are shared between df1 and df2, and
@@ -285,7 +287,8 @@ class Compare(object):
                     self.intersect_rows[col_1],
                     self.intersect_rows[col_2],
                     self.rel_tol,
-                    self.abs_tol)
+                    self.abs_tol,
+                    ignore_spaces)
                 match_cnt = self.intersect_rows[col_match].sum()
 
                 try:
@@ -570,7 +573,7 @@ def render(filename, *fields):
         return file_open.read().format(*fields)
 
 
-def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0):
+def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False):
     """Compares two columns from a dataframe, returning a True/False series,
     with the same index as column 1.
 
@@ -592,6 +595,8 @@ def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0):
         Relative tolerance
     abs_tol : float, optional
         Absolute tolerance
+    ignore_spaces : bool, optional
+        Flag to strip whitespace (including newlines) from string columns
 
     Returns
     -------
@@ -616,6 +621,12 @@ def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0):
                 equal_nan=True))
         except (ValueError, TypeError):
             try:
+                if ignore_spaces:
+                    if col_1.dtype.kind == 'O':
+                        col_1 = col_1.str.strip()
+                    if col_2.dtype.kind == 'O':
+                        col_2 = col_2.str.strip()
+                        
                 if set([col_1.dtype.kind, col_2.dtype.kind]) == set(['M','O']):
                     compare = compare_string_and_date_columns(col_1, col_2)
                 else:
