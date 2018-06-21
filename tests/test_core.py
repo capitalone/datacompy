@@ -447,11 +447,8 @@ def test_string_joiner():
 def test_decimal_with_joins():
     df1 = pd.DataFrame([{'a': Decimal('1'), 'b': 2}, {'a': Decimal('2'), 'b': 2}])
     df2 = pd.DataFrame([{'a': 1, 'b': 2}, {'a': 2, 'b': 2}])
-    compare = datacompy.Compare(df1, df2, 'a')
-    assert compare.matches()
-    assert compare.all_columns_match()
-    assert compare.all_rows_overlap()
-    assert compare.intersect_rows_match()
+    with raises(ValueError):
+        compare = datacompy.Compare(df1, df2, 'a')
 
 
 def test_decimal_with_nulls():
@@ -490,6 +487,7 @@ def test_index_joining_strings_i_guess():
     df2 = pd.DataFrame([{'a': 'hi', 'b': 2}, {'a': 'bye', 'b': 2}])
     df1.index = df1['a']
     df2.index = df2['a']
+    df1.index.name = df2.index.name = None
     compare = datacompy.Compare(df1, df2, on_index=True)
     assert compare.matches()
 
@@ -557,6 +555,7 @@ def test_simple_dupes_index():
     df2 = pd.DataFrame([{'a': 1, 'b': 2}, {'a': 1, 'b': 2}])
     df1.index = df1['a']
     df2.index = df2['a']
+    df1.index.name = df2.index.name = None
     compare = datacompy.Compare(df1, df2, on_index=True)
     assert compare.matches()
     #Just render the report to make sure it renders.

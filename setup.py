@@ -5,7 +5,7 @@ import sys
 CURR_DIR = os.path.abspath(os.path.dirname(__file__))
 INSTALL_REQUIRES = [
     'enum34>=1.1.6;python_version<"3.4"',
-    'pandas>=0.19.0',
+    'pandas>=0.19.0,<=0.23.1',
     'numpy>=1.11.3',
     'six>=1.10']
 with open(os.path.join(CURR_DIR, 'README.rst')) as file_open:
