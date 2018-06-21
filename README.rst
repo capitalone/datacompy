@@ -111,6 +111,13 @@ Things that are happening behind the scenes
 
 - You can turn on logging to see more detailed logs.
 
+Note on Pandas versions
+-----------------------
+
+Due to some changes in the Pandas API, we have a range of versions of Pandas that we've tried to
+test on, found in the ``requirements.txt`` file.  Versions of Pandas outside of that range may well
+work, but it's buyer beware.
+
 .. _spark-detail:
 
 Spark Detail
