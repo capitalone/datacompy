@@ -677,3 +677,26 @@ def test_index_with_joins_with_ignore_spaces():
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert compare.intersect_rows_match()
+
+
+MAX_DIFF_DF = pd.DataFrame({
+    'base': [1,1,1,1,1],
+    'floats': [1.1,1.1,1.1,1.2,0.9],
+    'decimals': [Decimal('1.1'), Decimal('1.1'), Decimal('1.1'), Decimal('1.1'), Decimal('1.1')],
+    'null_floats': [np.nan, 1.1, 1, 1, 1],
+    'strings': ['1', '1', '1', '1.1', '1'],
+    'mixed_strings': ['1','1','1','2','some string'],
+    'infinity': [1,1,1,1,np.inf]
+    })
+
+@pytest.mark.parametrize('column,expected', [
+    ('base', 0),
+    ('floats', 0.2),
+    ('decimals', 0.1),
+    ('null_floats', 0.1),
+    ('strings', 0.1),
+    ('mixed_strings', 0),
+    ('infinity', np.inf)
+])
+def test_calculate_max_diff(column, expected):
+    assert np.isclose(datacompy.calculate_max_diff(MAX_DIFF_DF['base'], MAX_DIFF_DF[column]), expected)

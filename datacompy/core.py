@@ -290,14 +290,8 @@ class Compare(object):
                     self.abs_tol,
                     ignore_spaces)
                 match_cnt = self.intersect_rows[col_match].sum()
-
-                try:
-                    max_diff = (
-                        self.intersect_rows[col_1]
-                        - self.intersect_rows[col_2]).abs().max()
-                except:
-                    max_diff = 0
-
+                max_diff = calculate_max_diff(
+                    self.intersect_rows[col_1], self.intersect_rows[col_2])
                 null_diff = (
                     (self.intersect_rows[col_1].isnull())
                     ^ (self.intersect_rows[col_2].isnull())).sum()
@@ -626,7 +620,7 @@ def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False):
                         col_1 = col_1.str.strip()
                     if col_2.dtype.kind == 'O':
                         col_2 = col_2.str.strip()
-                        
+
                 if set([col_1.dtype.kind, col_2.dtype.kind]) == set(['M','O']):
                     compare = compare_string_and_date_columns(col_1, col_2)
                 else:
@@ -718,3 +712,23 @@ def temp_column_name(*dataframes):
                 unique = False
         if unique:
             return temp_column
+
+def calculate_max_diff(col_1, col_2):
+    """Get a maximum difference between two columns
+
+    Parameters
+    ----------
+    col_1 : Pandas.Series
+        The first column
+    col_2 : Pandas.Series
+        The second column
+
+    Returns
+    -------
+    Numeric
+        Numeric field, or zero.
+    """
+    try:
+        return (col_1.astype(float) - col_2.astype(float)).abs().max()
+    except:
+        return 0
