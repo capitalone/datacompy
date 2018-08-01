@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>DataComPy &mdash; datacompy 0.5.0 documentation</title>
+  <title>DataComPy &mdash; datacompy 0.5.1 documentation</title>
   
 
   
@@ -24,26 +24,18 @@
 
   
 
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="datacompy 0.5.0 documentation" href="#"/>
-        <link rel="next" title="Installation" href="install.html"/> 
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="install.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -65,7 +57,7 @@
             
             
               <div class="version">
-                0.5.0
+                0.5.1
               </div>
             
           
@@ -106,7 +98,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="#">datacompy</a>
@@ -114,9 +106,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -159,16 +152,17 @@
            <div itemprop="articleBody">
             
   <a class="reference external image-reference" href="https://travis-ci.org/capitalone/datacompy"><img alt="https://travis-ci.org/capitalone/datacompy.svg?branch=master" src="https://travis-ci.org/capitalone/datacompy.svg?branch=master" /></a>
+<a class="reference external image-reference" href="https://github.com/ambv/black"><img alt="https://img.shields.io/badge/code%20style-black-000000.svg" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
 <div class="section" id="datacompy">
 <h1>DataComPy<a class="headerlink" href="#datacompy" title="Permalink to this headline">¶</a></h1>
 <p>DataComPy is a package to compare two Pandas DataFrames. Originally started to
-be something of a replacement for SAS’s <code class="docutils literal"><span class="pre">PROC</span> <span class="pre">COMPARE</span></code> for Pandas DataFrames
-with some more functionality than just <code class="docutils literal"><span class="pre">Pandas.DataFrame.equals(Pandas.DataFrame)</span></code>
+be something of a replacement for SAS’s <code class="docutils literal notranslate"><span class="pre">PROC</span> <span class="pre">COMPARE</span></code> for Pandas DataFrames
+with some more functionality than just <code class="docutils literal notranslate"><span class="pre">Pandas.DataFrame.equals(Pandas.DataFrame)</span></code>
 (in that it prints out some stats, and lets you tweak how accurate matches have to be).
 Then extended to carry that functionality over to Spark Dataframes.</p>
 <div class="section" id="quick-installation">
 <h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span>
 </pre></div>
 </div>
 </div>
@@ -178,13 +172,13 @@ Then extended to carry that functionality over to Spark Dataframes.</p>
 on indexes.  If the two dataframes have duplicates based on join values, the
 match process sorts by the remaining fields and joins based on that row number.</p>
 <p>Column-wise comparisons attempt to match values even when dtypes don’t match.
-So if, for example, you have a column with <code class="docutils literal"><span class="pre">decimal.Decimal</span></code> values in one
-dataframe and an identically-named column with <code class="docutils literal"><span class="pre">float64</span></code> dtype in another,
+So if, for example, you have a column with <code class="docutils literal notranslate"><span class="pre">decimal.Decimal</span></code> values in one
+dataframe and an identically-named column with <code class="docutils literal notranslate"><span class="pre">float64</span></code> dtype in another,
 it will tell you that the dtypes are different but will still try to compare the
 values.</p>
 <div class="section" id="basic-usage">
 <h3>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">datacompy</span>
 
@@ -228,11 +222,11 @@ values.</p>
 <div class="section" id="things-that-are-happening-behind-the-scenes">
 <h3>Things that are happening behind the scenes<a class="headerlink" href="#things-that-are-happening-behind-the-scenes" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li>You pass in two dataframes (<code class="docutils literal"><span class="pre">df1</span></code>, <code class="docutils literal"><span class="pre">df2</span></code>) to <code class="docutils literal"><span class="pre">datacompy.Compare</span></code> and a
-column to join on (or list of columns) to <code class="docutils literal"><span class="pre">join_columns</span></code>.  By default the
-comparison needs to match values exactly, but you can pass in <code class="docutils literal"><span class="pre">abs_tol</span></code>
-and/or <code class="docutils literal"><span class="pre">rel_tol</span></code> to apply absolute and/or relative tolerances for numeric columns.<ul>
-<li>You can pass in <code class="docutils literal"><span class="pre">on_index=True</span></code> instead of <code class="docutils literal"><span class="pre">join_columns</span></code> to join on
+<li>You pass in two dataframes (<code class="docutils literal notranslate"><span class="pre">df1</span></code>, <code class="docutils literal notranslate"><span class="pre">df2</span></code>) to <code class="docutils literal notranslate"><span class="pre">datacompy.Compare</span></code> and a
+column to join on (or list of columns) to <code class="docutils literal notranslate"><span class="pre">join_columns</span></code>.  By default the
+comparison needs to match values exactly, but you can pass in <code class="docutils literal notranslate"><span class="pre">abs_tol</span></code>
+and/or <code class="docutils literal notranslate"><span class="pre">rel_tol</span></code> to apply absolute and/or relative tolerances for numeric columns.<ul>
+<li>You can pass in <code class="docutils literal notranslate"><span class="pre">on_index=True</span></code> instead of <code class="docutils literal notranslate"><span class="pre">join_columns</span></code> to join on
 the index instead.</li>
 </ul>
 </li>
@@ -240,60 +234,66 @@ the index instead.</li>
 columns in <cite>join_columns</cite> and have unique column names other than that.  The
 class also lowercases all column names to disambiguate.</li>
 <li>On initialization the class validates inputs, and runs the comparison.</li>
-<li><code class="docutils literal"><span class="pre">Compare.matches()</span></code> will return <code class="docutils literal"><span class="pre">True</span></code> if the dataframes match, <code class="docutils literal"><span class="pre">False</span></code>
+<li><code class="docutils literal notranslate"><span class="pre">Compare.matches()</span></code> will return <code class="docutils literal notranslate"><span class="pre">True</span></code> if the dataframes match, <code class="docutils literal notranslate"><span class="pre">False</span></code>
 otherwise.<ul>
-<li>You can pass in <code class="docutils literal"><span class="pre">ignore_extra_columns=True</span></code> to not return <code class="docutils literal"><span class="pre">False</span></code> just
+<li>You can pass in <code class="docutils literal notranslate"><span class="pre">ignore_extra_columns=True</span></code> to not return <code class="docutils literal notranslate"><span class="pre">False</span></code> just
 because there are non-overlapping column names (will still check on
 overlapping columns)</li>
 <li>NOTE: if you only want to validate whether a dataframe matches exactly or
-not, you should look at <code class="docutils literal"><span class="pre">pandas.testing.assert_frame_equal</span></code>.  The main
-use case for <code class="docutils literal"><span class="pre">datacompy</span></code> is when you need to interpret the difference
+not, you should look at <code class="docutils literal notranslate"><span class="pre">pandas.testing.assert_frame_equal</span></code>.  The main
+use case for <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> is when you need to interpret the difference
 between two dataframes.</li>
 </ul>
 </li>
 <li>Compare also has some shortcuts like<ul>
-<li><code class="docutils literal"><span class="pre">intersect_rows</span></code>, <code class="docutils literal"><span class="pre">df1_unq_rows</span></code>, <code class="docutils literal"><span class="pre">df2_unq_rows</span></code> for getting
+<li><code class="docutils literal notranslate"><span class="pre">intersect_rows</span></code>, <code class="docutils literal notranslate"><span class="pre">df1_unq_rows</span></code>, <code class="docutils literal notranslate"><span class="pre">df2_unq_rows</span></code> for getting
 intersection, just df1 and just df2 records (DataFrames)</li>
-<li><code class="docutils literal"><span class="pre">intersect_columns()</span></code>, <code class="docutils literal"><span class="pre">df1_unq_columns()</span></code>, <code class="docutils literal"><span class="pre">df2_unq_columns()</span></code> for
+<li><code class="docutils literal notranslate"><span class="pre">intersect_columns()</span></code>, <code class="docutils literal notranslate"><span class="pre">df1_unq_columns()</span></code>, <code class="docutils literal notranslate"><span class="pre">df2_unq_columns()</span></code> for
 getting intersection, just df1 and just df2 columns (Sets)</li>
 </ul>
 </li>
 <li>You can turn on logging to see more detailed logs.</li>
 </ul>
 </div>
+<div class="section" id="note-on-pandas-versions">
+<h3>Note on Pandas versions<a class="headerlink" href="#note-on-pandas-versions" title="Permalink to this headline">¶</a></h3>
+<p>Due to some changes in the Pandas API, we have a range of versions of Pandas that we’ve tried to
+test on, found in the <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> file.  Versions of Pandas outside of that range may well
+work, but it’s buyer beware.</p>
+</div>
 </div>
 <div class="section" id="spark-detail">
 <span id="id1"></span><h2>Spark Detail<a class="headerlink" href="#spark-detail" title="Permalink to this headline">¶</a></h2>
-<p>DataComPy’s <code class="docutils literal"><span class="pre">SparkCompare</span></code> class will join two dataframes either on a list of join
+<p>DataComPy’s <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> class will join two dataframes either on a list of join
 columns. It has the capability to map column names that may be different in each
 dataframe, including in the join columns. You are responsible for creating the
 dataframes from any source which Spark can handle and specifying a unique join
 key. If there are duplicates in either dataframe by join key, the match process
 will remove the duplicates before joining (and tell you how many duplicates were
 found).</p>
-<p>As with the Pandas-based <code class="docutils literal"><span class="pre">Compare</span></code> class, comparisons will be attempted even
+<p>As with the Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code> class, comparisons will be attempted even
 if dtypes don’t match. Any schema differences will be reported in the output
 as well as in any mismatch reports, so that you can assess whether or not a
 type mismatch is a problem or not.</p>
-<p>The main reasons why you would choose to use <code class="docutils literal"><span class="pre">SparkCompare</span></code> over <code class="docutils literal"><span class="pre">Compare</span></code>
+<p>The main reasons why you would choose to use <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> over <code class="docutils literal notranslate"><span class="pre">Compare</span></code>
 are that your data is too large to fit into memory, or you’re comparing data
 that works well in a Spark environment, like partitioned Parquet, CSV, or JSON
 files, or Cerebro tables.</p>
 <div class="section" id="performance-implications">
 <h3>Performance Implications<a class="headerlink" href="#performance-implications" title="Permalink to this headline">¶</a></h3>
-<p>Spark scales incredibly well, so you can use <code class="docutils literal"><span class="pre">SparkCompare</span></code> to compare
+<p>Spark scales incredibly well, so you can use <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> to compare
 billions of rows of data, provided you spin up a big enough cluster. Still,
 joining billions of rows of data is an inherently large task, so there are a
 couple of things you may want to take into consideration when getting into the
 cliched realm of “big data”:</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">SparkCompare</span></code> will compare all columns in common in the dataframes and
+<li><code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> will compare all columns in common in the dataframes and
 report on the rest. If there are columns in the data that you don’t care to
-compare, use a <code class="docutils literal"><span class="pre">select</span></code> statement/method on the dataframe(s) to filter
+compare, use a <code class="docutils literal notranslate"><span class="pre">select</span></code> statement/method on the dataframe(s) to filter
 those out. Particularly when reading from wide Parquet files, this can make
 a huge difference when the columns you don’t care about don’t have to be
 read into memory and included in the joined dataframe.</li>
-<li>For large datasets, adding <code class="docutils literal"><span class="pre">cache_intermediates=True</span></code> to the <code class="docutils literal"><span class="pre">SparkCompare</span></code>
+<li>For large datasets, adding <code class="docutils literal notranslate"><span class="pre">cache_intermediates=True</span></code> to the <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>
 call can help optimize performance by caching certain intermediate dataframes
 in memory, like the de-duped version of each input dataset, or the joined
 dataframe. Otherwise, Spark’s lazy evaluation will recompute those each time
@@ -305,7 +305,7 @@ this parameter is set to False by default.</li>
 </div>
 <div class="section" id="id2">
 <h3>Basic Usage<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">datacompy</span>
 <span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">Row</span>
 
@@ -347,12 +347,12 @@ this parameter is set to False by default.</li>
 <h3>Using SparkCompare on EMR or standalone Spark<a class="headerlink" href="#using-sparkcompare-on-emr-or-standalone-spark" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li>Set proxy variables</li>
-<li>Create a virtual environment, if desired (<code class="docutils literal"><span class="pre">virtualenv</span> <span class="pre">venv;</span> <span class="pre">source</span> <span class="pre">venv/bin/activate</span></code>)</li>
+<li>Create a virtual environment, if desired (<code class="docutils literal notranslate"><span class="pre">virtualenv</span> <span class="pre">venv;</span> <span class="pre">source</span> <span class="pre">venv/bin/activate</span></code>)</li>
 <li>Pip install datacompy and requirements</li>
-<li>Ensure your SPARK_HOME environment variable is set (this is probably <code class="docutils literal"><span class="pre">/usr/lib/spark</span></code> but may
+<li>Ensure your SPARK_HOME environment variable is set (this is probably <code class="docutils literal notranslate"><span class="pre">/usr/lib/spark</span></code> but may
 differ based on your installation)</li>
 <li>Augment your PYTHONPATH environment variable with
-<code class="docutils literal"><span class="pre">export</span> <span class="pre">PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$SPARK_HOME/python:$PYTHONPATH</span></code>
+<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$SPARK_HOME/python:$PYTHONPATH</span></code>
 (note that your version of py4j may differ depending on the version of Spark you’re using)</li>
 </ol>
 </div>
@@ -360,7 +360,7 @@ differ based on your installation)</li>
 <h3>Using SparkCompare on Databricks<a class="headerlink" href="#using-sparkcompare-on-databricks" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li>Clone this repository locally</li>
-<li>Create a datacompy egg by running <code class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">bdist_egg</span></code> from the repo root directory.</li>
+<li>Create a datacompy egg by running <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">bdist_egg</span></code> from the repo root directory.</li>
 <li>From the Databricks front page, click the “Library” link under the “New” section.</li>
 <li><dl class="first docutils">
 <dt>On the New library page:</dt>
@@ -375,7 +375,7 @@ differ based on your installation)</li>
 </li>
 <li>Once the library has been created, from the library page (which you can find in your /Users/{login} workspace),
 you can choose clusters to attach the library to.</li>
-<li><code class="docutils literal"><span class="pre">import</span> <span class="pre">datacompy</span></code> in a notebook attached to the cluster that the library is attached to and enjoy!</li>
+<li><code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">datacompy</span></code> in a notebook attached to the cluster that the library is attached to and enjoy!</li>
 </ol>
 </div>
 <div class="section" id="contributors">
@@ -416,6 +416,7 @@ By participating, you are expected to honor this code.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#pre-commit-hooks">Pre-Commit Hooks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#generating-documentation">Generating Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#run-unit-tests">Run unit tests</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#management-of-requirements">Management of Requirements</a></li>
@@ -441,9 +442,7 @@ By participating, you are expected to honor this code.</p>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -463,7 +462,7 @@ By participating, you are expected to honor this code.</p>
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -481,7 +480,8 @@ By participating, you are expected to honor this code.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.5.0',
+            VERSION:'0.5.1',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -494,19 +494,13 @@ By participating, you are expected to honor this code.</p>
 
   
 
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

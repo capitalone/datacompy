@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>datacompy.core module &mdash; datacompy 0.5.0 documentation</title>
+  <title>datacompy.core module &mdash; datacompy 0.5.1 documentation</title>
   
 
   
@@ -24,28 +24,19 @@
 
   
 
-  
-  
-    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="../genindex.html"/>
-        <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="datacompy 0.5.0 documentation" href="../index.html"/>
-        <link rel="up" title="datacompy" href="modules.html"/>
-        <link rel="next" title="datacompy.SparkCompare" href="sparkcompare.html"/>
-        <link rel="prev" title="datacompy" href="modules.html"/> 
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="datacompy.SparkCompare" href="sparkcompare.html" />
+    <link rel="prev" title="datacompy" href="modules.html" /> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -67,7 +58,7 @@
             
             
               <div class="version">
-                0.5.0
+                0.5.1
               </div>
             
           
@@ -112,7 +103,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">datacompy</a>
@@ -120,9 +111,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -174,8 +166,8 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.</p>
 <dl class="class">
 <dt id="datacompy.core.Compare">
-<em class="property">class </em><code class="descclassname">datacompy.core.</code><code class="descname">Compare</code><span class="sig-paren">(</span><em>df1</em>, <em>df2</em>, <em>join_columns=None</em>, <em>on_index=False</em>, <em>abs_tol=0</em>, <em>rel_tol=0</em>, <em>df1_name='df1'</em>, <em>df2_name='df2'</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<em class="property">class </em><code class="descclassname">datacompy.core.</code><code class="descname">Compare</code><span class="sig-paren">(</span><em>df1</em>, <em>df2</em>, <em>join_columns=None</em>, <em>on_index=False</em>, <em>abs_tol=0</em>, <em>rel_tol=0</em>, <em>df1_name='df1'</em>, <em>df2_name='df2'</em>, <em>ignore_spaces=False</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Comparison class to be used to compare whether two dataframes as equal.</p>
 <p>Both df1 and df2 should be dataframes containing all of the join_columns,
 with unique column names. Differences between values are compared to
@@ -184,59 +176,51 @@ abs_tol + rel_tol * abs(df2[‘value’]).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>df1</strong> : pandas <code class="docutils literal"><span class="pre">DataFrame</span></code></p>
-<blockquote>
-<div><p>First dataframe to check</p>
-</div></blockquote>
-<p><strong>df2</strong> : pandas <code class="docutils literal"><span class="pre">DataFrame</span></code></p>
-<blockquote>
-<div><p>Second dataframe to check</p>
-</div></blockquote>
-<p><strong>join_columns</strong> : list or str, optional</p>
-<blockquote>
-<div><p>Column(s) to join dataframes on.  If a string is passed in, that one
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>df1</strong> <span class="classifier-delimiter">:</span> <span class="classifier">pandas <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code></span></dt>
+<dd><p class="first last">First dataframe to check</p>
+</dd>
+<dt><strong>df2</strong> <span class="classifier-delimiter">:</span> <span class="classifier">pandas <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code></span></dt>
+<dd><p class="first last">Second dataframe to check</p>
+</dd>
+<dt><strong>join_columns</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list or str, optional</span></dt>
+<dd><p class="first last">Column(s) to join dataframes on.  If a string is passed in, that one
 column will be used.</p>
-</div></blockquote>
-<p><strong>on_index</strong> : bool, optional</p>
-<blockquote>
-<div><p>If True, the index will be used to join the two dataframes.  If both
-<code class="docutils literal"><span class="pre">join_columns</span></code> and <code class="docutils literal"><span class="pre">on_index</span></code> are provided, an exception will be
+</dd>
+<dt><strong>on_index</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">If True, the index will be used to join the two dataframes.  If both
+<code class="docutils literal notranslate"><span class="pre">join_columns</span></code> and <code class="docutils literal notranslate"><span class="pre">on_index</span></code> are provided, an exception will be
 raised.</p>
-</div></blockquote>
-<p><strong>abs_tol</strong> : float, optional</p>
-<blockquote>
-<div><p>Absolute tolerance between two values.</p>
-</div></blockquote>
-<p><strong>rel_tol</strong> : float, optional</p>
-<blockquote>
-<div><p>Relative tolerance between two values.</p>
-</div></blockquote>
-<p><strong>df1_name</strong> : str, optional</p>
-<blockquote>
-<div><p>A string name for the first dataframe.  This allows the reporting to
+</dd>
+<dt><strong>abs_tol</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">Absolute tolerance between two values.</p>
+</dd>
+<dt><strong>rel_tol</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">Relative tolerance between two values.</p>
+</dd>
+<dt><strong>df1_name</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd><p class="first last">A string name for the first dataframe.  This allows the reporting to
 print out an actual name instead of “df1”, and allows human users to
 more easily track the dataframes.</p>
-</div></blockquote>
-<p><strong>df2_name</strong> : str, optional</p>
-<blockquote class="last">
-<div><p>A string name for the second dataframe</p>
-</div></blockquote>
+</dd>
+<dt><strong>df2_name</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str, optional</span></dt>
+<dd><p class="first last">A string name for the second dataframe</p>
+</dd>
+<dt><strong>ignore_spaces</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">Flag to strip whitespace (including newlines) from string columns</p>
+</dd>
+</dl>
 </td>
 </tr>
-</tbody>
-</table>
-<p class="rubric">Attributes</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="15%" />
-<col width="85%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><strong>df1_unq_rows</strong></td>
-<td>(pandas <code class="docutils literal"><span class="pre">DataFrame</span></code>) All records that are only in df1 (based on a join on join_columns)</td>
-</tr>
-<tr class="row-even"><td><strong>df2_unq_rows</strong></td>
-<td>(pandas <code class="docutils literal"><span class="pre">DataFrame</span></code>) All records that are only in df2 (based on a join on join_columns)</td>
+<tr class="field-even field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>df1_unq_rows</strong> <span class="classifier-delimiter">:</span> <span class="classifier">pandas <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code></span></dt>
+<dd><p class="first last">All records that are only in df1 (based on a join on join_columns)</p>
+</dd>
+<dt><strong>df2_unq_rows</strong> <span class="classifier-delimiter">:</span> <span class="classifier">pandas <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code></span></dt>
+<dd><p class="first last">All records that are only in df2 (based on a join on join_columns)</p>
+</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -254,11 +238,12 @@ more easily track the dataframes.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">bool</p>
-<blockquote class="last">
-<div><p>True if all rows in df1 are in df2 and vice versa (based on
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>bool</strong></dt>
+<dd><p class="first last">True if all rows in df1 are in df2 and vice versa (based on
 existence for join option)</p>
-</div></blockquote>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -273,10 +258,11 @@ existence for join option)</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">int</p>
-<blockquote class="last">
-<div><p>Number of matching rows</p>
-</div></blockquote>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>int</strong></dt>
+<dd><p class="first last">Number of matching rows</p>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -325,10 +311,11 @@ existence for join option)</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>ignore_extra_columns</strong> : bool</p>
-<blockquote class="last">
-<div><p>Ignores any columns in one dataframe and not in the other.</p>
-</div></blockquote>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>ignore_extra_columns</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first last">Ignores any columns in one dataframe and not in the other.</p>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -344,16 +331,18 @@ then be printed or saved to a file.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>sample_count</strong> : int, optional</p>
-<blockquote>
-<div><p>The number of sample records to return.  Defaults to 10.</p>
-</div></blockquote>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>sample_count</strong> <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd><p class="first last">The number of sample records to return.  Defaults to 10.</p>
+</dd>
+</dl>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">str</p>
-<blockquote class="last">
-<div><p>The report, formatted kinda nicely.</p>
-</div></blockquote>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>str</strong></dt>
+<dd><p class="first last">The report, formatted kinda nicely.</p>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -369,27 +358,27 @@ columns, and df1 and df2 versions of the column.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>column</strong> : str</p>
-<blockquote>
-<div><p>The raw column name (i.e. without <code class="docutils literal"><span class="pre">_df1</span></code> appended)</p>
-</div></blockquote>
-<p><strong>sample_count</strong> : int, optional</p>
-<blockquote>
-<div><p>The number of sample records to return.  Defaults to 10.</p>
-</div></blockquote>
-<p><strong>for_display</strong> : bool, optional</p>
-<blockquote>
-<div><p>Whether this is just going to be used for display (overwrite the
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>column</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">The raw column name (i.e. without <code class="docutils literal notranslate"><span class="pre">_df1</span></code> appended)</p>
+</dd>
+<dt><strong>sample_count</strong> <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd><p class="first last">The number of sample records to return.  Defaults to 10.</p>
+</dd>
+<dt><strong>for_display</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">Whether this is just going to be used for display (overwrite the
 column names)</p>
-</div></blockquote>
+</dd>
+</dl>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Pandas.DataFrame</p>
-<blockquote class="last">
-<div><p>A sample of the intersection dataframe, containing only the
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>Pandas.DataFrame</strong></dt>
+<dd><p class="first last">A sample of the intersection dataframe, containing only the
 “pertinent” columns, for rows that don’t match on the provided
 column.</p>
-</div></blockquote>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -408,8 +397,37 @@ shared columns.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="datacompy.core.calculate_max_diff">
+<code class="descclassname">datacompy.core.</code><code class="descname">calculate_max_diff</code><span class="sig-paren">(</span><em>col_1</em>, <em>col_2</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.calculate_max_diff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a maximum difference between two columns</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>col_1</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Pandas.Series</span></dt>
+<dd><p class="first last">The first column</p>
+</dd>
+<dt><strong>col_2</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Pandas.Series</span></dt>
+<dd><p class="first last">The second column</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>Numeric</strong></dt>
+<dd><p class="first last">Numeric field, or zero.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="datacompy.core.columns_equal">
-<code class="descclassname">datacompy.core.</code><code class="descname">columns_equal</code><span class="sig-paren">(</span><em>col_1</em>, <em>col_2</em>, <em>rel_tol=0</em>, <em>abs_tol=0</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.columns_equal" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">datacompy.core.</code><code class="descname">columns_equal</code><span class="sig-paren">(</span><em>col_1</em>, <em>col_2</em>, <em>rel_tol=0</em>, <em>abs_tol=0</em>, <em>ignore_spaces=False</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.columns_equal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compares two columns from a dataframe, returning a True/False series,
 with the same index as column 1.</p>
 <ul class="simple">
@@ -425,29 +443,31 @@ trigger True on two nulls or exact matches.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>col_1</strong> : Pandas.Series</p>
-<blockquote>
-<div><p>The first column to look at</p>
-</div></blockquote>
-<p><strong>col_2</strong> : Pandas.Series</p>
-<blockquote>
-<div><p>The second column</p>
-</div></blockquote>
-<p><strong>rel_tol</strong> : float, optional</p>
-<blockquote>
-<div><p>Relative tolerance</p>
-</div></blockquote>
-<p><strong>abs_tol</strong> : float, optional</p>
-<blockquote>
-<div><p>Absolute tolerance</p>
-</div></blockquote>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>col_1</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Pandas.Series</span></dt>
+<dd><p class="first last">The first column to look at</p>
+</dd>
+<dt><strong>col_2</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Pandas.Series</span></dt>
+<dd><p class="first last">The second column</p>
+</dd>
+<dt><strong>rel_tol</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">Relative tolerance</p>
+</dd>
+<dt><strong>abs_tol</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">Absolute tolerance</p>
+</dd>
+<dt><strong>ignore_spaces</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">Flag to strip whitespace (including newlines) from string columns</p>
+</dd>
+</dl>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">pandas.Series</p>
-<blockquote class="last">
-<div><p>A series of Boolean values.  True == the values match, False == the
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>pandas.Series</strong></dt>
+<dd><p class="first last">A series of Boolean values.  True == the values match, False == the
 values don’t match.</p>
-</div></blockquote>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -463,21 +483,22 @@ convert a string column to a date column and compare that way.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>col_1</strong> : Pandas.Series</p>
-<blockquote>
-<div><p>The first column to look at</p>
-</div></blockquote>
-<p><strong>col_2</strong> : Pandas.Series</p>
-<blockquote>
-<div><p>The second column</p>
-</div></blockquote>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>col_1</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Pandas.Series</span></dt>
+<dd><p class="first last">The first column to look at</p>
+</dd>
+<dt><strong>col_2</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Pandas.Series</span></dt>
+<dd><p class="first last">The second column</p>
+</dd>
+</dl>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">pandas.Series</p>
-<blockquote class="last">
-<div><p>A series of Boolean values.  True == the values match, False == the
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>pandas.Series</strong></dt>
+<dd><p class="first last">A series of Boolean values.  True == the values match, False == the
 values don’t match.</p>
-</div></blockquote>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -492,19 +513,18 @@ values don’t match.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>original_df</strong> : Pandas.DataFrame</p>
-<blockquote>
-<div><p>The original, pre-merge dataframe</p>
-</div></blockquote>
-<p><strong>merged_df</strong> : Pandas.DataFrame</p>
-<blockquote>
-<div><p>Post-merge with another dataframe, with suffixes added in.</p>
-</div></blockquote>
-<p><strong>suffix</strong> : str</p>
-<blockquote class="last">
-<div><p>What suffix was used to distinguish when the original dataframe was
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>original_df</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Pandas.DataFrame</span></dt>
+<dd><p class="first last">The original, pre-merge dataframe</p>
+</dd>
+<dt><strong>merged_df</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Pandas.DataFrame</span></dt>
+<dd><p class="first last">Post-merge with another dataframe, with suffixes added in.</p>
+</dd>
+<dt><strong>suffix</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">What suffix was used to distinguish when the original dataframe was
 overlapping with the other merged dataframe.</p>
-</div></blockquote>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -515,26 +535,27 @@ overlapping with the other merged dataframe.</p>
 <dt id="datacompy.core.render">
 <code class="descclassname">datacompy.core.</code><code class="descname">render</code><span class="sig-paren">(</span><em>filename</em>, <em>*fields</em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.render" title="Permalink to this definition">¶</a></dt>
 <dd><p>Renders out an individual template.  This basically just reads in a
-template file, and applies <code class="docutils literal"><span class="pre">.format()</span></code> on the fields.</p>
+template file, and applies <code class="docutils literal notranslate"><span class="pre">.format()</span></code> on the fields.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>filename</strong> : str</p>
-<blockquote>
-<div><p>The file that contains the template.  Will automagically prepend the
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>filename</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">The file that contains the template.  Will automagically prepend the
 templates directory before opening</p>
-</div></blockquote>
-<p><strong>fields</strong> : list</p>
-<blockquote>
-<div><p>Fields to be rendered out in the template</p>
-</div></blockquote>
+</dd>
+<dt><strong>fields</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd><p class="first last">Fields to be rendered out in the template</p>
+</dd>
+</dl>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">str</p>
-<blockquote class="last">
-<div><p>The fully rendered out file.</p>
-</div></blockquote>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>str</strong></dt>
+<dd><p class="first last">The fully rendered out file.</p>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -549,16 +570,18 @@ templates directory before opening</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>dataframes</strong> : list of Pandas.DataFrame</p>
-<blockquote>
-<div><p>The DataFrames to create a temporary column name for</p>
-</div></blockquote>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>dataframes</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list of Pandas.DataFrame</span></dt>
+<dd><p class="first last">The DataFrames to create a temporary column name for</p>
+</dd>
+</dl>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">str</p>
-<blockquote class="last">
-<div><p>String column name that looks like ‘_temp_x’ for some integer x</p>
-</div></blockquote>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>str</strong></dt>
+<dd><p class="first last">String column name that looks like ‘_temp_x’ for some integer x</p>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -569,9 +592,7 @@ templates directory before opening</p>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -593,7 +614,7 @@ templates directory before opening</p>
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -611,7 +632,8 @@ templates directory before opening</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../',
-            VERSION:'0.5.0',
+            VERSION:'0.5.1',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -624,19 +646,13 @@ templates directory before opening</p>
 
   
 
-  
-  
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>
