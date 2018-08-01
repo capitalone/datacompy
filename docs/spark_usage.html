@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Spark Usage &mdash; datacompy 0.5.0 documentation</title>
+  <title>Spark Usage &mdash; datacompy 0.5.1 documentation</title>
   
 
   
@@ -24,27 +24,19 @@
 
   
 
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="datacompy 0.5.0 documentation" href="index.html"/>
-        <link rel="next" title="Developer Instructions" href="developer_instructions.html"/>
-        <link rel="prev" title="Pandas Usage" href="pandas_usage.html"/> 
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Developer Instructions" href="developer_instructions.html" />
+    <link rel="prev" title="Pandas Usage" href="pandas_usage.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -66,7 +58,7 @@
             
             
               <div class="version">
-                0.5.0
+                0.5.1
               </div>
             
           
@@ -110,7 +102,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">datacompy</a>
@@ -118,9 +110,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -166,14 +159,14 @@
 <h1>Spark Usage<a class="headerlink" href="#spark-usage" title="Permalink to this headline">¶</a></h1>
 <p><em>Under Construction</em></p>
 <p>Meanwhile, see the <a class="reference internal" href="index.html#spark-detail"><span class="std std-ref">Readme “Spark Detail” section</span></a> for a usage example and
-comments on <code class="docutils literal"><span class="pre">SparkCompare</span></code>. You may also want to checkout the <a class="reference internal" href="api/sparkcompare.html#datacompy.SparkCompare" title="datacompy.SparkCompare"><code class="xref py py-class docutils literal"><span class="pre">datacompy.SparkCompare</span></code></a> API
+comments on <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>. You may also want to checkout the <a class="reference internal" href="api/sparkcompare.html#datacompy.SparkCompare" title="datacompy.SparkCompare"><code class="xref py py-class docutils literal notranslate"><span class="pre">datacompy.SparkCompare</span></code></a> API
 documentation, which is pretty well-documented, if I do say so myself.</p>
 <div class="section" id="known-differences">
 <h2>Known Differences<a class="headerlink" href="#known-differences" title="Permalink to this headline">¶</a></h2>
 <p>For cases when two dataframes are expected to differ, it can be helpful to cluster detected
 differences into three categories: matches, known differences, and true mismatches. Known
 differences can be specified through an optional parameter:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">SparkCompare</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">base_df</span><span class="p">,</span> <span class="n">compare_df</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="n">column_mapping</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">SparkCompare</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">base_df</span><span class="p">,</span> <span class="n">compare_df</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="n">column_mapping</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span>
     <span class="n">known_differences</span> <span class="o">=</span> <span class="p">[</span>
         <span class="p">{</span>
          <span class="s1">&#39;name&#39;</span><span class="p">:</span>  <span class="s2">&quot;My Known Difference Name&quot;</span><span class="p">,</span>
@@ -236,7 +229,7 @@ differences can be specified through an optional parameter:</p>
 </tbody>
 </table>
 <p>Transformations are applied to the compare side only. A known difference is found when transformation(compare.cell) equals base.cell. An example comparison is shown below.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">datacompy</span>
 <span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">Row</span>
 
@@ -278,7 +271,7 @@ differences can be specified through an optional parameter:</p>
 </pre></div>
 </div>
 <p>Corresponding output:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">******</span> <span class="n">Column</span> <span class="n">Summary</span> <span class="o">******</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">******</span> <span class="n">Column</span> <span class="n">Summary</span> <span class="o">******</span>
 <span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">common</span> <span class="k">with</span> <span class="n">matching</span> <span class="n">schemas</span><span class="p">:</span> <span class="mi">3</span>
 <span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">common</span> <span class="k">with</span> <span class="n">schema</span> <span class="n">differences</span><span class="p">:</span> <span class="mi">2</span>
 <span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">base</span> <span class="n">but</span> <span class="ow">not</span> <span class="n">compare</span><span class="p">:</span> <span class="mi">0</span>
@@ -319,9 +312,7 @@ differences can be specified through an optional parameter:</p>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -343,7 +334,7 @@ differences can be specified through an optional parameter:</p>
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -361,7 +352,8 @@ differences can be specified through an optional parameter:</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.5.0',
+            VERSION:'0.5.1',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -374,19 +366,13 @@ differences can be specified through an optional parameter:</p>
 
   
 
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

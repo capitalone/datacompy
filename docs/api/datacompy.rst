@@ -4,16 +4,16 @@ datacompy package
 Submodules
 ----------
 
-datacompy\.core module
-----------------------
+datacompy.core module
+---------------------
 
 .. automodule:: datacompy.core
     :members:
     :undoc-members:
     :show-inheritance:
 
-datacompy\.sparkcompare module
-------------------------------
+datacompy.sparkcompare module
+-----------------------------
 
 .. automodule:: datacompy.sparkcompare
     :members:
