@@ -9,7 +9,7 @@ INSTALL_REQUIRES = [
     "numpy>=1.11.3",
     "six>=1.10",
 ]
-with open(os.path.join(CURR_DIR, "README.rst")) as file_open:
+with open(os.path.join(CURR_DIR, "README.rst"), encoding="utf-8") as file_open:
     LONG_DESCRIPTION = file_open.read()
 
 exec(open("datacompy/_version.py").read())
