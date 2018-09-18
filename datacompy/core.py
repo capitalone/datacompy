@@ -62,6 +62,8 @@ class Compare(object):
         A string name for the second dataframe
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns
+    ignore_case : bool, optional
+        Flag to ignore the case of string columns
 
     Attributes
     ----------
@@ -82,6 +84,7 @@ class Compare(object):
         df1_name="df1",
         df2_name="df2",
         ignore_spaces=False,
+        ignore_case=False,
     ):
 
         if on_index and join_columns is not None:
@@ -105,7 +108,7 @@ class Compare(object):
         self.rel_tol = rel_tol
         self.df1_unq_rows = self.df2_unq_rows = self.intersect_rows = None
         self.column_stats = []
-        self._compare(ignore_spaces)
+        self._compare(ignore_spaces, ignore_case)
 
     @property
     def df1(self):
@@ -154,7 +157,7 @@ class Compare(object):
             if len(dataframe.drop_duplicates(subset=self.join_columns)) < len(dataframe):
                 self._any_dupes = True
 
-    def _compare(self, ignore_spaces):
+    def _compare(self, ignore_spaces, ignore_case):
         """Actually run the comparison.  This tries to run df1.equals(df2)
         first so that if they're truly equal we can tell.
 
@@ -176,7 +179,7 @@ class Compare(object):
         LOG.info("Number of columns in df2 and not in df1: {}".format(len(self.df2_unq_columns())))
         LOG.debug("Merging dataframes")
         self._dataframe_merge(ignore_spaces)
-        self._intersect_compare(ignore_spaces)
+        self._intersect_compare(ignore_spaces, ignore_case)
         if self.matches():
             LOG.info("df1 matches df2")
         else:
@@ -270,7 +273,7 @@ class Compare(object):
             )
         )
 
-    def _intersect_compare(self, ignore_spaces):
+    def _intersect_compare(self, ignore_spaces, ignore_case):
         """Run the comparison on the intersect dataframe
 
         This loops through all columns that are shared between df1 and df2, and
@@ -295,6 +298,7 @@ class Compare(object):
                     self.rel_tol,
                     self.abs_tol,
                     ignore_spaces,
+                    ignore_case,
                 )
                 match_cnt = self.intersect_rows[col_match].sum()
                 max_diff = calculate_max_diff(
@@ -585,7 +589,7 @@ def render(filename, *fields):
         return file_open.read().format(*fields)
 
 
-def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False):
+def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False, ignore_case=False):
     """Compares two columns from a dataframe, returning a True/False series,
     with the same index as column 1.
 
@@ -609,6 +613,8 @@ def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False):
         Absolute tolerance
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns
+    ignore_case : bool, optional
+        Flag to ignore the case of string columns
 
     Returns
     -------
@@ -636,6 +642,12 @@ def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False):
                         col_1 = col_1.str.strip()
                     if col_2.dtype.kind == "O":
                         col_2 = col_2.str.strip()
+
+                if ignore_case:
+                    if col_1.dtype.kind == "O":
+                        col_1 = col_1.str.upper()
+                    if col_2.dtype.kind == "O":
+                        col_2 = col_2.str.upper()
 
                 if set([col_1.dtype.kind, col_2.dtype.kind]) == set(["M", "O"]):
                     compare = compare_string_and_date_columns(col_1, col_2)
