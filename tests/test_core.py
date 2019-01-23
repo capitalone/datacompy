@@ -870,6 +870,7 @@ def test_dupes_with_nulls():
     "dataframe,expected",
     [
         (pd.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}), pd.Series([0, 0, 0])),
+        (pd.DataFrame({"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}), pd.Series([0, 1, 0])),
         (pd.DataFrame({"a": [-999, 2, 3], "b": [1, 2, 3]}), pd.Series([0, 0, 0])),
         (pd.DataFrame({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}), pd.Series([0, 0, 1])),
         (pd.DataFrame({"a": ["1", np.nan, np.nan], "b": ["1", "2", "2"]}), pd.Series([0, 0, 1])),
@@ -887,13 +888,9 @@ def test_generate_id_within_group(dataframe, expected):
     "dataframe, message",
     [
         (
-            pd.DataFrame({"a": [1, np.nan, -999], "b": [1, 2, 3]}),
-            "Could not deduplicate null rows with value -999",
-        ),
-        (
-            pd.DataFrame({"a": [datetime(1985, 6, 20), np.nan], "b": [1, 2]}),
-            "Could not deduplicate null rows with value 1985-06-20 00:00:00",
-        ),
+            pd.DataFrame({"a": [1, np.nan, "DATACOMPY_NULL"], "b": [1, 2, 3]}),
+            "DATACOMPY_NULL was found in your join columns",
+        )
     ],
 )
 def test_generate_id_within_group_valueerror(dataframe, message):

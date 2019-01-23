@@ -772,26 +772,16 @@ def generate_id_within_group(dataframe, join_columns):
     Pandas.Series
         The ID column that's unique in each group.
     """
-    default_date = datetime(1985, 6, 20)
-    default_other = -999
-
-    # Temporarily fill join column values with default values
-    temp_joiners = dataframe.sort_values(by=list(dataframe.columns))[join_columns].copy()
-    for column in join_columns:
-        if temp_joiners[column].isnull().any():
-            if np.issubdtype(temp_joiners[column].dtype, np.datetime64):
-                if (temp_joiners[column] == default_date).any():
-                    raise ValueError(
-                        "Could not deduplicate null rows with value {}".format(default_date)
-                    )
-                else:
-                    temp_joiners[column].fillna(default_date, inplace=True)
-            else:
-                if (temp_joiners[column] == default_other).any():
-                    raise ValueError(
-                        "Could not deduplicate null rows with value {}".format(default_other)
-                    )
-                else:
-                    temp_joiners[column].fillna(default_other, inplace=True)
-
-    return temp_joiners.groupby(join_columns).cumcount()
+    default_value = "DATACOMPY_NULL"
+    if dataframe[join_columns].isnull().any().any():
+        if (dataframe[join_columns] == default_value).any().any():
+            raise ValueError("{} was found in your join columns".format(default_value))
+        return (
+            dataframe[join_columns]
+            .astype(str)
+            .fillna(default_value)
+            .groupby(join_columns)
+            .cumcount()
+        )
+    else:
+        return dataframe[join_columns].groupby(join_columns).cumcount()
