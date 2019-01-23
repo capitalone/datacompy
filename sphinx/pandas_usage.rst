@@ -36,7 +36,7 @@ acct_id     dollar_amt name                 float_fld
 Set up like:
 
 .. code-block:: python
-    
+
     from io import StringIO
     import pandas as pd
     import datacompy
@@ -82,7 +82,7 @@ join column(s) or by index.
 
     compare = datacompy.Compare(df1, df2, join_columns=['acct_id', 'name'])
 
-    # OR 
+    # OR
 
     compare = datacompy.Compare(df1, df2, on_index=True)
 
@@ -196,6 +196,66 @@ There are a few convenience methods available after the comparison has been run:
     print(compare.df2_unq_columns())
     # set()
 
+Duplicate rows
+--------------
+
+Datacompy will try to handle rows that are duplicate in the join columns.  It does this behind the
+scenes by generating a unique ID within each unique group of the join columns.  For example, if you
+have two dataframes you're trying to join on acct_id:
+
+=========== ================
+acct_id     name
+=========== ================
+1           George Maharis
+1           Michael Bluth
+2           George Bluth
+=========== ================
+
+=========== ================
+acct_id     name
+=========== ================
+1           George Maharis
+1           Michael Bluth
+1           Tony Wonder
+2           George Bluth
+=========== ================
+
+Datacompy will generate a unique temporary ID for joining:
+
+=========== ================ ========
+acct_id     name             temp_id
+=========== ================ ========
+1           George Maharis   0
+1           Michael Bluth    1
+2           George Bluth     0
+=========== ================ ========
+
+=========== ================ ========
+acct_id     name             temp_id
+=========== ================ ========
+1           George Maharis   0
+1           Michael Bluth    1
+1           Tony Wonder      2
+2           George Bluth     0
+=========== ================ ========
+
+And then merge the two dataframes on a combination of the join_columns you specified and the temporary
+ID, before dropping the temp_id again.  So the first two rows in the first dataframe will match the
+first two rows in the second dataframe, and the third row in the second dataframe will be recognized
+as uniquely in the second.
+
+Caveats
++++++++
+
+- Duplicate matching is resilient to nulls in your join columns - it will convert the join
+  columns to strings and fill null values with ``'DATACOMPY_NULL'`` before generating the temporary
+  ID.  If you already have ``'DATACOMPY_NULL'`` as a value in your join columns, the merge step will
+  fail with a ``ValueError``.  You can also fill null values with a value of your choice before
+  initializing the ``Compare`` class, based on what you know about the data.
+- The duplicate matching is somewhat naïve when it comes to picking which rows to match when there
+  are duplicates.  Datacompy sorts by the other fields before generating the temporary ID, then matches
+  directly on that field.  If there are a lot of duplicates you may need to join on more columns, or
+  handle them separately.
 
 Limitations
 -----------

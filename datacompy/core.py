@@ -24,6 +24,7 @@ two dataframes.
 
 import os
 import logging
+from datetime import datetime
 import pandas as pd
 import numpy as np
 
@@ -219,16 +220,8 @@ class Compare(object):
 
             # Create order column for uniqueness of match
             order_column = temp_column_name(self.df1, self.df2)
-            self.df1[order_column] = (
-                self.df1.sort_values(by=list(self.df1.columns))
-                .groupby(temp_join_columns)
-                .cumcount()
-            )
-            self.df2[order_column] = (
-                self.df2.sort_values(by=list(self.df2.columns))
-                .groupby(temp_join_columns)
-                .cumcount()
-            )
+            self.df1[order_column] = generate_id_within_group(self.df1, temp_join_columns)
+            self.df2[order_column] = generate_id_within_group(self.df2, temp_join_columns)
             temp_join_columns.append(order_column)
 
             params = {"on": temp_join_columns}
@@ -761,3 +754,34 @@ def calculate_max_diff(col_1, col_2):
         return (col_1.astype(float) - col_2.astype(float)).abs().max()
     except:
         return 0
+
+
+def generate_id_within_group(dataframe, join_columns):
+    """Generate an ID column that can be used to deduplicate identical rows.  The series generated
+    is the order within a unique group, and it handles nulls.
+
+    Parameters
+    ----------
+    dataframe : Pandas.DataFrame
+        The dataframe to operate on
+    join_columns : list
+        List of strings which are the join columns
+
+    Returns
+    -------
+    Pandas.Series
+        The ID column that's unique in each group.
+    """
+    default_value = "DATACOMPY_NULL"
+    if dataframe[join_columns].isnull().any().any():
+        if (dataframe[join_columns] == default_value).any().any():
+            raise ValueError("{} was found in your join columns".format(default_value))
+        return (
+            dataframe[join_columns]
+            .astype(str)
+            .fillna(default_value)
+            .groupby(join_columns)
+            .cumcount()
+        )
+    else:
+        return dataframe[join_columns].groupby(join_columns).cumcount()
