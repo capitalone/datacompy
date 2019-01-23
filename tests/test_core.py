@@ -17,7 +17,7 @@
 """
 Testing out the datacompy functionality
 """
-
+from datetime import datetime
 from decimal import Decimal
 import pytest
 from pytest import raises
@@ -124,8 +124,9 @@ something||False
 |something|False
 ||True"""
     df = pd.read_csv(six.StringIO(data), sep="|")
-    actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True,
-                                         ignore_case=True)
+    actual_out = datacompy.columns_equal(
+        df.a, df.b, rel_tol=0.2, ignore_spaces=True, ignore_case=True
+    )
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -190,8 +191,9 @@ def test_date_columns_equal_with_ignore_spaces_and_case():
 ||True"""
     df = pd.read_csv(six.StringIO(data), sep="|")
     # First compare just the strings
-    actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True,
-                                         ignore_case=True)
+    actual_out = datacompy.columns_equal(
+        df.a, df.b, rel_tol=0.2, ignore_spaces=True, ignore_case=True
+    )
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -735,7 +737,6 @@ def test_strings_with_joins_with_ignore_spaces():
     assert compare.intersect_rows_match()
 
 
-
 def test_strings_with_joins_with_ignore_case():
     df1 = pd.DataFrame([{"a": "hi", "b": "a"}, {"a": "bye", "b": "A"}])
     df2 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "a"}])
@@ -851,3 +852,50 @@ def test_calculate_max_diff(column, expected):
     assert np.isclose(
         datacompy.calculate_max_diff(MAX_DIFF_DF["base"], MAX_DIFF_DF[column]), expected
     )
+
+
+def test_dupes_with_nulls():
+    df1 = pd.DataFrame(
+        {
+            "fld_1": [1, 2, 2, 3, 3, 4, 5, 5],
+            "fld_2": ["A", np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+        }
+    )
+    df2 = pd.DataFrame({"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", np.nan, np.nan, np.nan, np.nan]})
+    comp = datacompy.Compare(df1, df2, join_columns=["fld_1", "fld_2"])
+    assert comp.subset()
+
+
+@pytest.mark.parametrize(
+    "dataframe,expected",
+    [
+        (pd.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}), pd.Series([0, 0, 0])),
+        (pd.DataFrame({"a": [-999, 2, 3], "b": [1, 2, 3]}), pd.Series([0, 0, 0])),
+        (pd.DataFrame({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}), pd.Series([0, 0, 1])),
+        (pd.DataFrame({"a": ["1", np.nan, np.nan], "b": ["1", "2", "2"]}), pd.Series([0, 0, 1])),
+        (
+            pd.DataFrame({"a": [datetime(2018, 1, 1), np.nan, np.nan], "b": ["1", "2", "2"]}),
+            pd.Series([0, 0, 1]),
+        ),
+    ],
+)
+def test_generate_id_within_group(dataframe, expected):
+    assert (datacompy.core.generate_id_within_group(dataframe, ["a", "b"]) == expected).all()
+
+
+@pytest.mark.parametrize(
+    "dataframe, message",
+    [
+        (
+            pd.DataFrame({"a": [1, np.nan, -999], "b": [1, 2, 3]}),
+            "Could not deduplicate null rows with value -999",
+        ),
+        (
+            pd.DataFrame({"a": [datetime(1985, 6, 20), np.nan], "b": [1, 2]}),
+            "Could not deduplicate null rows with value 1985-06-20 00:00:00",
+        ),
+    ],
+)
+def test_generate_id_within_group_valueerror(dataframe, message):
+    with raises(ValueError, message=message):
+        datacompy.core.generate_id_within_group(dataframe, ["a", "b"])
