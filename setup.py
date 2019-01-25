@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 import os
 import sys
+from io import open as iopen
 
 CURR_DIR = os.path.abspath(os.path.dirname(__file__))
 INSTALL_REQUIRES = [
@@ -9,7 +10,7 @@ INSTALL_REQUIRES = [
     "numpy>=1.11.3",
     "six>=1.10",
 ]
-with open(os.path.join(CURR_DIR, "README.rst"), encoding="utf-8") as file_open:
+with iopen(os.path.join(CURR_DIR, "README.rst"), encoding="utf-8") as file_open:
     LONG_DESCRIPTION = file_open.read()
 
 exec(open("datacompy/_version.py").read())
