@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 import os
 import sys
+from io import open
 
 CURR_DIR = os.path.abspath(os.path.dirname(__file__))
 INSTALL_REQUIRES = [
