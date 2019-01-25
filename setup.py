@@ -13,7 +13,7 @@ INSTALL_REQUIRES = [
 with open(os.path.join(CURR_DIR, "README.rst"), encoding="utf-8") as file_open:
     LONG_DESCRIPTION = file_open.read()
 
-exec(open("datacompy/_version.py").read())
+exec(open("datacompy/_version.py", encoding="utf-8").read())
 
 setup(
     name="datacompy",
