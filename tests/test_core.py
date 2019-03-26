@@ -525,6 +525,10 @@ def test_string_joiner():
     assert compare.matches()
 
 
+@pytest.mark.xfail(
+    pd.__version__ >= "0.24.0",
+    reason="Pandas behaviour change http://pandas.pydata.org/pandas-docs/version/0.24.0rc1/whatsnew/v0.24.0.html",
+)
 def test_decimal_with_joins():
     df1 = pd.DataFrame([{"a": Decimal("1"), "b": 2}, {"a": Decimal("2"), "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])

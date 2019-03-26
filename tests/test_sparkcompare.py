@@ -1044,8 +1044,8 @@ def test_report_outputs_the_column_summary(comparison1):
     assert "****** Column Summary ******" in stdout.getvalue()
     assert "Number of columns in common with matching schemas: 3" in stdout.getvalue()
     assert "Number of columns in common with schema differences: 1" in stdout.getvalue()
-    assert "Number of columns in base but not compare: 1" in stdout.getvalue()
-    assert "Number of columns in compare but not base: 1" in stdout.getvalue()
+    assert "Number of columns in df1 but not df2: 1" in stdout.getvalue()
+    assert "Number of columns in df2 but not df1: 1" in stdout.getvalue()
 
 
 def test_report_outputs_the_column_summary_for_identical_schemas(comparison2):
@@ -1056,8 +1056,8 @@ def test_report_outputs_the_column_summary_for_identical_schemas(comparison2):
     assert "****** Column Summary ******" in stdout.getvalue()
     assert "Number of columns in common with matching schemas: 5" in stdout.getvalue()
     assert "Number of columns in common with schema differences: 0" in stdout.getvalue()
-    assert "Number of columns in base but not compare: 0" in stdout.getvalue()
-    assert "Number of columns in compare but not base: 0" in stdout.getvalue()
+    assert "Number of columns in df1 but not df2: 0" in stdout.getvalue()
+    assert "Number of columns in df2 but not df1: 0" in stdout.getvalue()
 
 
 def test_report_outputs_the_column_summary_for_differently_named_columns(comparison3):
@@ -1068,8 +1068,8 @@ def test_report_outputs_the_column_summary_for_differently_named_columns(compari
     assert "****** Column Summary ******" in stdout.getvalue()
     assert "Number of columns in common with matching schemas: 4" in stdout.getvalue()
     assert "Number of columns in common with schema differences: 1" in stdout.getvalue()
-    assert "Number of columns in base but not compare: 0" in stdout.getvalue()
-    assert "Number of columns in compare but not base: 1" in stdout.getvalue()
+    assert "Number of columns in df1 but not df2: 0" in stdout.getvalue()
+    assert "Number of columns in df2 but not df1: 1" in stdout.getvalue()
 
 
 def test_report_outputs_the_row_summary(comparison1):
@@ -1079,10 +1079,10 @@ def test_report_outputs_the_row_summary(comparison1):
 
     assert "****** Row Summary ******" in stdout.getvalue()
     assert "Number of rows in common: 4" in stdout.getvalue()
-    assert "Number of rows in base but not compare: 1" in stdout.getvalue()
-    assert "Number of rows in compare but not base: 1" in stdout.getvalue()
-    assert "Number of duplicate rows found in base: 0" in stdout.getvalue()
-    assert "Number of duplicate rows found in compare: 1" in stdout.getvalue()
+    assert "Number of rows in df1 but not df2: 1" in stdout.getvalue()
+    assert "Number of rows in df2 but not df1: 1" in stdout.getvalue()
+    assert "Number of duplicate rows found in df1: 0" in stdout.getvalue()
+    assert "Number of duplicate rows found in df2: 1" in stdout.getvalue()
 
 
 def test_report_outputs_the_row_equality_comparison(comparison1):
@@ -1102,10 +1102,10 @@ def test_report_outputs_the_row_summary_for_differently_named_columns(comparison
 
     assert "****** Row Summary ******" in stdout.getvalue()
     assert "Number of rows in common: 5" in stdout.getvalue()
-    assert "Number of rows in base but not compare: 0" in stdout.getvalue()
-    assert "Number of rows in compare but not base: 0" in stdout.getvalue()
-    assert "Number of duplicate rows found in base: 0" in stdout.getvalue()
-    assert "Number of duplicate rows found in compare: 0" in stdout.getvalue()
+    assert "Number of rows in df1 but not df2: 0" in stdout.getvalue()
+    assert "Number of rows in df2 but not df1: 0" in stdout.getvalue()
+    assert "Number of duplicate rows found in df1: 0" in stdout.getvalue()
+    assert "Number of duplicate rows found in df2: 0" in stdout.getvalue()
 
 
 def test_report_outputs_the_row_equality_comparison_for_differently_named_columns(comparison3):
@@ -1123,7 +1123,7 @@ def test_report_outputs_column_detail_for_columns_in_only_one_dataframe(comparis
 
     comparison1.report(file=stdout)
     comparison1.report()
-    assert "****** Columns In Base Only ******" in stdout.getvalue()
+    assert "****** Columns In df1 Only ******" in stdout.getvalue()
     r2 = r"""Column\s*Name \s* Dtype \n -+ \s+ -+ \ndate_fld \s+ date"""
     assert re.search(r2, str(stdout.getvalue()), re.X) is not None
 
@@ -1133,7 +1133,8 @@ def test_report_outputs_column_detail_for_columns_in_only_compare_dataframe(comp
 
     comparison1.report(file=stdout)
     comparison1.report()
-    assert "****** Columns In Compare Only ******" in stdout.getvalue()
+    print(stdout.getvalue())
+    assert "****** Columns In df2 Only ******" in stdout.getvalue()
     r2 = r"""Column\s*Name \s* Dtype \n -+ \s+ -+ \n accnt_purge \s+  boolean"""
     assert re.search(r2, str(stdout.getvalue()), re.X) is not None
 
@@ -1145,7 +1146,7 @@ def test_report_outputs_schema_difference_details(comparison1):
 
     assert "****** Schema Differences ******" in stdout.getvalue()
     assert re.search(
-        r"""Base\sColumn\sName \s+ Compare\sColumn\sName \s+ Base\sDtype \s+ Compare\sDtype \n
+        r"""df1\sColumn\sName \s+ df2\sColumn\sName \s+ df1\sDtype \s+ df2\sDtype \n
             -+ \s+ -+ \s+ -+ \s+ -+ \n
             dollar_amt \s+ dollar_amt \s+ bigint \s+ double""",
         stdout.getvalue(),
@@ -1160,7 +1161,7 @@ def test_report_outputs_schema_difference_details_for_differently_named_columns(
 
     assert "****** Schema Differences ******" in stdout.getvalue()
     assert re.search(
-        r"""Base\sColumn\sName \s+ Compare\sColumn\sName \s+ Base\sDtype \s+ Compare\sDtype \n
+        r"""df1\sColumn\sName \s+ df2\sColumn\sName \s+ df1\sDtype \s+ df2\sDtype \n
             -+ \s+ -+ \s+ -+ \s+ -+ \n
             dollar_amt \s+ dollar_amount \s+ bigint \s+ double""",
         stdout.getvalue(),
@@ -1245,7 +1246,7 @@ def test_columns_with_unequal_values_show_mismatch_counts(comparison1):
 
     assert "****** Columns with Unequal Values ******" in stdout.getvalue()
     assert re.search(
-        r"""Base\s*Column\s*Name \s+ Compare\s*Column\s*Name \s+ Base\s*Dtype \s+ Compare\sDtype \s*
+        r"""df1\s*Column\s*Name \s+ df2\s*Column\s*Name \s+ df1\s*Dtype \s+ df2\sDtype \s*
             \#\sMatches \s* \#\sMismatches \n
             -+ \s+ -+ \s+ -+ \s+ -+ \s+ -+ \s+ -+""",
         stdout.getvalue(),
@@ -1269,7 +1270,7 @@ def test_columns_with_different_names_with_unequal_values_show_mismatch_counts(c
 
     assert "****** Columns with Unequal Values ******" in stdout.getvalue()
     assert re.search(
-        r"""Base\s*Column\s*Name \s+ Compare\s*Column\s*Name \s+ Base\s*Dtype \s+ Compare\sDtype \s*
+        r"""df1\s*Column\s*Name \s+ df2\s*Column\s*Name \s+ df1\s*Dtype \s+ df2\sDtype \s*
             \#\sMatches \s* \#\sMismatches \n
             -+ \s+ -+ \s+ -+ \s+ -+ \s+ -+ \s+ -+""",
         stdout.getvalue(),
@@ -1312,8 +1313,8 @@ def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark, compar
         schema,
     )
 
-    assert comparison1.rows_only_base.count() == 1
-    assert expected_df.union(comparison1.rows_only_base).distinct().count() == 1
+    assert comparison1.rows_only_df1.count() == 1
+    assert expected_df.union(comparison1.rows_only_df1).distinct().count() == 1
 
 
 def test_rows_only_compare_returns_a_dataframe_with_rows_only_in_compare(spark, comparison1):
@@ -1329,8 +1330,8 @@ def test_rows_only_compare_returns_a_dataframe_with_rows_only_in_compare(spark, 
         ]
     )
 
-    assert comparison1.rows_only_compare.count() == 1
-    assert expected_df.union(comparison1.rows_only_compare).distinct().count() == 1
+    assert comparison1.rows_only_df2.count() == 1
+    assert expected_df.union(comparison1.rows_only_df2).distinct().count() == 1
 
 
 def test_rows_both_mismatch_returns_a_dataframe_with_rows_where_variables_mismatched(
@@ -1340,42 +1341,42 @@ def test_rows_both_mismatch_returns_a_dataframe_with_rows_where_variables_mismat
         [
             Row(
                 acct=10000001234,
-                dollar_amt_base=123,
-                dollar_amt_compare=123.4,
+                dollar_amt_df1=123,
+                dollar_amt_df2=123.4,
                 dollar_amt_match=False,
-                name_base="George Maharis",
-                name_compare="George Michael Bluth",
+                name_df1="George Maharis",
+                name_df2="George Michael Bluth",
                 name_match=False,
-                float_fld_base=14530.1555,
-                float_fld_compare=14530.155,
+                float_fld_df1=14530.1555,
+                float_fld_df2=14530.155,
                 float_fld_match=False,
                 date_fld=datetime.date(2017, 1, 1),
                 accnt_purge=False,
             ),
             Row(
                 acct=10000001235,
-                dollar_amt_base=0,
-                dollar_amt_compare=0.45,
+                dollar_amt_df1=0,
+                dollar_amt_df2=0.45,
                 dollar_amt_match=False,
-                name_base="Michael Bluth",
-                name_compare="Michael Bluth",
+                name_df1="Michael Bluth",
+                name_df2="Michael Bluth",
                 name_match=True,
-                float_fld_base=1.0,
-                float_fld_compare=None,
+                float_fld_df1=1.0,
+                float_fld_df2=None,
                 float_fld_match=False,
                 date_fld=datetime.date(2017, 1, 1),
                 accnt_purge=False,
             ),
             Row(
                 acct=10000001236,
-                dollar_amt_base=1345,
-                dollar_amt_compare=1345.0,
+                dollar_amt_df1=1345,
+                dollar_amt_df2=1345.0,
                 dollar_amt_match=True,
-                name_base="George Bluth",
-                name_compare="George Bluth",
+                name_df1="George Bluth",
+                name_df2="George Bluth",
                 name_match=True,
-                float_fld_base=None,
-                float_fld_compare=1.0,
+                float_fld_df1=None,
+                float_fld_df2=1.0,
                 float_fld_match=False,
                 date_fld=datetime.date(2017, 1, 1),
                 accnt_purge=False,
@@ -1395,16 +1396,16 @@ def test_rows_both_mismatch_only_includes_rows_with_true_mismatches_when_known_d
             Row(
                 acct=10000001237,
                 acct_seq=0,
-                stat_cd_base="*2",
-                stat_cd_compare="V3",
+                stat_cd_df1="*2",
+                stat_cd_df2="V3",
                 stat_cd_match=False,
                 stat_cd_match_type="MISMATCH",
-                open_dt_base=datetime.date(2017, 5, 4),
-                open_dt_compare=2017124,
+                open_dt_df1=datetime.date(2017, 5, 4),
+                open_dt_df2=2017124,
                 open_dt_match=True,
                 open_dt_match_type="KNOWN_DIFFERENCE",
-                cd_base="0004",
-                cd_compare=4.0,
+                cd_df1="0004",
+                cd_df2=4.0,
                 cd_match=True,
                 cd_match_type="KNOWN_DIFFERENCE",
             )
@@ -1420,56 +1421,56 @@ def test_rows_both_all_returns_a_dataframe_with_all_rows_in_both_dataframes(spar
         [
             Row(
                 acct=10000001234,
-                dollar_amt_base=123,
-                dollar_amt_compare=123.4,
+                dollar_amt_df1=123,
+                dollar_amt_df2=123.4,
                 dollar_amt_match=False,
-                name_base="George Maharis",
-                name_compare="George Michael Bluth",
+                name_df1="George Maharis",
+                name_df2="George Michael Bluth",
                 name_match=False,
-                float_fld_base=14530.1555,
-                float_fld_compare=14530.155,
+                float_fld_df1=14530.1555,
+                float_fld_df2=14530.155,
                 float_fld_match=False,
                 date_fld=datetime.date(2017, 1, 1),
                 accnt_purge=False,
             ),
             Row(
                 acct=10000001235,
-                dollar_amt_base=0,
-                dollar_amt_compare=0.45,
+                dollar_amt_df1=0,
+                dollar_amt_df2=0.45,
                 dollar_amt_match=False,
-                name_base="Michael Bluth",
-                name_compare="Michael Bluth",
+                name_df1="Michael Bluth",
+                name_df2="Michael Bluth",
                 name_match=True,
-                float_fld_base=1.0,
-                float_fld_compare=None,
+                float_fld_df1=1.0,
+                float_fld_df2=None,
                 float_fld_match=False,
                 date_fld=datetime.date(2017, 1, 1),
                 accnt_purge=False,
             ),
             Row(
                 acct=10000001236,
-                dollar_amt_base=1345,
-                dollar_amt_compare=1345.0,
+                dollar_amt_df1=1345,
+                dollar_amt_df2=1345.0,
                 dollar_amt_match=True,
-                name_base="George Bluth",
-                name_compare="George Bluth",
+                name_df1="George Bluth",
+                name_df2="George Bluth",
                 name_match=True,
-                float_fld_base=None,
-                float_fld_compare=1.0,
+                float_fld_df1=None,
+                float_fld_df2=1.0,
                 float_fld_match=False,
                 date_fld=datetime.date(2017, 1, 1),
                 accnt_purge=False,
             ),
             Row(
                 acct=10000001237,
-                dollar_amt_base=123456,
-                dollar_amt_compare=123456.0,
+                dollar_amt_df1=123456,
+                dollar_amt_df2=123456.0,
                 dollar_amt_match=True,
-                name_base="Bob Loblaw",
-                name_compare="Bob Loblaw",
+                name_df1="Bob Loblaw",
+                name_df2="Bob Loblaw",
                 name_match=True,
-                float_fld_base=345.12,
-                float_fld_compare=345.12,
+                float_fld_df1=345.12,
+                float_fld_df2=345.12,
                 float_fld_match=True,
                 date_fld=datetime.date(2017, 1, 1),
                 accnt_purge=False,
@@ -1489,80 +1490,80 @@ def test_rows_both_all_shows_known_diffs_flag_and_known_diffs_count_as_matches(
             Row(
                 acct=10000001234,
                 acct_seq=0,
-                stat_cd_base="*2",
-                stat_cd_compare=None,
+                stat_cd_df1="*2",
+                stat_cd_df2=None,
                 stat_cd_match=True,
                 stat_cd_match_type="KNOWN_DIFFERENCE",
-                open_dt_base=datetime.date(2017, 5, 1),
-                open_dt_compare=2017121,
+                open_dt_df1=datetime.date(2017, 5, 1),
+                open_dt_df2=2017121,
                 open_dt_match=True,
                 open_dt_match_type="KNOWN_DIFFERENCE",
-                cd_base="0001",
-                cd_compare=1.0,
+                cd_df1="0001",
+                cd_df2=1.0,
                 cd_match=True,
                 cd_match_type="KNOWN_DIFFERENCE",
             ),
             Row(
                 acct=10000001235,
                 acct_seq=0,
-                stat_cd_base="V1",
-                stat_cd_compare="V1",
+                stat_cd_df1="V1",
+                stat_cd_df2="V1",
                 stat_cd_match=True,
                 stat_cd_match_type="MATCH",
-                open_dt_base=datetime.date(2017, 5, 2),
-                open_dt_compare=2017122,
+                open_dt_df1=datetime.date(2017, 5, 2),
+                open_dt_df2=2017122,
                 open_dt_match=True,
                 open_dt_match_type="KNOWN_DIFFERENCE",
-                cd_base="0002",
-                cd_compare=2.0,
+                cd_df1="0002",
+                cd_df2=2.0,
                 cd_match=True,
                 cd_match_type="KNOWN_DIFFERENCE",
             ),
             Row(
                 acct=10000001236,
                 acct_seq=0,
-                stat_cd_base="V2",
-                stat_cd_compare="V2",
+                stat_cd_df1="V2",
+                stat_cd_df2="V2",
                 stat_cd_match=True,
                 stat_cd_match_type="MATCH",
-                open_dt_base=datetime.date(2017, 5, 3),
-                open_dt_compare=2017123,
+                open_dt_df1=datetime.date(2017, 5, 3),
+                open_dt_df2=2017123,
                 open_dt_match=True,
                 open_dt_match_type="KNOWN_DIFFERENCE",
-                cd_base="0003",
-                cd_compare=3.0,
+                cd_df1="0003",
+                cd_df2=3.0,
                 cd_match=True,
                 cd_match_type="KNOWN_DIFFERENCE",
             ),
             Row(
                 acct=10000001237,
                 acct_seq=0,
-                stat_cd_base="*2",
-                stat_cd_compare="V3",
+                stat_cd_df1="*2",
+                stat_cd_df2="V3",
                 stat_cd_match=False,
                 stat_cd_match_type="MISMATCH",
-                open_dt_base=datetime.date(2017, 5, 4),
-                open_dt_compare=2017124,
+                open_dt_df1=datetime.date(2017, 5, 4),
+                open_dt_df2=2017124,
                 open_dt_match=True,
                 open_dt_match_type="KNOWN_DIFFERENCE",
-                cd_base="0004",
-                cd_compare=4.0,
+                cd_df1="0004",
+                cd_df2=4.0,
                 cd_match=True,
                 cd_match_type="KNOWN_DIFFERENCE",
             ),
             Row(
                 acct=10000001238,
                 acct_seq=0,
-                stat_cd_base="*2",
-                stat_cd_compare=None,
+                stat_cd_df1="*2",
+                stat_cd_df2=None,
                 stat_cd_match=True,
                 stat_cd_match_type="KNOWN_DIFFERENCE",
-                open_dt_base=datetime.date(2017, 5, 5),
-                open_dt_compare=2017125,
+                open_dt_df1=datetime.date(2017, 5, 5),
+                open_dt_df2=2017125,
                 open_dt_match=True,
                 open_dt_match_type="KNOWN_DIFFERENCE",
-                cd_base="0005",
-                cd_compare=5.0,
+                cd_df1="0005",
+                cd_df2=5.0,
                 cd_match=True,
                 cd_match_type="KNOWN_DIFFERENCE",
             ),
@@ -1580,77 +1581,77 @@ def test_rows_both_all_returns_a_dataframe_with_all_rows_in_identical_dataframes
         [
             Row(
                 acct=10000001234,
-                dollar_amt_base=123,
-                dollar_amt_compare=123,
+                dollar_amt_df1=123,
+                dollar_amt_df2=123,
                 dollar_amt_match=True,
-                name_base="George Maharis",
-                name_compare="George Maharis",
+                name_df1="George Maharis",
+                name_df2="George Maharis",
                 name_match=True,
-                float_fld_base=14530.1555,
-                float_fld_compare=14530.1555,
+                float_fld_df1=14530.1555,
+                float_fld_df2=14530.1555,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_df1=datetime.date(2017, 1, 1),
+                date_fld_df2=datetime.date(2017, 1, 1),
                 date_fld_match=True,
             ),
             Row(
                 acct=10000001235,
-                dollar_amt_base=0,
-                dollar_amt_compare=0,
+                dollar_amt_df1=0,
+                dollar_amt_df2=0,
                 dollar_amt_match=True,
-                name_base="Michael Bluth",
-                name_compare="Michael Bluth",
+                name_df1="Michael Bluth",
+                name_df2="Michael Bluth",
                 name_match=True,
-                float_fld_base=1.0,
-                float_fld_compare=1.0,
+                float_fld_df1=1.0,
+                float_fld_df2=1.0,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_df1=datetime.date(2017, 1, 1),
+                date_fld_df2=datetime.date(2017, 1, 1),
                 date_fld_match=True,
             ),
             Row(
                 acct=10000001236,
-                dollar_amt_base=1345,
-                dollar_amt_compare=1345,
+                dollar_amt_df1=1345,
+                dollar_amt_df2=1345,
                 dollar_amt_match=True,
-                name_base="George Bluth",
-                name_compare="George Bluth",
+                name_df1="George Bluth",
+                name_df2="George Bluth",
                 name_match=True,
-                float_fld_base=None,
-                float_fld_compare=None,
+                float_fld_df1=None,
+                float_fld_df2=None,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_df1=datetime.date(2017, 1, 1),
+                date_fld_df2=datetime.date(2017, 1, 1),
                 date_fld_match=True,
             ),
             Row(
                 acct=10000001237,
-                dollar_amt_base=123456,
-                dollar_amt_compare=123456,
+                dollar_amt_df1=123456,
+                dollar_amt_df2=123456,
                 dollar_amt_match=True,
-                name_base="Bob Loblaw",
-                name_compare="Bob Loblaw",
+                name_df1="Bob Loblaw",
+                name_df2="Bob Loblaw",
                 name_match=True,
-                float_fld_base=345.12,
-                float_fld_compare=345.12,
+                float_fld_df1=345.12,
+                float_fld_df2=345.12,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_df1=datetime.date(2017, 1, 1),
+                date_fld_df2=datetime.date(2017, 1, 1),
                 date_fld_match=True,
             ),
             Row(
                 acct=10000001239,
-                dollar_amt_base=1,
-                dollar_amt_compare=1,
+                dollar_amt_df1=1,
+                dollar_amt_df2=1,
                 dollar_amt_match=True,
-                name_base="Lucille Bluth",
-                name_compare="Lucille Bluth",
+                name_df1="Lucille Bluth",
+                name_df2="Lucille Bluth",
                 name_match=True,
-                float_fld_base=None,
-                float_fld_compare=None,
+                float_fld_df1=None,
+                float_fld_df2=None,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_df1=datetime.date(2017, 1, 1),
+                date_fld_df2=datetime.date(2017, 1, 1),
                 date_fld_match=True,
             ),
         ]
@@ -1667,81 +1668,81 @@ def test_rows_both_all_returns_all_rows_in_both_dataframes_for_differently_named
         [
             Row(
                 acct=10000001234,
-                dollar_amt_base=123,
-                dollar_amt_compare=123.4,
+                dollar_amt_df1=123,
+                dollar_amt_df2=123.4,
                 dollar_amt_match=False,
-                name_base="George Maharis",
-                name_compare="George Michael Bluth",
+                name_df1="George Maharis",
+                name_df2="George Michael Bluth",
                 name_match=False,
-                float_fld_base=14530.1555,
-                float_fld_compare=14530.155,
+                float_fld_df1=14530.1555,
+                float_fld_df2=14530.155,
                 float_fld_match=False,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_df1=datetime.date(2017, 1, 1),
+                date_fld_df2=datetime.date(2017, 1, 1),
                 date_fld_match=True,
                 accnt_purge=False,
             ),
             Row(
                 acct=10000001235,
-                dollar_amt_base=0,
-                dollar_amt_compare=0.45,
+                dollar_amt_df1=0,
+                dollar_amt_df2=0.45,
                 dollar_amt_match=False,
-                name_base="Michael Bluth",
-                name_compare="Michael Bluth",
+                name_df1="Michael Bluth",
+                name_df2="Michael Bluth",
                 name_match=True,
-                float_fld_base=1.0,
-                float_fld_compare=1.0,
+                float_fld_df1=1.0,
+                float_fld_df2=1.0,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_df1=datetime.date(2017, 1, 1),
+                date_fld_df2=datetime.date(2017, 1, 1),
                 date_fld_match=True,
                 accnt_purge=False,
             ),
             Row(
                 acct=10000001236,
-                dollar_amt_base=1345,
-                dollar_amt_compare=1345.0,
+                dollar_amt_df1=1345,
+                dollar_amt_df2=1345.0,
                 dollar_amt_match=True,
-                name_base="George Bluth",
-                name_compare="George Bluth",
+                name_df1="George Bluth",
+                name_df2="George Bluth",
                 name_match=True,
-                float_fld_base=None,
-                float_fld_compare=None,
+                float_fld_df1=None,
+                float_fld_df2=None,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_df1=datetime.date(2017, 1, 1),
+                date_fld_df2=datetime.date(2017, 1, 1),
                 date_fld_match=True,
                 accnt_purge=False,
             ),
             Row(
                 acct=10000001237,
-                dollar_amt_base=123456,
-                dollar_amt_compare=123456.0,
+                dollar_amt_df1=123456,
+                dollar_amt_df2=123456.0,
                 dollar_amt_match=True,
-                name_base="Bob Loblaw",
-                name_compare="Bob Loblaw",
+                name_df1="Bob Loblaw",
+                name_df2="Bob Loblaw",
                 name_match=True,
-                float_fld_base=345.12,
-                float_fld_compare=345.12,
+                float_fld_df1=345.12,
+                float_fld_df2=345.12,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_df1=datetime.date(2017, 1, 1),
+                date_fld_df2=datetime.date(2017, 1, 1),
                 date_fld_match=True,
                 accnt_purge=False,
             ),
             Row(
                 acct=10000001239,
-                dollar_amt_base=1,
-                dollar_amt_compare=1.05,
+                dollar_amt_df1=1,
+                dollar_amt_df2=1.05,
                 dollar_amt_match=False,
-                name_base="Lucille Bluth",
-                name_compare="Lucille Bluth",
+                name_df1="Lucille Bluth",
+                name_df2="Lucille Bluth",
                 name_match=True,
-                float_fld_base=None,
-                float_fld_compare=None,
+                float_fld_df1=None,
+                float_fld_df2=None,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_df1=datetime.date(2017, 1, 1),
+                date_fld_df2=datetime.date(2017, 1, 1),
                 date_fld_match=True,
                 accnt_purge=True,
             ),
@@ -1765,7 +1766,7 @@ def test_columns_with_unequal_values_text_is_aligned(comparison4):
         left_indices=(1, 2, 3, 4),
         right_indices=(5, 6),
         column_regexes=[
-            r"""(Base\sColumn\sName) \s+ (Compare\sColumn\sName) \s+ (Base\sDtype) \s+ (Compare\sDtype) \s+
+            r"""(df1\sColumn\sName) \s+ (df2\sColumn\sName) \s+ (df1\sDtype) \s+ (df2\sDtype) \s+
                 (\#\sMatches) \s+ (\#\sMismatches)""",
             r"""(-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+)""",
             r"""(dollar_amt) \s+ (dollar_amt) \s+ (bigint) \s+ (double) \s+ (2) \s+ (2)""",
@@ -1788,7 +1789,7 @@ def test_columns_with_unequal_values_text_is_aligned_with_known_differences(comp
         left_indices=(1, 2, 3, 4),
         right_indices=(5, 6, 7),
         column_regexes=[
-            r"""(Base\sColumn\sName) \s+ (Compare\sColumn\sName) \s+ (Base\sDtype) \s+ (Compare\sDtype) \s+
+            r"""(df1\sColumn\sName) \s+ (df2\sColumn\sName) \s+ (df1\sDtype) \s+ (df2\sDtype) \s+
                 (\#\sMatches) \s+ (\#\sKnown\sDiffs) \s+ (\#\sMismatches)""",
             r"""(-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+)""",
             r"""(stat_cd) \s+ (STATC) \s+ (string) \s+ (string) \s+ (2) \s+ (2) \s+ (1)""",
@@ -1811,7 +1812,7 @@ def test_columns_with_unequal_values_text_is_aligned_with_custom_known_differenc
         left_indices=(1, 2, 3, 4),
         right_indices=(5, 6, 7),
         column_regexes=[
-            r"""(Base\sColumn\sName) \s+ (Compare\sColumn\sName) \s+ (Base\sDtype) \s+ (Compare\sDtype) \s+
+            r"""(df1\sColumn\sName) \s+ (df2\sColumn\sName) \s+ (df1\sDtype) \s+ (df2\sDtype) \s+
                 (\#\sMatches) \s+ (\#\sKnown\sDiffs) \s+ (\#\sMismatches)""",
             r"""(-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+)""",
             r"""(stat_cd) \s+ (STATC) \s+ (string) \s+ (string) \s+ (2) \s+ (2) \s+ (1)""",
@@ -1834,7 +1835,7 @@ def test_columns_with_unequal_values_text_is_aligned_for_decimals(comparison_dec
         left_indices=(1, 2, 3, 4),
         right_indices=(5, 6),
         column_regexes=[
-            r"""(Base\sColumn\sName) \s+ (Compare\sColumn\sName) \s+ (Base\sDtype) \s+ (Compare\sDtype) \s+
+            r"""(df1\sColumn\sName) \s+ (df2\sColumn\sName) \s+ (df1\sDtype) \s+ (df2\sDtype) \s+
                 (\#\sMatches) \s+ (\#\sMismatches)""",
             r"""(-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+)""",
             r"""(dollar_amt) \s+ (dollar_amt) \s+ (decimal\(8,2\)) \s+ (double) \s+ (1) \s+ (1)""",
@@ -1856,7 +1857,7 @@ def test_schema_differences_text_is_aligned(comparison4):
         left_indices=(1, 2, 3, 4),
         right_indices=(),
         column_regexes=[
-            r"""(Base\sColumn\sName) \s+ (Compare\sColumn\sName) \s+ (Base\sDtype) \s+ (Compare\sDtype)""",
+            r"""(df1\sColumn\sName) \s+ (df2\sColumn\sName) \s+ (df1\sDtype) \s+ (df2\sDtype)""",
             r"""(-+) \s+ (-+) \s+ (-+) \s+ (-+)""",
             r"""(dollar_amt) \s+ (dollar_amt) \s+ (bigint) \s+ (double)""",
         ],
@@ -1876,7 +1877,7 @@ def test_schema_differences_text_is_aligned_for_decimals(comparison_decimal):
         left_indices=(1, 2, 3, 4),
         right_indices=(),
         column_regexes=[
-            r"""(Base\sColumn\sName) \s+ (Compare\sColumn\sName) \s+ (Base\sDtype) \s+ (Compare\sDtype)""",
+            r"""(df1\sColumn\sName) \s+ (df2\sColumn\sName) \s+ (df1\sDtype) \s+ (df2\sDtype)""",
             r"""(-+) \s+ (-+) \s+ (-+) \s+ (-+)""",
             r"""(dollar_amt) \s+ (dollar_amt) \s+ (decimal\(8,2\)) \s+ (double)""",
         ],
@@ -1891,7 +1892,7 @@ def test_base_only_columns_text_is_aligned(comparison4):
 
     text_alignment_validator(
         report=stdout,
-        section_start="****** Columns In Base Only ******",
+        section_start="****** Columns In df1 Only ******",
         section_end="\n",
         left_indices=(1, 2),
         right_indices=(),
@@ -1911,7 +1912,7 @@ def test_compare_only_columns_text_is_aligned(comparison4):
 
     text_alignment_validator(
         report=stdout,
-        section_start="****** Columns In Compare Only ******",
+        section_start="****** Columns In df2 Only ******",
         section_end="\n",
         left_indices=(1, 2),
         right_indices=(),
@@ -1948,6 +1949,12 @@ def text_alignment_validator(
     all lines past the first are either left- or right-aligned with the same match group
     on the first line.
     """
+    print(report)
+    print(section_start)
+    print(section_end)
+    print(left_indices)
+    print(right_indices)
+    print(column_regexes)
 
     at_column_section = False
     processed_first_line = False
