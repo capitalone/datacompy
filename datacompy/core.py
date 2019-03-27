@@ -28,6 +28,8 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 
+from datacompy import utils
+
 LOG = logging.getLogger(__name__)
 
 
@@ -211,7 +213,7 @@ class Compare(object):
             LOG.debug("Duplicate rows found, deduping by order of remaining fields")
             # Bring index into a column
             if self.on_index:
-                index_column = temp_column_name(self.df1, self.df2)
+                index_column = utils.temp_column_name(self.df1, self.df2)
                 self.df1[index_column] = self.df1.index
                 self.df2[index_column] = self.df2.index
                 temp_join_columns = [index_column]
@@ -219,9 +221,9 @@ class Compare(object):
                 temp_join_columns = list(self.join_columns)
 
             # Create order column for uniqueness of match
-            order_column = temp_column_name(self.df1, self.df2)
-            self.df1[order_column] = generate_id_within_group(self.df1, temp_join_columns)
-            self.df2[order_column] = generate_id_within_group(self.df2, temp_join_columns)
+            order_column = utils.temp_column_name(self.df1, self.df2)
+            self.df1[order_column] = utils.generate_id_within_group(self.df1, temp_join_columns)
+            self.df2[order_column] = utils.generate_id_within_group(self.df2, temp_join_columns)
             temp_join_columns.append(order_column)
 
             params = {"on": temp_join_columns}
@@ -245,8 +247,8 @@ class Compare(object):
             self.df1.drop(order_column, axis=1, inplace=True)
             self.df2.drop(order_column, axis=1, inplace=True)
 
-        df1_cols = get_merged_columns(self.df1, outer_join, "_df1")
-        df2_cols = get_merged_columns(self.df2, outer_join, "_df2")
+        df1_cols = utils.get_merged_columns(self.df1, outer_join, "_df1")
+        df2_cols = utils.get_merged_columns(self.df2, outer_join, "_df2")
 
         LOG.debug("Selecting df1 unique rows")
         self.df1_unq_rows = outer_join[outer_join["_merge"] == "left_only"][df1_cols].copy()
@@ -285,7 +287,7 @@ class Compare(object):
                 col_1 = column + "_df1"
                 col_2 = column + "_df2"
                 col_match = column + "_match"
-                self.intersect_rows[col_match] = columns_equal(
+                self.intersect_rows[col_match] = utils.columns_equal(
                     self.intersect_rows[col_1],
                     self.intersect_rows[col_2],
                     self.rel_tol,
@@ -294,7 +296,7 @@ class Compare(object):
                     ignore_case,
                 )
                 match_cnt = self.intersect_rows[col_match].sum()
-                max_diff = calculate_max_diff(
+                max_diff = utils.calculate_max_diff(
                     self.intersect_rows[col_1], self.intersect_rows[col_2]
                 )
                 null_diff = (
@@ -442,7 +444,7 @@ class Compare(object):
             The report, formatted kinda nicely.
         """
         # Header
-        report = render("header.txt")
+        report = utils.render("header.txt")
         df_header = pd.DataFrame(
             {
                 "DataFrame": [self.df1_name, self.df2_name],
@@ -454,7 +456,7 @@ class Compare(object):
         report += "\n\n"
 
         # Column Summary
-        report += render(
+        report += utils.render(
             "column_summary.txt",
             len(self.intersect_columns()),
             len(self.df1_unq_columns()),
@@ -468,7 +470,7 @@ class Compare(object):
             match_on = "index"
         else:
             match_on = ", ".join(self.join_columns)
-        report += render(
+        report += utils.render(
             "row_summary.txt",
             match_on,
             self.abs_tol,
@@ -485,7 +487,7 @@ class Compare(object):
 
         # Column Matching
         cnt_intersect = self.intersect_rows.shape[0]
-        report += render(
+        report += utils.render(
             "column_comparison.txt",
             len([col for col in self.column_stats if col["unequal_cnt"] > 0]),
             len([col for col in self.column_stats if col["unequal_cnt"] == 0]),
@@ -558,230 +560,3 @@ class Compare(object):
             report += "\n\n"
 
         return report
-
-
-def render(filename, *fields):
-    """Renders out an individual template.  This basically just reads in a
-    template file, and applies ``.format()`` on the fields.
-
-    Parameters
-    ----------
-    filename : str
-        The file that contains the template.  Will automagically prepend the
-        templates directory before opening
-    fields : list
-        Fields to be rendered out in the template
-
-    Returns
-    -------
-    str
-        The fully rendered out file.
-    """
-    this_dir = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(this_dir, "templates", filename)) as file_open:
-        return file_open.read().format(*fields)
-
-
-def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False, ignore_case=False):
-    """Compares two columns from a dataframe, returning a True/False series,
-    with the same index as column 1.
-
-    - Two nulls (np.nan) will evaluate to True.
-    - A null and a non-null value will evaluate to False.
-    - Numeric values will use the relative and absolute tolerances.
-    - Decimal values (decimal.Decimal) will attempt to be converted to floats
-      before comparing
-    - Non-numeric values (i.e. where np.isclose can't be used) will just
-      trigger True on two nulls or exact matches.
-
-    Parameters
-    ----------
-    col_1 : Pandas.Series
-        The first column to look at
-    col_2 : Pandas.Series
-        The second column
-    rel_tol : float, optional
-        Relative tolerance
-    abs_tol : float, optional
-        Absolute tolerance
-    ignore_spaces : bool, optional
-        Flag to strip whitespace (including newlines) from string columns
-    ignore_case : bool, optional
-        Flag to ignore the case of string columns
-
-    Returns
-    -------
-    pandas.Series
-        A series of Boolean values.  True == the values match, False == the
-        values don't match.
-    """
-    try:
-        compare = pd.Series(np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True))
-    except TypeError:
-        try:
-            compare = pd.Series(
-                np.isclose(
-                    col_1.astype(float),
-                    col_2.astype(float),
-                    rtol=rel_tol,
-                    atol=abs_tol,
-                    equal_nan=True,
-                )
-            )
-        except (ValueError, TypeError):
-            try:
-                if ignore_spaces:
-                    if col_1.dtype.kind == "O":
-                        col_1 = col_1.str.strip()
-                    if col_2.dtype.kind == "O":
-                        col_2 = col_2.str.strip()
-
-                if ignore_case:
-                    if col_1.dtype.kind == "O":
-                        col_1 = col_1.str.upper()
-                    if col_2.dtype.kind == "O":
-                        col_2 = col_2.str.upper()
-
-                if set([col_1.dtype.kind, col_2.dtype.kind]) == set(["M", "O"]):
-                    compare = compare_string_and_date_columns(col_1, col_2)
-                else:
-                    compare = pd.Series((col_1 == col_2) | (col_1.isnull() & col_2.isnull()))
-            except:
-                # Blanket exception should just return all False
-                compare = pd.Series(False, index=col_1.index)
-    compare.index = col_1.index
-    return compare
-
-
-def compare_string_and_date_columns(col_1, col_2):
-    """Compare a string column and date column, value-wise.  This tries to
-    convert a string column to a date column and compare that way.
-
-    Parameters
-    ----------
-    col_1 : Pandas.Series
-        The first column to look at
-    col_2 : Pandas.Series
-        The second column
-
-    Returns
-    -------
-    pandas.Series
-        A series of Boolean values.  True == the values match, False == the
-        values don't match.
-    """
-    if col_1.dtype.kind == "O":
-        obj_column = col_1
-        date_column = col_2
-    else:
-        obj_column = col_2
-        date_column = col_1
-
-    try:
-        return pd.Series(
-            (pd.to_datetime(obj_column) == date_column)
-            | (obj_column.isnull() & date_column.isnull())
-        )
-    except:
-        return pd.Series(False, index=col_1.index)
-
-
-def get_merged_columns(original_df, merged_df, suffix):
-    """Gets the columns from an original dataframe, in the new merged dataframe
-
-    Parameters
-    ----------
-    original_df : Pandas.DataFrame
-        The original, pre-merge dataframe
-    merged_df : Pandas.DataFrame
-        Post-merge with another dataframe, with suffixes added in.
-    suffix : str
-        What suffix was used to distinguish when the original dataframe was
-        overlapping with the other merged dataframe.
-    """
-    columns = []
-    for col in original_df.columns:
-        if col in merged_df.columns:
-            columns.append(col)
-        elif col + suffix in merged_df.columns:
-            columns.append(col + suffix)
-        else:
-            raise ValueError("Column not found: %s", col)
-    return columns
-
-
-def temp_column_name(*dataframes):
-    """Gets a temp column name that isn't included in columns of any dataframes
-
-    Parameters
-    ----------
-    dataframes : list of Pandas.DataFrame
-        The DataFrames to create a temporary column name for
-
-    Returns
-    -------
-    str
-        String column name that looks like '_temp_x' for some integer x
-    """
-    i = 0
-    while True:
-        temp_column = "_temp_{}".format(i)
-        unique = True
-        for dataframe in dataframes:
-            if temp_column in dataframe.columns:
-                i += 1
-                unique = False
-        if unique:
-            return temp_column
-
-
-def calculate_max_diff(col_1, col_2):
-    """Get a maximum difference between two columns
-
-    Parameters
-    ----------
-    col_1 : Pandas.Series
-        The first column
-    col_2 : Pandas.Series
-        The second column
-
-    Returns
-    -------
-    Numeric
-        Numeric field, or zero.
-    """
-    try:
-        return (col_1.astype(float) - col_2.astype(float)).abs().max()
-    except:
-        return 0
-
-
-def generate_id_within_group(dataframe, join_columns):
-    """Generate an ID column that can be used to deduplicate identical rows.  The series generated
-    is the order within a unique group, and it handles nulls.
-
-    Parameters
-    ----------
-    dataframe : Pandas.DataFrame
-        The dataframe to operate on
-    join_columns : list
-        List of strings which are the join columns
-
-    Returns
-    -------
-    Pandas.Series
-        The ID column that's unique in each group.
-    """
-    default_value = "DATACOMPY_NULL"
-    if dataframe[join_columns].isnull().any().any():
-        if (dataframe[join_columns] == default_value).any().any():
-            raise ValueError("{} was found in your join columns".format(default_value))
-        return (
-            dataframe[join_columns]
-            .astype(str)
-            .fillna(default_value)
-            .groupby(join_columns)
-            .cumcount()
-        )
-    else:
-        return dataframe[join_columns].groupby(join_columns).cumcount()
