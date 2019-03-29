@@ -22,6 +22,8 @@ from itertools import chain
 
 import six
 
+from datacompy import Compare
+
 try:
     from pyspark.sql import functions as F
 except ImportError:
@@ -74,7 +76,7 @@ def _is_comparable(type1, type2):
     return type1 == type2 or (type1 in NUMERIC_SPARK_TYPES and type2 in NUMERIC_SPARK_TYPES)
 
 
-class SparkCompare(object):
+class SparkCompare:
     """Comparison class used to compare two Spark Dataframes.
 
     Extends the ``Compare`` functionality to the wide world of Spark and
@@ -204,6 +206,8 @@ class SparkCompare(object):
             self.df2.cache()
             self._df2_row_count = self.df2.count()
 
+        self._merge_dataframes()
+
     def _tuplizer(self, input_list):
         join_columns = []
         for val in input_list:
@@ -275,8 +279,6 @@ class SparkCompare(object):
         )
 
     def _print_columns_summary(self, myfile):
-        """ Prints the column summary details"""
-        print("\n****** Column Summary ******", file=myfile)
         print(
             "Number of columns in common with matching schemas: {}".format(
                 len(self._columns_with_matching_schema())
@@ -604,6 +606,27 @@ class SparkCompare(object):
             match_failure=MatchType.MISMATCH.value,
         )
 
+    def _report_row_summary(self, target):
+        """Prints the row summary to the report"""
+        print(
+            utils.render(
+                "row_summary.txt",
+                match_on", ".join(self.join_columns),
+                abs_tol=self.abs_tol,
+                rel_tol=self.rel_tol,
+                cnt_intersect_rows=self.intersect_rows.shape[0],
+                cnt_df1_unq_rows=self.df1_unq_rows.shape[0],
+                cnt_df2_unq_rows=self.df2_unq_rows.shape[0],
+                cnt_unequal_rows=self.intersect_rows.shape[0] - self.common_row_count,
+                cnt_matching_rows=self.count_matching_rows(),
+                df1_name=self.df1_name,
+                df2_name=self.df2_name,
+                any_dupes="Yes" if self._any_dupes else "No",
+            )
+            + "\n",
+            file=target,
+        )
+
     def _print_row_summary(self, myfile):
         df1_cnt = self.df1.count()
         df2_cnt = self.df2.count()
@@ -847,6 +870,5 @@ class SparkCompare(object):
         self._print_only_columns("df1", file)
         self._print_only_columns("df2", file)
         self._print_row_summary(file)
-        self._merge_dataframes()
         self._print_num_of_rows_with_column_equality(file)
         self._print_row_matches_by_column(file)

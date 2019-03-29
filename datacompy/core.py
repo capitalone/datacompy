@@ -34,7 +34,7 @@ from datacompy import utils
 LOG = logging.getLogger(__name__)
 
 
-class Compare(object):
+class Compare:
     """Comparison class to be used to compare whether two dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
@@ -356,7 +356,8 @@ class Compare(object):
         """
         return len(self.df1_unq_rows) == len(self.df2_unq_rows) == 0
 
-    def count_matching_rows(self):
+    @property
+    def common_row_count(self):
         """Count the number of rows match (on overlapping fields)
 
         Returns
@@ -373,7 +374,7 @@ class Compare(object):
     def intersect_rows_match(self):
         """Check whether the intersect rows all match"""
         actual_length = self.intersect_rows.shape[0]
-        return self.count_matching_rows() == actual_length
+        return self.common_row_count() == actual_length
 
     def matches(self, ignore_extra_columns=False):
         """Return True or False if the dataframes match.
@@ -507,8 +508,8 @@ class Compare(object):
                 cnt_intersect_rows=self.intersect_rows.shape[0],
                 cnt_df1_unq_rows=self.df1_unq_rows.shape[0],
                 cnt_df2_unq_rows=self.df2_unq_rows.shape[0],
-                cnt_unequal_rows=self.intersect_rows.shape[0] - self.count_matching_rows(),
-                cnt_matching_rows=self.count_matching_rows(),
+                cnt_unequal_rows=self.intersect_rows.shape[0] - self.common_row_count,
+                common_row_count=self.common_row_count,
                 df1_name=self.df1_name,
                 df2_name=self.df2_name,
                 any_dupes="Yes" if self._any_dupes else "No",
