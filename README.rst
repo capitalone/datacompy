@@ -74,7 +74,11 @@ Basic Usage
     # False
 
     # This method prints out a human-readable report summarizing and sampling differences
-    print(compare.report())
+    compare.report()
+
+    # You can also print to a file if you'd prefer
+    with open('my_output.txt', 'w') as file_out:
+        compare.report(file=file_out)
 
 See docs for more detailed usage instructions and an example of the report output.
 

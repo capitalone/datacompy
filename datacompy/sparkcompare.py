@@ -154,6 +154,8 @@ class SparkCompare(object):
         abs_tol=0,
         show_all_columns=False,
         match_rates=False,
+        df1_name="df1",
+        df2_name="df2",
     ):
         self.rel_tol = rel_tol
         self.abs_tol = abs_tol

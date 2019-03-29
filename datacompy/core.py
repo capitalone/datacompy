@@ -23,6 +23,7 @@ two dataframes.
 """
 
 import os
+import sys
 import logging
 from datetime import datetime
 import pandas as pd
@@ -110,7 +111,7 @@ class Compare(object):
         self.abs_tol = abs_tol
         self.rel_tol = rel_tol
         self.df1_unq_rows = self.df2_unq_rows = self.intersect_rows = None
-        self.column_stats = []
+        self.column_stats = None
         self._compare(ignore_spaces, ignore_case)
 
     @property
@@ -277,6 +278,7 @@ class Compare(object):
         """
         LOG.debug("Comparing intersection")
         row_cnt = len(self.intersect_rows)
+        column_stats_temp = []
         for column in self.intersect_columns():
             if column in self.join_columns:
                 match_cnt = row_cnt
@@ -311,21 +313,33 @@ class Compare(object):
                 "{0}: {1} / {2} ({3:.2%}) match".format(column, match_cnt, row_cnt, match_rate)
             )
 
-            self.column_stats.append(
-                {
-                    "column": column,
-                    "match_column": col_match,
-                    "match_cnt": match_cnt,
-                    "unequal_cnt": row_cnt - match_cnt,
-                    "dtype1": str(self.df1[column].dtype),
-                    "dtype2": str(self.df2[column].dtype),
-                    "all_match": all(
-                        (self.df1[column].dtype == self.df2[column].dtype, row_cnt == match_cnt)
-                    ),
-                    "max_diff": max_diff,
-                    "null_diff": null_diff,
-                }
+            column_stats_temp.append(
+                [
+                    column,
+                    col_match,
+                    match_cnt,
+                    row_cnt - match_cnt,
+                    str(self.df1[column].dtype),
+                    str(self.df2[column].dtype),
+                    all((self.df1[column].dtype == self.df2[column].dtype, row_cnt == match_cnt)),
+                    max_diff,
+                    null_diff,
+                ]
             )
+        self.column_stats = pd.DataFrame(
+            column_stats_temp,
+            columns=[
+                "column",
+                "match_column",
+                "match_cnt",
+                "unequal_cnt",
+                "dtype1",
+                "dtype2",
+                "all_match",
+                "max_diff",
+                "null_diff",
+            ],
+        )
 
     def all_columns_match(self):
         """Whether the columns all match in the dataframes"""
@@ -429,22 +443,35 @@ class Compare(object):
             ]
         return to_return
 
-    def report(self, sample_count=10):
-        """Returns a string representation of a report.  The representation can
-        then be printed or saved to a file.
+    def report(self, sample_count=10, file=sys.stdout):
+        """Creates a string representation of a report, and prints it to stdout (or a file).  This
+        method just gathers a bunch of other methods together into one report so that Pandas and
+        Spark can implement each one separately.
 
         Parameters
         ----------
         sample_count : int, optional
-            The number of sample records to return.  Defaults to 10.
+            The number of sample records to print.  Defaults to 10.
+        file : ``file``, optional
+            A filehandle to write the report to. By default, this is sys.stdout, printing the report
+            to stdout. You can also redirect this to an output file, as in the example.
 
-        Returns
-        -------
-        str
-            The report, formatted kinda nicely.
+        Examples
+        --------
+        >>> with open('my_report.txt', 'w') as report_file:
+        ...     comparison.report(file=report_file)
         """
-        # Header
-        report = utils.render("header.txt")
+        self._report_header(file)
+        self._report_column_summary(file)
+        self._report_row_summary(file)
+        self._report_column_comparison(file)
+        self._report_column_comparison_samples(sample_count, file)
+        self._report_sample_rows("df1", sample_count, file)
+        self._report_sample_rows("df2", sample_count, file)
+
+    def _report_header(self, target):
+        """Prints the report header, which is largely summary stats"""
+        print(utils.render("header.txt"), file=target)
         df_header = pd.DataFrame(
             {
                 "DataFrame": [self.df1_name, self.df2_name],
@@ -452,111 +479,123 @@ class Compare(object):
                 "Rows": [self.df1.shape[0], self.df2.shape[0]],
             }
         )
-        report += df_header[["DataFrame", "Columns", "Rows"]].to_string()
-        report += "\n\n"
+        print(df_header[["DataFrame", "Columns", "Rows"]].to_string() + "\n", file=target)
 
-        # Column Summary
-        report += utils.render(
-            "column_summary.txt",
-            len(self.intersect_columns()),
-            len(self.df1_unq_columns()),
-            len(self.df2_unq_columns()),
-            self.df1_name,
-            self.df2_name,
+    def _report_column_summary(self, target):
+        """Prints the column summary"""
+        print(
+            utils.render(
+                "column_summary.txt",
+                cnt_intersect_columns=len(self.intersect_columns()),
+                cnt_df1_unq_columns=len(self.df1_unq_columns()),
+                cnt_df2_unq_columns=len(self.df2_unq_columns()),
+                df1_name=self.df1_name,
+                df2_name=self.df2_name,
+            )
+            + "\n",
+            file=target,
         )
 
-        # Row Summary
-        if self.on_index:
-            match_on = "index"
-        else:
-            match_on = ", ".join(self.join_columns)
-        report += utils.render(
-            "row_summary.txt",
-            match_on,
-            self.abs_tol,
-            self.rel_tol,
-            self.intersect_rows.shape[0],
-            self.df1_unq_rows.shape[0],
-            self.df2_unq_rows.shape[0],
-            self.intersect_rows.shape[0] - self.count_matching_rows(),
-            self.count_matching_rows(),
-            self.df1_name,
-            self.df2_name,
-            "Yes" if self._any_dupes else "No",
+    def _report_row_summary(self, target):
+        """Prints the row summary to the report"""
+        print(
+            utils.render(
+                "row_summary.txt",
+                match_on="index" if self.on_index else ", ".join(self.join_columns),
+                abs_tol=self.abs_tol,
+                rel_tol=self.rel_tol,
+                cnt_intersect_rows=self.intersect_rows.shape[0],
+                cnt_df1_unq_rows=self.df1_unq_rows.shape[0],
+                cnt_df2_unq_rows=self.df2_unq_rows.shape[0],
+                cnt_unequal_rows=self.intersect_rows.shape[0] - self.count_matching_rows(),
+                cnt_matching_rows=self.count_matching_rows(),
+                df1_name=self.df1_name,
+                df2_name=self.df2_name,
+                any_dupes="Yes" if self._any_dupes else "No",
+            )
+            + "\n",
+            file=target,
         )
 
-        # Column Matching
+    def _report_column_comparison(self, target):
+        """High-level column comparison, printed to target."""
         cnt_intersect = self.intersect_rows.shape[0]
-        report += utils.render(
-            "column_comparison.txt",
-            len([col for col in self.column_stats if col["unequal_cnt"] > 0]),
-            len([col for col in self.column_stats if col["unequal_cnt"] == 0]),
-            sum([col["unequal_cnt"] for col in self.column_stats]),
+        print(
+            utils.render(
+                "column_comparison.txt",
+                col_cnt_uneq_vals=(self.column_stats.unequal_cnt > 0).sum(),
+                col_cnt_eq_vals=(self.column_stats.unequal_cnt == 0).sum(),
+                cnt_uneq_vals=self.column_stats.unequal_cnt.sum(),
+            )
+            + "\n",
+            file=target,
         )
 
-        match_stats = []
-        match_sample = []
-        any_mismatch = False
-        for column in self.column_stats:
-            if not column["all_match"]:
-                any_mismatch = True
-                match_stats.append(
-                    {
-                        "Column": column["column"],
-                        "{} dtype".format(self.df1_name): column["dtype1"],
-                        "{} dtype".format(self.df2_name): column["dtype2"],
-                        "# Unequal": column["unequal_cnt"],
-                        "Max Diff": column["max_diff"],
-                        "# Null Diff": column["null_diff"],
-                    }
+    def _report_column_comparison_samples(self, sample_count, target):
+        """Column comparison which prints some samples
+
+        Parameters
+        ----------
+        sample_count : int
+            The count of samples to print out
+        target : file
+            The file object to print out to
+        """
+        fields_to_print = {
+            "column": "Column",
+            "dtype1": "{} dtype".format(self.df1_name),
+            "dtype2": "{} dtype".format(self.df2_name),
+            "unequal_cnt": "# Unequal",
+            "max_diff": "Max Diff",
+            "null_diff": "# Null Diff",
+        }
+        match_stats = (
+            self.column_stats[~self.column_stats.all_match][fields_to_print.keys()]
+            .rename(fields_to_print, axis=1)
+            .sort_values("Column")
+        )
+        match_sample = [
+            self.sample_mismatch(col, sample_count, for_display=True)
+            for col in self.column_stats[~self.column_stats.all_match].column
+        ]
+
+        if not self.column_stats.all_match.all():  # Only print if there are non-matchers
+            print(utils.render("unequal_columns.txt", match_stats=match_stats), file=target)
+            print(
+                utils.render(
+                    "unequal_rows.txt",
+                    match_sample="\n\n".join(sample.to_string() for sample in match_sample),
                 )
-                if column["unequal_cnt"] > 0:
-                    match_sample.append(
-                        self.sample_mismatch(column["column"], sample_count, for_display=True)
-                    )
+                + "\n",
+                file=target,
+            )
 
-        if any_mismatch:
-            report += "Columns with Unequal Values or Types\n"
-            report += "------------------------------------\n"
-            report += "\n"
-            df_match_stats = pd.DataFrame(match_stats)
-            df_match_stats.sort_values("Column", inplace=True)
-            # Have to specify again for sorting
-            report += df_match_stats[
-                [
-                    "Column",
-                    "{} dtype".format(self.df1_name),
-                    "{} dtype".format(self.df2_name),
-                    "# Unequal",
-                    "Max Diff",
-                    "# Null Diff",
-                ]
-            ].to_string()
-            report += "\n\n"
+    def _report_sample_rows(self, df1_or_df2, sample_count, target):
+        """Prints a sample of rows in one of the dataframes that aren't in the other to the report
 
-            report += "Sample Rows with Unequal Values\n"
-            report += "-------------------------------\n"
-            report += "\n"
-            for sample in match_sample:
-                report += sample.to_string()
-                report += "\n\n"
-
-        if self.df1_unq_rows.shape[0] > 0:
-            report += "Sample Rows Only in {} (First 10 Columns)\n".format(self.df1_name)
-            report += "---------------------------------------{}\n".format("-" * len(self.df1_name))
-            report += "\n"
-            columns = self.df1_unq_rows.columns[:10]
-            unq_count = min(sample_count, self.df1_unq_rows.shape[0])
-            report += self.df1_unq_rows.sample(unq_count)[columns].to_string()
-            report += "\n\n"
-
-        if self.df2_unq_rows.shape[0] > 0:
-            report += "Sample Rows Only in {} (First 10 Columns)\n".format(self.df2_name)
-            report += "---------------------------------------{}\n".format("-" * len(self.df2_name))
-            report += "\n"
-            columns = self.df2_unq_rows.columns[:10]
-            unq_count = min(sample_count, self.df2_unq_rows.shape[0])
-            report += self.df2_unq_rows.sample(unq_count)[columns].to_string()
-            report += "\n\n"
-
-        return report
+        Parameters
+        ----------
+        df1_or_df2 : {'df1', 'df2'}
+            Which dataframe you're looking at
+        sample_count : int
+            The count of samples to print out
+        target : file
+            The file to print out to
+        """
+        df_unq_rows = getattr(self, df1_or_df2 + "_unq_rows")
+        df_name = getattr(self, df1_or_df2 + "_name")
+        if df_unq_rows.shape[0] > 0:
+            print(
+                utils.render(
+                    "unique_rows.txt",
+                    df_name=df_name,
+                    df_name_dashes="-" * len(df_name),
+                    sample_rows=(
+                        df_unq_rows.sample(min(sample_count, df_unq_rows.shape[0]))[
+                            df_unq_rows.columns[:10]
+                        ]
+                    ),
+                )
+                + "\n",
+                file=target,
+            )

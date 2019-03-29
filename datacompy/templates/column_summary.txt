@@ -1,7 +1,6 @@
 Column Summary
 --------------
 
-Number of columns in common: {0}
-Number of columns in {3} but not in {4}: {1}
-Number of columns in {4} but not in {3}: {2}
-
+Number of columns in common: {cnt_intersect_columns}
+Number of columns in {df1_name} but not in {df2_name}: {cnt_df1_unq_columns}
+Number of columns in {df2_name} but not in {df1_name}: {cnt_df2_unq_columns}

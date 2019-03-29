@@ -1,7 +1,6 @@
 Column Comparison
 -----------------
 
-Number of columns compared with some values unequal: {0:,}
-Number of columns compared with all values equal: {1:,}
-Total number of values which compare unequal: {2:,}
-
+Number of columns compared with some values unequal: {col_cnt_uneq_vals:,}
+Number of columns compared with all values equal: {col_cnt_eq_vals:,}
+Total number of values which compare unequal: {cnt_uneq_vals:,}

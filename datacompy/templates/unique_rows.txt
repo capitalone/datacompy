@@ -1,0 +1,4 @@
+Sample Rows Only in {df_name} (First 10 Columns)
+---------------------------------------{df_name_dashes}
+
+{sample_rows}

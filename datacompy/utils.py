@@ -26,7 +26,7 @@ import numpy as np
 LOG = logging.getLogger(__name__)
 
 
-def render(filename, *fields):
+def render(filename, **fields):
     """Renders out an individual template.  This basically just reads in a
     template file, and applies ``.format()`` on the fields.
 
@@ -35,7 +35,7 @@ def render(filename, *fields):
     filename : str
         The file that contains the template.  Will automagically prepend the
         templates directory before opening
-    fields : list
+    fields : dict
         Fields to be rendered out in the template
 
     Returns
@@ -45,7 +45,7 @@ def render(filename, *fields):
     """
     this_dir = os.path.dirname(os.path.realpath(__file__))
     with open(os.path.join(this_dir, "templates", filename)) as file_open:
-        return file_open.read().format(*fields)
+        return file_open.read().format(**fields)
 
 
 def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False, ignore_case=False):
