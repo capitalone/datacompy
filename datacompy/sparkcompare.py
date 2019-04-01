@@ -76,7 +76,7 @@ def _is_comparable(type1, type2):
     return type1 == type2 or (type1 in NUMERIC_SPARK_TYPES and type2 in NUMERIC_SPARK_TYPES)
 
 
-class SparkCompare:
+class SparkCompare(Compare):
     """Comparison class used to compare two Spark Dataframes.
 
     Extends the ``Compare`` functionality to the wide world of Spark and
@@ -188,12 +188,13 @@ class SparkCompare:
 
         self.spark = spark_session
         self.df1_unq_rows = self.df2_unq_rows = None
-        self._df1_row_count = self._df2_row_count = self._common_row_count = None
+        self._df1_row_count = self._df2_row_count = self._intersect_rows_count = None
         self._joined_dataframe = None
         self._rows_only_df1 = None
         self._rows_only_df2 = None
         self._all_matched_rows = None
         self._all_rows_mismatched = None
+        self.column_stats = None
         self.columns_match_dict = {}
 
         # drop the duplicates before actual comparison made.
@@ -202,9 +203,7 @@ class SparkCompare:
 
         if cache_intermediates:
             self.df1.cache()
-            self._df1_row_count = self.df1.count()
             self.df2.cache()
-            self._df2_row_count = self.df2.count()
 
         self._merge_dataframes()
 
@@ -241,30 +240,26 @@ class SparkCompare:
         """set[str]: Get columns that are unique to the df2 dataframe"""
         return set(self.df2.columns) - set(self.df1.columns)
 
-    @property
-    def df1_row_count(self):
-        """int: Get the count of rows in the de-duped df1 dataframe"""
-        if self._df1_row_count is None:
-            self._df1_row_count = self.df1.count()
-
-        return self._df1_row_count
-
-    @property
-    def df2_row_count(self):
-        """int: Get the count of rows in the de-duped df2 dataframe"""
-        if self._df2_row_count is None:
-            self._df2_row_count = self.df2.count()
-
-        return self._df2_row_count
+    def df_row_count(self, index)):
+        """int: Get the count of rows in a dataframe"""
+        attr = '_' + index + '_row_count'
+        if getattr(self, attr) is None:
+            setattr(self, attr, getattr(self, index).count())
+        return getattr(self, attr)
 
     @property
-    def common_row_count(self):
-        """int: Get the count of rows in common between df1 and df2 dataframes"""
-        if self._common_row_count is None:
-            common_rows = self._get_or_create_joined_dataframe()
-            self._common_row_count = common_rows.count()
+    def intersect_rows_count(self):
+        """int: Get the count of rows in common between df1 and df2 dataframes, regardless of
+        whether they match or not"""
+        if self._intersect_rows_count is None:
+            intersect_rows = self._get_or_create_joined_dataframe()
+            self._intersect_rows_count = intersect_rows.count()
 
-        return self._common_row_count
+        return self._intersect_rows_count
+
+    @property
+    def matching_rows_count(self):
+        raise NotImplementedError("Not yet!")
 
     def _get_unq_df1_rows(self):
         """Get the rows only from df1 data frame"""
@@ -480,7 +475,6 @@ class SparkCompare:
             self._joined_dataframe = self.spark.sql(join_query)
             if self.cache_intermediates:
                 self._joined_dataframe.cache()
-                self._common_row_count = self._joined_dataframe.count()
 
         return self._joined_dataframe
 
@@ -501,7 +495,7 @@ class SparkCompare:
         print("\n****** Row Comparison ******", file=myfile)
         print(
             "Number of rows with some columns unequal: {}".format(
-                self.common_row_count - matched_rows
+                self.intersect_rows_count - matched_rows
             ),
             file=myfile,
         )
@@ -512,8 +506,10 @@ class SparkCompare:
         side effects:
             columns_match_dict assigned to { column -> match_type_counts }
                 where:
-                    column (string): Name of a column that exists in both the df1 and comparison columns
-                    match_type_counts (list of int with size = len(MatchType)): The number of each match type seen for this column (in order of the MatchType enum values)
+                    column (string): Name of a column that exists in both the df1 and comparison
+                    columns
+                    match_type_counts (list of int with size = len(MatchType)): The number of each
+                    match type seen for this column (in order of the MatchType enum values)
 
         returns: None
         """
@@ -606,27 +602,6 @@ class SparkCompare:
             match_failure=MatchType.MISMATCH.value,
         )
 
-    def _report_row_summary(self, target):
-        """Prints the row summary to the report"""
-        print(
-            utils.render(
-                "row_summary.txt",
-                match_on", ".join(self.join_columns),
-                abs_tol=self.abs_tol,
-                rel_tol=self.rel_tol,
-                cnt_intersect_rows=self.intersect_rows.shape[0],
-                cnt_df1_unq_rows=self.df1_unq_rows.shape[0],
-                cnt_df2_unq_rows=self.df2_unq_rows.shape[0],
-                cnt_unequal_rows=self.intersect_rows.shape[0] - self.common_row_count,
-                cnt_matching_rows=self.count_matching_rows(),
-                df1_name=self.df1_name,
-                df2_name=self.df2_name,
-                any_dupes="Yes" if self._any_dupes else "No",
-            )
-            + "\n",
-            file=target,
-        )
-
     def _print_row_summary(self, myfile):
         df1_cnt = self.df1.count()
         df2_cnt = self.df2.count()
@@ -634,13 +609,13 @@ class SparkCompare:
         df2_with_dup_cnt = self._original_df2.count()
 
         print("\n****** Row Summary ******", file=myfile)
-        print("Number of rows in common: {}".format(self.common_row_count), file=myfile)
+        print("Number of rows in common: {}".format(self.intersect_rows_count), file=myfile)
         print(
-            "Number of rows in df1 but not df2: {}".format(df1_cnt - self.common_row_count),
+            "Number of rows in df1 but not df2: {}".format(df1_cnt - self.intersect_rows_count),
             file=myfile,
         )
         print(
-            "Number of rows in df2 but not df1: {}".format(df2_cnt - self.common_row_count),
+            "Number of rows in df2 but not df1: {}".format(df2_cnt - self.intersect_rows_count),
             file=myfile,
         )
         print(
@@ -839,7 +814,7 @@ class SparkCompare:
                 if self.match_rates:
                     match_rate = 100 * (
                         1
-                        - (column_values[MatchType.MISMATCH.value] + 0.0) / self.common_row_count
+                        - (column_values[MatchType.MISMATCH.value] + 0.0) / self.intersect_rows_count
                         + 0.0
                     )
                     output_row.append("{:02.5f}".format(match_rate))
@@ -864,6 +839,13 @@ class SparkCompare:
         >>> with open('my_report.txt', 'w') as report_file:
         ...     comparison.report(file=report_file)
         """
+        self._report_header(file)
+        self._report_column_summary(file)
+        self._report_row_summary(file) # One thing to change
+        # self._report_column_comparison(file)
+        # self._report_column_comparison_samples(sample_count, file)
+        # self._report_sample_rows("df1", sample_count, file) # Use spark.createDataFrame(df.rdd.takeSample(False, 3)).toPandas()?
+        # self._report_sample_rows("df2", sample_count, file)
 
         self._print_columns_summary(file)
         self._print_schema_diff_details(file)

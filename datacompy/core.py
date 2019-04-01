@@ -111,6 +111,7 @@ class Compare:
         self.abs_tol = abs_tol
         self.rel_tol = rel_tol
         self.df1_unq_rows = self.df2_unq_rows = self.intersect_rows = None
+        self._df1_row_count = self._df2_row_count = None
         self.column_stats = None
         self._compare(ignore_spaces, ignore_case)
 
@@ -173,14 +174,14 @@ class Compare:
             LOG.info("df1 Pandas.DataFrame.equals df2")
         else:
             LOG.info("df1 does not Pandas.DataFrame.equals df2")
-        LOG.info("Number of columns in common: {0}".format(len(self.intersect_columns())))
+        LOG.info("Number of columns in common: {0}".format(len(self.intersect_columns)))
         LOG.debug("Checking column overlap")
-        for col in self.df1_unq_columns():
+        for col in self.df1_unq_columns:
             LOG.info("Column in df1 and not in df2: {0}".format(col))
-        LOG.info("Number of columns in df1 and not in df2: {0}".format(len(self.df1_unq_columns())))
-        for col in self.df2_unq_columns():
+        LOG.info("Number of columns in df1 and not in df2: {0}".format(len(self.df1_unq_columns)))
+        for col in self.df2_unq_columns:
             LOG.info("Column in df2 and not in df1: {}".format(col))
-        LOG.info("Number of columns in df2 and not in df1: {}".format(len(self.df2_unq_columns())))
+        LOG.info("Number of columns in df2 and not in df1: {}".format(len(self.df2_unq_columns)))
         LOG.debug("Merging dataframes")
         self._dataframe_merge(ignore_spaces)
         self._intersect_compare(ignore_spaces, ignore_case)
@@ -189,16 +190,19 @@ class Compare:
         else:
             LOG.info("df1 does not match df2")
 
+    @property
     def df1_unq_columns(self):
-        """Get columns that are unique to df1"""
+        """Get columns that are unique to df1 - works for Spark"""
         return set(self.df1.columns) - set(self.df2.columns)
 
+    @property
     def df2_unq_columns(self):
-        """Get columns that are unique to df2"""
+        """Get columns that are unique to df2 - works for Spark"""
         return set(self.df2.columns) - set(self.df1.columns)
 
+    @property
     def intersect_columns(self):
-        """Get columns that are shared between the two dataframes"""
+        """Get columns that are shared between the two dataframes - works for Spark."""
         return set(self.df1.columns) & set(self.df2.columns)
 
     def _dataframe_merge(self, ignore_spaces):
@@ -265,21 +269,21 @@ class Compare:
         self.intersect_rows = outer_join[outer_join["_merge"] == "both"].copy()
         LOG.info(
             "Number of rows in df1 and df2 (not necessarily equal): {}".format(
-                len(self.intersect_rows)
+                self.intersect_rows_count
             )
         )
 
     def _intersect_compare(self, ignore_spaces, ignore_case):
         """Run the comparison on the intersect dataframe
 
-        This loops through all columns that are shared between df1 and df2, and
-        creates a column column_match which is True for matches, False
-        otherwise.
+        This loops through all columns that are shared between df1 and df2, and creates a column
+        column_match which is True for matches, False otherwise.  Also sets the self.column_stats
+        dataframe.
         """
         LOG.debug("Comparing intersection")
-        row_cnt = len(self.intersect_rows)
+        row_cnt = self.intersect_rows_count
         column_stats_temp = []
-        for column in self.intersect_columns():
+        for column in self.intersect_columns:
             if column in self.join_columns:
                 match_cnt = row_cnt
                 col_match = ""
@@ -343,7 +347,7 @@ class Compare:
 
     def all_columns_match(self):
         """Whether the columns all match in the dataframes"""
-        return self.df1_unq_columns() == self.df2_unq_columns() == set()
+        return self.df1_unq_columns == self.df2_unq_columns == set()
 
     def all_rows_overlap(self):
         """Whether the rows are all present in both dataframes
@@ -357,7 +361,7 @@ class Compare:
         return len(self.df1_unq_rows) == len(self.df2_unq_rows) == 0
 
     @property
-    def common_row_count(self):
+    def matching_rows_count(self):
         """Count the number of rows match (on overlapping fields)
 
         Returns
@@ -365,16 +369,27 @@ class Compare:
         int
             Number of matching rows
         """
-        match_columns = []
-        for column in self.intersect_columns():
-            if column not in self.join_columns:
-                match_columns.append(column + "_match")
+        match_columns = [
+            col + "_match"
+            for col in self.intersect_columns
+            if col not in self.join_columns]
         return self.intersect_rows[match_columns].all(axis=1).sum()
+
+    def df_row_count(self, index)):
+        """Get the count of rows in a dataframe.  Is overwritten in Spark."""
+        return getattr(self, index).shape[0]
+
+    def df_column_cnt(self, index):
+        """Get number of columns in a dataframe.  Should work for Pandas and Spark."""
+        return len(getattr(self, index).columns)
+
+    @property
+    def intersect_rows_count(self):
+        return self.intersect_rows.shape[0]
 
     def intersect_rows_match(self):
         """Check whether the intersect rows all match"""
-        actual_length = self.intersect_rows.shape[0]
-        return self.common_row_count() == actual_length
+        return self.matching_rows_count == self.intersect_rows_count
 
     def matches(self, ignore_extra_columns=False):
         """Return True or False if the dataframes match.
@@ -400,7 +415,7 @@ class Compare:
         dataframe 1, and all of its rows match rows in dataframe 1 for the
         shared columns.
         """
-        if not self.df2_unq_columns() == set():
+        if not self.df2_unq_columns == set():
             return False
         elif not len(self.df2_unq_rows) == 0:
             return False
@@ -430,7 +445,7 @@ class Compare:
             "pertinent" columns, for rows that don't match on the provided
             column.
         """
-        row_cnt = self.intersect_rows.shape[0]
+        row_cnt = self.intersect_rows_count
         col_match = self.intersect_rows[column + "_match"]
         match_cnt = col_match.sum()
         sample_count = min(sample_count, row_cnt - match_cnt)
@@ -476,8 +491,8 @@ class Compare:
         df_header = pd.DataFrame(
             {
                 "DataFrame": [self.df1_name, self.df2_name],
-                "Columns": [self.df1.shape[1], self.df2.shape[1]],
-                "Rows": [self.df1.shape[0], self.df2.shape[0]],
+                "Columns": [self.df_column_cnt('df1'), self.df_column_cnt('df2')],
+                "Rows": [self.df_row_count('df1'), self.df_row_count('df2')],
             }
         )
         print(df_header[["DataFrame", "Columns", "Rows"]].to_string() + "\n", file=target)
@@ -487,9 +502,9 @@ class Compare:
         print(
             utils.render(
                 "column_summary.txt",
-                cnt_intersect_columns=len(self.intersect_columns()),
-                cnt_df1_unq_columns=len(self.df1_unq_columns()),
-                cnt_df2_unq_columns=len(self.df2_unq_columns()),
+                cnt_intersect_columns=len(self.intersect_columns),
+                cnt_df1_unq_columns=len(self.df1_unq_columns),
+                cnt_df2_unq_columns=len(self.df2_unq_columns),
                 df1_name=self.df1_name,
                 df2_name=self.df2_name,
             )
@@ -505,11 +520,11 @@ class Compare:
                 match_on="index" if self.on_index else ", ".join(self.join_columns),
                 abs_tol=self.abs_tol,
                 rel_tol=self.rel_tol,
-                cnt_intersect_rows=self.intersect_rows.shape[0],
+                cnt_intersect_rows=self.intersect_rows_count,
                 cnt_df1_unq_rows=self.df1_unq_rows.shape[0],
                 cnt_df2_unq_rows=self.df2_unq_rows.shape[0],
-                cnt_unequal_rows=self.intersect_rows.shape[0] - self.common_row_count,
-                common_row_count=self.common_row_count,
+                cnt_unequal_rows=self.intersect_rows_count - self.matching_rows_count,
+                cnt_matching_rows=self.matching_rows_count,
                 df1_name=self.df1_name,
                 df2_name=self.df2_name,
                 any_dupes="Yes" if self._any_dupes else "No",
@@ -520,7 +535,6 @@ class Compare:
 
     def _report_column_comparison(self, target):
         """High-level column comparison, printed to target."""
-        cnt_intersect = self.intersect_rows.shape[0]
         print(
             utils.render(
                 "column_comparison.txt",
