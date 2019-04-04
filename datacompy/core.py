@@ -459,6 +459,15 @@ class Compare:
             ]
         return to_return
 
+    def _df_to_string(self, dataframe):
+        """Function to return a string representation of a dataframe.  Changes between Pandas and
+        Spark."""
+        return dataframe.to_string()
+
+    def _pre_report(self):
+        """Pre-processing for the report step - nothing for Pandas"""
+        pass
+
     def report(self, sample_count=10, file=sys.stdout):
         """Creates a string representation of a report, and prints it to stdout (or a file).  This
         method just gathers a bunch of other methods together into one report so that Pandas and
@@ -477,6 +486,7 @@ class Compare:
         >>> with open('my_report.txt', 'w') as report_file:
         ...     comparison.report(file=report_file)
         """
+        self._pre_report()
         self._report_header(file)
         self._report_column_summary(file)
         self._report_row_summary(file)
@@ -579,7 +589,7 @@ class Compare:
             print(
                 utils.render(
                     "unequal_rows.txt",
-                    match_sample="\n\n".join(sample.to_string() for sample in match_sample),
+                    match_sample="\n\n".join(self._df_to_string(sample) for sample in match_sample),
                 )
                 + "\n",
                 file=target,

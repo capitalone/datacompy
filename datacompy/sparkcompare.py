@@ -18,8 +18,8 @@ from __future__ import print_function
 
 import sys
 from enum import Enum
-from itertools import chain
-
+import contextlib
+import io
 import six
 
 from datacompy import Compare
@@ -244,7 +244,18 @@ class SparkCompare(Compare):
 
     @property
     def matching_rows_count(self):
-        raise NotImplementedError("Not yet!")
+        # match_dataframe contains columns from both dataframes with flag to indicate if columns matched
+        match_dataframe = self._get_or_create_joined_dataframe().select(*self.columns_compared)
+        match_dataframe.createOrReplaceTempView("matched_df")
+
+        where_cond = " AND ".join(
+            ["A." + name + "=" + str(MatchType.MATCH.value) for name in self.columns_compared]
+        )
+        match_query = r"SELECT count(*) AS row_count FROM matched_df A WHERE {}".format(
+            where_cond
+        )
+        return self.spark.sql(match_query).head()[0]
+
 
     def _get_unq_df1_rows(self):
         """Get the rows only from df1 data frame"""
@@ -257,56 +268,6 @@ class SparkCompare(Compare):
         return self.df2.select(self._join_column_names).subtract(
             self.df1.select(self._join_column_names)
         )
-
-    def _print_columns_summary(self, myfile):
-        print(
-            "Number of columns in common with matching schemas: {}".format(
-                len(self._columns_with_matching_schema())
-            ),
-            file=myfile,
-        )
-        print(
-            "Number of columns in common with schema differences: {}".format(
-                len(self._columns_with_schemadiff())
-            ),
-            file=myfile,
-        )
-        print(
-            "Number of columns in df1 but not df2: {}".format(len(self.df1_unq_columns)),
-            file=myfile,
-        )
-        print(
-            "Number of columns in df2 but not df1: {}".format(len(self.df2_unq_columns)),
-            file=myfile,
-        )
-
-    def _print_only_columns(self, df1_or_df2, myfile):
-        """Prints the columns and data types only in either the df1 or df2 datasets"""
-
-        if df1_or_df2 == "df1":
-            columns = self.df1_unq_columns
-            df = self.df1
-        elif df1_or_df2 == "df2":
-            columns = self.df2_unq_columns
-            df = self.df2
-        else:
-            raise ValueError('df1_or_df2 must be df1 or df2, but was "{}"'.format(df1_or_df2))
-
-        if (
-            not columns
-        ):  # If there are no columns only in this dataframe, don't display this section
-            return
-
-        max_length = max([len(col) for col in columns] + [11])
-        format_pattern = "{{:{max}s}}".format(max=max_length)
-
-        print("\n****** Columns In {} Only ******".format(df1_or_df2), file=myfile)
-        print((format_pattern + "  Dtype").format("Column Name"), file=myfile)
-        print("-" * max_length + "  -------------", file=myfile)
-
-        for column in columns:
-            col_type = df.select(column).dtypes[0][1]
-            print((format_pattern + "  {:13s}").format(column, col_type), file=myfile)
 
     def _columns_with_matching_schema(self):
         """ This function will identify the columns which has matching schema"""
@@ -439,29 +400,6 @@ class SparkCompare(Compare):
                 self._joined_dataframe.cache()
 
         return self._joined_dataframe
-
-    def _print_num_of_rows_with_column_equality(self, myfile):
-        # match_dataframe contains columns from both dataframes with flag to indicate if columns matched
-        match_dataframe = self._get_or_create_joined_dataframe().select(*self.columns_compared)
-        match_dataframe.createOrReplaceTempView("matched_df")
-
-        where_cond = " AND ".join(
-            ["A." + name + "=" + str(MatchType.MATCH.value) for name in self.columns_compared]
-        )
-        match_query = r"""SELECT count(*) AS row_count FROM matched_df A WHERE {}""".format(
-            where_cond
-        )
-        all_rows_matched = self.spark.sql(match_query)
-        matched_rows = all_rows_matched.head()[0]
-
-        print("\n****** Row Comparison ******", file=myfile)
-        print(
-            "Number of rows with some columns unequal: {}".format(
-                self.intersect_rows_count - matched_rows
-            ),
-            file=myfile,
-        )
-        print("Number of rows with all columns equal: {}".format(matched_rows), file=myfile)
 
     def _populate_columns_match_dict(self):
         """
@@ -599,65 +537,6 @@ class SparkCompare(Compare):
             match_failure=MatchType.MISMATCH.value,
         )
 
-    def _print_row_summary(self, myfile):
-        df1_cnt = self.df1.count()
-        df2_cnt = self.df2.count()
-        df1_with_dup_cnt = self._original_df1.count()
-        df2_with_dup_cnt = self._original_df2.count()
-
-        print("\n****** Row Summary ******", file=myfile)
-        print("Number of rows in common: {}".format(self.intersect_rows_count), file=myfile)
-        print(
-            "Number of rows in df1 but not df2: {}".format(df1_cnt - self.intersect_rows_count),
-            file=myfile,
-        )
-        print(
-            "Number of rows in df2 but not df1: {}".format(df2_cnt - self.intersect_rows_count),
-            file=myfile,
-        )
-        print(
-            "Number of duplicate rows found in df1: {}".format(df1_with_dup_cnt - df1_cnt),
-            file=myfile,
-        )
-        print(
-            "Number of duplicate rows found in df2: {}".format(df2_with_dup_cnt - df2_cnt),
-            file=myfile,
-        )
-
-    def _print_schema_diff_details(self, myfile):
-        schema_diff_dict = self._columns_with_schemadiff()
-
-        if not schema_diff_dict:  # If there are no differences, don't print the section
-            return
-
-        # For columns with mismatches, what are the longest df1 and df2 column name lengths (with minimums)?
-        df1_name_max = max([len(key) for key in schema_diff_dict] + [16])
-        df2_name_max = max([len(self._df1_to_df2_name(key)) for key in schema_diff_dict] + [19])
-
-        format_pattern = "{{:{df1}s}}  {{:{df2}s}}".format(df1=df1_name_max, df2=df2_name_max)
-
-        print("\n****** Schema Differences ******", file=myfile)
-        print(
-            (format_pattern + "  df1 Dtype      df2 Dtype").format(
-                "df1 Column Name", "df2 Column Name"
-            ),
-            file=myfile,
-        )
-        print(
-            "-" * df1_name_max + "  " + "-" * df2_name_max + "  -------------  -------------",
-            file=myfile,
-        )
-
-        for df1_column, types in schema_diff_dict.items():
-            df2_column = self._df1_to_df2_name(df1_column)
-
-            print(
-                (format_pattern + "  {:13s}  {:13s}").format(
-                    df1_column, df2_column, types["df1_type"], types["df2_type"]
-                ),
-                file=myfile,
-            )
-
     def _df1_to_df2_name(self, df1_name):
         """Translates a column name in the df1 dataframe to its counterpart in the
         df2 dataframe, if they are different."""
@@ -670,182 +549,51 @@ class SparkCompare(Compare):
                     return name[1]
             return df1_name
 
-    def _print_row_matches_by_column(self, myfile):
-        self._populate_columns_match_dict()
-        columns_with_mismatches = {
-            key: self.columns_match_dict[key]
-            for key in self.columns_match_dict
-            if self.columns_match_dict[key][MatchType.MISMATCH.value]
-        }
-        columns_fully_matching = {
-            key: self.columns_match_dict[key]
-            for key in self.columns_match_dict
-            if sum(self.columns_match_dict[key])
-            == self.columns_match_dict[key][MatchType.MATCH.value]
-        }
-        columns_with_any_diffs = {
-            key: self.columns_match_dict[key]
-            for key in self.columns_match_dict
-            if sum(self.columns_match_dict[key])
-            != self.columns_match_dict[key][MatchType.MATCH.value]
-        }
-
-        print("\n****** Column Comparison ******", file=myfile)
-
-        if self._known_differences:
-            print(
-                "Number of columns compared with unexpected differences in some values: {}".format(
-                    len(columns_with_mismatches)
-                ),
-                file=myfile,
-            )
-            print(
-                "Number of columns compared with all values equal but known differences found: {}".format(
-                    len(self.columns_compared)
-                    - len(columns_with_mismatches)
-                    - len(columns_fully_matching)
-                ),
-                file=myfile,
-            )
-            print(
-                "Number of columns compared with all values completely equal: {}".format(
-                    len(columns_fully_matching)
-                ),
-                file=myfile,
-            )
-        else:
-            print(
-                "Number of columns compared with some values unequal: {}".format(
-                    len(columns_with_mismatches)
-                ),
-                file=myfile,
-            )
-            print(
-                "Number of columns compared with all values equal: {}".format(
-                    len(columns_fully_matching)
-                ),
-                file=myfile,
-            )
-
-        # If all columns matched, don't print columns with unequal values
-        if (not self.show_all_columns) and (
-            len(columns_fully_matching) == len(self.columns_compared)
-        ):
-            return
-
-        # if show_all_columns is set, set column name length maximum to max of ALL columns(with minimum)
-        if self.show_all_columns:
-            df1_name_max = max([len(key) for key in self.columns_match_dict] + [16])
-            df2_name_max = max(
-                [len(self._df1_to_df2_name(key)) for key in self.columns_match_dict] + [19]
-            )
-
-        # For columns with any differences, what are the longest df1 and df2 column name lengths (with minimums)?
-        else:
-            df1_name_max = max([len(key) for key in columns_with_any_diffs] + [16])
-            df2_name_max = max(
-                [len(self._df1_to_df2_name(key)) for key in columns_with_any_diffs] + [19]
-            )
-
-        """ list of (header, condition, width, align)
-                where
-                    header (String) : output header for a column
-                    condition (Bool): true if this header should be displayed
-                    width (Int)     : width of the column
-                    align (Bool)    : true if right-aligned
-        """
-        headers_columns_unequal = [
-            ("df1 Column Name", True, df1_name_max, False),
-            ("df2 Column Name", True, df2_name_max, False),
-            ("df1 Dtype   ", True, 13, False),
-            ("df2 Dtype", True, 13, False),
-            ("# Matches", True, 9, True),
-            ("# Known Diffs", self._known_differences is not None, 13, True),
-            ("# Mismatches", True, 12, True),
-        ]
-        if self.match_rates:
-            headers_columns_unequal.append(("Match Rate %", True, 12, True))
-        headers_columns_unequal_valid = [h for h in headers_columns_unequal if h[1]]
-        padding = 2  # spaces to add to left and right of each column
-
-        if self.show_all_columns:
-            print("\n****** Columns with Equal/Unequal Values ******", file=myfile)
-        else:
-            print("\n****** Columns with Unequal Values ******", file=myfile)
-
-        format_pattern = (" " * padding).join(
-            [
-                ("{:" + (">" if h[3] else "") + str(h[2]) + "}")
-                for h in headers_columns_unequal_valid
-            ]
-        )
-        print(format_pattern.format(*[h[0] for h in headers_columns_unequal_valid]), file=myfile)
-        print(
-            format_pattern.format(*["-" * len(h[0]) for h in headers_columns_unequal_valid]),
-            file=myfile,
-        )
-
-        for column_name, column_values in sorted(
-            self.columns_match_dict.items(), key=lambda i: i[0]
-        ):
-            num_matches = column_values[MatchType.MATCH.value]
-            num_known_diffs = (
-                None
-                if self._known_differences is None
-                else column_values[MatchType.KNOWN_DIFFERENCE.value]
-            )
-            num_mismatches = column_values[MatchType.MISMATCH.value]
-            df2_column = self._df1_to_df2_name(column_name)
-
-            if num_mismatches or num_known_diffs or self.show_all_columns:
-                output_row = [
-                    column_name,
-                    df2_column,
-                    self.df1_dtypes.get(column_name),
-                    self.df2_dtypes.get(column_name),
-                    str(num_matches),
-                    str(num_mismatches),
-                ]
-                if self.match_rates:
-                    match_rate = 100 * (
-                        1
-                        - (column_values[MatchType.MISMATCH.value] + 0.0) / self.intersect_rows_count
-                        + 0.0
-                    )
-                    output_row.append("{:02.5f}".format(match_rate))
-                if num_known_diffs is not None:
-                    output_row.insert(len(output_row) - 1, str(num_known_diffs))
-                print(format_pattern.format(*output_row), file=myfile)
-
-    # noinspection PyUnresolvedReferences
-    def report(self, file=sys.stdout):
-        """Creates a comparison report and prints it to the file specified
-        (stdout by default).
+    def sample_mismatch(self, column, sample_count=10, for_display=False):
+        """Returns a sample sub-dataframe which contains the identifying
+        columns, and df1 and df2 versions of the column.
 
         Parameters
         ----------
-        file : ``file``, optional
-            A filehandle to write the report to. By default, this is
-            sys.stdout, printing the report to stdout. You can also redirect
-            this to an output file, as in the example.
+        column : str
+            The raw column name (i.e. without ``_df1`` appended)
+        sample_count : int, optional
+            The number of sample records to return.  Defaults to 10.
+        for_display : bool, optional
+            Whether this is just going to be used for display (overwrite the
+            column names)
 
-        Examples
-        --------
-        >>> with open('my_report.txt', 'w') as report_file:
-        ...     comparison.report(file=report_file)
+        Returns
+        -------
+        Pandas.DataFrame
+            A sample of the intersection dataframe, containing only the
+            "pertinent" columns, for rows that don't match on the provided
+            column.
         """
-        self._report_header(file)
-        self._report_column_summary(file)
-        self._report_row_summary(file) # One thing to change
-        self._report_column_comparison(file)
-        # self._report_column_comparison_samples(sample_count, file)
-        # self._report_sample_rows("df1", sample_count, file) # Use spark.createDataFrame(df.rdd.takeSample(False, 3)).toPandas()?
-        # self._report_sample_rows("df2", sample_count, file)
+        row_cnt = self.intersect_rows_count
+        col_match = self.intersect_rows[column + "_match"]
+        match_cnt = col_match.sum()
+        sample_count = min(sample_count, row_cnt - match_cnt)
+        sample = self.intersect_rows[~col_match].sample(sample_count)
+        return_cols = self.join_columns + [column + "_df1", column + "_df2"]
+        to_return = sample[return_cols]
+        if for_display:
+            to_return.columns = self.join_columns + [
+                column + " (" + self.df1_name + ")",
+                column + " (" + self.df2_name + ")",
+            ]
+        return to_return
 
-        # self._print_columns_summary(file)
-        # self._print_schema_diff_details(file)
-        # self._print_only_columns("df1", file)
-        # self._print_only_columns("df2", file)
-        # self._print_row_summary(file)
-        # self._print_num_of_rows_with_column_equality(file)
-        # self._print_row_matches_by_column(file)
+    def _df_to_string(self, dataframe):
+        """Function to return a string representation of a dataframe.  Changes between Pandas and
+        Spark.  I can't find a way to convert a Spark dataframe to string, so have to capture
+        stdout."""
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            dataframe.show()
+
+        return output.getvalue()
+
+    def _pre_report(self):
+        """Processing that needs to happen before the report can happen"""
+        self._populate_columns_match_dict()
