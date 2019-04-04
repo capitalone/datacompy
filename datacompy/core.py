@@ -135,25 +135,25 @@ class Compare:
         self._df2 = df2
         self._validate_dataframe("df2")
 
-    def _validate_dataframe(self, index):
+    def _validate_dataframe(self, df1_or_df2):
         """Check that it is a dataframe and has the join columns
 
         Parameters
         ----------
-        index : str
+        df1_or_df2 : str
             The "index" of the dataframe - df1 or df2.
         """
-        dataframe = getattr(self, index)
+        dataframe = getattr(self, df1_or_df2)
         if not isinstance(dataframe, pd.DataFrame):
-            raise TypeError("{} must be a pandas DataFrame".format(index))
+            raise TypeError("{} must be a pandas DataFrame".format(df1_or_df2))
 
         dataframe.columns = [col.lower() for col in dataframe.columns]
         # Check if join_columns are present in the dataframe
         if not set(self.join_columns).issubset(set(dataframe.columns)):
-            raise ValueError("{} must have all columns from join_columns".format(index))
+            raise ValueError("{} must have all columns from join_columns".format(df1_or_df2))
 
         if len(set(dataframe.columns)) < len(dataframe.columns):
-            raise ValueError("{} must have unique column names".format(index))
+            raise ValueError("{} must have unique column names".format(df1_or_df2))
 
         if self.on_index:
             if dataframe.index.duplicated().sum() > 0:
@@ -370,18 +370,17 @@ class Compare:
             Number of matching rows
         """
         match_columns = [
-            col + "_match"
-            for col in self.intersect_columns
-            if col not in self.join_columns]
+            col + "_match" for col in self.intersect_columns if col not in self.join_columns
+        ]
         return self.intersect_rows[match_columns].all(axis=1).sum()
 
-    def df_row_count(self, index)):
+    def df_row_count(self, df1_or_df2):
         """Get the count of rows in a dataframe.  Is overwritten in Spark."""
-        return getattr(self, index).shape[0]
+        return getattr(self, df1_or_df2).shape[0]
 
-    def df_column_cnt(self, index):
+    def df_column_cnt(self, df1_or_df2):
         """Get number of columns in a dataframe.  Should work for Pandas and Spark."""
-        return len(getattr(self, index).columns)
+        return len(getattr(self, df1_or_df2).columns)
 
     @property
     def intersect_rows_count(self):
@@ -425,8 +424,8 @@ class Compare:
             return True
 
     def sample_mismatch(self, column, sample_count=10, for_display=False):
-        """Returns a sample sub-dataframe which contains the identifying
-        columns, and df1 and df2 versions of the column.
+        """Returns a sample sub-dataframe which contains the identifying columns, and df1 and df2
+        versions of the column.
 
         Parameters
         ----------
@@ -435,20 +434,17 @@ class Compare:
         sample_count : int, optional
             The number of sample records to return.  Defaults to 10.
         for_display : bool, optional
-            Whether this is just going to be used for display (overwrite the
-            column names)
+            Whether this is just going to be used for display (overwrite the column names)
 
         Returns
         -------
         Pandas.DataFrame
-            A sample of the intersection dataframe, containing only the
-            "pertinent" columns, for rows that don't match on the provided
-            column.
+            A sample of the intersection dataframe, containing only the "pertinent" columns, for
+            rows that don't match on the provided column.
         """
-        row_cnt = self.intersect_rows_count
         col_match = self.intersect_rows[column + "_match"]
         match_cnt = col_match.sum()
-        sample_count = min(sample_count, row_cnt - match_cnt)
+        sample_count = min(sample_count, self.intersect_rows_count - match_cnt)
         sample = self.intersect_rows[~col_match].sample(sample_count)
         return_cols = self.join_columns + [column + "_df1", column + "_df2"]
         to_return = sample[return_cols]
@@ -458,6 +454,26 @@ class Compare:
                 column + " (" + self.df2_name + ")",
             ]
         return to_return
+
+    def sample_unique_rows(self, df1_or_df2, sample_count=10):
+        """Returns a sample sub-dataframe of rows that are only in one dataframe.  This is replaced
+        in the Spark sub-class.
+
+        Parameters
+        ----------
+        df1_or_df2 : {'df1', 'df2'}
+            Which dataframe you're picking from
+        sample_count : int
+            How many samples to take
+
+        Returns
+        -------
+        pd.DataFrame
+            A sample of unique rows from the dataframe you specified.  The columns are trimmed at
+            10 columns to make them more print-friendly
+        """
+        df_unq_rows = getattr(self, df1_or_df2 + "_unq_rows")
+        return df_unq_rows.sample(min(sample_count, df_unq_rows.shape[0]))[df_unq_rows.columns[:10]]
 
     def _df_to_string(self, dataframe):
         """Function to return a string representation of a dataframe.  Changes between Pandas and
@@ -486,12 +502,12 @@ class Compare:
         >>> with open('my_report.txt', 'w') as report_file:
         ...     comparison.report(file=report_file)
         """
-        self._pre_report()
-        self._report_header(file)
-        self._report_column_summary(file)
+        self._pre_report()  # OK for Spark I think
+        self._report_header(file)  # OK for Spark I think
+        self._report_column_summary(file)  # OK for Spark I think
         self._report_row_summary(file)
-        self._report_column_comparison(file)
-        self._report_column_comparison_samples(sample_count, file)
+        self._report_column_comparison(file)  # OK for Spark I think
+        self._report_column_comparison_samples(sample_count, file)  # OK for Spark I think
         self._report_sample_rows("df1", sample_count, file)
         self._report_sample_rows("df2", sample_count, file)
 
@@ -501,8 +517,8 @@ class Compare:
         df_header = pd.DataFrame(
             {
                 "DataFrame": [self.df1_name, self.df2_name],
-                "Columns": [self.df_column_cnt('df1'), self.df_column_cnt('df2')],
-                "Rows": [self.df_row_count('df1'), self.df_row_count('df2')],
+                "Columns": [self.df_column_cnt("df1"), self.df_column_cnt("df2")],
+                "Rows": [self.df_row_count("df1"), self.df_row_count("df2")],
             }
         )
         print(df_header[["DataFrame", "Columns", "Rows"]].to_string() + "\n", file=target)
@@ -615,10 +631,8 @@ class Compare:
                     "unique_rows.txt",
                     df_name=df_name,
                     df_name_dashes="-" * len(df_name),
-                    sample_rows=(
-                        df_unq_rows.sample(min(sample_count, df_unq_rows.shape[0]))[
-                            df_unq_rows.columns[:10]
-                        ]
+                    sample_rows=self._df_to_string(
+                        self.sample_unique_rows(df1_or_df2, sample_count)
                     ),
                 )
                 + "\n",
