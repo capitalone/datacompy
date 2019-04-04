@@ -5,7 +5,7 @@ Matched on: {match_on}
 Any duplicates on match values: {any_dupes}
 Absolute Tolerance: {abs_tol}
 Relative Tolerance: {rel_tol}
-Number of rows in common: {common_row_count:,}
+Number of rows in common: {cnt_intersect_rows:,}
 Number of rows in {df1_name} but not in {df2_name}: {cnt_df1_unq_rows:,}
 Number of rows in {df2_name} but not in {df1_name}: {cnt_df2_unq_rows:,}
 

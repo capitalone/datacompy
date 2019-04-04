@@ -97,18 +97,18 @@ def test_columns_overlap():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     compare = datacompy.Compare(df1, df2, ["a"])
-    assert compare.df1_unq_columns() == set()
-    assert compare.df2_unq_columns() == set()
-    assert compare.intersect_columns() == set(["a", "b"])
+    assert compare.df1_unq_columns == set()
+    assert compare.df2_unq_columns == set()
+    assert compare.intersect_columns == set(["a", "b"])
 
 
 def test_columns_no_overlap():
     df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
     df2 = pd.DataFrame([{"a": 1, "b": 2, "d": "oh"}, {"a": 2, "b": 3, "d": "ya"}])
     compare = datacompy.Compare(df1, df2, ["a"])
-    assert compare.df1_unq_columns() == set(["c"])
-    assert compare.df2_unq_columns() == set(["d"])
-    assert compare.intersect_columns() == set(["a", "b"])
+    assert compare.df1_unq_columns == set(["c"])
+    assert compare.df2_unq_columns == set(["d"])
+    assert compare.intersect_columns == set(["a", "b"])
 
 
 def test_10k_rows():
@@ -121,7 +121,7 @@ def test_10k_rows():
     assert compare_tol.matches()
     assert len(compare_tol.df1_unq_rows) == 0
     assert len(compare_tol.df2_unq_rows) == 0
-    assert compare_tol.intersect_columns() == set(["a", "b", "c"])
+    assert compare_tol.intersect_columns == set(["a", "b", "c"])
     assert compare_tol.all_columns_match()
     assert compare_tol.all_rows_overlap()
     assert compare_tol.intersect_rows_match()
@@ -130,7 +130,7 @@ def test_10k_rows():
     assert not compare_no_tol.matches()
     assert len(compare_no_tol.df1_unq_rows) == 0
     assert len(compare_no_tol.df2_unq_rows) == 0
-    assert compare_no_tol.intersect_columns() == set(["a", "b", "c"])
+    assert compare_no_tol.intersect_columns == set(["a", "b", "c"])
     assert compare_no_tol.all_columns_match()
     assert compare_no_tol.all_rows_overlap()
     assert not compare_no_tol.intersect_rows_match()

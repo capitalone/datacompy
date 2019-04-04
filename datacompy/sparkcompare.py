@@ -21,6 +21,7 @@ from enum import Enum
 import contextlib
 import io
 import six
+import pyspark
 
 from datacompy import Compare
 
@@ -206,6 +207,29 @@ class SparkCompare(Compare):
             self.df2.cache()
 
         self._merge_dataframes()
+
+    def _validate_dataframe(self, df1_or_df2):
+        """Check that it is a dataframe and has the join columns
+
+        Parameters
+        ----------
+        df1_or_df2 : str
+            The "index" of the dataframe - df1 or df2.
+        """
+        dataframe = getattr(self, df1_or_df2)
+        original_dataframe = getattr(self, "_original_" + df1_or_df2)
+        if not isinstance(dataframe, pyspark.sql.dataframe.DataFrame):
+            raise TypeError("{} must be a PySpark DataFrame".format(df1_or_df2))
+
+        # Check if join_columns are present in the dataframe
+        if not set(self.join_columns).issubset(set(dataframe.columns)):
+            raise ValueError("{} must have all columns from join_columns".format(df1_or_df2))
+
+        if len(set(dataframe.columns)) < len(dataframe.columns):
+            raise ValueError("{} must have unique column names".format(df1_or_df2))
+
+        if dataframe.count() < original_dataframe.count():
+            self._any_dupes = True
 
     def _tuplizer(self, input_list):
         join_columns = []
