@@ -475,6 +475,9 @@ class Compare:
         df_unq_rows = getattr(self, df1_or_df2 + "_unq_rows")
         return df_unq_rows.sample(min(sample_count, df_unq_rows.shape[0]))[df_unq_rows.columns[:10]]
 
+    def cnt_df_unq_rows(self, df1_or_df2):
+        return getattr(self, df1_or_df2 + "_unq_rows").shape[0]
+
     def _df_to_string(self, dataframe):
         """Function to return a string representation of a dataframe.  Changes between Pandas and
         Spark."""
@@ -547,8 +550,8 @@ class Compare:
                 abs_tol=self.abs_tol,
                 rel_tol=self.rel_tol,
                 cnt_intersect_rows=self.intersect_rows_count,
-                cnt_df1_unq_rows=self.df1_unq_rows.shape[0],
-                cnt_df2_unq_rows=self.df2_unq_rows.shape[0],
+                cnt_df1_unq_rows=self.cnt_df_unq_rows("df1"),
+                cnt_df2_unq_rows=self.cnt_df_unq_rows("df2"),
                 cnt_unequal_rows=self.intersect_rows_count - self.matching_rows_count,
                 cnt_matching_rows=self.matching_rows_count,
                 df1_name=self.df1_name,
@@ -623,9 +626,8 @@ class Compare:
         target : file
             The file to print out to
         """
-        df_unq_rows = getattr(self, df1_or_df2 + "_unq_rows")
         df_name = getattr(self, df1_or_df2 + "_name")
-        if df_unq_rows.shape[0] > 0:
+        if self.cnt_df_unq_rows(df1_or_df2) > 0:
             print(
                 utils.render(
                     "unique_rows.txt",

@@ -20,8 +20,9 @@ import sys
 from enum import Enum
 import contextlib
 import io
-import six
+
 import pyspark
+import pandas as pd
 
 from datacompy import Compare
 
@@ -132,8 +133,6 @@ class SparkCompare(Compare):
     show_all_columns : bool, optional
         If true, all columns will be shown in the report including columns
         with a 100% match rate.
-    match_rates : bool, optional
-        If true, match rates by column will be shown in the column summary.
 
     Returns
     -------
@@ -156,23 +155,25 @@ class SparkCompare(Compare):
         rel_tol=0,
         abs_tol=0,
         show_all_columns=False,
-        match_rates=False,
         df1_name="df1",
         df2_name="df2",
     ):
+        self._any_dupes = False  # Later reset based on dedupin'
         self.rel_tol = rel_tol
         self.abs_tol = abs_tol
+        self.df1_name = df1_name
+        self.df2_name = df1_name
+        self.on_index = False
         if self.rel_tol < 0 or self.abs_tol < 0:
             raise ValueError("Please enter positive valued tolerances")
         self.show_all_columns = show_all_columns
-        self.match_rates = match_rates
 
         self._original_df1 = df1
         self._original_df2 = df2
         self.cache_intermediates = cache_intermediates
 
-        self.join_columns = self._tuplizer(join_columns)
-        self._join_column_names = [name[0] for name in self.join_columns]
+        self.join_column_tuples = self._tuplizer(join_columns)
+        self.join_columns = [name[0] for name in self.join_column_tuples]
 
         self._known_differences = known_differences
 
@@ -183,7 +184,7 @@ class SparkCompare(Compare):
         else:
             self.column_mapping = {}
 
-        for mapping in self.join_columns:
+        for mapping in self.join_column_tuples:
             if mapping[1] != mapping[0]:
                 df2 = df2.withColumnRenamed(mapping[1], mapping[0])
 
@@ -197,8 +198,8 @@ class SparkCompare(Compare):
         self.columns_match_dict = {}
 
         # drop the duplicates before actual comparison made.
-        self.df1 = df1.dropDuplicates(self._join_column_names)
-        self.df2 = df2.dropDuplicates(self._join_column_names)
+        self.df1 = df1.dropDuplicates(self.join_columns)
+        self.df2 = df2.dropDuplicates(self.join_columns)
         self.df1_dtypes = dict(self.df1.dtypes)
         self.df2_dtypes = dict(self.df2.dtypes)
 
@@ -232,20 +233,14 @@ class SparkCompare(Compare):
             self._any_dupes = True
 
     def _tuplizer(self, input_list):
-        join_columns = []
-        for val in input_list:
-            if isinstance(val, six.string_types):
-                join_columns.append((val, val))
-            else:
-                join_columns.append(val)
-
-        return join_columns
+        """Return a list of tuples for mapping join columns together"""
+        return [(val, val) if isinstance(val, str) else val for val in input_list]
 
     @property
     def columns_compared(self):
         """set([str]): Get columns to be compared in both dataframes (all columns in both excluding
         the join key(s)"""
-        return self.intersect_columns - set(self._join_column_names)
+        return self.intersect_columns - set(self.join_columns)
 
     def df_row_count(self, df1_or_df2):
         """int: Get the count of rows in a dataframe"""
@@ -278,15 +273,11 @@ class SparkCompare(Compare):
 
     def _get_unq_df1_rows(self):
         """Get the rows only from df1 data frame"""
-        return self.df1.select(self._join_column_names).subtract(
-            self.df2.select(self._join_column_names)
-        )
+        return self.df1.select(self.join_columns).subtract(self.df2.select(self.join_columns))
 
     def _get_unq_df2_rows(self):
         """Get the rows only from df2 data frame"""
-        return self.df2.select(self._join_column_names).subtract(
-            self.df1.select(self._join_column_names)
-        )
+        return self.df2.select(self.join_columns).subtract(self.df1.select(self.join_columns))
 
     def df_unq_rows(self, df1_or_df2):
         """pyspark.sql.DataFrame: Returns rows only in the specified dataframe"""
@@ -296,7 +287,7 @@ class SparkCompare(Compare):
             rows.createOrReplaceTempView("unique_rows")
             getattr(self, df1_or_df2).createOrReplaceTempView("whole_table")
             join_condition = " AND ".join(
-                ["A." + name + "=B." + name for name in self._join_column_names]
+                ["A." + name + "=B." + name for name in self.join_columns]
             )
             sql_query = "select A.* from whole_table as A, unique_rows as B where " + join_condition
             setattr(self, attr, self.spark.sql(sql_query))
@@ -305,6 +296,9 @@ class SparkCompare(Compare):
                 getattr(self, attr).cache().count()
 
         return getattr(self, attr)
+
+    def cnt_df_unq_rows(self, df1_or_df2):
+        return self.df_unq_rows(df1_or_df2).count()
 
     def _generate_select_statement(self, match_data=True):
         """This function is to generate the select statement to be used later in the query.  For
@@ -332,7 +326,7 @@ class SparkCompare(Compare):
                     select_statement.append(self._create_case_statement(name=column_name))
                 else:
                     select_statement.append(self._create_select_statement(name=column_name))
-            elif column_name in self.df1_unq_columns + self._join_column_names:
+            elif column_name in self.df1_unq_columns | set(self.join_columns):
                 select_statement.append("A." + column_name)
             elif column_name in self.df2_unq_columns:
                 if match_data:
@@ -350,17 +344,17 @@ class SparkCompare(Compare):
         select_statement = self._generate_select_statement(False)
         select_query = "SELECT {} FROM full_matched_table A".format(select_statement)
 
-        self._all_matched_rows = self.spark.sql(select_query).orderBy(self._join_column_names)
+        self._all_matched_rows = self.spark.sql(select_query).orderBy(self.join_columns)
         self._all_matched_rows.createOrReplaceTempView("matched_table")
 
         where_cond = " OR ".join(["A." + name + "_match= False" for name in self.columns_compared])
         mismatch_query = """SELECT * FROM matched_table A WHERE {}""".format(where_cond)
-        self._all_rows_mismatched = self.spark.sql(mismatch_query).orderBy(self._join_column_names)
+        self._all_rows_mismatched = self.spark.sql(mismatch_query).orderBy(self.join_columns)
 
     def _get_or_create_joined_dataframe(self):
         if self._joined_dataframe is None:
             join_condition = " AND ".join(
-                ["A." + name + "=B." + name for name in self._join_column_names]
+                ["A." + name + "=B." + name for name in self.join_columns]
             )
             select_statement = self._generate_select_statement(match_data=True)
 
@@ -502,7 +496,7 @@ class SparkCompare(Compare):
                         )
 
         # Null differences can be OR since AND case has been taken care of above
-        null_differences = "(A.{name} IS NULL OR B.{name} IS NULL)"
+        null_differences = "(A.{name} IS NULL OR B.{name} IS NULL)".format(name=name)
 
         case_string = (
             "( CASE WHEN ("
@@ -530,7 +524,7 @@ class SparkCompare(Compare):
         if df1_name in self.column_mapping:
             return self.column_mapping[df1_name]
         else:
-            for name in self.join_columns:
+            for name in self.join_column_tuples:
                 if df1_name == name[0]:
                     return name[1]
             return df1_name
@@ -555,18 +549,20 @@ class SparkCompare(Compare):
             rows that don't match on the provided column.
         """
         if for_display:
-            as_df1 = "AS " + column + " (" + self.df1_name + ")"
-            as_df2 = "AS " + column + " (" + self.df1_name + ")"
+            as_df1 = " AS `" + column + " (" + self.df1_name + ")`"
+            as_df2 = " AS `" + column + " (" + self.df2_name + ")`"
         else:
             as_df1 = as_df2 = ""
-
+        filter_columns = list(self.join_columns) + [column + "_df1", column + "_df2"] + [column]
+        match_dataframe = self._get_or_create_joined_dataframe().select(*filter_columns)
+        match_dataframe.createOrReplaceTempView("matched_df")
         select_sql = (
-            "SELECT {join_columns}, {column}_df1 {as_df1}, {column}_df2 {as_df2}"
-            "FROM match_data WHERE {column} = {MISMATCH}"
+            "SELECT {join_columns}, {column}_df1{as_df1}, {column}_df2{as_df2} "
+            " FROM matched_df WHERE {column} = {MISMATCH}"
         )
-        spark.sql(
+        self.spark.sql(
             select_sql.format(
-                join_columns=self._join_column_names,
+                join_columns=",".join(self.join_columns),
                 column=column,
                 as_df1=as_df1,
                 as_df2=as_df2,
@@ -575,7 +571,7 @@ class SparkCompare(Compare):
         ).createOrReplaceTempView("limited_columns")
 
         sample_sql = "SELECT * FROM limited_columns TABLESAMPLE({sample_count} ROWS)"
-        return spark.sql(sample_sql.format(sample_count=sample_count))
+        return self.spark.sql(sample_sql.format(sample_count=sample_count))
 
     def sample_unique_rows(self, df1_or_df2, sample_count=10):
         """Returns a sample sub-dataframe of rows that are only in one dataframe.
@@ -596,7 +592,9 @@ class SparkCompare(Compare):
         self.df_unq_rows(df1_or_df2).createOrReplaceTempView("unique_rows")
         columns = getattr(self, df1_or_df2).columns[:10]
         sample_sql = "SELECT {columns} FROM unique_rows TABLESAMPLE({sample_count} ROWS)"
-        return spark.sql(sample_sql.format(columns=",".join(columns), sample_count=sample_count))
+        return self.spark.sql(
+            sample_sql.format(columns=",".join(columns), sample_count=sample_count)
+        )
 
     def _df_to_string(self, dataframe):
         """Function to return a string representation of a dataframe.  Changes between Pandas and
