@@ -837,7 +837,6 @@ def comparison_neg_tol_fixture(spark_session, base_tol, compare_both_tol):
     )
 
 
-
 @pytest.fixture(scope="module", name="comparison_kd1")
 def comparison_known_diffs1(spark_session, base_td, compare_source):
     return SparkCompare(
@@ -892,7 +891,11 @@ def comparison_known_diffs2(spark_session, base_td, compare_source):
 @pytest.fixture(scope="module", name="comparison1")
 def comparison1_fixture(spark_session, base_df1, compare_df1):
     return SparkCompare(
-        spark_session, base_df1, compare_df1, join_columns=["acct"], cache_intermediates=CACHE_INTERMEDIATES
+        spark_session,
+        base_df1,
+        compare_df1,
+        join_columns=["acct"],
+        cache_intermediates=CACHE_INTERMEDIATES,
     )
 
 
@@ -1051,11 +1054,12 @@ def test_report_comparison1(comparison1):
     +-----------+-----------+----------+---------+----------------+"""
     assert textwrap.dedent(expected) in report
 
+
 def test_report_identical(compare_identical):
     stdout = six.StringIO()
     compare_identical.report(file=stdout)
     report = stdout.getvalue()
-    print(report) # For debugging tests
+    print(report)  # For debugging tests
 
     assert "Column Summary\n--------------\n" in report
     assert "Number of columns in common: 5" in report
@@ -1183,7 +1187,9 @@ def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark_session
     assert expected_df.union(comparison1.df1_unq_rows).distinct().count() == 1
 
 
-def test_rows_only_compare_returns_a_dataframe_with_rows_only_in_compare(spark_session, comparison1):
+def test_rows_only_compare_returns_a_dataframe_with_rows_only_in_compare(
+    spark_session, comparison1
+):
     expected_df = spark_session.createDataFrame(
         [
             Row(
@@ -1282,7 +1288,9 @@ def test_all_rows_mismatched_only_includes_rows_with_true_mismatches_when_known_
     assert expected_df.unionAll(comparison_kd1._all_rows_mismatched).distinct().count() == 1
 
 
-def test_all_matched_rows_returns_a_dataframe_with_all_rows_in_both_dataframes(spark_session, comparison1):
+def test_all_matched_rows_returns_a_dataframe_with_all_rows_in_both_dataframes(
+    spark_session, comparison1
+):
     expected_df = spark_session.createDataFrame(
         [
             Row(
@@ -1616,4 +1624,9 @@ def test_all_matched_rows_returns_all_rows_in_both_dataframes_for_differently_na
     )
 
     assert compare_name_change_extra_col_type_diff._all_matched_rows.count() == 5
-    assert expected_df.unionAll(compare_name_change_extra_col_type_diff._all_matched_rows).distinct().count() == 5
+    assert (
+        expected_df.unionAll(compare_name_change_extra_col_type_diff._all_matched_rows)
+        .distinct()
+        .count()
+        == 5
+    )

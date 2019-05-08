@@ -408,17 +408,10 @@ class SparkCompare(Compare):
             [
                 column,
                 value[MatchType.MATCH.value],
-                (
-                    value[MatchType.MISMATCH.value]
-                    + value[MatchType.NULL_DIFFERENCE.value]
-                ),
+                (value[MatchType.MISMATCH.value] + value[MatchType.NULL_DIFFERENCE.value]),
                 self.df1_dtypes[column],
                 self.df2_dtypes[column],
-                (
-                    value[MatchType.MISMATCH.value]
-                    + value[MatchType.NULL_DIFFERENCE.value]
-                )
-                == 0,
+                (value[MatchType.MISMATCH.value] + value[MatchType.NULL_DIFFERENCE.value]) == 0,
                 -1,  # TODO: implement this
                 value[MatchType.NULL_DIFFERENCE.value],
                 value[MatchType.KNOWN_DIFFERENCE.value],
