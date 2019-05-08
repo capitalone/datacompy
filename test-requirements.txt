@@ -8,3 +8,5 @@ numpydoc>=0.6.0
 six>=1.10.0
 mock>=2.0.0
 pre-commit>=1.10.4
+pyspark>=2.4.1
+pytest-spark>=0.4.5
