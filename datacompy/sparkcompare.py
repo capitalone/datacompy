@@ -26,6 +26,7 @@ import pandas as pd
 from datacompy import Compare
 
 try:
+    import pyspark
     from pyspark.sql import functions as F
 except ImportError:
     pass  # Let non-Spark people at least enjoy the loveliness of the pandas datacompy functionality
