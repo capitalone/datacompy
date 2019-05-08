@@ -15,23 +15,14 @@
 # limitations under the License.
 
 import datetime
-import textwrap
 import logging
 import re
+import textwrap
 from decimal import Decimal
 
 import pytest
 import six
-from pyspark.sql import SparkSession, Row
-from pyspark.sql.types import (
-    StructType,
-    StructField,
-    DoubleType,
-    StringType,
-    LongType,
-    DateType,
-    DecimalType,
-)
+from pyspark.sql import Row, SparkSession, types
 
 import datacompy
 from datacompy import SparkCompare
@@ -783,10 +774,10 @@ def base_decimal_fixture(spark_session):
 
     return spark_session.createDataFrame(
         mock_data,
-        schema=StructType(
+        schema=types.StructType(
             [
-                StructField("acct", LongType(), True),
-                StructField("dollar_amt", DecimalType(8, 2), True),
+                types.StructField("acct", types.LongType(), True),
+                types.StructField("dollar_amt", types.DecimalType(8, 2), True),
             ]
         ),
     )
@@ -1161,13 +1152,13 @@ def test_column_comparison_outputs_number_of_columns_with_differences_for_custom
 
 def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark_session, comparison1):
     # require schema if contains only 1 row and contain field value as None
-    schema = StructType(
+    schema = types.StructType(
         [
-            StructField("acct", LongType(), True),
-            StructField("date_fld", DateType(), True),
-            StructField("dollar_amt", LongType(), True),
-            StructField("float_fld", DoubleType(), True),
-            StructField("name", StringType(), True),
+            types.StructField("acct", types.LongType(), True),
+            types.StructField("date_fld", types.DateType(), True),
+            types.StructField("dollar_amt", types.LongType(), True),
+            types.StructField("float_fld", types.DoubleType(), True),
+            types.StructField("name", types.StringType(), True),
         ]
     )
     expected_df = spark_session.createDataFrame(

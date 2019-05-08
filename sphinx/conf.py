@@ -32,7 +32,9 @@
 #
 import os
 import sys
+
 import sphinx_rtd_theme
+
 import datacompy
 
 napoleon_use_ivar = True

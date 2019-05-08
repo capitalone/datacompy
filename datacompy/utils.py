@@ -18,10 +18,11 @@
 Utilities for datacompy
 """
 
-import os
 import logging
-import pandas as pd
+import os
+
 import numpy as np
+import pandas as pd
 
 LOG = logging.getLogger(__name__)
 

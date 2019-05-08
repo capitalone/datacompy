@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-from datacompy.core import *
+
 from datacompy._version import __version__
-from datacompy.sparkcompare import SparkCompare, NUMERIC_SPARK_TYPES
+from datacompy.core import *
+from datacompy.sparkcompare import NUMERIC_SPARK_TYPES, SparkCompare

@@ -1,7 +1,8 @@
-from setuptools import setup, find_packages
 import os
 import sys
 from io import open as iopen
+
+from setuptools import find_packages, setup
 
 CURR_DIR = os.path.abspath(os.path.dirname(__file__))
 INSTALL_REQUIRES = ['enum34>=1.1.6;python_version<"3.4"', "pandas>=0.19.0", "numpy>=1.11.3"]

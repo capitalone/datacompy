@@ -16,10 +16,10 @@
 
 from __future__ import print_function
 
-import sys
-from enum import Enum
 import contextlib
 import io
+import sys
+from enum import Enum
 
 import pandas as pd
 

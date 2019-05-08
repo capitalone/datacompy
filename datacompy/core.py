@@ -22,12 +22,13 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
+import logging
 import os
 import sys
-import logging
 from datetime import datetime
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 
 from datacompy import utils
 

@@ -18,18 +18,19 @@
 Testing out datacompy utils
 """
 
-from datetime import datetime
-from decimal import Decimal
-import pytest
-from pytest import raises
-from datacompy import utils
-import pandas as pd
-from pandas.util.testing import assert_series_equal
-import numpy as np
 import logging
 import sys
+from datetime import datetime
+from decimal import Decimal
 
+import numpy as np
+import pandas as pd
+import pytest
 import six
+from pandas.util.testing import assert_series_equal
+from pytest import raises
+
+from datacompy import utils
 
 
 def test_numeric_columns_equal_abs():
