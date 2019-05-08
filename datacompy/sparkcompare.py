@@ -21,7 +21,6 @@ from enum import Enum
 import contextlib
 import io
 
-import pyspark
 import pandas as pd
 
 from datacompy import Compare
