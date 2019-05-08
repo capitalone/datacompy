@@ -328,6 +328,7 @@ class Compare:
                     all((self.df1[column].dtype == self.df2[column].dtype, row_cnt == match_cnt)),
                     max_diff,
                     null_diff,
+                    -1,  # TODO: implement this
                 ]
             )
         self.column_stats = pd.DataFrame(
@@ -342,6 +343,7 @@ class Compare:
                 "all_match",
                 "max_diff",
                 "null_diff",
+                "known_diff_cnt",
             ],
         )
 
@@ -569,6 +571,7 @@ class Compare:
                 "column_comparison.txt",
                 col_cnt_uneq_vals=(self.column_stats.unequal_cnt > 0).sum(),
                 col_cnt_eq_vals=(self.column_stats.unequal_cnt == 0).sum(),
+                col_cnt_known_eq_vals=(self.column_stats.known_diff_cnt > 0).sum(),
                 cnt_uneq_vals=self.column_stats.unequal_cnt.sum(),
             )
             + "\n",

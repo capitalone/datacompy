@@ -3,4 +3,5 @@ Column Comparison
 
 Number of columns compared with some values unequal: {col_cnt_uneq_vals:,}
 Number of columns compared with all values equal: {col_cnt_eq_vals:,}
+Number of columns compared with expected differences: {col_cnt_known_eq_vals:,}
 Total number of values which compare unequal: {cnt_uneq_vals:,}

@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import datetime
+import textwrap
 import logging
 import re
 from decimal import Decimal
@@ -44,15 +45,15 @@ CACHE_INTERMEDIATES = True
 
 # Declare fixtures
 # (if we need to use these in other modules, move to conftest.py)
-@pytest.fixture(scope="module", name="spark")
-def spark_fixture():
-    spark = SparkSession.builder.master("local[2]").appName("pytest").getOrCreate()
-    yield spark
-    spark.stop()
+# @pytest.fixture(scope="module", name="spark")
+# def spark_fixture():
+#     spark = SparkSession.builder.master("local[2]").appName("pytest").getOrCreate()
+#     yield spark
+#     spark.stop()
 
 
 @pytest.fixture(scope="module", name="base_df1")
-def base_df1_fixture(spark):
+def base_df1_fixture(spark_session):
     mock_data = [
         Row(
             acct=10000001234,
@@ -91,11 +92,11 @@ def base_df1_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data)
+    return spark_session.createDataFrame(mock_data)
 
 
 @pytest.fixture(scope="module", name="base_df2")
-def base_df2_fixture(spark):
+def base_df2_fixture(spark_session):
     mock_data = [
         Row(
             acct=10000001234,
@@ -134,11 +135,11 @@ def base_df2_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data)
+    return spark_session.createDataFrame(mock_data)
 
 
 @pytest.fixture(scope="module", name="compare_df1")
-def compare_df1_fixture(spark):
+def compare_df1_fixture(spark_session):
     mock_data2 = [
         Row(
             acct=10000001234,
@@ -184,11 +185,12 @@ def compare_df1_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data2)
+    return spark_session.createDataFrame(mock_data2)
 
 
 @pytest.fixture(scope="module", name="compare_df2")
-def compare_df2_fixture(spark):
+def compare_df2_fixture(spark_session):
+    """This equals the base_df1 fixture"""
     mock_data = [
         Row(
             acct=10000001234,
@@ -227,11 +229,11 @@ def compare_df2_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data)
+    return spark_session.createDataFrame(mock_data)
 
 
 @pytest.fixture(scope="module", name="compare_df3")
-def compare_df3_fixture(spark):
+def compare_df3_fixture(spark_session):
     mock_data2 = [
         Row(
             account_identifier=10000001234,
@@ -275,11 +277,11 @@ def compare_df3_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data2)
+    return spark_session.createDataFrame(mock_data2)
 
 
 @pytest.fixture(scope="module", name="base_tol")
-def base_tol_fixture(spark):
+def base_tol_fixture(spark_session):
     tol_data1 = [
         Row(
             account_identifier=10000001234,
@@ -387,11 +389,11 @@ def base_tol_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(tol_data1)
+    return spark_session.createDataFrame(tol_data1)
 
 
 @pytest.fixture(scope="module", name="compare_abs_tol")
-def compare_tol2_fixture(spark):
+def compare_tol2_fixture(spark_session):
     tol_data2 = [
         Row(
             account_identifier=10000001234,
@@ -499,11 +501,11 @@ def compare_tol2_fixture(spark):
         ),  # both NULL
     ]
 
-    return spark.createDataFrame(tol_data2)
+    return spark_session.createDataFrame(tol_data2)
 
 
 @pytest.fixture(scope="module", name="compare_rel_tol")
-def compare_tol3_fixture(spark):
+def compare_tol3_fixture(spark_session):
     tol_data3 = [
         Row(
             account_identifier=10000001234,
@@ -611,11 +613,11 @@ def compare_tol3_fixture(spark):
         ),  # both NULL  #MATCH
     ]
 
-    return spark.createDataFrame(tol_data3)
+    return spark_session.createDataFrame(tol_data3)
 
 
 @pytest.fixture(scope="module", name="compare_both_tol")
-def compare_tol4_fixture(spark):
+def compare_tol4_fixture(spark_session):
     tol_data4 = [
         Row(
             account_identifier=10000001234,
@@ -723,11 +725,11 @@ def compare_tol4_fixture(spark):
         ),  # both NULL
     ]
 
-    return spark.createDataFrame(tol_data4)
+    return spark_session.createDataFrame(tol_data4)
 
 
 @pytest.fixture(scope="module", name="base_td")
-def base_td_fixture(spark):
+def base_td_fixture(spark_session):
     mock_data = [
         Row(
             acct=10000001234, acct_seq=0, stat_cd="*2", open_dt=datetime.date(2017, 5, 1), cd="0001"
@@ -746,11 +748,11 @@ def base_td_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data)
+    return spark_session.createDataFrame(mock_data)
 
 
 @pytest.fixture(scope="module", name="compare_source")
-def compare_source_fixture(spark):
+def compare_source_fixture(spark_session):
     mock_data = [
         Row(
             ACCOUNT_IDENTIFIER=10000001234, SEQ_NUMBER=0, STATC=None, ACCOUNT_OPEN=2017121, CODE=1.0
@@ -769,17 +771,17 @@ def compare_source_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data)
+    return spark_session.createDataFrame(mock_data)
 
 
 @pytest.fixture(scope="module", name="base_decimal")
-def base_decimal_fixture(spark):
+def base_decimal_fixture(spark_session):
     mock_data = [
         Row(acct=10000001234, dollar_amt=Decimal(123.4)),
         Row(acct=10000001235, dollar_amt=Decimal(0.45)),
     ]
 
-    return spark.createDataFrame(
+    return spark_session.createDataFrame(
         mock_data,
         schema=StructType(
             [
@@ -791,30 +793,30 @@ def base_decimal_fixture(spark):
 
 
 @pytest.fixture(scope="module", name="compare_decimal")
-def compare_decimal_fixture(spark):
+def compare_decimal_fixture(spark_session):
     mock_data = [Row(acct=10000001234, dollar_amt=123.4), Row(acct=10000001235, dollar_amt=0.456)]
 
-    return spark.createDataFrame(mock_data)
+    return spark_session.createDataFrame(mock_data)
 
 
 @pytest.fixture(scope="module", name="comparison_abs_tol")
-def comparison_abs_tol_fixture(base_tol, compare_abs_tol, spark):
+def comparison_abs_tol_fixture(spark_session, base_tol, compare_abs_tol):
     return SparkCompare(
-        spark, base_tol, compare_abs_tol, join_columns=["account_identifier"], abs_tol=0.01
+        spark_session, base_tol, compare_abs_tol, join_columns=["account_identifier"], abs_tol=0.01
     )
 
 
 @pytest.fixture(scope="module", name="comparison_rel_tol")
-def comparison_rel_tol_fixture(base_tol, compare_rel_tol, spark):
+def comparison_rel_tol_fixture(spark_session, base_tol, compare_rel_tol):
     return SparkCompare(
-        spark, base_tol, compare_rel_tol, join_columns=["account_identifier"], rel_tol=0.1
+        spark_session, base_tol, compare_rel_tol, join_columns=["account_identifier"], rel_tol=0.1
     )
 
 
 @pytest.fixture(scope="module", name="comparison_both_tol")
-def comparison_both_tol_fixture(base_tol, compare_both_tol, spark):
+def comparison_both_tol_fixture(spark_session, base_tol, compare_both_tol):
     return SparkCompare(
-        spark,
+        spark_session,
         base_tol,
         compare_both_tol,
         join_columns=["account_identifier"],
@@ -824,9 +826,9 @@ def comparison_both_tol_fixture(base_tol, compare_both_tol, spark):
 
 
 @pytest.fixture(scope="module", name="comparison_neg_tol")
-def comparison_neg_tol_fixture(base_tol, compare_both_tol, spark):
+def comparison_neg_tol_fixture(spark_session, base_tol, compare_both_tol):
     return SparkCompare(
-        spark,
+        spark_session,
         base_tol,
         compare_both_tol,
         join_columns=["account_identifier"],
@@ -835,22 +837,11 @@ def comparison_neg_tol_fixture(base_tol, compare_both_tol, spark):
     )
 
 
-@pytest.fixture(scope="module", name="show_all_columns_and_match_rate")
-def show_all_columns_and_match_rate_fixture(base_tol, compare_both_tol, spark):
-    return SparkCompare(
-        spark,
-        base_tol,
-        compare_both_tol,
-        join_columns=["account_identifier"],
-        show_all_columns=True,
-        match_rates=True,
-    )
-
 
 @pytest.fixture(scope="module", name="comparison_kd1")
-def comparison_known_diffs1(base_td, compare_source, spark):
+def comparison_known_diffs1(spark_session, base_td, compare_source):
     return SparkCompare(
-        spark,
+        spark_session,
         base_td,
         compare_source,
         join_columns=[("acct", "ACCOUNT_IDENTIFIER"), ("acct_seq", "SEQ_NUMBER")],
@@ -876,9 +867,9 @@ def comparison_known_diffs1(base_td, compare_source, spark):
 
 
 @pytest.fixture(scope="module", name="comparison_kd2")
-def comparison_known_diffs2(base_td, compare_source, spark):
+def comparison_known_diffs2(spark_session, base_td, compare_source):
     return SparkCompare(
-        spark,
+        spark_session,
         base_td,
         compare_source,
         join_columns=[("acct", "ACCOUNT_IDENTIFIER"), ("acct_seq", "SEQ_NUMBER")],
@@ -899,21 +890,21 @@ def comparison_known_diffs2(base_td, compare_source, spark):
 
 
 @pytest.fixture(scope="module", name="comparison1")
-def comparison1_fixture(base_df1, compare_df1, spark):
+def comparison1_fixture(spark_session, base_df1, compare_df1):
     return SparkCompare(
-        spark, base_df1, compare_df1, join_columns=["acct"], cache_intermediates=CACHE_INTERMEDIATES
+        spark_session, base_df1, compare_df1, join_columns=["acct"], cache_intermediates=CACHE_INTERMEDIATES
     )
 
 
-@pytest.fixture(scope="module", name="comparison2")
-def comparison2_fixture(base_df1, compare_df2, spark):
-    return SparkCompare(spark, base_df1, compare_df2, join_columns=["acct"])
+@pytest.fixture(scope="module", name="compare_identical")
+def compare_identical_fixture(spark_session, base_df1, compare_df2):
+    return SparkCompare(spark_session, base_df1, compare_df2, join_columns=["acct"])
 
 
-@pytest.fixture(scope="module", name="comparison3")
-def comparison3_fixture(base_df1, compare_df3, spark):
+@pytest.fixture(scope="module", name="compare_name_change_extra_col_type_diff")
+def compare_name_change_extra_col_type_diff_fixture(spark_session, base_df1, compare_df3):
     return SparkCompare(
-        spark,
+        spark_session,
         base_df1,
         compare_df3,
         join_columns=[("acct", "account_identifier")],
@@ -927,9 +918,9 @@ def comparison3_fixture(base_df1, compare_df3, spark):
 
 
 @pytest.fixture(scope="module", name="comparison4")
-def comparison4_fixture(base_df2, compare_df1, spark):
+def comparison4_fixture(spark_session, base_df2, compare_df1):
     return SparkCompare(
-        spark,
+        spark_session,
         base_df2,
         compare_df1,
         join_columns=["acct"],
@@ -938,50 +929,47 @@ def comparison4_fixture(base_df2, compare_df1, spark):
 
 
 @pytest.fixture(scope="module", name="comparison_decimal")
-def comparison_decimal_fixture(base_decimal, compare_decimal, spark):
-    return SparkCompare(spark, base_decimal, compare_decimal, join_columns=["acct"])
+def comparison_decimal_fixture(spark_session, base_decimal, compare_decimal):
+    return SparkCompare(spark_session, base_decimal, compare_decimal, join_columns=["acct"])
 
 
 def test_absolute_tolerances(comparison_abs_tol):
     stdout = six.StringIO()
-
     comparison_abs_tol.report(file=stdout)
-    stdout.seek(0)
-    assert "****** Row Comparison ******" in stdout.getvalue()
-    assert "Number of rows with some columns unequal: 6" in stdout.getvalue()
-    assert "Number of rows with all columns equal: 7" in stdout.getvalue()
-    assert "Number of columns compared with some values unequal: 1" in stdout.getvalue()
-    assert "Number of columns compared with all values equal: 4" in stdout.getvalue()
+    report = stdout.getvalue()
+    print(report)
+    assert "Number of rows with some compared columns unequal: 6" in report
+    assert "Number of rows with all compared columns equal: 7" in report
+    assert "Number of columns compared with some values unequal: 1" in report
+    assert "Number of columns compared with all values equal: 4" in report
 
 
 def test_relative_tolerances(comparison_rel_tol):
     stdout = six.StringIO()
-
     comparison_rel_tol.report(file=stdout)
-    stdout.seek(0)
-    assert "****** Row Comparison ******" in stdout.getvalue()
-    assert "Number of rows with some columns unequal: 6" in stdout.getvalue()
-    assert "Number of rows with all columns equal: 7" in stdout.getvalue()
-    assert "Number of columns compared with some values unequal: 1" in stdout.getvalue()
-    assert "Number of columns compared with all values equal: 4" in stdout.getvalue()
+    report = stdout.getvalue()
+    print(report)
+    assert "Number of rows with some compared columns unequal: 6" in report
+    assert "Number of rows with all compared columns equal: 7" in report
+    assert "Number of columns compared with some values unequal: 1" in report
+    assert "Number of columns compared with all values equal: 4" in report
 
 
 def test_both_tolerances(comparison_both_tol):
     stdout = six.StringIO()
-
     comparison_both_tol.report(file=stdout)
-    stdout.seek(0)
-    assert "****** Row Comparison ******" in stdout.getvalue()
-    assert "Number of rows with some columns unequal: 6" in stdout.getvalue()
-    assert "Number of rows with all columns equal: 7" in stdout.getvalue()
-    assert "Number of columns compared with some values unequal: 1" in stdout.getvalue()
-    assert "Number of columns compared with all values equal: 4" in stdout.getvalue()
+    report = stdout.getvalue()
+    print(report)
+    assert "Number of rows with some compared columns unequal: 6" in report
+    assert "Number of rows with all compared columns equal: 7" in report
+    assert "Number of columns compared with some values unequal: 1" in report
+    assert "Number of columns compared with all values equal: 4" in report
 
 
-def test_negative_tolerances(spark, base_tol, compare_both_tol):
+def test_negative_tolerances(spark_session, base_tol, compare_both_tol):
     with pytest.raises(ValueError, message="Please enter positive valued tolerances"):
         comp = SparkCompare(
-            spark,
+            spark_session,
             base_tol,
             compare_both_tol,
             join_columns=["account_identifier"],
@@ -989,35 +977,6 @@ def test_negative_tolerances(spark, base_tol, compare_both_tol):
             abs_tol=0.01,
         )
         comp.report()
-        pass
-
-
-def test_show_all_columns_and_match_rate(show_all_columns_and_match_rate):
-    stdout = six.StringIO()
-
-    show_all_columns_and_match_rate.report(file=stdout)
-
-    assert "****** Columns with Equal/Unequal Values ******" in stdout.getvalue()
-    assert (
-        "accnt_purge       accnt_purge          boolean        boolean               13             0     100.00000"
-        in stdout.getvalue()
-    )
-    assert (
-        "date_field        date_field           date           date                  13             0     100.00000"
-        in stdout.getvalue()
-    )
-    assert (
-        "dollar_amount     dollar_amount        double         double                 3            10      23.07692"
-        in stdout.getvalue()
-    )
-    assert (
-        "float_field       float_field          double         double                13             0     100.00000"
-        in stdout.getvalue()
-    )
-    assert (
-        "name              name                 string         string                13             0     100.00000"
-        in stdout.getvalue()
-    )
 
 
 def test_decimal_comparisons():
@@ -1036,260 +995,167 @@ def test_decimals_and_doubles_are_comparable():
     assert _is_comparable("double", "decimal(10, 2)")
 
 
-def test_report_outputs_the_column_summary(comparison1):
+def test_report_comparison1(comparison1):
     stdout = six.StringIO()
 
     comparison1.report(file=stdout)
+    report = stdout.getvalue()
+    print(report)
 
-    assert "****** Column Summary ******" in stdout.getvalue()
-    assert "Number of columns in common with matching schemas: 3" in stdout.getvalue()
-    assert "Number of columns in common with schema differences: 1" in stdout.getvalue()
-    assert "Number of columns in df1 but not df2: 1" in stdout.getvalue()
-    assert "Number of columns in df2 but not df1: 1" in stdout.getvalue()
+    # Report outputs the column summary
+    assert "Column Summary\n--------------\n" in report
+    assert "Number of columns in common: 4" in report
+    assert "Number of columns in df1 but not in df2: 1" in report
+    assert "Number of columns in df2 but not in df1: 1" in report
 
+    # Check on unequal column renderings
+    assert "Columns with Unequal Values or Types\n------------------------------------" in report
+    # Header
+    assert re.search(r"Column\s+df1 dtype\s+df2 dtype\s+# Unequal\s+Max Diff\s+# Null Diff", report)
+    # Lines
+    assert re.search(r"dollar_amt\s+bigint\s+double\s+2\s+-1\s+0", report)
+    assert re.search(r"float_fld\s+double\s+double\s+3\s+-1\s+2", report)
+    assert re.search(r"name\s+string\s+string\s+1\s+-1\s+0", report)
 
-def test_report_outputs_the_column_summary_for_identical_schemas(comparison2):
+    # test_report_outputs_the_row_summary
+    assert "Row Summary\n-----------\n" in report
+    assert "Number of rows in common: 4" in report
+    assert "Number of rows in df1 but not in df2: 1" in report
+    assert "Number of rows in df2 but not in df1: 1" in report
+
+    # test_report_outputs_the_row_equality_comparison
+    assert "Number of rows with some compared columns unequal: 3" in report
+    assert "Number of rows with all compared columns equal: 1" in report
+
+    # test column comparison outputs number of columns with differences
+    assert "Column Comparison\n-----------------" in report
+    assert "Number of columns compared with some values unequal: 3" in report
+    assert "Number of columns compared with all values equal: 0" in report
+    assert "Total number of values which compare unequal: 6" in report
+
+    assert "Sample Rows Only in df1 (First 10 Columns)" in report
+    expected = """\
+    +-----------+----------+----------+---------+-------------+
+    |       acct|  date_fld|dollar_amt|float_fld|         name|
+    +-----------+----------+----------+---------+-------------+
+    |10000001239|2017-01-01|         1|     null|Lucille Bluth|
+    +-----------+----------+----------+---------+-------------+"""
+    assert textwrap.dedent(expected) in report
+
+    assert "Sample Rows Only in df2 (First 10 Columns)" in report
+    expected = """\
+    +-----------+-----------+----------+---------+----------------+
+    |accnt_purge|       acct|dollar_amt|float_fld|            name|
+    +-----------+-----------+----------+---------+----------------+
+    |       true|10000001238|      1.05|    111.0|Loose Seal Bluth|
+    +-----------+-----------+----------+---------+----------------+"""
+    assert textwrap.dedent(expected) in report
+
+def test_report_identical(compare_identical):
     stdout = six.StringIO()
+    compare_identical.report(file=stdout)
+    report = stdout.getvalue()
+    print(report) # For debugging tests
 
-    comparison2.report(file=stdout)
+    assert "Column Summary\n--------------\n" in report
+    assert "Number of columns in common: 5" in report
+    assert "Number of columns in df1 but not in df2: 0" in report
+    assert "Number of columns in df2 but not in df1: 0" in report
 
-    assert "****** Column Summary ******" in stdout.getvalue()
-    assert "Number of columns in common with matching schemas: 5" in stdout.getvalue()
-    assert "Number of columns in common with schema differences: 0" in stdout.getvalue()
-    assert "Number of columns in df1 but not df2: 0" in stdout.getvalue()
-    assert "Number of columns in df2 but not df1: 0" in stdout.getvalue()
+    assert "Column Comparison\n-----------------" in report
+    assert "Number of columns compared with some values unequal: 0" in report
+    assert "Number of columns compared with all values equal: 4" in report
+    assert "Total number of values which compare unequal: 0" in report
+
+    assert "Number of rows with some compared columns unequal: 0" in report
+    assert "Number of rows with all compared columns equal: 5" in report
 
 
-def test_report_outputs_the_column_summary_for_differently_named_columns(comparison3):
+def test_report_compare_name_change_extra_col_type_diff(compare_name_change_extra_col_type_diff):
     stdout = six.StringIO()
+    compare_name_change_extra_col_type_diff.report(file=stdout)
+    report = stdout.getvalue()
+    print(report)
 
-    comparison3.report(file=stdout)
+    assert "Column Summary\n--------------\n" in report
+    assert "Number of columns in common: 5" in report
+    assert "Number of columns in df1 but not in df2: 0" in report
+    assert "Number of columns in df2 but not in df1: 1" in report
 
-    assert "****** Column Summary ******" in stdout.getvalue()
-    assert "Number of columns in common with matching schemas: 4" in stdout.getvalue()
-    assert "Number of columns in common with schema differences: 1" in stdout.getvalue()
-    assert "Number of columns in df1 but not df2: 0" in stdout.getvalue()
-    assert "Number of columns in df2 but not df1: 1" in stdout.getvalue()
+    assert "Row Summary\n-----------\n" in report
+    assert "Number of rows in common: 5" in report
+    assert "Number of rows in df1 but not in df2: 0" in report
+    assert "Number of rows in df2 but not in df1: 0" in report
 
+    assert "Columns with Unequal Values or Types\n------------------------------------" in report
+    # Header
+    assert re.search(r"Column\s+df1 dtype\s+df2 dtype\s+# Unequal\s+Max Diff\s+# Null Diff", report)
+    # Lines
+    assert re.search(r"dollar_amt\s+bigint\s+double\s+3\s+-1\s+0", report)
 
-def test_report_outputs_the_row_summary(comparison1):
-    stdout = six.StringIO()
+    assert "Column Comparison\n-----------------" in report
+    assert "Number of columns compared with some values unequal: 3" in report
+    assert "Number of columns compared with all values equal: 1" in report
 
-    comparison1.report(file=stdout)
+    # Check out sample mismatches
+    expected_header = """\
+    +-----------+----------------+----------------+
+    |       acct|dollar_amt (df1)|dollar_amt (df2)|
+    +-----------+----------------+----------------+"""
+    assert textwrap.dedent(expected_header) in report
+    assert "|10000001235|               0|            0.45|" in report
+    assert "|10000001234|             123|           123.4|" in report
+    assert "|10000001239|               1|            1.05|" in report
 
-    assert "****** Row Summary ******" in stdout.getvalue()
-    assert "Number of rows in common: 4" in stdout.getvalue()
-    assert "Number of rows in df1 but not df2: 1" in stdout.getvalue()
-    assert "Number of rows in df2 but not df1: 1" in stdout.getvalue()
-    assert "Number of duplicate rows found in df1: 0" in stdout.getvalue()
-    assert "Number of duplicate rows found in df2: 1" in stdout.getvalue()
-
-
-def test_report_outputs_the_row_equality_comparison(comparison1):
-    stdout = six.StringIO()
-
-    comparison1.report(file=stdout)
-
-    assert "****** Row Comparison ******" in stdout.getvalue()
-    assert "Number of rows with some columns unequal: 3" in stdout.getvalue()
-    assert "Number of rows with all columns equal: 1" in stdout.getvalue()
-
-
-def test_report_outputs_the_row_summary_for_differently_named_columns(comparison3):
-    stdout = six.StringIO()
-
-    comparison3.report(file=stdout)
-
-    assert "****** Row Summary ******" in stdout.getvalue()
-    assert "Number of rows in common: 5" in stdout.getvalue()
-    assert "Number of rows in df1 but not df2: 0" in stdout.getvalue()
-    assert "Number of rows in df2 but not df1: 0" in stdout.getvalue()
-    assert "Number of duplicate rows found in df1: 0" in stdout.getvalue()
-    assert "Number of duplicate rows found in df2: 0" in stdout.getvalue()
-
-
-def test_report_outputs_the_row_equality_comparison_for_differently_named_columns(comparison3):
-    stdout = six.StringIO()
-
-    comparison3.report(file=stdout)
-
-    assert "****** Row Comparison ******" in stdout.getvalue()
-    assert "Number of rows with some columns unequal: 3" in stdout.getvalue()
-    assert "Number of rows with all columns equal: 2" in stdout.getvalue()
-
-
-def test_report_outputs_column_detail_for_columns_in_only_one_dataframe(comparison1):
-    stdout = six.StringIO()
-
-    comparison1.report(file=stdout)
-    comparison1.report()
-    assert "****** Columns In df1 Only ******" in stdout.getvalue()
-    r2 = r"""Column\s*Name \s* Dtype \n -+ \s+ -+ \ndate_fld \s+ date"""
-    assert re.search(r2, str(stdout.getvalue()), re.X) is not None
-
-
-def test_report_outputs_column_detail_for_columns_in_only_compare_dataframe(comparison1):
-    stdout = six.StringIO()
-
-    comparison1.report(file=stdout)
-    comparison1.report()
-    print(stdout.getvalue())
-    assert "****** Columns In df2 Only ******" in stdout.getvalue()
-    r2 = r"""Column\s*Name \s* Dtype \n -+ \s+ -+ \n accnt_purge \s+  boolean"""
-    assert re.search(r2, str(stdout.getvalue()), re.X) is not None
-
-
-def test_report_outputs_schema_difference_details(comparison1):
-    stdout = six.StringIO()
-
-    comparison1.report(file=stdout)
-
-    assert "****** Schema Differences ******" in stdout.getvalue()
-    assert re.search(
-        r"""df1\sColumn\sName \s+ df2\sColumn\sName \s+ df1\sDtype \s+ df2\sDtype \n
-            -+ \s+ -+ \s+ -+ \s+ -+ \n
-            dollar_amt \s+ dollar_amt \s+ bigint \s+ double""",
-        stdout.getvalue(),
-        re.X,
-    )
-
-
-def test_report_outputs_schema_difference_details_for_differently_named_columns(comparison3):
-    stdout = six.StringIO()
-
-    comparison3.report(file=stdout)
-
-    assert "****** Schema Differences ******" in stdout.getvalue()
-    assert re.search(
-        r"""df1\sColumn\sName \s+ df2\sColumn\sName \s+ df1\sDtype \s+ df2\sDtype \n
-            -+ \s+ -+ \s+ -+ \s+ -+ \n
-            dollar_amt \s+ dollar_amount \s+ bigint \s+ double""",
-        stdout.getvalue(),
-        re.X,
-    )
-
-
-def test_column_comparison_outputs_number_of_columns_with_differences(comparison1):
-    stdout = six.StringIO()
-
-    comparison1.report(file=stdout)
-
-    assert "****** Column Comparison ******" in stdout.getvalue()
-    assert "Number of columns compared with some values unequal: 3" in stdout.getvalue()
-    assert "Number of columns compared with all values equal: 0" in stdout.getvalue()
-
-
-def test_column_comparison_outputs_all_columns_equal_for_identical_dataframes(comparison2):
-    stdout = six.StringIO()
-
-    comparison2.report(file=stdout)
-
-    assert "****** Column Comparison ******" in stdout.getvalue()
-    assert "Number of columns compared with some values unequal: 0" in stdout.getvalue()
-    assert "Number of columns compared with all values equal: 4" in stdout.getvalue()
-
-
-def test_column_comparison_outputs_number_of_columns_with_differences_for_differently_named_columns(
-    comparison3
-):
-    stdout = six.StringIO()
-
-    comparison3.report(file=stdout)
-
-    assert "****** Column Comparison ******" in stdout.getvalue()
-    assert "Number of columns compared with some values unequal: 3" in stdout.getvalue()
-    assert "Number of columns compared with all values equal: 1" in stdout.getvalue()
+    expected = """\
+    +-----------+--------------+--------------------+
+    |       acct|    name (df1)|          name (df2)|
+    +-----------+--------------+--------------------+
+    |10000001234|George Maharis|George Michael Bluth|
+    +-----------+--------------+--------------------+"""
+    assert textwrap.dedent(expected) in report
 
 
 def test_column_comparison_outputs_number_of_columns_with_differences_for_known_diffs(
     comparison_kd1
 ):
     stdout = six.StringIO()
-
     comparison_kd1.report(file=stdout)
+    report = stdout.getvalue()
 
-    assert "****** Column Comparison ******" in stdout.getvalue()
-    assert (
-        "Number of columns compared with unexpected differences in some values: 1"
-        in stdout.getvalue()
-    )
-    assert (
-        "Number of columns compared with all values equal but known differences found: 2"
-        in stdout.getvalue()
-    )
-    assert "Number of columns compared with all values completely equal: 0" in stdout.getvalue()
+    assert "Column Comparison\n-----------------" in report
+    assert "Number of columns compared with some values unequal: 1" in report
+    assert "Number of columns compared with all values equal: 2" in report
+    assert "Number of columns compared with expected differences: 3" in report
+
+    assert "Columns with Unequal Values or Types\n------------------------------------" in report
+    # Header
+    assert re.search(r"Column\s+df1 dtype\s+df2 dtype\s+# Unequal\s+Max Diff\s+# Null Diff", report)
+    # Lines
+    assert re.search(r"stat_cd\s+string\s+string\s+1\s+-1\s+0", report)
 
 
 def test_column_comparison_outputs_number_of_columns_with_differences_for_custom_known_diffs(
     comparison_kd2
 ):
     stdout = six.StringIO()
-
     comparison_kd2.report(file=stdout)
+    report = stdout.getvalue()
 
-    assert "****** Column Comparison ******" in stdout.getvalue()
-    assert (
-        "Number of columns compared with unexpected differences in some values: 2"
-        in stdout.getvalue()
-    )
-    assert (
-        "Number of columns compared with all values equal but known differences found: 1"
-        in stdout.getvalue()
-    )
-    assert "Number of columns compared with all values completely equal: 0" in stdout.getvalue()
+    assert "Column Comparison\n-----------------" in report
+    assert "Number of columns compared with some values unequal: 2" in report
+    assert "Number of columns compared with all values equal: 1" in report
+    assert "Number of columns compared with expected differences: 2" in report
 
-
-def test_columns_with_unequal_values_show_mismatch_counts(comparison1):
-    stdout = six.StringIO()
-
-    comparison1.report(file=stdout)
-
-    assert "****** Columns with Unequal Values ******" in stdout.getvalue()
-    assert re.search(
-        r"""df1\s*Column\s*Name \s+ df2\s*Column\s*Name \s+ df1\s*Dtype \s+ df2\sDtype \s*
-            \#\sMatches \s* \#\sMismatches \n
-            -+ \s+ -+ \s+ -+ \s+ -+ \s+ -+ \s+ -+""",
-        stdout.getvalue(),
-        re.X,
-    )
-    assert re.search(
-        r"""dollar_amt \s+ dollar_amt \s+ bigint \s+ double \s+ 2 \s+ 2""", stdout.getvalue(), re.X
-    )
-    assert re.search(
-        r"""float_fld \s+ float_fld \s+ double \s+ double \s+ 1 \s+ 3""", stdout.getvalue(), re.X
-    )
-    assert re.search(
-        r"""name \s+ name \s+ string \s+ string \s+ 3 \s+ 1""", stdout.getvalue(), re.X
-    )
+    assert "Columns with Unequal Values or Types\n------------------------------------" in report
+    # Header
+    assert re.search(r"Column\s+df1 dtype\s+df2 dtype\s+# Unequal\s+Max Diff\s+# Null Diff", report)
+    # Lines
+    assert re.search(r"open_dt\s+date\s+bigint\s+5\s+-1\s+0", report)
+    assert re.search(r"stat_cd\s+string\s+string\s+1\s+-1\s+0", report)
 
 
-def test_columns_with_different_names_with_unequal_values_show_mismatch_counts(comparison3):
-    stdout = six.StringIO()
-
-    comparison3.report(file=stdout)
-
-    assert "****** Columns with Unequal Values ******" in stdout.getvalue()
-    assert re.search(
-        r"""df1\s*Column\s*Name \s+ df2\s*Column\s*Name \s+ df1\s*Dtype \s+ df2\sDtype \s*
-            \#\sMatches \s* \#\sMismatches \n
-            -+ \s+ -+ \s+ -+ \s+ -+ \s+ -+ \s+ -+""",
-        stdout.getvalue(),
-        re.X,
-    )
-    assert re.search(
-        r"""dollar_amt \s+ dollar_amount \s+ bigint \s+ double \s+ 2 \s+ 3""",
-        stdout.getvalue(),
-        re.X,
-    )
-    assert re.search(
-        r"""float_fld \s+ float_field \s+ double \s+ double \s+ 4 \s+ 1""", stdout.getvalue(), re.X
-    )
-    assert re.search(
-        r"""name \s+ name \s+ string \s+ string \s+ 4 \s+ 1""", stdout.getvalue(), re.X
-    )
-
-
-def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark, comparison1):
+def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark_session, comparison1):
     # require schema if contains only 1 row and contain field value as None
     schema = StructType(
         [
@@ -1300,7 +1166,7 @@ def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark, compar
             StructField("name", StringType(), True),
         ]
     )
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001239,
@@ -1313,12 +1179,12 @@ def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark, compar
         schema,
     )
 
-    assert comparison1.rows_only_df1.count() == 1
-    assert expected_df.union(comparison1.rows_only_df1).distinct().count() == 1
+    assert comparison1.df1_unq_rows.count() == 1
+    assert expected_df.union(comparison1.df1_unq_rows).distinct().count() == 1
 
 
-def test_rows_only_compare_returns_a_dataframe_with_rows_only_in_compare(spark, comparison1):
-    expected_df = spark.createDataFrame(
+def test_rows_only_compare_returns_a_dataframe_with_rows_only_in_compare(spark_session, comparison1):
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001238,
@@ -1330,14 +1196,14 @@ def test_rows_only_compare_returns_a_dataframe_with_rows_only_in_compare(spark, 
         ]
     )
 
-    assert comparison1.rows_only_df2.count() == 1
-    assert expected_df.union(comparison1.rows_only_df2).distinct().count() == 1
+    assert comparison1.df2_unq_rows.count() == 1
+    assert expected_df.union(comparison1.df2_unq_rows).distinct().count() == 1
 
 
-def test_rows_both_mismatch_returns_a_dataframe_with_rows_where_variables_mismatched(
-    spark, comparison1
+def test_all_rows_mismatched_returns_a_dataframe_with_rows_where_variables_mismatched(
+    spark_session, comparison1
 ):
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001234,
@@ -1384,14 +1250,14 @@ def test_rows_both_mismatch_returns_a_dataframe_with_rows_where_variables_mismat
         ]
     )
 
-    assert comparison1.rows_both_mismatch.count() == 3
-    assert expected_df.unionAll(comparison1.rows_both_mismatch).distinct().count() == 3
+    assert comparison1._all_rows_mismatched.count() == 3
+    assert expected_df.unionAll(comparison1._all_rows_mismatched).distinct().count() == 3
 
 
-def test_rows_both_mismatch_only_includes_rows_with_true_mismatches_when_known_diffs_are_present(
-    spark, comparison_kd1
+def test_all_rows_mismatched_only_includes_rows_with_true_mismatches_when_known_diffs_are_present(
+    spark_session, comparison_kd1
 ):
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001237,
@@ -1412,12 +1278,12 @@ def test_rows_both_mismatch_only_includes_rows_with_true_mismatches_when_known_d
         ]
     )
 
-    assert comparison_kd1.rows_both_mismatch.count() == 1
-    assert expected_df.unionAll(comparison_kd1.rows_both_mismatch).distinct().count() == 1
+    assert comparison_kd1._all_rows_mismatched.count() == 1
+    assert expected_df.unionAll(comparison_kd1._all_rows_mismatched).distinct().count() == 1
 
 
-def test_rows_both_all_returns_a_dataframe_with_all_rows_in_both_dataframes(spark, comparison1):
-    expected_df = spark.createDataFrame(
+def test_all_matched_rows_returns_a_dataframe_with_all_rows_in_both_dataframes(spark_session, comparison1):
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001234,
@@ -1478,14 +1344,14 @@ def test_rows_both_all_returns_a_dataframe_with_all_rows_in_both_dataframes(spar
         ]
     )
 
-    assert comparison1.rows_both_all.count() == 4
-    assert expected_df.unionAll(comparison1.rows_both_all).distinct().count() == 4
+    assert comparison1._all_matched_rows.count() == 4
+    assert expected_df.unionAll(comparison1._all_matched_rows).distinct().count() == 4
 
 
-def test_rows_both_all_shows_known_diffs_flag_and_known_diffs_count_as_matches(
-    spark, comparison_kd1
+def test_all_matched_rows_shows_known_diffs_flag_and_known_diffs_count_as_matches(
+    spark_session, comparison_kd1
 ):
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001234,
@@ -1570,14 +1436,14 @@ def test_rows_both_all_shows_known_diffs_flag_and_known_diffs_count_as_matches(
         ]
     )
 
-    assert comparison_kd1.rows_both_all.count() == 5
-    assert expected_df.unionAll(comparison_kd1.rows_both_all).distinct().count() == 5
+    assert comparison_kd1._all_matched_rows.count() == 5
+    assert expected_df.unionAll(comparison_kd1._all_matched_rows).distinct().count() == 5
 
 
-def test_rows_both_all_returns_a_dataframe_with_all_rows_in_identical_dataframes(
-    spark, comparison2
+def test_all_matched_rows_returns_a_dataframe_with_all_rows_in_identical_dataframes(
+    spark_session, compare_identical
 ):
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001234,
@@ -1657,14 +1523,14 @@ def test_rows_both_all_returns_a_dataframe_with_all_rows_in_identical_dataframes
         ]
     )
 
-    assert comparison2.rows_both_all.count() == 5
-    assert expected_df.unionAll(comparison2.rows_both_all).distinct().count() == 5
+    assert compare_identical._all_matched_rows.count() == 5
+    assert expected_df.unionAll(compare_identical._all_matched_rows).distinct().count() == 5
 
 
-def test_rows_both_all_returns_all_rows_in_both_dataframes_for_differently_named_columns(
-    spark, comparison3
+def test_all_matched_rows_returns_all_rows_in_both_dataframes_for_differently_named_columns(
+    spark_session, compare_name_change_extra_col_type_diff
 ):
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001234,
@@ -1749,245 +1615,5 @@ def test_rows_both_all_returns_all_rows_in_both_dataframes_for_differently_named
         ]
     )
 
-    assert comparison3.rows_both_all.count() == 5
-    assert expected_df.unionAll(comparison3.rows_both_all).distinct().count() == 5
-
-
-def test_columns_with_unequal_values_text_is_aligned(comparison4):
-    stdout = six.StringIO()
-
-    comparison4.report(file=stdout)
-    stdout.seek(0)  # Back up to the beginning of the stream
-
-    text_alignment_validator(
-        report=stdout,
-        section_start="****** Columns with Unequal Values ******",
-        section_end="\n",
-        left_indices=(1, 2, 3, 4),
-        right_indices=(5, 6),
-        column_regexes=[
-            r"""(df1\sColumn\sName) \s+ (df2\sColumn\sName) \s+ (df1\sDtype) \s+ (df2\sDtype) \s+
-                (\#\sMatches) \s+ (\#\sMismatches)""",
-            r"""(-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+)""",
-            r"""(dollar_amt) \s+ (dollar_amt) \s+ (bigint) \s+ (double) \s+ (2) \s+ (2)""",
-            r"""(float_fld) \s+ (float_fld) \s+ (double) \s+ (double) \s+ (1) \s+ (3)""",
-            r"""(super_duper_big_long_name) \s+ (name) \s+ (string) \s+ (string) \s+ (3) \s+ (1)\s*""",
-        ],
-    )
-
-
-def test_columns_with_unequal_values_text_is_aligned_with_known_differences(comparison_kd1):
-    stdout = six.StringIO()
-
-    comparison_kd1.report(file=stdout)
-    stdout.seek(0)  # Back up to the beginning of the stream
-
-    text_alignment_validator(
-        report=stdout,
-        section_start="****** Columns with Unequal Values ******",
-        section_end="\n",
-        left_indices=(1, 2, 3, 4),
-        right_indices=(5, 6, 7),
-        column_regexes=[
-            r"""(df1\sColumn\sName) \s+ (df2\sColumn\sName) \s+ (df1\sDtype) \s+ (df2\sDtype) \s+
-                (\#\sMatches) \s+ (\#\sKnown\sDiffs) \s+ (\#\sMismatches)""",
-            r"""(-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+)""",
-            r"""(stat_cd) \s+ (STATC) \s+ (string) \s+ (string) \s+ (2) \s+ (2) \s+ (1)""",
-            r"""(open_dt) \s+ (ACCOUNT_OPEN) \s+ (date) \s+ (bigint) \s+ (0) \s+ (5) \s+ (0)""",
-            r"""(cd) \s+ (CODE) \s+ (string) \s+ (double) \s+ (0) \s+ (5) \s+ (0)\s*""",
-        ],
-    )
-
-
-def test_columns_with_unequal_values_text_is_aligned_with_custom_known_differences(comparison_kd2):
-    stdout = six.StringIO()
-
-    comparison_kd2.report(file=stdout)
-    stdout.seek(0)  # Back up to the beginning of the stream
-
-    text_alignment_validator(
-        report=stdout,
-        section_start="****** Columns with Unequal Values ******",
-        section_end="\n",
-        left_indices=(1, 2, 3, 4),
-        right_indices=(5, 6, 7),
-        column_regexes=[
-            r"""(df1\sColumn\sName) \s+ (df2\sColumn\sName) \s+ (df1\sDtype) \s+ (df2\sDtype) \s+
-                (\#\sMatches) \s+ (\#\sKnown\sDiffs) \s+ (\#\sMismatches)""",
-            r"""(-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+)""",
-            r"""(stat_cd) \s+ (STATC) \s+ (string) \s+ (string) \s+ (2) \s+ (2) \s+ (1)""",
-            r"""(open_dt) \s+ (ACCOUNT_OPEN) \s+ (date) \s+ (bigint) \s+ (0) \s+ (0) \s+ (5)""",
-            r"""(cd) \s+ (CODE) \s+ (string) \s+ (double) \s+ (0) \s+ (5) \s+ (0)\s*""",
-        ],
-    )
-
-
-def test_columns_with_unequal_values_text_is_aligned_for_decimals(comparison_decimal):
-    stdout = six.StringIO()
-
-    comparison_decimal.report(file=stdout)
-    stdout.seek(0)  # Back up to the beginning of the stream
-
-    text_alignment_validator(
-        report=stdout,
-        section_start="****** Columns with Unequal Values ******",
-        section_end="\n",
-        left_indices=(1, 2, 3, 4),
-        right_indices=(5, 6),
-        column_regexes=[
-            r"""(df1\sColumn\sName) \s+ (df2\sColumn\sName) \s+ (df1\sDtype) \s+ (df2\sDtype) \s+
-                (\#\sMatches) \s+ (\#\sMismatches)""",
-            r"""(-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+) \s+ (-+)""",
-            r"""(dollar_amt) \s+ (dollar_amt) \s+ (decimal\(8,2\)) \s+ (double) \s+ (1) \s+ (1)""",
-        ],
-    )
-
-
-def test_schema_differences_text_is_aligned(comparison4):
-    stdout = six.StringIO()
-
-    comparison4.report(file=stdout)
-    comparison4.report()
-    stdout.seek(0)  # Back up to the beginning of the stream
-
-    text_alignment_validator(
-        report=stdout,
-        section_start="****** Schema Differences ******",
-        section_end="\n",
-        left_indices=(1, 2, 3, 4),
-        right_indices=(),
-        column_regexes=[
-            r"""(df1\sColumn\sName) \s+ (df2\sColumn\sName) \s+ (df1\sDtype) \s+ (df2\sDtype)""",
-            r"""(-+) \s+ (-+) \s+ (-+) \s+ (-+)""",
-            r"""(dollar_amt) \s+ (dollar_amt) \s+ (bigint) \s+ (double)""",
-        ],
-    )
-
-
-def test_schema_differences_text_is_aligned_for_decimals(comparison_decimal):
-    stdout = six.StringIO()
-
-    comparison_decimal.report(file=stdout)
-    stdout.seek(0)  # Back up to the beginning of the stream
-
-    text_alignment_validator(
-        report=stdout,
-        section_start="****** Schema Differences ******",
-        section_end="\n",
-        left_indices=(1, 2, 3, 4),
-        right_indices=(),
-        column_regexes=[
-            r"""(df1\sColumn\sName) \s+ (df2\sColumn\sName) \s+ (df1\sDtype) \s+ (df2\sDtype)""",
-            r"""(-+) \s+ (-+) \s+ (-+) \s+ (-+)""",
-            r"""(dollar_amt) \s+ (dollar_amt) \s+ (decimal\(8,2\)) \s+ (double)""",
-        ],
-    )
-
-
-def test_base_only_columns_text_is_aligned(comparison4):
-    stdout = six.StringIO()
-
-    comparison4.report(file=stdout)
-    stdout.seek(0)  # Back up to the beginning of the stream
-
-    text_alignment_validator(
-        report=stdout,
-        section_start="****** Columns In df1 Only ******",
-        section_end="\n",
-        left_indices=(1, 2),
-        right_indices=(),
-        column_regexes=[
-            r"""(Column\sName) \s+ (Dtype)""",
-            r"""(-+) \s+ (-+)""",
-            r"""(date_fld) \s+ (date)""",
-        ],
-    )
-
-
-def test_compare_only_columns_text_is_aligned(comparison4):
-    stdout = six.StringIO()
-
-    comparison4.report(file=stdout)
-    stdout.seek(0)  # Back up to the beginning of the stream
-
-    text_alignment_validator(
-        report=stdout,
-        section_start="****** Columns In df2 Only ******",
-        section_end="\n",
-        left_indices=(1, 2),
-        right_indices=(),
-        column_regexes=[
-            r"""(Column\sName) \s+ (Dtype)""",
-            r"""(-+) \s+ (-+)""",
-            r"""(accnt_purge) \s+ (boolean)""",
-        ],
-    )
-
-
-def text_alignment_validator(
-    report, section_start, section_end, left_indices, right_indices, column_regexes
-):
-    """Check to make sure that report output columns are vertically aligned.
-
-    Parameters
-    ----------
-    report: An iterable returning lines of report output to be validated.
-    section_start: A string that represents the beginning of the section to be validated.
-    section_end: A string that represents the end of the section to be validated.
-    left_indices: The match group indexes (starting with 1) that should be left-aligned
-        in the output column.
-    right_indices: The match group indexes (starting with 1) that should be right-aligned
-        in the output column.
-    column_regexes: A list of regular expressions representing the expected output, with
-        each column enclosed with parentheses to return a match. The regular expression will
-        use the "X" flag, so it may contain whitespace, and any whitespace to be matched
-        should be explicitly given with \s. The first line will represent the alignments
-        that are expected in the following lines. The number of match groups should cover
-        all of the indices given in left/right_indices.
-
-    Runs assertions for every match group specified by left/right_indices to ensure that
-    all lines past the first are either left- or right-aligned with the same match group
-    on the first line.
-    """
-    print(report)
-    print(section_start)
-    print(section_end)
-    print(left_indices)
-    print(right_indices)
-    print(column_regexes)
-
-    at_column_section = False
-    processed_first_line = False
-    match_positions = [None] * (len(left_indices + right_indices) + 1)
-
-    for line in report:
-        if at_column_section:
-            if line == section_end:  # Detect end of section and stop
-                break
-
-            if not processed_first_line:  # First line in section - capture text start/end positions
-                matches = re.search(column_regexes[0], line, re.X)
-                assert matches is not None  # Make sure we found at least this...
-
-                for n in left_indices:
-                    match_positions[n] = matches.start(n)
-                for n in right_indices:
-                    match_positions[n] = matches.end(n)
-                processed_first_line = True
-            else:  # Match the stuff after the header text
-                match = None
-                for regex in column_regexes[1:]:
-                    match = re.search(regex, line, re.X)
-                    if match:
-                        break
-
-                if not match:
-                    raise AssertionError('Did not find a match for line: "{}"'.format(line))
-
-                for n in left_indices:
-                    assert match_positions[n] == match.start(n)
-                for n in right_indices:
-                    assert match_positions[n] == match.end(n)
-
-        if not at_column_section and section_start in line:
-            at_column_section = True
+    assert compare_name_change_extra_col_type_diff._all_matched_rows.count() == 5
+    assert expected_df.unionAll(compare_name_change_extra_col_type_diff._all_matched_rows).distinct().count() == 5

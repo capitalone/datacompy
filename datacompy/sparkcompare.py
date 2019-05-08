@@ -162,7 +162,7 @@ class SparkCompare(Compare):
         self.rel_tol = rel_tol
         self.abs_tol = abs_tol
         self.df1_name = df1_name
-        self.df2_name = df1_name
+        self.df2_name = df2_name
         self.on_index = False
         if self.rel_tol < 0 or self.abs_tol < 0:
             raise ValueError("Please enter positive valued tolerances")
@@ -189,7 +189,7 @@ class SparkCompare(Compare):
                 df2 = df2.withColumnRenamed(mapping[1], mapping[0])
 
         self.spark = spark_session
-        self._df1_unq_rows = self._df2_unq_rows = None
+        self.df1_unq_rows = self.df2_unq_rows = None
         self._df1_row_count = self._df2_row_count = self._intersect_rows_count = None
         self._joined_dataframe = None
         self._all_matched_rows = None
@@ -341,7 +341,7 @@ class SparkCompare(Compare):
         full_joined_dataframe = self._get_or_create_joined_dataframe()
         full_joined_dataframe.createOrReplaceTempView("full_matched_table")
 
-        select_statement = self._generate_select_statement(False)
+        select_statement = self._generate_select_statement(match_data=False)
         select_query = "SELECT {} FROM full_matched_table A".format(select_statement)
 
         self._all_matched_rows = self.spark.sql(select_query).orderBy(self.join_columns)
@@ -350,6 +350,7 @@ class SparkCompare(Compare):
         where_cond = " OR ".join(["A." + name + "_match= False" for name in self.columns_compared])
         mismatch_query = """SELECT * FROM matched_table A WHERE {}""".format(where_cond)
         self._all_rows_mismatched = self.spark.sql(mismatch_query).orderBy(self.join_columns)
+        _ = [self.df_unq_rows("df1"), self.df_unq_rows("df2")]
 
     def _get_or_create_joined_dataframe(self):
         if self._joined_dataframe is None:
@@ -411,14 +412,12 @@ class SparkCompare(Compare):
                 (
                     value[MatchType.MISMATCH.value]
                     + value[MatchType.NULL_DIFFERENCE.value]
-                    + value[MatchType.KNOWN_DIFFERENCE.value]
                 ),
                 self.df1_dtypes[column],
                 self.df2_dtypes[column],
                 (
                     value[MatchType.MISMATCH.value]
                     + value[MatchType.NULL_DIFFERENCE.value]
-                    + value[MatchType.KNOWN_DIFFERENCE.value]
                 )
                 == 0,
                 -1,  # TODO: implement this
@@ -438,7 +437,7 @@ class SparkCompare(Compare):
                 "all_match",
                 "max_diff",
                 "null_diff",
-                "known_diff",
+                "known_diff_cnt",
             ],
         )
 
@@ -449,14 +448,26 @@ class SparkCompare(Compare):
                 match_type_comparison += " WHEN (A.{name}={match_value}) THEN '{match_name}'".format(
                     name=name, match_value=str(k.value), match_name=k.name
                 )
-            return "A.{name}_df1, A.{name}_df2, (CASE WHEN (A.{name}={match_failure}) THEN False ELSE True END) AS {name}_match, (CASE {match_type_comparison} ELSE 'UNDEFINED' END) AS {name}_match_type ".format(
+            return (
+                "A.{name}_df1, "
+                "A.{name}_df2, "
+                "CASE WHEN A.{name} IN ({mismatch}, {null_difference}) THEN False ELSE True END AS {name}_match, "
+                "CASE {match_type_comparison} ELSE 'UNDEFINED' END AS {name}_match_type "
+            ).format(
                 name=name,
-                match_failure=MatchType.MISMATCH.value,
+                mismatch=MatchType.MISMATCH.value,
+                null_difference=MatchType.NULL_DIFFERENCE.value,
                 match_type_comparison=match_type_comparison,
             )
         else:
-            return "A.{name}_df1, A.{name}_df2, CASE WHEN (A.{name}={match_failure})  THEN False ELSE True END AS {name}_match ".format(
-                name=name, match_failure=MatchType.MISMATCH.value
+            return (
+                "A.{name}_df1, "
+                "A.{name}_df2, "
+                "CASE WHEN A.{name} IN ({match_failure}, {null_difference}) THEN False ELSE True END AS {name}_match "
+            ).format(
+                name=name,
+                match_failure=MatchType.MISMATCH.value,
+                null_difference=MatchType.NULL_DIFFERENCE.value,
             )
 
     def _create_case_statement(self, name):
@@ -481,7 +492,7 @@ class SparkCompare(Compare):
         if self._known_differences:
             new_input = "B.{name}"
             for kd in self._known_differences:
-                if df2_dtype in kd["types"]:
+                if self.df2_dtypes[name] in kd["types"]:
                     if "flags" in kd and "nullcheck" in kd["flags"]:
                         known_diff_comparisons.append(
                             "(("
