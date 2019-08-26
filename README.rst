@@ -243,5 +243,5 @@ use your own contributions for any other purpose.
 - `Link to Individual CLA <https://docs.google.com/forms/d/19LpBBjykHPox18vrZvBbZUcK6gQTj7qv1O5hCduAZFU/viewform>`_
 - `Link to Corporate CLA <https://docs.google.com/forms/d/e/1FAIpQLSeAbobIPLCVZD_ccgtMWBDAcN68oqbAJBQyDTSAQ1AkYuCp_g/viewform>`_
 
-This project adheres to the `Open Source Code of Conduct <https://developer.capitalone.com/single/code-of-conduct/>`_.
+This project adheres to the `Open Source Code of Conduct <https://developer.capitalone.com/resources/code-of-conduct>`_.
 By participating, you are expected to honor this code.
