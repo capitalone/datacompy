@@ -6,7 +6,7 @@ cache:
 
 python:
   - "2.7"
-  - "3.6"
+  - "3.6.5"
 install:
   - pip install -r test-requirements.txt
 script:
