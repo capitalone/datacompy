@@ -1,5 +1,5 @@
 enum34>=1.1.6;python_version<"3.4"
-pandas>=0.19.0
+pandas>=0.19.0,!=0.23.*
 numpy>=1.11.3
 pytest>=3.0.6
 Sphinx>=1.6.2

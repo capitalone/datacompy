@@ -394,11 +394,11 @@ def test_mixed_column_with_ignore_spaces_and_case():
 
 def test_compare_df_setter_bad():
     df = pd.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
-    with raises(TypeError, message="df1 must be a pandas DataFrame"):
+    with raises(TypeError, match="df1 must be a pandas DataFrame"):
         compare = datacompy.Compare("a", "a", ["a"])
-    with raises(ValueError, message="df1 must have all fields from join_columns"):
+    with raises(ValueError, match="df1 must have all columns from join_columns"):
         compare = datacompy.Compare(df, df.copy(), ["b"])
-    with raises(ValueError, message="df1 must have unique column names"):
+    with raises(ValueError, match="df1 must have unique column names"):
         compare = datacompy.Compare(df, df.copy(), ["a"])
     df_dupe = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
     assert datacompy.Compare(df_dupe, df_dupe.copy(), ["a", "b"]).df1.equals(df_dupe)
@@ -427,15 +427,15 @@ def test_compare_df_setter_different_cases():
 
 def test_compare_df_setter_bad_index():
     df = pd.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
-    with raises(TypeError, message="df1 must be a pandas DataFrame"):
+    with raises(TypeError, match="df1 must be a pandas DataFrame"):
         compare = datacompy.Compare("a", "a", on_index=True)
-    with raises(ValueError, message="df1 must have unique column names"):
+    with raises(ValueError, match="df1 must have unique column names"):
         compare = datacompy.Compare(df, df.copy(), on_index=True)
 
 
 def test_compare_on_index_and_join_columns():
     df = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    with raises(Exception, message="Only provide on_index or join_columns"):
+    with raises(Exception, match="Only provide on_index or join_columns"):
         compare = datacompy.Compare(df, df.copy(), on_index=True, join_columns=["a"])
 
 
@@ -528,8 +528,11 @@ def test_string_joiner():
 def test_decimal_with_joins():
     df1 = pd.DataFrame([{"a": Decimal("1"), "b": 2}, {"a": Decimal("2"), "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    with raises(ValueError):
-        compare = datacompy.Compare(df1, df2, "a")
+    compare = datacompy.Compare(df1, df2, "a")
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
 
 
 def test_decimal_with_nulls():
@@ -894,5 +897,5 @@ def test_generate_id_within_group(dataframe, expected):
     ],
 )
 def test_generate_id_within_group_valueerror(dataframe, message):
-    with raises(ValueError, message=message):
+    with raises(ValueError, match=message):
         datacompy.core.generate_id_within_group(dataframe, ["a", "b"])
