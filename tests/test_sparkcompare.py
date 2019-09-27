@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright 2017 Capital One Services, LLC
 #
@@ -1926,7 +1925,7 @@ def test_compare_only_columns_text_is_aligned(comparison4):
 def text_alignment_validator(
     report, section_start, section_end, left_indices, right_indices, column_regexes
 ):
-    """Check to make sure that report output columns are vertically aligned.
+    r"""Check to make sure that report output columns are vertically aligned.
 
     Parameters
     ----------
