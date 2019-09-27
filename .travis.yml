@@ -4,7 +4,6 @@ dist: trusty
 cache:
   pip: true
 python:
-  - "2.7"
   - "3.6"
 before_install:
   - mkdir -p /opt
