@@ -1,13 +1,22 @@
 language: python
+jdk: openjdk8
 dist: trusty
 sudo: false
 cache:
   pip: true
-
 python:
   - "2.7"
   - "3.6"
+before_install:
+  - mkdir -p /opt
+  - wget -q -O /opt/spark.tgz https://archive.apache.org/dist/spark/spark-2.4.3/spark-2.4.3-bin-hadoop2.7.tgz
+  - tar xzf /opt/spark.tgz -C /opt/
+  - rm /opt/spark.tgz
+  - export SPARK_HOME=/opt/spark-2.4.3-bin-hadoop2.7
+  - export PATH=$PATH:/opt/spark-2.4.3-bin-hadoop2.7/bin
 install:
   - pip install -r test-requirements.txt
+  - pip install pyspark==2.4.3
+  - pip install pytest-spark==0.4.5
 script:
-  - python -m pytest tests/test_core.py
+  - python -m pytest

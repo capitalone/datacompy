@@ -979,7 +979,7 @@ def test_both_tolerances(comparison_both_tol):
 
 
 def test_negative_tolerances(spark, base_tol, compare_both_tol):
-    with pytest.raises(ValueError, message="Please enter positive valued tolerances"):
+    with pytest.raises(ValueError, match="Please enter positive valued tolerances"):
         comp = SparkCompare(
             spark,
             base_tol,
