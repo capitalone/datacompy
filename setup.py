@@ -6,7 +6,6 @@ CURR_DIR = os.path.abspath(os.path.dirname(__file__))
 INSTALL_REQUIRES = [
     "pandas>=0.19.0,!=0.23.*",
     "numpy>=1.11.3",
-    "six>=1.10",
 ]
 with iopen(os.path.join(CURR_DIR, "README.rst"), encoding="utf-8") as file_open:
     LONG_DESCRIPTION = file_open.read()

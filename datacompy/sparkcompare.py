@@ -18,8 +18,6 @@ import sys
 from enum import Enum
 from itertools import chain
 
-import six
-
 try:
     from pyspark.sql import functions as F
 except ImportError:
