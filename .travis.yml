@@ -1,7 +1,6 @@
 language: python
 jdk: openjdk8
 dist: trusty
-sudo: false
 cache:
   pip: true
 python:
