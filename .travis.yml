@@ -1,11 +1,10 @@
 language: python
 jdk: openjdk8
 dist: trusty
-sudo: false
 cache:
   pip: true
 python:
-  - "2.7"
+  - "3.5"
   - "3.6"
 before_install:
   - mkdir -p /opt

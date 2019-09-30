@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright 2017 Capital One Services, LLC
 #
@@ -27,13 +26,8 @@ from pandas.util.testing import assert_series_equal
 import numpy as np
 import logging
 import sys
-
-import six
-
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+import io
+from unittest import mock
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -46,7 +40,7 @@ def test_numeric_columns_equal_abs():
 4|NULL|False
 NULL|4|False
 NULL|NULL|True"""
-    df = pd.read_csv(six.StringIO(data), sep="|")
+    df = pd.read_csv(io.StringIO(data), sep="|")
     actual_out = datacompy.columns_equal(df.a, df.b, abs_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -60,7 +54,7 @@ def test_numeric_columns_equal_rel():
 4|NULL|False
 NULL|4|False
 NULL|NULL|True"""
-    df = pd.read_csv(six.StringIO(data), sep="|")
+    df = pd.read_csv(io.StringIO(data), sep="|")
     actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -81,7 +75,7 @@ datacompy|DataComPy|False
 something||False
 |something|False
 ||True"""
-    df = pd.read_csv(six.StringIO(data), sep="|")
+    df = pd.read_csv(io.StringIO(data), sep="|")
     actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -102,7 +96,7 @@ datacompy|DataComPy|False
 something||False
 |something|False
 ||True"""
-    df = pd.read_csv(six.StringIO(data), sep="|")
+    df = pd.read_csv(io.StringIO(data), sep="|")
     actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -123,7 +117,7 @@ datacompy|DataComPy|True
 something||False
 |something|False
 ||True"""
-    df = pd.read_csv(six.StringIO(data), sep="|")
+    df = pd.read_csv(io.StringIO(data), sep="|")
     actual_out = datacompy.columns_equal(
         df.a, df.b, rel_tol=0.2, ignore_spaces=True, ignore_case=True
     )
@@ -139,7 +133,7 @@ def test_date_columns_equal():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pd.read_csv(six.StringIO(data), sep="|")
+    df = pd.read_csv(io.StringIO(data), sep="|")
     # First compare just the strings
     actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2)
     expect_out = df["expected"]
@@ -164,7 +158,7 @@ def test_date_columns_equal_with_ignore_spaces():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pd.read_csv(six.StringIO(data), sep="|")
+    df = pd.read_csv(io.StringIO(data), sep="|")
     # First compare just the strings
     actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
@@ -189,7 +183,7 @@ def test_date_columns_equal_with_ignore_spaces_and_case():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pd.read_csv(six.StringIO(data), sep="|")
+    df = pd.read_csv(io.StringIO(data), sep="|")
     # First compare just the strings
     actual_out = datacompy.columns_equal(
         df.a, df.b, rel_tol=0.2, ignore_spaces=True, ignore_case=True
@@ -453,16 +447,16 @@ def test_columns_overlap():
     compare = datacompy.Compare(df1, df2, ["a"])
     assert compare.df1_unq_columns() == set()
     assert compare.df2_unq_columns() == set()
-    assert compare.intersect_columns() == set(["a", "b"])
+    assert compare.intersect_columns() == {"a", "b"}
 
 
 def test_columns_no_overlap():
     df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
     df2 = pd.DataFrame([{"a": 1, "b": 2, "d": "oh"}, {"a": 2, "b": 3, "d": "ya"}])
     compare = datacompy.Compare(df1, df2, ["a"])
-    assert compare.df1_unq_columns() == set(["c"])
-    assert compare.df2_unq_columns() == set(["d"])
-    assert compare.intersect_columns() == set(["a", "b"])
+    assert compare.df1_unq_columns() == {"c"}
+    assert compare.df2_unq_columns() == {"d"}
+    assert compare.intersect_columns() == {"a", "b"}
 
 
 def test_10k_rows():
@@ -475,7 +469,7 @@ def test_10k_rows():
     assert compare_tol.matches()
     assert len(compare_tol.df1_unq_rows) == 0
     assert len(compare_tol.df2_unq_rows) == 0
-    assert compare_tol.intersect_columns() == set(["a", "b", "c"])
+    assert compare_tol.intersect_columns() == {"a", "b", "c"}
     assert compare_tol.all_columns_match()
     assert compare_tol.all_rows_overlap()
     assert compare_tol.intersect_rows_match()
@@ -484,7 +478,7 @@ def test_10k_rows():
     assert not compare_no_tol.matches()
     assert len(compare_no_tol.df1_unq_rows) == 0
     assert len(compare_no_tol.df2_unq_rows) == 0
-    assert compare_no_tol.intersect_columns() == set(["a", "b", "c"])
+    assert compare_no_tol.intersect_columns() == {"a", "b", "c"}
     assert compare_no_tol.all_columns_match()
     assert compare_no_tol.all_rows_overlap()
     assert not compare_no_tol.intersect_rows_match()
@@ -711,7 +705,7 @@ def test_dupes_from_real_data():
 200,0,2017-07-01,1009433,214.12,2017-06-29,D,USA,3640,20170,,A,
 100,0,2017-06-20,1607593,1.67,2017-06-19,D,CAN,5814,M2N 6L7,,,0.0
 200,0,2017-07-01,1009393,2.01,2017-06-29,D,USA,5814,22102,,F,"""
-    df1 = pd.read_csv(six.StringIO(data), sep=",")
+    df1 = pd.read_csv(io.StringIO(data), sep=",")
     df2 = df1.copy()
     compare_acct = datacompy.Compare(df1, df2, join_columns=["acct_id"])
     assert compare_acct.matches()

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright 2017 Capital One Services, LLC
 #
@@ -16,11 +15,11 @@
 
 import datetime
 import logging
+import io
 import re
 from decimal import Decimal
 
 import pytest
-import six
 from pyspark.sql import SparkSession, Row
 from pyspark.sql.types import (
     StructType,
@@ -943,7 +942,7 @@ def comparison_decimal_fixture(base_decimal, compare_decimal, spark):
 
 
 def test_absolute_tolerances(comparison_abs_tol):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison_abs_tol.report(file=stdout)
     stdout.seek(0)
@@ -955,7 +954,7 @@ def test_absolute_tolerances(comparison_abs_tol):
 
 
 def test_relative_tolerances(comparison_rel_tol):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison_rel_tol.report(file=stdout)
     stdout.seek(0)
@@ -967,7 +966,7 @@ def test_relative_tolerances(comparison_rel_tol):
 
 
 def test_both_tolerances(comparison_both_tol):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison_both_tol.report(file=stdout)
     stdout.seek(0)
@@ -993,7 +992,7 @@ def test_negative_tolerances(spark, base_tol, compare_both_tol):
 
 
 def test_show_all_columns_and_match_rate(show_all_columns_and_match_rate):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     show_all_columns_and_match_rate.report(file=stdout)
 
@@ -1037,7 +1036,7 @@ def test_decimals_and_doubles_are_comparable():
 
 
 def test_report_outputs_the_column_summary(comparison1):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison1.report(file=stdout)
 
@@ -1049,7 +1048,7 @@ def test_report_outputs_the_column_summary(comparison1):
 
 
 def test_report_outputs_the_column_summary_for_identical_schemas(comparison2):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison2.report(file=stdout)
 
@@ -1061,7 +1060,7 @@ def test_report_outputs_the_column_summary_for_identical_schemas(comparison2):
 
 
 def test_report_outputs_the_column_summary_for_differently_named_columns(comparison3):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison3.report(file=stdout)
 
@@ -1073,7 +1072,7 @@ def test_report_outputs_the_column_summary_for_differently_named_columns(compari
 
 
 def test_report_outputs_the_row_summary(comparison1):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison1.report(file=stdout)
 
@@ -1086,7 +1085,7 @@ def test_report_outputs_the_row_summary(comparison1):
 
 
 def test_report_outputs_the_row_equality_comparison(comparison1):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison1.report(file=stdout)
 
@@ -1096,7 +1095,7 @@ def test_report_outputs_the_row_equality_comparison(comparison1):
 
 
 def test_report_outputs_the_row_summary_for_differently_named_columns(comparison3):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison3.report(file=stdout)
 
@@ -1109,7 +1108,7 @@ def test_report_outputs_the_row_summary_for_differently_named_columns(comparison
 
 
 def test_report_outputs_the_row_equality_comparison_for_differently_named_columns(comparison3):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison3.report(file=stdout)
 
@@ -1119,7 +1118,7 @@ def test_report_outputs_the_row_equality_comparison_for_differently_named_column
 
 
 def test_report_outputs_column_detail_for_columns_in_only_one_dataframe(comparison1):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison1.report(file=stdout)
     comparison1.report()
@@ -1129,7 +1128,7 @@ def test_report_outputs_column_detail_for_columns_in_only_one_dataframe(comparis
 
 
 def test_report_outputs_column_detail_for_columns_in_only_compare_dataframe(comparison1):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison1.report(file=stdout)
     comparison1.report()
@@ -1139,7 +1138,7 @@ def test_report_outputs_column_detail_for_columns_in_only_compare_dataframe(comp
 
 
 def test_report_outputs_schema_difference_details(comparison1):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison1.report(file=stdout)
 
@@ -1154,7 +1153,7 @@ def test_report_outputs_schema_difference_details(comparison1):
 
 
 def test_report_outputs_schema_difference_details_for_differently_named_columns(comparison3):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison3.report(file=stdout)
 
@@ -1169,7 +1168,7 @@ def test_report_outputs_schema_difference_details_for_differently_named_columns(
 
 
 def test_column_comparison_outputs_number_of_columns_with_differences(comparison1):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison1.report(file=stdout)
 
@@ -1179,7 +1178,7 @@ def test_column_comparison_outputs_number_of_columns_with_differences(comparison
 
 
 def test_column_comparison_outputs_all_columns_equal_for_identical_dataframes(comparison2):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison2.report(file=stdout)
 
@@ -1191,7 +1190,7 @@ def test_column_comparison_outputs_all_columns_equal_for_identical_dataframes(co
 def test_column_comparison_outputs_number_of_columns_with_differences_for_differently_named_columns(
     comparison3
 ):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison3.report(file=stdout)
 
@@ -1203,7 +1202,7 @@ def test_column_comparison_outputs_number_of_columns_with_differences_for_differ
 def test_column_comparison_outputs_number_of_columns_with_differences_for_known_diffs(
     comparison_kd1
 ):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison_kd1.report(file=stdout)
 
@@ -1222,7 +1221,7 @@ def test_column_comparison_outputs_number_of_columns_with_differences_for_known_
 def test_column_comparison_outputs_number_of_columns_with_differences_for_custom_known_diffs(
     comparison_kd2
 ):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison_kd2.report(file=stdout)
 
@@ -1239,7 +1238,7 @@ def test_column_comparison_outputs_number_of_columns_with_differences_for_custom
 
 
 def test_columns_with_unequal_values_show_mismatch_counts(comparison1):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison1.report(file=stdout)
 
@@ -1263,7 +1262,7 @@ def test_columns_with_unequal_values_show_mismatch_counts(comparison1):
 
 
 def test_columns_with_different_names_with_unequal_values_show_mismatch_counts(comparison3):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison3.report(file=stdout)
 
@@ -1753,7 +1752,7 @@ def test_rows_both_all_returns_all_rows_in_both_dataframes_for_differently_named
 
 
 def test_columns_with_unequal_values_text_is_aligned(comparison4):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison4.report(file=stdout)
     stdout.seek(0)  # Back up to the beginning of the stream
@@ -1776,7 +1775,7 @@ def test_columns_with_unequal_values_text_is_aligned(comparison4):
 
 
 def test_columns_with_unequal_values_text_is_aligned_with_known_differences(comparison_kd1):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison_kd1.report(file=stdout)
     stdout.seek(0)  # Back up to the beginning of the stream
@@ -1799,7 +1798,7 @@ def test_columns_with_unequal_values_text_is_aligned_with_known_differences(comp
 
 
 def test_columns_with_unequal_values_text_is_aligned_with_custom_known_differences(comparison_kd2):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison_kd2.report(file=stdout)
     stdout.seek(0)  # Back up to the beginning of the stream
@@ -1822,7 +1821,7 @@ def test_columns_with_unequal_values_text_is_aligned_with_custom_known_differenc
 
 
 def test_columns_with_unequal_values_text_is_aligned_for_decimals(comparison_decimal):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison_decimal.report(file=stdout)
     stdout.seek(0)  # Back up to the beginning of the stream
@@ -1843,7 +1842,7 @@ def test_columns_with_unequal_values_text_is_aligned_for_decimals(comparison_dec
 
 
 def test_schema_differences_text_is_aligned(comparison4):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison4.report(file=stdout)
     comparison4.report()
@@ -1864,7 +1863,7 @@ def test_schema_differences_text_is_aligned(comparison4):
 
 
 def test_schema_differences_text_is_aligned_for_decimals(comparison_decimal):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison_decimal.report(file=stdout)
     stdout.seek(0)  # Back up to the beginning of the stream
@@ -1884,7 +1883,7 @@ def test_schema_differences_text_is_aligned_for_decimals(comparison_decimal):
 
 
 def test_base_only_columns_text_is_aligned(comparison4):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison4.report(file=stdout)
     stdout.seek(0)  # Back up to the beginning of the stream
@@ -1904,7 +1903,7 @@ def test_base_only_columns_text_is_aligned(comparison4):
 
 
 def test_compare_only_columns_text_is_aligned(comparison4):
-    stdout = six.StringIO()
+    stdout = io.StringIO()
 
     comparison4.report(file=stdout)
     stdout.seek(0)  # Back up to the beginning of the stream
@@ -1926,7 +1925,7 @@ def test_compare_only_columns_text_is_aligned(comparison4):
 def text_alignment_validator(
     report, section_start, section_end, left_indices, right_indices, column_regexes
 ):
-    """Check to make sure that report output columns are vertically aligned.
+    r"""Check to make sure that report output columns are vertically aligned.
 
     Parameters
     ----------

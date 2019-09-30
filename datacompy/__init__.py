@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright 2017 Capital One Services, LLC
 #
@@ -14,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
 from datacompy.core import *
 from datacompy._version import __version__
 from datacompy.sparkcompare import SparkCompare, NUMERIC_SPARK_TYPES

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright 2017 Capital One Services, LLC
 #
@@ -31,7 +30,7 @@ import numpy as np
 LOG = logging.getLogger(__name__)
 
 
-class Compare(object):
+class Compare:
     """Comparison class to be used to compare whether two dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
@@ -170,11 +169,11 @@ class Compare(object):
             LOG.info("df1 Pandas.DataFrame.equals df2")
         else:
             LOG.info("df1 does not Pandas.DataFrame.equals df2")
-        LOG.info("Number of columns in common: {0}".format(len(self.intersect_columns())))
+        LOG.info("Number of columns in common: {}".format(len(self.intersect_columns())))
         LOG.debug("Checking column overlap")
         for col in self.df1_unq_columns():
-            LOG.info("Column in df1 and not in df2: {0}".format(col))
-        LOG.info("Number of columns in df1 and not in df2: {0}".format(len(self.df1_unq_columns())))
+            LOG.info("Column in df1 and not in df2: {}".format(col))
+        LOG.info("Number of columns in df1 and not in df2: {}".format(len(self.df1_unq_columns())))
         for col in self.df2_unq_columns():
             LOG.info("Column in df2 and not in df1: {}".format(col))
         LOG.info("Number of columns in df2 and not in df1: {}".format(len(self.df2_unq_columns())))
@@ -305,9 +304,7 @@ class Compare(object):
                 match_rate = float(match_cnt) / row_cnt
             else:
                 match_rate = 0
-            LOG.info(
-                "{0}: {1} / {2} ({3:.2%}) match".format(column, match_cnt, row_cnt, match_rate)
-            )
+            LOG.info("{}: {} / {} ({:.2%}) match".format(column, match_cnt, row_cnt, match_rate))
 
             self.column_stats.append(
                 {
@@ -642,7 +639,7 @@ def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False, ignor
                     if col_2.dtype.kind == "O":
                         col_2 = col_2.str.upper()
 
-                if set([col_1.dtype.kind, col_2.dtype.kind]) == set(["M", "O"]):
+                if {col_1.dtype.kind, col_2.dtype.kind} == {"M", "O"}:
                     compare = compare_string_and_date_columns(col_1, col_2)
                 else:
                     compare = pd.Series((col_1 == col_2) | (col_1.isnull() & col_2.isnull()))

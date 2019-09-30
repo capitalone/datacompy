@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright 2017 Capital One Services, LLC
 #
@@ -14,13 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
 
 import sys
 from enum import Enum
 from itertools import chain
-
-import six
 
 try:
     from pyspark.sql import functions as F
@@ -74,7 +70,7 @@ def _is_comparable(type1, type2):
     return type1 == type2 or (type1 in NUMERIC_SPARK_TYPES and type2 in NUMERIC_SPARK_TYPES)
 
 
-class SparkCompare(object):
+class SparkCompare:
     """Comparison class used to compare two Spark Dataframes.
 
     Extends the ``Compare`` functionality to the wide world of Spark and
@@ -205,7 +201,7 @@ class SparkCompare(object):
     def _tuplizer(self, input_list):
         join_columns = []
         for val in input_list:
-            if isinstance(val, six.string_types):
+            if isinstance(val, str):
                 join_columns.append((val, val))
             else:
                 join_columns.append(val)
