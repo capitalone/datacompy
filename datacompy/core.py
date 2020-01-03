@@ -21,11 +21,11 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
-import os
 import logging
-from datetime import datetime
-import pandas as pd
+import os
+
 import numpy as np
+import pandas as pd
 
 LOG = logging.getLogger(__name__)
 
