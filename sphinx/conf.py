@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Capital One Services, LLC
+# Copyright 2020 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "datacompy"
-copyright = "2017, Capital One"
+copyright = "2020, Capital One"
 author = "Ian Robertson, Dan Coates, Usman Azhar"
 
 # The version info for the project you're documenting, acts as replacement for
