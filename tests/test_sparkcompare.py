@@ -1188,7 +1188,7 @@ def test_column_comparison_outputs_all_columns_equal_for_identical_dataframes(co
 
 
 def test_column_comparison_outputs_number_of_columns_with_differences_for_differently_named_columns(
-    comparison3
+    comparison3,
 ):
     stdout = io.StringIO()
 
@@ -1200,7 +1200,7 @@ def test_column_comparison_outputs_number_of_columns_with_differences_for_differ
 
 
 def test_column_comparison_outputs_number_of_columns_with_differences_for_known_diffs(
-    comparison_kd1
+    comparison_kd1,
 ):
     stdout = io.StringIO()
 
@@ -1219,7 +1219,7 @@ def test_column_comparison_outputs_number_of_columns_with_differences_for_known_
 
 
 def test_column_comparison_outputs_number_of_columns_with_differences_for_custom_known_diffs(
-    comparison_kd2
+    comparison_kd2,
 ):
     stdout = io.StringIO()
 
