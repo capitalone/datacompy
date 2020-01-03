@@ -1383,7 +1383,7 @@ def test_rows_both_mismatch_returns_a_dataframe_with_rows_where_variables_mismat
     )
 
     assert comparison1.rows_both_mismatch.count() == 3
-    assert expected_df.unionAll(comparison1.rows_both_mismatch).distinct().count() == 3
+    assert expected_df.union(comparison1.rows_both_mismatch).distinct().count() == 3
 
 
 def test_rows_both_mismatch_only_includes_rows_with_true_mismatches_when_known_diffs_are_present(
@@ -1411,7 +1411,7 @@ def test_rows_both_mismatch_only_includes_rows_with_true_mismatches_when_known_d
     )
 
     assert comparison_kd1.rows_both_mismatch.count() == 1
-    assert expected_df.unionAll(comparison_kd1.rows_both_mismatch).distinct().count() == 1
+    assert expected_df.union(comparison_kd1.rows_both_mismatch).distinct().count() == 1
 
 
 def test_rows_both_all_returns_a_dataframe_with_all_rows_in_both_dataframes(spark, comparison1):
@@ -1477,7 +1477,7 @@ def test_rows_both_all_returns_a_dataframe_with_all_rows_in_both_dataframes(spar
     )
 
     assert comparison1.rows_both_all.count() == 4
-    assert expected_df.unionAll(comparison1.rows_both_all).distinct().count() == 4
+    assert expected_df.union(comparison1.rows_both_all).distinct().count() == 4
 
 
 def test_rows_both_all_shows_known_diffs_flag_and_known_diffs_count_as_matches(
@@ -1569,7 +1569,7 @@ def test_rows_both_all_shows_known_diffs_flag_and_known_diffs_count_as_matches(
     )
 
     assert comparison_kd1.rows_both_all.count() == 5
-    assert expected_df.unionAll(comparison_kd1.rows_both_all).distinct().count() == 5
+    assert expected_df.union(comparison_kd1.rows_both_all).distinct().count() == 5
 
 
 def test_rows_both_all_returns_a_dataframe_with_all_rows_in_identical_dataframes(
@@ -1656,7 +1656,7 @@ def test_rows_both_all_returns_a_dataframe_with_all_rows_in_identical_dataframes
     )
 
     assert comparison2.rows_both_all.count() == 5
-    assert expected_df.unionAll(comparison2.rows_both_all).distinct().count() == 5
+    assert expected_df.union(comparison2.rows_both_all).distinct().count() == 5
 
 
 def test_rows_both_all_returns_all_rows_in_both_dataframes_for_differently_named_columns(
