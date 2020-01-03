@@ -1748,7 +1748,7 @@ def test_rows_both_all_returns_all_rows_in_both_dataframes_for_differently_named
     )
 
     assert comparison3.rows_both_all.count() == 5
-    assert expected_df.unionAll(comparison3.rows_both_all).distinct().count() == 5
+    assert expected_df.union(comparison3.rows_both_all).distinct().count() == 5
 
 
 def test_columns_with_unequal_values_text_is_aligned(comparison4):
