@@ -19,4 +19,5 @@ install:
   - pip install pyspark==2.4.3
   - pip install pytest-spark==0.4.5
 script:
+  - jdk_switcher use openjdk8
   - python -m pytest
