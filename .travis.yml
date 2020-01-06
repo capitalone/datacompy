@@ -1,6 +1,6 @@
 language: python
 jdk: openjdk8
-dist: trusty
+dist: xenial
 cache:
   pip: true
 python:
