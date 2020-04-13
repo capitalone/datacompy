@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Capital One Services, LLC
+# Copyright 2020 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,18 +16,20 @@
 """
 Testing out the datacompy functionality
 """
-from datetime import datetime
-from decimal import Decimal
-import pytest
-from pytest import raises
-import datacompy
-import pandas as pd
-from pandas.util.testing import assert_series_equal
-import numpy as np
+import io
 import logging
 import sys
-import io
+from datetime import datetime
+from decimal import Decimal
 from unittest import mock
+
+import numpy as np
+import pandas as pd
+import pytest
+from pandas.util.testing import assert_series_equal
+from pytest import raises
+
+import datacompy
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 

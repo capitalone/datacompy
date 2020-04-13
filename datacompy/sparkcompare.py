@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Capital One Services, LLC
+# Copyright 2020 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -306,9 +306,8 @@ class SparkCompare:
                 'base_or_compare must be BASE or COMPARE, but was "{}"'.format(base_or_compare)
             )
 
-        if (
-            not columns
-        ):  # If there are no columns only in this dataframe, don't display this section
+        # If there are no columns only in this dataframe, don't display this section
+        if not columns:
             return
 
         max_length = max([len(col) for col in columns] + [11])
@@ -522,9 +521,8 @@ class SparkCompare:
 
         # For each column, create a single tuple. This tuple's values correspond to the number of times
         # each match type appears in that column
-        match_data = match_dataframe.agg(*[helper(col) for col in self.columns_compared]).collect()[
-            0
-        ]
+        match_data = match_dataframe.agg(*[helper(col) for col in self.columns_compared]).collect()
+        match_data = match_data[0]
 
         for c in self.columns_compared:
             self.columns_match_dict[c] = match_data[c]

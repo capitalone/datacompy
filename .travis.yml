@@ -1,11 +1,12 @@
 language: python
 jdk: openjdk8
-dist: trusty
+dist: xenial
 cache:
   pip: true
 python:
   - "3.5"
   - "3.6"
+  - "3.7"
 before_install:
   - mkdir -p /opt
   - wget -q -O /opt/spark.tgz https://archive.apache.org/dist/spark/spark-2.4.3/spark-2.4.3-bin-hadoop2.7.tgz
@@ -13,6 +14,8 @@ before_install:
   - rm /opt/spark.tgz
   - export SPARK_HOME=/opt/spark-2.4.3-bin-hadoop2.7
   - export PATH=$PATH:/opt/spark-2.4.3-bin-hadoop2.7/bin
+  - export PATH=$(echo "$PATH" | sed -e 's/:\/usr\/local\/lib\/jvm\/openjdk11\/bin//')
+  - export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
 install:
   - pip install -r test-requirements.txt
   - pip install pyspark==2.4.3

@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Capital One Services, LLC
+# Copyright 2020 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
-import os
 import logging
-from datetime import datetime
-import pandas as pd
+import os
+
 import numpy as np
+import pandas as pd
 
 LOG = logging.getLogger(__name__)
 
