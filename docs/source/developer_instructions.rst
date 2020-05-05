@@ -24,15 +24,15 @@ You will need to ``pip install`` the test requirements::
 
     pip install -r test-requirements.txt
 
-Then enter the ``sphinx`` directory and type::
+Then from the root of the repo you can type::
 
-    make html
+    make sphinx
 
-This will automatically regenerate the api documentation using ``sphinx-apidoc``.
-The rendered documentation will be stored in the ``/docs`` directory.  The
-GitHub pages endpoint
-is served from the ``/docs`` folder on the master branch, so merge into master
-to see the rendered docs changes.
+This will automatically regenerate the api documentation using ``sphinx-apidoc``. The rendered documentation will be
+stored in the ``/docs/build`` directory. The generated documentation is served from the ``gh-pages`` branch. Make sure
+that the branch is clean and then to push to gh-pages you can type::
+
+    make ghpages
 
 Note about documentation: The `Numpy and Google style docstrings
 <http://sphinx-doc.org/latest/ext/napoleon.html>`_ are activated by default.

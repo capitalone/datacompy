@@ -1,5 +1,5 @@
 
-.. include:: ../README.rst
+.. include:: ../../README.rst
 
 Contents
 ========
@@ -11,7 +11,13 @@ Contents
     Pandas Usage <pandas_usage>
     Spark Usage <spark_usage>
     Developer Instructions <developer_instructions>
-    Module Reference <api/modules>
+
+.. toctree::
+   :maxdepth: 4
+   :caption: API Reference
+
+   api/modules
+   Github Repo <https://github.com/capitalone/datacompy>
 
 Indices and tables
 ==================
