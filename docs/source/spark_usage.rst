@@ -3,9 +3,9 @@ Spark Usage
 
 *Under Construction*
 
-Meanwhile, see the :ref:`Readme "Spark Detail" section <spark-detail>` for a usage example and
-comments on ``SparkCompare``. You may also want to checkout the :class:`datacompy.SparkCompare` API
-documentation, which is pretty well-documented, if I do say so myself.
+Meanwhile, see the Readme "Spark Detail" section for a usage example and comments on ``SparkCompare``. You may also
+want to checkout the :class:`datacompy.SparkCompare` API documentation, which is pretty well-documented, if I do say
+so myself.
 
 Known Differences
 -----------------
