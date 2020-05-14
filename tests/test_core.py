@@ -816,6 +816,41 @@ def test_index_with_joins_with_ignore_case():
     assert compare.intersect_rows_match()
 
 
+def test_strings_with_ignore_spaces_and_join_columns():
+    df1 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A"}])
+    df2 = pd.DataFrame([{"a": " hi ", "b": "A"}, {"a": " bye ", "b": "A"}])
+    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.count_matching_rows() == 0
+
+    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 2
+
+
+def test_integers_with_ignore_spaces_and_join_columns():
+    df1 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
+    df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
+    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=False)
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 2
+
+    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 2
+
+
 MAX_DIFF_DF = pd.DataFrame(
     {
         "base": [1, 1, 1, 1, 1],
