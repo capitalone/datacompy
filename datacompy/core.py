@@ -61,7 +61,8 @@ class Compare:
     df2_name : str, optional
         A string name for the second dataframe
     ignore_spaces : bool, optional
-        Flag to strip whitespace (including newlines) from string columns
+        Flag to strip whitespace (including newlines) from string columns (including any join
+        columns)
     ignore_case : bool, optional
         Flag to ignore the case of string columns
 
@@ -228,6 +229,13 @@ class Compare:
             params = {"left_index": True, "right_index": True}
         else:
             params = {"on": self.join_columns}
+
+        if ignore_spaces:
+            for column in self.join_columns:
+                if self.df1[column].dtype.kind == "O":
+                    self.df1[column] = self.df1[column].str.strip()
+                if self.df2[column].dtype.kind == "O":
+                    self.df2[column] = self.df2[column].str.strip()
 
         outer_join = self.df1.merge(
             self.df2, how="outer", suffixes=("_df1", "_df2"), indicator=True, **params
