@@ -231,12 +231,11 @@ class Compare:
             params = {"on": self.join_columns}
 
         if ignore_spaces:
-            self.df1[self.join_columns] = self.df1[self.join_columns].apply(
-                lambda x: x.str.strip() if x.dtype.kind == "O" else x
-            )
-            self.df2[self.join_columns] = self.df2[self.join_columns].apply(
-                lambda x: x.str.strip() if x.dtype.kind == "O" else x
-            )
+            for column in self.join_columns:
+                if self.df1[column].dtype.kind == "O":
+                    self.df1[column] = self.df1[column].str.strip()
+                if self.df2[column].dtype.kind == "O":
+                    self.df2[column] = self.df2[column].str.strip()
 
         outer_join = self.df1.merge(
             self.df2, how="outer", suffixes=("_df1", "_df2"), indicator=True, **params
