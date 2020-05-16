@@ -434,8 +434,8 @@ class Compare:
         return to_return
 
     def all_mismatch(self):
-        """All mismatches to a file which contains all columns (with ``_match``), and df1 and df2 versions of
-        those columns.
+        """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
+        columns.
 
         Returns
         -------
