@@ -24,6 +24,7 @@ two dataframes.
 import logging
 import os
 
+
 import numpy as np
 import pandas as pd
 
@@ -431,6 +432,25 @@ class Compare:
                 column + " (" + self.df2_name + ")",
             ]
         return to_return
+
+    def all_mismatch(self):
+        """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
+        columns.
+
+        Returns
+        -------
+        Pandas.DataFrame
+            All rows of the intersection dataframe, containing any columns, that don't match.
+        """
+        match_list = []
+        return_list = []
+        for col in self.intersect_rows.columns:
+            if col.endswith("_match"):
+                match_list.append(col)
+                return_list.extend([col[:-6] + "_df1", col[:-6] + "_df2"])
+
+        mm_bool = self.intersect_rows[match_list].all(axis="columns")
+        return self.intersect_rows[~mm_bool][self.join_columns + return_list]
 
     def report(self, sample_count=10):
         """Returns a string representation of a report.  The representation can
