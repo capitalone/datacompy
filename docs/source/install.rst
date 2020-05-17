@@ -2,6 +2,19 @@
 Installation
 ============
 
+.. note::
+
+    Moving forward ``datacompy`` will not support Python 2. Please make sure you are using Python 3.5+
+
+
+PyPI (basic)
+------------
+
+::
+
+    pip install datacompy
+
+
 A Conda environment or virtual environment is highly recommended:
 
 conda (installs dependencies from Conda)
