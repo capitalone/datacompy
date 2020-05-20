@@ -183,7 +183,7 @@ class SparkCompare:
         self.spark = spark_session
         self.base_unq_rows = self.compare_unq_rows = None
         self._base_row_count = self._compare_row_count = self._common_row_count = None
-        self._joined_dataframe: Type["pyspark.sql.DataFrame"]
+        self._joined_dataframe: Optional[Type["pyspark.sql.DataFrame"]] = None
         self._rows_only_base = None
         self._rows_only_compare = None
         self._all_matched_rows = None
