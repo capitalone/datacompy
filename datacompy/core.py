@@ -109,9 +109,9 @@ class Compare:
         self.df2_name = df2_name
         self.abs_tol = abs_tol
         self.rel_tol = rel_tol
-        self.df1_unq_rows: pd.DataFrame
-        self.df2_unq_rows: pd.DataFrame
-        self.intersect_rows: pd.DataFrame
+        self.df1_unq_rows: Optional[pd.DataFrame] = None
+        self.df2_unq_rows: Optional[pd.DataFrame] = None
+        self.intersect_rows: Optional[pd.DataFrame] = None
         self.column_stats: List[Dict[str, Any]] = []
         self._compare(ignore_spaces, ignore_case)
 
@@ -284,6 +284,9 @@ class Compare:
         creates a column column_match which is True for matches, False
         otherwise.
         """
+        if self.intersect_rows is None:
+            raise TypeError("intersect_rows is None...")
+
         LOG.debug("Comparing intersection")
         row_cnt = len(self.intersect_rows)
         for column in self.intersect_columns():
@@ -347,6 +350,12 @@ class Compare:
             True if all rows in df1 are in df2 and vice versa (based on
             existence for join option)
         """
+        if self.df1_unq_rows is None:
+            raise TypeError("df1_unq_rows is None...")
+
+        if self.df2_unq_rows is None:
+            raise TypeError("df2_unq_rows is None...")
+
         return len(self.df1_unq_rows) == len(self.df2_unq_rows) == 0
 
     def count_matching_rows(self) -> int:
@@ -357,6 +366,9 @@ class Compare:
         int
             Number of matching rows
         """
+        if self.intersect_rows is None:
+            raise TypeError("intersect_rows is None...")
+
         match_columns = []
         for column in self.intersect_columns():
             if column not in self.join_columns:
@@ -365,6 +377,9 @@ class Compare:
 
     def intersect_rows_match(self) -> bool:
         """Check whether the intersect rows all match"""
+        if self.intersect_rows is None:
+            raise TypeError("intersect_rows is None...")
+
         actual_length = self.intersect_rows.shape[0]
         return self.count_matching_rows() == actual_length
 
@@ -392,6 +407,9 @@ class Compare:
         dataframe 1, and all of its rows match rows in dataframe 1 for the
         shared columns.
         """
+        if self.df2_unq_rows is None:
+            raise TypeError("df2_unq_rows is None...")
+
         if not self.df2_unq_columns() == set():
             return False
         elif not len(self.df2_unq_rows) == 0:
@@ -422,6 +440,9 @@ class Compare:
             "pertinent" columns, for rows that don't match on the provided
             column.
         """
+        if self.intersect_rows is None:
+            raise TypeError("intersect_rows is None...")
+
         row_cnt = self.intersect_rows.shape[0]
         col_match = self.intersect_rows[column + "_match"]
         match_cnt = col_match.sum()
@@ -445,6 +466,9 @@ class Compare:
         Pandas.DataFrame
             All rows of the intersection dataframe, containing any columns, that don't match.
         """
+        if self.intersect_rows is None:
+            raise TypeError("intersect_rows is None...")
+
         match_list = []
         return_list = []
         for col in self.intersect_rows.columns:
@@ -469,6 +493,15 @@ class Compare:
         str
             The report, formatted kinda nicely.
         """
+        if self.intersect_rows is None:
+            raise TypeError("intersect_rows is None...")
+
+        if self.df1_unq_rows is None:
+            raise TypeError("df1_unq_rows is None...")
+
+        if self.df2_unq_rows is None:
+            raise TypeError("df2_unq_rows is None...")
+
         # Header
         report = render("header.txt")
         df_header = pd.DataFrame(
