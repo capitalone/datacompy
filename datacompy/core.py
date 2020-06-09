@@ -24,6 +24,7 @@ two dataframes.
 import logging
 import os
 
+
 import numpy as np
 import pandas as pd
 
@@ -61,7 +62,8 @@ class Compare:
     df2_name : str, optional
         A string name for the second dataframe
     ignore_spaces : bool, optional
-        Flag to strip whitespace (including newlines) from string columns
+        Flag to strip whitespace (including newlines) from string columns (including any join
+        columns)
     ignore_case : bool, optional
         Flag to ignore the case of string columns
 
@@ -228,6 +230,13 @@ class Compare:
             params = {"left_index": True, "right_index": True}
         else:
             params = {"on": self.join_columns}
+
+        if ignore_spaces:
+            for column in self.join_columns:
+                if self.df1[column].dtype.kind == "O":
+                    self.df1[column] = self.df1[column].str.strip()
+                if self.df2[column].dtype.kind == "O":
+                    self.df2[column] = self.df2[column].str.strip()
 
         outer_join = self.df1.merge(
             self.df2, how="outer", suffixes=("_df1", "_df2"), indicator=True, **params
@@ -423,6 +432,25 @@ class Compare:
                 column + " (" + self.df2_name + ")",
             ]
         return to_return
+
+    def all_mismatch(self):
+        """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
+        columns.
+
+        Returns
+        -------
+        Pandas.DataFrame
+            All rows of the intersection dataframe, containing any columns, that don't match.
+        """
+        match_list = []
+        return_list = []
+        for col in self.intersect_rows.columns:
+            if col.endswith("_match"):
+                match_list.append(col)
+                return_list.extend([col[:-6] + "_df1", col[:-6] + "_df2"])
+
+        mm_bool = self.intersect_rows[match_list].all(axis="columns")
+        return self.intersect_rows[~mm_bool][self.join_columns + return_list]
 
     def report(self, sample_count=10):
         """Returns a string representation of a report.  The representation can

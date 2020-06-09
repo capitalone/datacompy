@@ -816,6 +816,111 @@ def test_index_with_joins_with_ignore_case():
     assert compare.intersect_rows_match()
 
 
+def test_strings_with_ignore_spaces_and_join_columns():
+    df1 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A"}])
+    df2 = pd.DataFrame([{"a": " hi ", "b": "A"}, {"a": " bye ", "b": "A"}])
+    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.count_matching_rows() == 0
+
+    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 2
+
+
+def test_integers_with_ignore_spaces_and_join_columns():
+    df1 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
+    df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
+    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=False)
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 2
+
+    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 2
+
+
+def test_sample_mismatch():
+    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
+    10000001234,123.45,George Maharis,14530.1555,2017-01-01
+    10000001235,0.45,Michael Bluth,1,2017-01-01
+    10000001236,1345,George Bluth,,2017-01-01
+    10000001237,123456,Bob Loblaw,345.12,2017-01-01
+    10000001239,1.05,Lucille Bluth,,2017-01-01
+    10000001240,123.45,George Maharis,14530.1555,2017-01-02
+    """
+
+    data2 = """acct_id,dollar_amt,name,float_fld,date_fld
+    10000001234,123.4,George Michael Bluth,14530.155,
+    10000001235,0.45,Michael Bluth,,
+    10000001236,1345,George Bluth,1,
+    10000001237,123456,Robert Loblaw,345.12,
+    10000001238,1.05,Loose Seal Bluth,111,
+    10000001240,123.45,George Maharis,14530.1555,2017-01-02
+    """
+    df1 = pd.read_csv(io.StringIO(data1), sep=",")
+    df2 = pd.read_csv(io.StringIO(data2), sep=",")
+    compare = datacompy.Compare(df1, df2, "acct_id")
+
+    output = compare.sample_mismatch(column="name", sample_count=1)
+    assert output.shape[0] == 1
+    assert (output.name_df1 != output.name_df2).all()
+
+    output = compare.sample_mismatch(column="name", sample_count=2)
+    assert output.shape[0] == 2
+    assert (output.name_df1 != output.name_df2).all()
+
+    output = compare.sample_mismatch(column="name", sample_count=3)
+    assert output.shape[0] == 2
+    assert (output.name_df1 != output.name_df2).all()
+
+
+def test_all_mismatch():
+    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
+    10000001234,123.45,George Maharis,14530.1555,2017-01-01
+    10000001235,0.45,Michael Bluth,1,2017-01-01
+    10000001236,1345,George Bluth,,2017-01-01
+    10000001237,123456,Bob Loblaw,345.12,2017-01-01
+    10000001239,1.05,Lucille Bluth,,2017-01-01
+    10000001240,123.45,George Maharis,14530.1555,2017-01-02
+    """
+
+    data2 = """acct_id,dollar_amt,name,float_fld,date_fld
+    10000001234,123.4,George Michael Bluth,14530.155,
+    10000001235,0.45,Michael Bluth,,
+    10000001236,1345,George Bluth,1,
+    10000001237,123456,Robert Loblaw,345.12,
+    10000001238,1.05,Loose Seal Bluth,111,
+    10000001240,123.45,George Maharis,14530.1555,2017-01-02
+    """
+    df1 = pd.read_csv(io.StringIO(data1), sep=",")
+    df2 = pd.read_csv(io.StringIO(data2), sep=",")
+    compare = datacompy.Compare(df1, df2, "acct_id")
+
+    output = compare.all_mismatch()
+    assert output.shape[0] == 4
+
+    assert (output.name_df1 != output.name_df2).values.sum() == 2
+    assert (~(output.name_df1 != output.name_df2)).values.sum() == 2
+
+    assert (output.dollar_amt_df1 != output.dollar_amt_df2).values.sum() == 1
+    assert (~(output.dollar_amt_df1 != output.dollar_amt_df2)).values.sum() == 3
+
+    assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
+    assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
+
+
 MAX_DIFF_DF = pd.DataFrame(
     {
         "base": [1, 1, 1, 1, 1],
