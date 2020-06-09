@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>datacompy package &mdash; datacompy 0.6.0 documentation</title>
+  <title>datacompy package &mdash; datacompy 0.7.0 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                0.6.0
+                0.7.0
               </div>
             
           
@@ -211,7 +211,8 @@ more easily track the dataframes.</p>
 </dd>
 <dt><strong>df2_name</strong><span class="classifier">str, optional</span></dt><dd><p>A string name for the second dataframe</p>
 </dd>
-<dt><strong>ignore_spaces</strong><span class="classifier">bool, optional</span></dt><dd><p>Flag to strip whitespace (including newlines) from string columns</p>
+<dt><strong>ignore_spaces</strong><span class="classifier">bool, optional</span></dt><dd><p>Flag to strip whitespace (including newlines) from string columns (including any join
+columns)</p>
 </dd>
 <dt><strong>ignore_case</strong><span class="classifier">bool, optional</span></dt><dd><p>Flag to ignore the case of string columns</p>
 </dd>
@@ -230,6 +231,21 @@ more easily track the dataframes.</p>
 <dt id="datacompy.core.Compare.all_columns_match">
 <code class="sig-name descname">all_columns_match</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.all_columns_match" title="Permalink to this definition">¶</a></dt>
 <dd><p>Whether the columns all match in the dataframes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="datacompy.core.Compare.all_mismatch">
+<code class="sig-name descname">all_mismatch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.all_mismatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
+columns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>Pandas.DataFrame</dt><dd><p>All rows of the intersection dataframe, containing any columns, that don’t match.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
