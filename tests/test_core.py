@@ -1000,3 +1000,18 @@ def test_generate_id_within_group(dataframe, expected):
 def test_generate_id_within_group_valueerror(dataframe, message):
     with raises(ValueError, match=message):
         datacompy.core.generate_id_within_group(dataframe, ["a", "b"])
+
+
+def test_lower():
+    """This function tests the toggle to use lower case for column names or not
+    """
+    # should match
+    df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+    df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
+    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+    assert compare.matches()
+    # should not match
+    df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+    df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
+    compare = datacompy.Compare(df1, df2, join_columns=["a"], lower=False)
+    assert not compare.matches()
