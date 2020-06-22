@@ -66,6 +66,8 @@ class Compare:
         columns)
     ignore_case : bool, optional
         Flag to ignore the case of string columns
+    lower: bool, optional
+        Boolean indicator that controls of column names will be cast into lower case
 
     Attributes
     ----------
@@ -87,6 +89,7 @@ class Compare:
         df2_name="df2",
         ignore_spaces=False,
         ignore_case=False,
+        lower=True,
     ):
 
         if on_index and join_columns is not None:
@@ -110,6 +113,7 @@ class Compare:
         self.rel_tol = rel_tol
         self.df1_unq_rows = self.df2_unq_rows = self.intersect_rows = None
         self.column_stats = []
+        self.lower = lower
         self._compare(ignore_spaces, ignore_case)
 
     @property
@@ -120,7 +124,7 @@ class Compare:
     def df1(self, df1):
         """Check that it is a dataframe and has the join columns"""
         self._df1 = df1
-        self._validate_dataframe("df1")
+        self._validate_dataframe("df1", lower=self.lower)
 
     @property
     def df2(self):
@@ -130,21 +134,24 @@ class Compare:
     def df2(self, df2):
         """Check that it is a dataframe and has the join columns"""
         self._df2 = df2
-        self._validate_dataframe("df2")
+        self._validate_dataframe("df2", lower=self.lower)
 
-    def _validate_dataframe(self, index):
+    def _validate_dataframe(self, index, lower=True):
         """Check that it is a dataframe and has the join columns
 
         Parameters
         ----------
         index : str
             The "index" of the dataframe - df1 or df2.
+        lower: bool, optional
+            Boolean indicator that controls of column names will be cast into lower case
         """
         dataframe = getattr(self, index)
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError("{} must be a pandas DataFrame".format(index))
 
-        dataframe.columns = [col.lower() for col in dataframe.columns]
+        if lower:
+            dataframe.columns = [str(col).lower() for col in dataframe.columns]
         # Check if join_columns are present in the dataframe
         if not set(self.join_columns).issubset(set(dataframe.columns)):
             raise ValueError("{} must have all columns from join_columns".format(index))
