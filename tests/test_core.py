@@ -1013,7 +1013,7 @@ def test_lower():
     # should not match
     df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
     df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
-    compare = datacompy.Compare(df1, df2, join_columns=["a"], lower=False)
+    compare = datacompy.Compare(df1, df2, join_columns=["a"], cast_column_names_lower=False)
     assert not compare.matches()
 
     # test join column
@@ -1027,7 +1027,7 @@ def test_lower():
     df2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
     expected_message = "df2 must have all columns from join_columns"
     with raises(ValueError, match=expected_message):
-        compare = datacompy.Compare(df1, df2, join_columns=["a"], lower=False)
+        compare = datacompy.Compare(df1, df2, join_columns=["a"], cast_column_names_lower=False)
 
 
 def test_integer_column_names():
