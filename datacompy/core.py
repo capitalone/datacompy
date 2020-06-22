@@ -92,20 +92,20 @@ class Compare:
         lower=True,
     ):
 
+        self.lower = lower
         if on_index and join_columns is not None:
             raise Exception("Only provide on_index or join_columns")
         elif on_index:
             self.on_index = True
             self.join_columns = []
-        elif isinstance(join_columns, str):
-            self.join_columns = [join_columns.lower()]
+        elif isinstance(join_columns, (str, int, float)):
+            self.join_columns = [str(join_columns).lower() if self.lower else str(join_columns)]
             self.on_index = False
         else:
-            self.join_columns = [col.lower() for col in join_columns]
+            self.join_columns = [str(col).lower() if self.lower else str(col) for col in join_columns]
             self.on_index = False
 
         self._any_dupes = False
-        self.lower = lower
         self.df1 = df1
         self.df2 = df2
         self.df1_name = df1_name
