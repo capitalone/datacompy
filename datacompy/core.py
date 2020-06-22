@@ -105,6 +105,7 @@ class Compare:
             self.on_index = False
 
         self._any_dupes = False
+        self.lower = lower
         self.df1 = df1
         self.df2 = df2
         self.df1_name = df1_name
@@ -113,7 +114,6 @@ class Compare:
         self.rel_tol = rel_tol
         self.df1_unq_rows = self.df2_unq_rows = self.intersect_rows = None
         self.column_stats = []
-        self.lower = lower
         self._compare(ignore_spaces, ignore_case)
 
     @property
