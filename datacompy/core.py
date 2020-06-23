@@ -99,10 +99,15 @@ class Compare:
             self.on_index = True
             self.join_columns = []
         elif isinstance(join_columns, (str, int, float)):
-            self.join_columns = [str(join_columns).lower() if self.cast_column_names_lower else str(join_columns)]
+            self.join_columns = [
+                str(join_columns).lower() if self.cast_column_names_lower else str(join_columns)
+            ]
             self.on_index = False
         else:
-            self.join_columns = [str(col).lower() if self.cast_column_names_lower else str(col) for col in join_columns]
+            self.join_columns = [
+                str(col).lower() if self.cast_column_names_lower else str(col)
+                for col in join_columns
+            ]
             self.on_index = False
 
         self._any_dupes = False
