@@ -1000,3 +1000,40 @@ def test_generate_id_within_group(dataframe, expected):
 def test_generate_id_within_group_valueerror(dataframe, message):
     with raises(ValueError, match=message):
         datacompy.core.generate_id_within_group(dataframe, ["a", "b"])
+
+
+def test_lower():
+    """This function tests the toggle to use lower case for column names or not
+    """
+    # should match
+    df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+    df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
+    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+    assert compare.matches()
+    # should not match
+    df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+    df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
+    compare = datacompy.Compare(df1, df2, join_columns=["a"], cast_column_names_lower=False)
+    assert not compare.matches()
+
+    # test join column
+    # should match
+    df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+    df2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
+    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+    assert compare.matches()
+    # should fail because "a" is not found in df2
+    df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+    df2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
+    expected_message = "df2 must have all columns from join_columns"
+    with raises(ValueError, match=expected_message):
+        compare = datacompy.Compare(df1, df2, join_columns=["a"], cast_column_names_lower=False)
+
+
+def test_integer_column_names():
+    """This function tests that integer column names would also work
+    """
+    df1 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
+    df2 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
+    compare = datacompy.Compare(df1, df2, join_columns=[1])
+    assert compare.matches()
