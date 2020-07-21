@@ -66,6 +66,8 @@ class Compare:
         columns)
     ignore_case : bool, optional
         Flag to ignore the case of string columns
+    cast_column_names_lower: bool, optional
+        Boolean indicator that controls of column names will be cast into lower case
 
     Attributes
     ----------
@@ -87,18 +89,25 @@ class Compare:
         df2_name="df2",
         ignore_spaces=False,
         ignore_case=False,
+        cast_column_names_lower=True,
     ):
 
+        self.cast_column_names_lower = cast_column_names_lower
         if on_index and join_columns is not None:
             raise Exception("Only provide on_index or join_columns")
         elif on_index:
             self.on_index = True
             self.join_columns = []
-        elif isinstance(join_columns, str):
-            self.join_columns = [join_columns.lower()]
+        elif isinstance(join_columns, (str, int, float)):
+            self.join_columns = [
+                str(join_columns).lower() if self.cast_column_names_lower else str(join_columns)
+            ]
             self.on_index = False
         else:
-            self.join_columns = [col.lower() for col in join_columns]
+            self.join_columns = [
+                str(col).lower() if self.cast_column_names_lower else str(col)
+                for col in join_columns
+            ]
             self.on_index = False
 
         self._any_dupes = False
@@ -120,7 +129,7 @@ class Compare:
     def df1(self, df1):
         """Check that it is a dataframe and has the join columns"""
         self._df1 = df1
-        self._validate_dataframe("df1")
+        self._validate_dataframe("df1", cast_column_names_lower=self.cast_column_names_lower)
 
     @property
     def df2(self):
@@ -130,21 +139,26 @@ class Compare:
     def df2(self, df2):
         """Check that it is a dataframe and has the join columns"""
         self._df2 = df2
-        self._validate_dataframe("df2")
+        self._validate_dataframe("df2", cast_column_names_lower=self.cast_column_names_lower)
 
-    def _validate_dataframe(self, index):
+    def _validate_dataframe(self, index, cast_column_names_lower=True):
         """Check that it is a dataframe and has the join columns
 
         Parameters
         ----------
         index : str
             The "index" of the dataframe - df1 or df2.
+        cast_column_names_lower: bool, optional
+            Boolean indicator that controls of column names will be cast into lower case
         """
         dataframe = getattr(self, index)
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError("{} must be a pandas DataFrame".format(index))
 
-        dataframe.columns = [col.lower() for col in dataframe.columns]
+        if cast_column_names_lower:
+            dataframe.columns = [str(col).lower() for col in dataframe.columns]
+        else:
+            dataframe.columns = [str(col) for col in dataframe.columns]
         # Check if join_columns are present in the dataframe
         if not set(self.join_columns).issubset(set(dataframe.columns)):
             raise ValueError("{} must have all columns from join_columns".format(index))
