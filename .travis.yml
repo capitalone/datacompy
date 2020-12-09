@@ -3,22 +3,27 @@ jdk: openjdk8
 dist: xenial
 cache:
   pip: true
-python:
-  - "3.5"
-  - "3.6"
-  - "3.7"
+jobs:
+  include:
+  - python: 3.5
+    env: SPARK_VERSION=2.4.7
+  - python: 3.6
+    env: SPARK_VERSION=2.4.7
+  - python: 3.7
+    env: SPARK_VERSION=2.4.7
+
 before_install:
   - mkdir -p /opt
-  - wget -q -O /opt/spark.tgz https://archive.apache.org/dist/spark/spark-2.4.7/spark-2.4.7-bin-hadoop2.7.tgz
+  - wget -q -O /opt/spark.tgz https://archive.apache.org/dist/spark/spark-$SPARK_VERSION/spark-$SPARK_VERSION-bin-hadoop2.7.tgz
   - tar xzf /opt/spark.tgz -C /opt/
   - rm /opt/spark.tgz
-  - export SPARK_HOME=/opt/spark-2.4.7-bin-hadoop2.7
-  - export PATH=$PATH:/opt/spark-2.4.7-bin-hadoop2.7/bin
+  - export SPARK_HOME=/opt/spark-$SPARK_VERSION-bin-hadoop2.7
+  - export PATH=$PATH:/opt/spark-$SPARK_VERSION-bin-hadoop2.7/bin
   - export PATH=$(echo "$PATH" | sed -e 's/:\/usr\/local\/lib\/jvm\/openjdk11\/bin//')
   - export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
 install:
   - pip install -r test-requirements.txt
-  - pip install pyspark==2.4.7
+  - pip install pyspark==$SPARK_VERSION
   - pip install pytest-spark==0.4.5
 script:
   - python -m pytest
