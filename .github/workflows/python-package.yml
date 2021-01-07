@@ -19,18 +19,14 @@ jobs:
         python-version: [3.6, 3.7, 3.8, 3.9]
         spark: [2.4.3, 2.4.4, 2.4.5, 3.0.0, 3.0.1]
         exclude:
-          - python-version: 3.8
-            spark: 2.4.3
-          - python-version: 3.8
-            spark: 2.4.4
-          - python-version: 3.8
-            spark: 2.4.5
-          - python-version: 3.9
-            spark: 2.4.3
-          - python-version: 3.9
-            spark: 2.4.4
-          - python-version: 3.9
-            spark: 2.4.5
+          - python-version: 3.6
+            spark: 3.0.0
+          - python-version: 3.6
+            spark: 3.0.1
+          - python-version: 3.7
+            spark: 3.0.0
+          - python-version: 3.7
+            spark: 3.0.1
     env:
       PYTHON_VERSION: ${{ matrix.python-version }} 
       SPARK_VERSION: ${{ matrix.spark }}
@@ -51,28 +47,25 @@ jobs:
     - name: Install Spark (2.4.x)
       if: matrix.spark == '2.4.3' || matrix.spark == '2.4.4' || matrix.spark == '2.4.5'
       run: |
-        wget -q -O spark.tgz https://archive.apache.org/dist/spark/spark-${{ matrix.spark }}/spark-${{ matrix.spark }}-bin-hadoop2.7.tgz
-        tar xzf spark.tgz
-        rm spark.tgz
-        ls -la
-        pwd
-        ls -lah spark-${{ matrix.spark }}-bin-hadoop2.7
-        echo "SPARK_HOME=${{ runner.workspace }}/datacompy/spark-${{ matrix.spark }}-bin-hadoop2.7" >> $GITHUB_ENV
-        echo "${{ runner.workspace }}/datacompy/spark-${{ matrix.spark }}-bin-hadoop2.7/bin" >> $GITHUB_PATH
+        wget -q -O ${{ runner.workspace }}/spark.tgz https://archive.apache.org/dist/spark/spark-${{ matrix.spark }}/spark-${{ matrix.spark }}-bin-hadoop2.7.tgz
+        tar xzf ${{ runner.workspace }}/spark.tgz
+        rm ${{ runner.workspace }}/spark.tgz
+        echo "SPARK_HOME=${{ runner.workspace }}/spark-${{ matrix.spark }}-bin-hadoop2.7" >> $GITHUB_ENV
+        echo "${{ runner.workspace }}/spark-${{ matrix.spark }}-bin-hadoop2.7/bin" >> $GITHUB_PATH
 
     - name: Install Spark (3.0.x)
       if: matrix.spark == '3.0.0' || matrix.spark == '3.0.1'
       run: |
-        wget -q -O spark.tgz https://archive.apache.org/dist/spark/spark-${{ matrix.spark }}/spark-${{ matrix.spark }}-bin-hadoop3.2.tgz
-        tar xzf spark.tgz
-        rm spark.tgz
-        echo "SPARK_HOME=${{ runner.workspace }}/datacompy/spark-${{ matrix.spark }}-bin-hadoop3.2" >> $GITHUB_ENV
-        echo "${{ runner.workspace }}/datacompy/spark-${{ matrix.spark }}-bin-hadoop3.2/bin" >> $GITHUB_PATH
+        wget -q -O ${{ runner.workspace }}/spark.tgz https://archive.apache.org/dist/spark/spark-${{ matrix.spark }}/spark-${{ matrix.spark }}-bin-hadoop3.2.tgz
+        tar xzf ${{ runner.workspace }}/spark.tgz
+        rm ${{ runner.workspace }}/spark.tgz
+        echo "SPARK_HOME=${{ runner.workspace }}/spark-${{ matrix.spark }}-bin-hadoop3.2" >> $GITHUB_ENV
+        echo "${{ runner.workspace }}/spark-${{ matrix.spark }}-bin-hadoop3.2/bin" >> $GITHUB_PATH
     
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pytest pytest-spark
+        python -m pip install pytest pytest-spark pypandoc
         python -m pip install pyspark==${{ matrix.spark }}
         if [ -f test-requirements.txt ]; then pip install -r test-requirements.txt; fi
     
