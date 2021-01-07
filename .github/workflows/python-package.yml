@@ -55,6 +55,8 @@ jobs:
         tar xzf spark.tgz
         rm spark.tgz
         ls -la
+        pwd
+        ls -lah spark-${{ matrix.spark }}-bin-hadoop2.7
         echo "SPARK_HOME=${{ runner.workspace }}/spark-${{ matrix.spark }}-bin-hadoop2.7" >> $GITHUB_ENV
         echo "${{ runner.workspace }}/spark-${{ matrix.spark }}-bin-hadoop2.7/bin" >> $GITHUB_PATH
 
