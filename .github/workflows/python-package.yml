@@ -50,6 +50,8 @@ jobs:
         wget -q -O ${{ runner.workspace }}/spark.tgz https://archive.apache.org/dist/spark/spark-${{ matrix.spark }}/spark-${{ matrix.spark }}-bin-hadoop2.7.tgz
         tar xzf ${{ runner.workspace }}/spark.tgz
         rm ${{ runner.workspace }}/spark.tgz
+        ls -lah ${{ runner.workspace }}
+        ls -lah ${{ runner.workspace }}/spark-${{ matrix.spark }}-bin-hadoop2.7
         echo "SPARK_HOME=${{ runner.workspace }}/spark-${{ matrix.spark }}-bin-hadoop2.7" >> $GITHUB_ENV
         echo "${{ runner.workspace }}/spark-${{ matrix.spark }}-bin-hadoop2.7/bin" >> $GITHUB_PATH
 
