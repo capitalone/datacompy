@@ -233,15 +233,8 @@ Using SparkCompare on Databricks
 Contributors
 ------------
 
-We welcome your interest in Capital One’s Open Source Projects (the "Project").
-Any Contributor to the project must accept and sign a CLA indicating agreement to
-the license terms. Except for the license granted in this CLA to Capital One and
-to recipients of software distributed by Capital One, you reserve all right, title,
-and interest in and to your contributions; this CLA does not impact your rights to
-use your own contributions for any other purpose.
+We welcome and appreciate your contributions! Before we can accept any contributions, we ask that you please be sure to
+sign the `Contributor License Agreement (CLA) <https://cla-assistant.io/capitalone/datacompy>`_.
 
-- `Link to Individual CLA <https://docs.google.com/forms/d/19LpBBjykHPox18vrZvBbZUcK6gQTj7qv1O5hCduAZFU/viewform>`_
-- `Link to Corporate CLA <https://docs.google.com/forms/d/e/1FAIpQLSeAbobIPLCVZD_ccgtMWBDAcN68oqbAJBQyDTSAQ1AkYuCp_g/viewform>`_
-
-This project adheres to the `Open Source Code of Conduct <https://developer.capitalone.com/resources/code-of-conduct>`_.
+This project adheres to the `Open Source Code of Conduct <https://developer.capitalone.com/resources/code-of-conduct/>`_.
 By participating, you are expected to honor this code.
