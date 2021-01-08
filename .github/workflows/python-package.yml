@@ -71,7 +71,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pytest pytest-spark pypandoc
         python -m pip install pyspark==${{ matrix.spark }}
-        if [ -f test-requirements.txt ]; then pip install -r test-requirements.txt; fi
+        python -m pip install .[dev,spark]
     
     - name: Test with pytest
       run: |
