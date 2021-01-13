@@ -1395,9 +1395,17 @@ def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark, compar
         ],
         schema,
     )
-    print(comparison1.rows_only_base.dtypes)
     assert comparison1.rows_only_base.count() == 1
-    assert expected_df.union(comparison1.rows_only_base).distinct().count() == 1
+    assert (
+        expected_df.union(
+            comparison1.rows_only_base.select(
+                "acct", "date_fld", "dollar_amt", "float_fld", "name"
+            )
+        )
+        .distinct()
+        .count()
+        == 1
+    )
 
 
 def test_rows_only_compare_returns_a_dataframe_with_rows_only_in_compare(
