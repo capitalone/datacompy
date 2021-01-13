@@ -1377,25 +1377,25 @@ def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark, compar
     schema = StructType(
         [
             StructField("acct", LongType(), True),
-            StructField("dollar_amt", LongType(), True),
-            StructField("name", StringType(), True),
-            StructField("float_fld", DoubleType(), True),
             StructField("date_fld", DateType(), True),
+            StructField("dollar_amt", LongType(), True),
+            StructField("float_fld", DoubleType(), True),
+            StructField("name", StringType(), True),
         ]
     )
     expected_df = spark.createDataFrame(
         [
             Row(
                 acct=10000001239,
-                dollar_amt=1,
-                name="Lucille Bluth",
-                float_fld=None,
                 date_fld=datetime.date(2017, 1, 1),
+                dollar_amt=1,
+                float_fld=None,
+                name="Lucille Bluth",
             )
         ],
         schema,
     )
-
+    print(comparison1.rows_only_base.dtypes)
     assert comparison1.rows_only_base.count() == 1
     assert expected_df.union(comparison1.rows_only_base).distinct().count() == 1
 
