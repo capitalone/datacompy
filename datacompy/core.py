@@ -571,14 +571,15 @@ class Compare:
             ].to_string()
             report += "\n\n"
 
-            report += "Sample Rows with Unequal Values\n"
-            report += "-------------------------------\n"
-            report += "\n"
-            for sample in match_sample:
-                report += sample.to_string()
-                report += "\n\n"
+            if sample_count > 0:
+                report += "Sample Rows with Unequal Values\n"
+                report += "-------------------------------\n"
+                report += "\n"
+                for sample in match_sample:
+                    report += sample.to_string()
+                    report += "\n\n"
 
-        if self.df1_unq_rows.shape[0] > 0:
+        if min(sample_count, self.df1_unq_rows.shape[0]) > 0:
             report += "Sample Rows Only in {} (First 10 Columns)\n".format(self.df1_name)
             report += "---------------------------------------{}\n".format("-" * len(self.df1_name))
             report += "\n"
@@ -587,7 +588,7 @@ class Compare:
             report += self.df1_unq_rows.sample(unq_count)[columns].to_string()
             report += "\n\n"
 
-        if self.df2_unq_rows.shape[0] > 0:
+        if min(sample_count, self.df2_unq_rows.shape[0]) > 0:
             report += "Sample Rows Only in {} (First 10 Columns)\n".format(self.df2_name)
             report += "---------------------------------------{}\n".format("-" * len(self.df2_name))
             report += "\n"
