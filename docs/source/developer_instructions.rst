@@ -6,23 +6,19 @@ Guidance for developers.
 Pre-Commit Hooks
 ----------------
 
-We use the excellent `pre-commit <https://pre-commit.com/>`_ to run the excellent
-`black <https://github.com/ambv/black>`_ on all changes before commits.  ``pre-commit`` is included
-in the test requirements below, and you'll have to run ``pre-commit install`` once per environment
-before committing changes, or else manually install ``black`` and run it.  If you have ``pre-commit``
-installed, trying to commit a change will first run black against any changed Python files, and force
-you to add/commit any changes.
+We use the excellent `pre-commit <https://pre-commit.com/>`_ to run several hooks on all changes before commits.
+``pre-commit`` is included in the ``dev`` extra installs. You'll have to run ``pre-commit install`` once per environment
+before committing changes.
 
-The reason behind running black as a pre-commit hook is to let a machine make style decisions, based
-on the collective wisdom of the Python community.  The only change made from the default black setup
-is to allow lines up to 100 characters long.
+The reason behind running black, isort, and others as a pre-commit hook is to let a machine make style decisions, based
+on the collective wisdom of the Python community.
 
 Generating Documentation
 ------------------------
 
-You will need to ``pip install`` the test requirements::
+You will need to ``pip install`` the ``dev`` requirements::
 
-    pip install -r test-requirements.txt
+    pip install -e .[dev]
 
 Then from the root of the repo you can type::
 
@@ -50,8 +46,8 @@ Run ``python -m pytest`` to run all unittests defined in the subfolder
 Management of Requirements
 --------------------------
 
-Requirements of the project should be added to ``requirements.txt``.  Optional
-requirements used only for testing are added to ``test-requirements.txt``.
+Requirements of the project should be added to ``requirements.txt``.  Optional requirements used only for testing,
+documentation, or code quality are added to ``setup.py`` and ``EXTRAS_REQUIRE``
 
 
 Release Guide
@@ -74,3 +70,33 @@ disconnected and independent from the code: ``git checkout --orphan gh-pages``.
 
 The repo has a ``Makefile`` in the root folder which has helper commands such as ``make sphinx``, and
 ``make ghpages`` to help streamline building and pushing docs once they are setup right.
+
+
+Generating distribution archives (PyPI)
+---------------------------------------
+
+After each release the package will need to be uploaded to PyPi. The instructions below are taken
+from `packaging.python.org <https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives>`_
+
+Update / Install ``setuptools``, ``wheel``, and ``twine``::
+
+    pip install --upgrade setuptools wheel twine
+
+Generate distributions::
+
+    python setup.py sdist bdist_wheel
+
+Under the ``dist`` folder you should have something as follows::
+
+    dist/
+    datacompy-0.1.0-py3-none-any.whl
+    datacompy-0.1.0.tar.gz
+
+
+Finally upload to PyPi::
+
+    # test pypi
+    twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+    # real pypi
+    twine upload dist/*

@@ -14,21 +14,21 @@
 # limitations under the License.
 
 import datetime
-import logging
 import io
+import logging
 import re
 from decimal import Decimal
 
 import pytest
-from pyspark.sql import SparkSession, Row
+from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import (
-    StructType,
-    StructField,
-    DoubleType,
-    StringType,
-    LongType,
     DateType,
     DecimalType,
+    DoubleType,
+    LongType,
+    StringType,
+    StructField,
+    StructType,
 )
 
 import datacompy
@@ -729,19 +729,39 @@ def compare_tol4_fixture(spark):
 def base_td_fixture(spark):
     mock_data = [
         Row(
-            acct=10000001234, acct_seq=0, stat_cd="*2", open_dt=datetime.date(2017, 5, 1), cd="0001"
+            acct=10000001234,
+            acct_seq=0,
+            stat_cd="*2",
+            open_dt=datetime.date(2017, 5, 1),
+            cd="0001",
         ),
         Row(
-            acct=10000001235, acct_seq=0, stat_cd="V1", open_dt=datetime.date(2017, 5, 2), cd="0002"
+            acct=10000001235,
+            acct_seq=0,
+            stat_cd="V1",
+            open_dt=datetime.date(2017, 5, 2),
+            cd="0002",
         ),
         Row(
-            acct=10000001236, acct_seq=0, stat_cd="V2", open_dt=datetime.date(2017, 5, 3), cd="0003"
+            acct=10000001236,
+            acct_seq=0,
+            stat_cd="V2",
+            open_dt=datetime.date(2017, 5, 3),
+            cd="0003",
         ),
         Row(
-            acct=10000001237, acct_seq=0, stat_cd="*2", open_dt=datetime.date(2017, 5, 4), cd="0004"
+            acct=10000001237,
+            acct_seq=0,
+            stat_cd="*2",
+            open_dt=datetime.date(2017, 5, 4),
+            cd="0004",
         ),
         Row(
-            acct=10000001238, acct_seq=0, stat_cd="*2", open_dt=datetime.date(2017, 5, 5), cd="0005"
+            acct=10000001238,
+            acct_seq=0,
+            stat_cd="*2",
+            open_dt=datetime.date(2017, 5, 5),
+            cd="0005",
         ),
     ]
 
@@ -752,19 +772,39 @@ def base_td_fixture(spark):
 def compare_source_fixture(spark):
     mock_data = [
         Row(
-            ACCOUNT_IDENTIFIER=10000001234, SEQ_NUMBER=0, STATC=None, ACCOUNT_OPEN=2017121, CODE=1.0
+            ACCOUNT_IDENTIFIER=10000001234,
+            SEQ_NUMBER=0,
+            STATC=None,
+            ACCOUNT_OPEN=2017121,
+            CODE=1.0,
         ),
         Row(
-            ACCOUNT_IDENTIFIER=10000001235, SEQ_NUMBER=0, STATC="V1", ACCOUNT_OPEN=2017122, CODE=2.0
+            ACCOUNT_IDENTIFIER=10000001235,
+            SEQ_NUMBER=0,
+            STATC="V1",
+            ACCOUNT_OPEN=2017122,
+            CODE=2.0,
         ),
         Row(
-            ACCOUNT_IDENTIFIER=10000001236, SEQ_NUMBER=0, STATC="V2", ACCOUNT_OPEN=2017123, CODE=3.0
+            ACCOUNT_IDENTIFIER=10000001236,
+            SEQ_NUMBER=0,
+            STATC="V2",
+            ACCOUNT_OPEN=2017123,
+            CODE=3.0,
         ),
         Row(
-            ACCOUNT_IDENTIFIER=10000001237, SEQ_NUMBER=0, STATC="V3", ACCOUNT_OPEN=2017124, CODE=4.0
+            ACCOUNT_IDENTIFIER=10000001237,
+            SEQ_NUMBER=0,
+            STATC="V3",
+            ACCOUNT_OPEN=2017124,
+            CODE=4.0,
         ),
         Row(
-            ACCOUNT_IDENTIFIER=10000001238, SEQ_NUMBER=0, STATC=None, ACCOUNT_OPEN=2017125, CODE=5.0
+            ACCOUNT_IDENTIFIER=10000001238,
+            SEQ_NUMBER=0,
+            STATC=None,
+            ACCOUNT_OPEN=2017125,
+            CODE=5.0,
         ),
     ]
 
@@ -791,7 +831,10 @@ def base_decimal_fixture(spark):
 
 @pytest.fixture(scope="module", name="compare_decimal")
 def compare_decimal_fixture(spark):
-    mock_data = [Row(acct=10000001234, dollar_amt=123.4), Row(acct=10000001235, dollar_amt=0.456)]
+    mock_data = [
+        Row(acct=10000001234, dollar_amt=123.4),
+        Row(acct=10000001235, dollar_amt=0.456),
+    ]
 
     return spark.createDataFrame(mock_data)
 
@@ -799,14 +842,22 @@ def compare_decimal_fixture(spark):
 @pytest.fixture(scope="module", name="comparison_abs_tol")
 def comparison_abs_tol_fixture(base_tol, compare_abs_tol, spark):
     return SparkCompare(
-        spark, base_tol, compare_abs_tol, join_columns=["account_identifier"], abs_tol=0.01
+        spark,
+        base_tol,
+        compare_abs_tol,
+        join_columns=["account_identifier"],
+        abs_tol=0.01,
     )
 
 
 @pytest.fixture(scope="module", name="comparison_rel_tol")
 def comparison_rel_tol_fixture(base_tol, compare_rel_tol, spark):
     return SparkCompare(
-        spark, base_tol, compare_rel_tol, join_columns=["account_identifier"], rel_tol=0.1
+        spark,
+        base_tol,
+        compare_rel_tol,
+        join_columns=["account_identifier"],
+        rel_tol=0.1,
     )
 
 
@@ -853,7 +904,11 @@ def comparison_known_diffs1(base_td, compare_source, spark):
         base_td,
         compare_source,
         join_columns=[("acct", "ACCOUNT_IDENTIFIER"), ("acct_seq", "SEQ_NUMBER")],
-        column_mapping=[("stat_cd", "STATC"), ("open_dt", "ACCOUNT_OPEN"), ("cd", "CODE")],
+        column_mapping=[
+            ("stat_cd", "STATC"),
+            ("open_dt", "ACCOUNT_OPEN"),
+            ("cd", "CODE"),
+        ],
         known_differences=[
             {
                 "name": "Left-padded, four-digit numeric code",
@@ -881,7 +936,11 @@ def comparison_known_diffs2(base_td, compare_source, spark):
         base_td,
         compare_source,
         join_columns=[("acct", "ACCOUNT_IDENTIFIER"), ("acct_seq", "SEQ_NUMBER")],
-        column_mapping=[("stat_cd", "STATC"), ("open_dt", "ACCOUNT_OPEN"), ("cd", "CODE")],
+        column_mapping=[
+            ("stat_cd", "STATC"),
+            ("open_dt", "ACCOUNT_OPEN"),
+            ("cd", "CODE"),
+        ],
         known_differences=[
             {
                 "name": "Left-padded, four-digit numeric code",
@@ -900,7 +959,11 @@ def comparison_known_diffs2(base_td, compare_source, spark):
 @pytest.fixture(scope="module", name="comparison1")
 def comparison1_fixture(base_df1, compare_df1, spark):
     return SparkCompare(
-        spark, base_df1, compare_df1, join_columns=["acct"], cache_intermediates=CACHE_INTERMEDIATES
+        spark,
+        base_df1,
+        compare_df1,
+        join_columns=["acct"],
+        cache_intermediates=CACHE_INTERMEDIATES,
     )
 
 
@@ -1107,7 +1170,9 @@ def test_report_outputs_the_row_summary_for_differently_named_columns(comparison
     assert "Number of duplicate rows found in compare: 0" in stdout.getvalue()
 
 
-def test_report_outputs_the_row_equality_comparison_for_differently_named_columns(comparison3):
+def test_report_outputs_the_row_equality_comparison_for_differently_named_columns(
+    comparison3,
+):
     stdout = io.StringIO()
 
     comparison3.report(file=stdout)
@@ -1127,7 +1192,9 @@ def test_report_outputs_column_detail_for_columns_in_only_one_dataframe(comparis
     assert re.search(r2, str(stdout.getvalue()), re.X) is not None
 
 
-def test_report_outputs_column_detail_for_columns_in_only_compare_dataframe(comparison1):
+def test_report_outputs_column_detail_for_columns_in_only_compare_dataframe(
+    comparison1,
+):
     stdout = io.StringIO()
 
     comparison1.report(file=stdout)
@@ -1152,7 +1219,9 @@ def test_report_outputs_schema_difference_details(comparison1):
     )
 
 
-def test_report_outputs_schema_difference_details_for_differently_named_columns(comparison3):
+def test_report_outputs_schema_difference_details_for_differently_named_columns(
+    comparison3,
+):
     stdout = io.StringIO()
 
     comparison3.report(file=stdout)
@@ -1177,7 +1246,9 @@ def test_column_comparison_outputs_number_of_columns_with_differences(comparison
     assert "Number of columns compared with all values equal: 0" in stdout.getvalue()
 
 
-def test_column_comparison_outputs_all_columns_equal_for_identical_dataframes(comparison2):
+def test_column_comparison_outputs_all_columns_equal_for_identical_dataframes(
+    comparison2,
+):
     stdout = io.StringIO()
 
     comparison2.report(file=stdout)
@@ -1215,7 +1286,10 @@ def test_column_comparison_outputs_number_of_columns_with_differences_for_known_
         "Number of columns compared with all values equal but known differences found: 2"
         in stdout.getvalue()
     )
-    assert "Number of columns compared with all values completely equal: 0" in stdout.getvalue()
+    assert (
+        "Number of columns compared with all values completely equal: 0"
+        in stdout.getvalue()
+    )
 
 
 def test_column_comparison_outputs_number_of_columns_with_differences_for_custom_known_diffs(
@@ -1234,7 +1308,10 @@ def test_column_comparison_outputs_number_of_columns_with_differences_for_custom
         "Number of columns compared with all values equal but known differences found: 1"
         in stdout.getvalue()
     )
-    assert "Number of columns compared with all values completely equal: 0" in stdout.getvalue()
+    assert (
+        "Number of columns compared with all values completely equal: 0"
+        in stdout.getvalue()
+    )
 
 
 def test_columns_with_unequal_values_show_mismatch_counts(comparison1):
@@ -1251,17 +1328,23 @@ def test_columns_with_unequal_values_show_mismatch_counts(comparison1):
         re.X,
     )
     assert re.search(
-        r"""dollar_amt \s+ dollar_amt \s+ bigint \s+ double \s+ 2 \s+ 2""", stdout.getvalue(), re.X
+        r"""dollar_amt \s+ dollar_amt \s+ bigint \s+ double \s+ 2 \s+ 2""",
+        stdout.getvalue(),
+        re.X,
     )
     assert re.search(
-        r"""float_fld \s+ float_fld \s+ double \s+ double \s+ 1 \s+ 3""", stdout.getvalue(), re.X
+        r"""float_fld \s+ float_fld \s+ double \s+ double \s+ 1 \s+ 3""",
+        stdout.getvalue(),
+        re.X,
     )
     assert re.search(
         r"""name \s+ name \s+ string \s+ string \s+ 3 \s+ 1""", stdout.getvalue(), re.X
     )
 
 
-def test_columns_with_different_names_with_unequal_values_show_mismatch_counts(comparison3):
+def test_columns_with_different_names_with_unequal_values_show_mismatch_counts(
+    comparison3,
+):
     stdout = io.StringIO()
 
     comparison3.report(file=stdout)
@@ -1280,7 +1363,9 @@ def test_columns_with_different_names_with_unequal_values_show_mismatch_counts(c
         re.X,
     )
     assert re.search(
-        r"""float_fld \s+ float_field \s+ double \s+ double \s+ 4 \s+ 1""", stdout.getvalue(), re.X
+        r"""float_fld \s+ float_field \s+ double \s+ double \s+ 4 \s+ 1""",
+        stdout.getvalue(),
+        re.X,
     )
     assert re.search(
         r"""name \s+ name \s+ string \s+ string \s+ 4 \s+ 1""", stdout.getvalue(), re.X
@@ -1302,20 +1387,30 @@ def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark, compar
         [
             Row(
                 acct=10000001239,
-                dollar_amt=1,
-                name="Lucille Bluth",
-                float_fld=None,
                 date_fld=datetime.date(2017, 1, 1),
+                dollar_amt=1,
+                float_fld=None,
+                name="Lucille Bluth",
             )
         ],
         schema,
     )
-
     assert comparison1.rows_only_base.count() == 1
-    assert expected_df.union(comparison1.rows_only_base).distinct().count() == 1
+    assert (
+        expected_df.union(
+            comparison1.rows_only_base.select(
+                "acct", "date_fld", "dollar_amt", "float_fld", "name"
+            )
+        )
+        .distinct()
+        .count()
+        == 1
+    )
 
 
-def test_rows_only_compare_returns_a_dataframe_with_rows_only_in_compare(spark, comparison1):
+def test_rows_only_compare_returns_a_dataframe_with_rows_only_in_compare(
+    spark, comparison1
+):
     expected_df = spark.createDataFrame(
         [
             Row(
@@ -1338,46 +1433,46 @@ def test_rows_both_mismatch_returns_a_dataframe_with_rows_where_variables_mismat
     expected_df = spark.createDataFrame(
         [
             Row(
+                accnt_purge=False,
                 acct=10000001234,
+                date_fld=datetime.date(2017, 1, 1),
                 dollar_amt_base=123,
                 dollar_amt_compare=123.4,
                 dollar_amt_match=False,
-                name_base="George Maharis",
-                name_compare="George Michael Bluth",
-                name_match=False,
                 float_fld_base=14530.1555,
                 float_fld_compare=14530.155,
                 float_fld_match=False,
-                date_fld=datetime.date(2017, 1, 1),
-                accnt_purge=False,
+                name_base="George Maharis",
+                name_compare="George Michael Bluth",
+                name_match=False,
             ),
             Row(
+                accnt_purge=False,
                 acct=10000001235,
+                date_fld=datetime.date(2017, 1, 1),
                 dollar_amt_base=0,
                 dollar_amt_compare=0.45,
                 dollar_amt_match=False,
-                name_base="Michael Bluth",
-                name_compare="Michael Bluth",
-                name_match=True,
                 float_fld_base=1.0,
                 float_fld_compare=None,
                 float_fld_match=False,
-                date_fld=datetime.date(2017, 1, 1),
-                accnt_purge=False,
+                name_base="Michael Bluth",
+                name_compare="Michael Bluth",
+                name_match=True,
             ),
             Row(
+                accnt_purge=False,
                 acct=10000001236,
+                date_fld=datetime.date(2017, 1, 1),
                 dollar_amt_base=1345,
                 dollar_amt_compare=1345.0,
                 dollar_amt_match=True,
-                name_base="George Bluth",
-                name_compare="George Bluth",
-                name_match=True,
                 float_fld_base=None,
                 float_fld_compare=1.0,
                 float_fld_match=False,
-                date_fld=datetime.date(2017, 1, 1),
-                accnt_purge=False,
+                name_base="George Bluth",
+                name_compare="George Bluth",
+                name_match=True,
             ),
         ]
     )
@@ -1394,84 +1489,85 @@ def test_rows_both_mismatch_only_includes_rows_with_true_mismatches_when_known_d
             Row(
                 acct=10000001237,
                 acct_seq=0,
-                stat_cd_base="*2",
-                stat_cd_compare="V3",
-                stat_cd_match=False,
-                stat_cd_match_type="MISMATCH",
-                open_dt_base=datetime.date(2017, 5, 4),
-                open_dt_compare=2017124,
-                open_dt_match=True,
-                open_dt_match_type="KNOWN_DIFFERENCE",
                 cd_base="0004",
                 cd_compare=4.0,
                 cd_match=True,
                 cd_match_type="KNOWN_DIFFERENCE",
+                open_dt_base=datetime.date(2017, 5, 4),
+                open_dt_compare=2017124,
+                open_dt_match=True,
+                open_dt_match_type="KNOWN_DIFFERENCE",
+                stat_cd_base="*2",
+                stat_cd_compare="V3",
+                stat_cd_match=False,
+                stat_cd_match_type="MISMATCH",
             )
         ]
     )
-
     assert comparison_kd1.rows_both_mismatch.count() == 1
     assert expected_df.union(comparison_kd1.rows_both_mismatch).distinct().count() == 1
 
 
-def test_rows_both_all_returns_a_dataframe_with_all_rows_in_both_dataframes(spark, comparison1):
+def test_rows_both_all_returns_a_dataframe_with_all_rows_in_both_dataframes(
+    spark, comparison1
+):
     expected_df = spark.createDataFrame(
         [
             Row(
+                accnt_purge=False,
                 acct=10000001234,
+                date_fld=datetime.date(2017, 1, 1),
                 dollar_amt_base=123,
                 dollar_amt_compare=123.4,
                 dollar_amt_match=False,
-                name_base="George Maharis",
-                name_compare="George Michael Bluth",
-                name_match=False,
                 float_fld_base=14530.1555,
                 float_fld_compare=14530.155,
                 float_fld_match=False,
-                date_fld=datetime.date(2017, 1, 1),
-                accnt_purge=False,
+                name_base="George Maharis",
+                name_compare="George Michael Bluth",
+                name_match=False,
             ),
             Row(
+                accnt_purge=False,
                 acct=10000001235,
+                date_fld=datetime.date(2017, 1, 1),
                 dollar_amt_base=0,
                 dollar_amt_compare=0.45,
                 dollar_amt_match=False,
-                name_base="Michael Bluth",
-                name_compare="Michael Bluth",
-                name_match=True,
                 float_fld_base=1.0,
                 float_fld_compare=None,
                 float_fld_match=False,
-                date_fld=datetime.date(2017, 1, 1),
-                accnt_purge=False,
+                name_base="Michael Bluth",
+                name_compare="Michael Bluth",
+                name_match=True,
             ),
             Row(
+                accnt_purge=False,
                 acct=10000001236,
+                date_fld=datetime.date(2017, 1, 1),
                 dollar_amt_base=1345,
                 dollar_amt_compare=1345.0,
                 dollar_amt_match=True,
-                name_base="George Bluth",
-                name_compare="George Bluth",
-                name_match=True,
                 float_fld_base=None,
                 float_fld_compare=1.0,
                 float_fld_match=False,
-                date_fld=datetime.date(2017, 1, 1),
-                accnt_purge=False,
+                name_base="George Bluth",
+                name_compare="George Bluth",
+                name_match=True,
             ),
             Row(
+                accnt_purge=False,
                 acct=10000001237,
+                date_fld=datetime.date(2017, 1, 1),
                 dollar_amt_base=123456,
                 dollar_amt_compare=123456.0,
                 dollar_amt_match=True,
-                name_base="Bob Loblaw",
-                name_compare="Bob Loblaw",
-                name_match=True,
                 float_fld_base=345.12,
                 float_fld_compare=345.12,
                 float_fld_match=True,
-                date_fld=datetime.date(2017, 1, 1),
-                accnt_purge=False,
+                name_base="Bob Loblaw",
+                name_compare="Bob Loblaw",
+                name_match=True,
             ),
         ]
     )
@@ -1488,82 +1584,82 @@ def test_rows_both_all_shows_known_diffs_flag_and_known_diffs_count_as_matches(
             Row(
                 acct=10000001234,
                 acct_seq=0,
-                stat_cd_base="*2",
-                stat_cd_compare=None,
-                stat_cd_match=True,
-                stat_cd_match_type="KNOWN_DIFFERENCE",
-                open_dt_base=datetime.date(2017, 5, 1),
-                open_dt_compare=2017121,
-                open_dt_match=True,
-                open_dt_match_type="KNOWN_DIFFERENCE",
                 cd_base="0001",
                 cd_compare=1.0,
                 cd_match=True,
                 cd_match_type="KNOWN_DIFFERENCE",
-            ),
-            Row(
-                acct=10000001235,
-                acct_seq=0,
-                stat_cd_base="V1",
-                stat_cd_compare="V1",
-                stat_cd_match=True,
-                stat_cd_match_type="MATCH",
-                open_dt_base=datetime.date(2017, 5, 2),
-                open_dt_compare=2017122,
+                open_dt_base=datetime.date(2017, 5, 1),
+                open_dt_compare=2017121,
                 open_dt_match=True,
                 open_dt_match_type="KNOWN_DIFFERENCE",
-                cd_base="0002",
-                cd_compare=2.0,
-                cd_match=True,
-                cd_match_type="KNOWN_DIFFERENCE",
-            ),
-            Row(
-                acct=10000001236,
-                acct_seq=0,
-                stat_cd_base="V2",
-                stat_cd_compare="V2",
-                stat_cd_match=True,
-                stat_cd_match_type="MATCH",
-                open_dt_base=datetime.date(2017, 5, 3),
-                open_dt_compare=2017123,
-                open_dt_match=True,
-                open_dt_match_type="KNOWN_DIFFERENCE",
-                cd_base="0003",
-                cd_compare=3.0,
-                cd_match=True,
-                cd_match_type="KNOWN_DIFFERENCE",
-            ),
-            Row(
-                acct=10000001237,
-                acct_seq=0,
-                stat_cd_base="*2",
-                stat_cd_compare="V3",
-                stat_cd_match=False,
-                stat_cd_match_type="MISMATCH",
-                open_dt_base=datetime.date(2017, 5, 4),
-                open_dt_compare=2017124,
-                open_dt_match=True,
-                open_dt_match_type="KNOWN_DIFFERENCE",
-                cd_base="0004",
-                cd_compare=4.0,
-                cd_match=True,
-                cd_match_type="KNOWN_DIFFERENCE",
-            ),
-            Row(
-                acct=10000001238,
-                acct_seq=0,
                 stat_cd_base="*2",
                 stat_cd_compare=None,
                 stat_cd_match=True,
                 stat_cd_match_type="KNOWN_DIFFERENCE",
-                open_dt_base=datetime.date(2017, 5, 5),
-                open_dt_compare=2017125,
+            ),
+            Row(
+                acct=10000001235,
+                acct_seq=0,
+                cd_base="0002",
+                cd_compare=2.0,
+                cd_match=True,
+                cd_match_type="KNOWN_DIFFERENCE",
+                open_dt_base=datetime.date(2017, 5, 2),
+                open_dt_compare=2017122,
                 open_dt_match=True,
                 open_dt_match_type="KNOWN_DIFFERENCE",
+                stat_cd_base="V1",
+                stat_cd_compare="V1",
+                stat_cd_match=True,
+                stat_cd_match_type="MATCH",
+            ),
+            Row(
+                acct=10000001236,
+                acct_seq=0,
+                cd_base="0003",
+                cd_compare=3.0,
+                cd_match=True,
+                cd_match_type="KNOWN_DIFFERENCE",
+                open_dt_base=datetime.date(2017, 5, 3),
+                open_dt_compare=2017123,
+                open_dt_match=True,
+                open_dt_match_type="KNOWN_DIFFERENCE",
+                stat_cd_base="V2",
+                stat_cd_compare="V2",
+                stat_cd_match=True,
+                stat_cd_match_type="MATCH",
+            ),
+            Row(
+                acct=10000001237,
+                acct_seq=0,
+                cd_base="0004",
+                cd_compare=4.0,
+                cd_match=True,
+                cd_match_type="KNOWN_DIFFERENCE",
+                open_dt_base=datetime.date(2017, 5, 4),
+                open_dt_compare=2017124,
+                open_dt_match=True,
+                open_dt_match_type="KNOWN_DIFFERENCE",
+                stat_cd_base="*2",
+                stat_cd_compare="V3",
+                stat_cd_match=False,
+                stat_cd_match_type="MISMATCH",
+            ),
+            Row(
+                acct=10000001238,
+                acct_seq=0,
                 cd_base="0005",
                 cd_compare=5.0,
                 cd_match=True,
                 cd_match_type="KNOWN_DIFFERENCE",
+                open_dt_base=datetime.date(2017, 5, 5),
+                open_dt_compare=2017125,
+                open_dt_match=True,
+                open_dt_match_type="KNOWN_DIFFERENCE",
+                stat_cd_base="*2",
+                stat_cd_compare=None,
+                stat_cd_match=True,
+                stat_cd_match_type="KNOWN_DIFFERENCE",
             ),
         ]
     )
@@ -1579,78 +1675,78 @@ def test_rows_both_all_returns_a_dataframe_with_all_rows_in_identical_dataframes
         [
             Row(
                 acct=10000001234,
+                date_fld_base=datetime.date(2017, 1, 1),
+                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_match=True,
                 dollar_amt_base=123,
                 dollar_amt_compare=123,
                 dollar_amt_match=True,
-                name_base="George Maharis",
-                name_compare="George Maharis",
-                name_match=True,
                 float_fld_base=14530.1555,
                 float_fld_compare=14530.1555,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
-                date_fld_match=True,
+                name_base="George Maharis",
+                name_compare="George Maharis",
+                name_match=True,
             ),
             Row(
                 acct=10000001235,
+                date_fld_base=datetime.date(2017, 1, 1),
+                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_match=True,
                 dollar_amt_base=0,
                 dollar_amt_compare=0,
                 dollar_amt_match=True,
-                name_base="Michael Bluth",
-                name_compare="Michael Bluth",
-                name_match=True,
                 float_fld_base=1.0,
                 float_fld_compare=1.0,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
-                date_fld_match=True,
+                name_base="Michael Bluth",
+                name_compare="Michael Bluth",
+                name_match=True,
             ),
             Row(
                 acct=10000001236,
+                date_fld_base=datetime.date(2017, 1, 1),
+                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_match=True,
                 dollar_amt_base=1345,
                 dollar_amt_compare=1345,
                 dollar_amt_match=True,
+                float_fld_base=None,
+                float_fld_compare=None,
+                float_fld_match=True,
                 name_base="George Bluth",
                 name_compare="George Bluth",
                 name_match=True,
-                float_fld_base=None,
-                float_fld_compare=None,
-                float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
-                date_fld_match=True,
             ),
             Row(
                 acct=10000001237,
+                date_fld_base=datetime.date(2017, 1, 1),
+                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_match=True,
                 dollar_amt_base=123456,
                 dollar_amt_compare=123456,
                 dollar_amt_match=True,
-                name_base="Bob Loblaw",
-                name_compare="Bob Loblaw",
-                name_match=True,
                 float_fld_base=345.12,
                 float_fld_compare=345.12,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
-                date_fld_match=True,
+                name_base="Bob Loblaw",
+                name_compare="Bob Loblaw",
+                name_match=True,
             ),
             Row(
                 acct=10000001239,
-                dollar_amt_base=1,
-                dollar_amt_compare=1,
-                dollar_amt_match=True,
-                name_base="Lucille Bluth",
-                name_compare="Lucille Bluth",
-                name_match=True,
-                float_fld_base=None,
-                float_fld_compare=None,
-                float_fld_match=True,
                 date_fld_base=datetime.date(2017, 1, 1),
                 date_fld_compare=datetime.date(2017, 1, 1),
                 date_fld_match=True,
+                dollar_amt_base=1,
+                dollar_amt_compare=1,
+                dollar_amt_match=True,
+                float_fld_base=None,
+                float_fld_compare=None,
+                float_fld_match=True,
+                name_base="Lucille Bluth",
+                name_compare="Lucille Bluth",
+                name_match=True,
             ),
         ]
     )
@@ -1665,84 +1761,84 @@ def test_rows_both_all_returns_all_rows_in_both_dataframes_for_differently_named
     expected_df = spark.createDataFrame(
         [
             Row(
+                accnt_purge=False,
                 acct=10000001234,
+                date_fld_base=datetime.date(2017, 1, 1),
+                date_fld_compare=datetime.date(2017, 1, 1),
+                date_fld_match=True,
                 dollar_amt_base=123,
                 dollar_amt_compare=123.4,
                 dollar_amt_match=False,
-                name_base="George Maharis",
-                name_compare="George Michael Bluth",
-                name_match=False,
                 float_fld_base=14530.1555,
                 float_fld_compare=14530.155,
                 float_fld_match=False,
+                name_base="George Maharis",
+                name_compare="George Michael Bluth",
+                name_match=False,
+            ),
+            Row(
+                accnt_purge=False,
+                acct=10000001235,
                 date_fld_base=datetime.date(2017, 1, 1),
                 date_fld_compare=datetime.date(2017, 1, 1),
                 date_fld_match=True,
-                accnt_purge=False,
-            ),
-            Row(
-                acct=10000001235,
                 dollar_amt_base=0,
                 dollar_amt_compare=0.45,
                 dollar_amt_match=False,
-                name_base="Michael Bluth",
-                name_compare="Michael Bluth",
-                name_match=True,
                 float_fld_base=1.0,
                 float_fld_compare=1.0,
                 float_fld_match=True,
+                name_base="Michael Bluth",
+                name_compare="Michael Bluth",
+                name_match=True,
+            ),
+            Row(
+                accnt_purge=False,
+                acct=10000001236,
                 date_fld_base=datetime.date(2017, 1, 1),
                 date_fld_compare=datetime.date(2017, 1, 1),
                 date_fld_match=True,
-                accnt_purge=False,
-            ),
-            Row(
-                acct=10000001236,
                 dollar_amt_base=1345,
                 dollar_amt_compare=1345.0,
                 dollar_amt_match=True,
+                float_fld_base=None,
+                float_fld_compare=None,
+                float_fld_match=True,
                 name_base="George Bluth",
                 name_compare="George Bluth",
                 name_match=True,
-                float_fld_base=None,
-                float_fld_compare=None,
-                float_fld_match=True,
+            ),
+            Row(
+                accnt_purge=False,
+                acct=10000001237,
                 date_fld_base=datetime.date(2017, 1, 1),
                 date_fld_compare=datetime.date(2017, 1, 1),
                 date_fld_match=True,
-                accnt_purge=False,
-            ),
-            Row(
-                acct=10000001237,
                 dollar_amt_base=123456,
                 dollar_amt_compare=123456.0,
                 dollar_amt_match=True,
-                name_base="Bob Loblaw",
-                name_compare="Bob Loblaw",
-                name_match=True,
                 float_fld_base=345.12,
                 float_fld_compare=345.12,
                 float_fld_match=True,
+                name_base="Bob Loblaw",
+                name_compare="Bob Loblaw",
+                name_match=True,
+            ),
+            Row(
+                accnt_purge=True,
+                acct=10000001239,
                 date_fld_base=datetime.date(2017, 1, 1),
                 date_fld_compare=datetime.date(2017, 1, 1),
                 date_fld_match=True,
-                accnt_purge=False,
-            ),
-            Row(
-                acct=10000001239,
                 dollar_amt_base=1,
                 dollar_amt_compare=1.05,
                 dollar_amt_match=False,
-                name_base="Lucille Bluth",
-                name_compare="Lucille Bluth",
-                name_match=True,
                 float_fld_base=None,
                 float_fld_compare=None,
                 float_fld_match=True,
-                date_fld_base=datetime.date(2017, 1, 1),
-                date_fld_compare=datetime.date(2017, 1, 1),
-                date_fld_match=True,
-                accnt_purge=True,
+                name_base="Lucille Bluth",
+                name_compare="Lucille Bluth",
+                name_match=True,
             ),
         ]
     )
@@ -1774,7 +1870,9 @@ def test_columns_with_unequal_values_text_is_aligned(comparison4):
     )
 
 
-def test_columns_with_unequal_values_text_is_aligned_with_known_differences(comparison_kd1):
+def test_columns_with_unequal_values_text_is_aligned_with_known_differences(
+    comparison_kd1,
+):
     stdout = io.StringIO()
 
     comparison_kd1.report(file=stdout)
@@ -1797,7 +1895,9 @@ def test_columns_with_unequal_values_text_is_aligned_with_known_differences(comp
     )
 
 
-def test_columns_with_unequal_values_text_is_aligned_with_custom_known_differences(comparison_kd2):
+def test_columns_with_unequal_values_text_is_aligned_with_custom_known_differences(
+    comparison_kd2,
+):
     stdout = io.StringIO()
 
     comparison_kd2.report(file=stdout)
@@ -1957,7 +2057,9 @@ def text_alignment_validator(
             if line == section_end:  # Detect end of section and stop
                 break
 
-            if not processed_first_line:  # First line in section - capture text start/end positions
+            if (
+                not processed_first_line
+            ):  # First line in section - capture text start/end positions
                 matches = re.search(column_regexes[0], line, re.X)
                 assert matches is not None  # Make sure we found at least this...
 
@@ -1974,7 +2076,9 @@ def text_alignment_validator(
                         break
 
                 if not match:
-                    raise AssertionError('Did not find a match for line: "{}"'.format(line))
+                    raise AssertionError(
+                        'Did not find a match for line: "{}"'.format(line)
+                    )
 
                 for n in left_indices:
                     assert match_positions[n] == match.start(n)

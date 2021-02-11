@@ -1,7 +1,11 @@
 repos:
--   repo: https://github.com/psf/black
-    rev: stable
+  - repo: https://github.com/psf/black
+    rev: 20.8b1
     hooks:
-    - id: black
-      language_version: python3.7
-      types: [python]
+      - id: black
+        types: [file, python]
+        language_version: python3.7
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.7.0
+    hooks:
+      - id: isort
