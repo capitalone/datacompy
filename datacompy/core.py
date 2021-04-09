@@ -28,6 +28,8 @@ import os
 import numpy as np
 import pandas as pd
 
+from ordered_set import OrderedSet
+
 LOG = logging.getLogger(__name__)
 
 
@@ -203,15 +205,15 @@ class Compare:
 
     def df1_unq_columns(self):
         """Get columns that are unique to df1"""
-        return set(self.df1.columns) - set(self.df2.columns)
+        return OrderedSet(self.df1.columns) - OrderedSet(self.df2.columns)
 
     def df2_unq_columns(self):
         """Get columns that are unique to df2"""
-        return set(self.df2.columns) - set(self.df1.columns)
+        return OrderedSet(self.df2.columns) - OrderedSet(self.df1.columns)
 
     def intersect_columns(self):
         """Get columns that are shared between the two dataframes"""
-        return set(self.df1.columns) & set(self.df2.columns)
+        return OrderedSet(self.df1.columns) & OrderedSet(self.df2.columns)
 
     def _dataframe_merge(self, ignore_spaces):
         """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
@@ -297,7 +299,7 @@ class Compare:
         """
         LOG.debug("Comparing intersection")
         row_cnt = len(self.intersect_rows)
-        for column in sorted(self.intersect_columns()):
+        for column in self.intersect_columns():
             if column in self.join_columns:
                 match_cnt = row_cnt
                 col_match = ""
@@ -369,7 +371,7 @@ class Compare:
             Number of matching rows
         """
         match_columns = []
-        for column in sorted(self.intersect_columns()):
+        for column in self.intersect_columns():
             if column not in self.join_columns:
                 match_columns.append(column + "_match")
         return self.intersect_rows[match_columns].all(axis=1).sum()

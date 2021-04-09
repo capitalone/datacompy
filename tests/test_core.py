@@ -461,6 +461,27 @@ def test_columns_no_overlap():
     assert compare.intersect_columns() == {"a", "b"}
 
 
+def test_columns_maintain_order_through_set_operations():
+    df1 = pd.DataFrame(
+        [
+            (("A"), (0), (1), (2), (3), (4), (-2)),
+            (("B"), (0), (2), (2), (3), (4), (-3))
+        ],
+        columns=["join", "f", "g", "b", "h", "a", "c"]
+    )
+    df2 = pd.DataFrame(
+        [
+            (("A"), (0), (1), (2), (-1), (4), (-3)),
+            (("B"), (1), (2), (3), (-1), (4), (-2))
+        ],
+        columns=["join", "e", "h", "b", "a", "g", "d"]
+    )
+    compare = datacompy.Compare(df1, df2, ["join"])
+    assert list(compare.df1_unq_columns()) == ["f", "c"]
+    assert list(compare.df2_unq_columns()) == ["e", "d"]
+    assert list(compare.intersect_columns()) == ["join", "g", "b", "h", "a"]
+
+
 def test_10k_rows():
     df1 = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
     df1.reset_index(inplace=True)
