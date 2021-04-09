@@ -297,7 +297,7 @@ class Compare:
         """
         LOG.debug("Comparing intersection")
         row_cnt = len(self.intersect_rows)
-        for column in self.intersect_columns():
+        for column in sorted(self.intersect_columns()):
             if column in self.join_columns:
                 match_cnt = row_cnt
                 col_match = ""
@@ -369,7 +369,7 @@ class Compare:
             Number of matching rows
         """
         match_columns = []
-        for column in self.intersect_columns():
+        for column in sorted(self.intersect_columns()):
             if column not in self.join_columns:
                 match_columns.append(column + "_match")
         return self.intersect_rows[match_columns].all(axis=1).sum()
