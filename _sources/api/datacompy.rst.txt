@@ -20,7 +20,6 @@ datacompy.sparkcompare module
    :undoc-members:
    :show-inheritance:
 
-
 Module contents
 ---------------
 

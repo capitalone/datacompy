@@ -3,20 +3,25 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>DataComPy &mdash; datacompy 0.7.1 documentation</title>
+  <title>DataComPy &mdash; datacompy 0.7.2 documentation</title>
   
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
 
   
   
+
   
+  
+
   
 
   
@@ -26,10 +31,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -50,7 +55,7 @@
           
 
           
-            <a href="#" class="icon icon-home" alt="Documentation Home"> datacompy
+            <a href="#" class="icon icon-home"> datacompy
           
 
           
@@ -60,7 +65,7 @@
             
             
               <div class="version">
-                0.7.1
+                0.7.2
               </div>
             
           
@@ -135,6 +140,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -146,7 +153,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
           
         
@@ -160,7 +167,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <a class="reference external image-reference" href="https://travis-ci.org/capitalone/datacompy"><img alt="https://travis-ci.org/capitalone/datacompy.svg?branch=master" src="https://travis-ci.org/capitalone/datacompy.svg?branch=master" /></a>
+  <a class="reference external image-reference" href="https://github.com/capitalone/datacompy/actions"><img alt="https://github.com/capitalone/datacompy/workflows/Python%20package/badge.svg" src="https://github.com/capitalone/datacompy/workflows/Python%20package/badge.svg" /></a>
 <a class="reference external image-reference" href="https://github.com/ambv/black"><img alt="https://img.shields.io/badge/code%20style-black-000000.svg" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
 <div class="section" id="datacompy">
 <h1>DataComPy<a class="headerlink" href="#datacompy" title="Permalink to this headline">¶</a></h1>
@@ -385,17 +392,9 @@ you can choose clusters to attach the library to.</p></li>
 </div>
 <div class="section" id="contributors">
 <h3>Contributors<a class="headerlink" href="#contributors" title="Permalink to this headline">¶</a></h3>
-<p>We welcome your interest in Capital One’s Open Source Projects (the “Project”).
-Any Contributor to the project must accept and sign a CLA indicating agreement to
-the license terms. Except for the license granted in this CLA to Capital One and
-to recipients of software distributed by Capital One, you reserve all right, title,
-and interest in and to your contributions; this CLA does not impact your rights to
-use your own contributions for any other purpose.</p>
-<ul class="simple">
-<li><p><a class="reference external" href="https://docs.google.com/forms/d/19LpBBjykHPox18vrZvBbZUcK6gQTj7qv1O5hCduAZFU/viewform">Link to Individual CLA</a></p></li>
-<li><p><a class="reference external" href="https://docs.google.com/forms/d/e/1FAIpQLSeAbobIPLCVZD_ccgtMWBDAcN68oqbAJBQyDTSAQ1AkYuCp_g/viewform">Link to Corporate CLA</a></p></li>
-</ul>
-<p>This project adheres to the <a class="reference external" href="https://developer.capitalone.com/resources/code-of-conduct">Open Source Code of Conduct</a>.
+<p>We welcome and appreciate your contributions! Before we can accept any contributions, we ask that you please be sure to
+sign the <a class="reference external" href="https://cla-assistant.io/capitalone/datacompy">Contributor License Agreement (CLA)</a>.</p>
+<p>This project adheres to the <a class="reference external" href="https://developer.capitalone.com/resources/code-of-conduct/">Open Source Code of Conduct</a>.
 By participating, you are expected to honor this code.</p>
 </div>
 </div>
@@ -405,7 +404,7 @@ By participating, you are expected to honor this code.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="install.html#pypi-basic">PyPI (basic)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install.html#conda-installs-dependencies-from-conda">conda (installs dependencies from Conda)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#conda-installs-dependencies-from-conda-forge">conda (installs dependencies from Conda Forge)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="install.html#virtualenv-install-dependencies-from-pypi">virtualenv (install dependencies from PyPI)</a></li>
 </ul>
 </li>
@@ -428,6 +427,7 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#run-unit-tests">Run unit tests</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#management-of-requirements">Management of Requirements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#release-guide">Release Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#generating-distribution-archives-pypi">Generating distribution archives (PyPI)</a></li>
 </ul>
 </li>
 </ul>
@@ -464,35 +464,28 @@ By participating, you are expected to honor this code.</p>
            
           </div>
           <footer>
-  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="install.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
+        <a href="install.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2020, Capital One
+        &#169; Copyright 2020, Capital One.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 
