@@ -18,7 +18,7 @@ PyPI (basic)
 A Conda environment or virtual environment is highly recommended:
 
 conda (installs dependencies from Conda Forge)
-----------------------------------------
+----------------------------------------------
 
 ::
 
