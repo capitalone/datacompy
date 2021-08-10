@@ -238,3 +238,9 @@ sign the `Contributor License Agreement (CLA) <https://cla-assistant.io/capitalo
 
 This project adheres to the `Open Source Code of Conduct <https://developer.capitalone.com/resources/code-of-conduct/>`_.
 By participating, you are expected to honor this code.
+
+
+Roadmap
+-------
+
+Roadmap details can be found `here <https://github.com/capitalone/datacompy/blob/develop/ROADMAP.rst>`_
