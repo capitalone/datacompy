@@ -449,24 +449,114 @@ class Compare:
             ]
         return to_return
 
-    def all_mismatch(self):
+    def all_mismatch(self,
+                     exclude_matched_columns=False,
+                     simplify_matched=False,
+                     include_match_col=False):
         """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
         columns.
+
+        Parameters
+        ----------
+        exclude_matched_columns : bool, optional
+            When set to True, columns where all rows are matched are excluded.
+        simplify_matched : bool, optional
+            When set to True, only a single column will be included for
+            columns that had no changes between the two dataframes.
+        include_match_col : bool, optional
+            Whether to include a `xxx_match` column that indicactes whether
+            the column data has changed for the row.
 
         Returns
         -------
         Pandas.DataFrame
             All rows of the intersection dataframe, containing any columns, that don't match.
         """
+
+        columns_matched = self.columns_matched()
+
         match_list = []
         return_list = []
         for col in self.intersect_rows.columns:
             if col.endswith("_match"):
                 match_list.append(col)
+
+                if col[:-6] in columns_matched:
+                    if exclude_matched_columns is True:
+                        continue
+
+                    if simplify_matched is True:
+                        return_list.append(col[:-6] + "_df1")
+                        continue
+
+                if include_match_col is True:
+                    return_list.append(col)
                 return_list.extend([col[:-6] + "_df1", col[:-6] + "_df2"])
 
         mm_bool = self.intersect_rows[match_list].all(axis="columns")
-        return self.intersect_rows[~mm_bool][self.join_columns + return_list]
+        all_mismatch = self.intersect_rows[~mm_bool][
+            self.join_columns + return_list
+        ]
+
+        if simplify_matched is True:
+            rename_dict = {}
+            for col in columns_matched:
+                rename_dict[col + "_df1"] = col
+            all_mismatch = all_mismatch.rename(columns=rename_dict)
+
+        return all_mismatch
+
+    def columns_mismatched(self):
+        """Returns a list of columns where at least some rows have mismatches.
+
+        Returns
+        -------
+        List
+            A list of columns where at least some rows have mismatches.
+        """
+        _, columns_mismatched = self._columns_by_match_status()
+
+        return columns_mismatched
+
+    def columns_matched(self):
+        """Returns a list of columns where the data matches across all rows in
+        the two dataframes.
+
+        Returns
+        -------
+        List
+            A list of columns where the data matches across all rows in the
+            two dataframes.
+        """
+        columns_matched, _ = self._columns_by_match_status()
+
+        return columns_matched
+
+    def _columns_by_match_status(self):
+        """Returns two lists. The first contains the columns that have no
+        differences between the two dataframes and the other one contains the
+        columns that do have differences.
+
+        Returns
+        -------
+        Tuple
+            With two lists of columns.
+        """
+        columns_matched = []
+        columns_mismatched = []
+        for col in self.intersect_rows.columns:
+            if col.endswith("_match"):
+                col_mismatched_count = len(self.intersect_rows[
+                    self.intersect_rows[col] == False
+                ].index)
+
+                col_name = col[:-6]
+                if col_mismatched_count > 0:
+                    columns_mismatched.append(col_name)
+                else:
+                    columns_matched.append(col_name)
+
+        return (columns_matched, columns_mismatched)
 
     def report(self, sample_count=10):
         """Returns a string representation of a report.  The representation can
