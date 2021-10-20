@@ -173,7 +173,9 @@ def test_date_columns_equal_with_ignore_spaces():
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
     # and reverse
-    actual_out_rev = datacompy.columns_equal(df.b, df.a, rel_tol=0.2, ignore_spaces=True)
+    actual_out_rev = datacompy.columns_equal(
+        df.b, df.a, rel_tol=0.2, ignore_spaces=True
+    )
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
@@ -200,13 +202,14 @@ def test_date_columns_equal_with_ignore_spaces_and_case():
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
     # and reverse
-    actual_out_rev = datacompy.columns_equal(df.b, df.a, rel_tol=0.2, ignore_spaces=True)
+    actual_out_rev = datacompy.columns_equal(
+        df.b, df.a, rel_tol=0.2, ignore_spaces=True
+    )
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
 def test_date_columns_unequal():
-    """I want datetime fields to match with dates stored as strings
-    """
+    """I want datetime fields to match with dates stored as strings"""
     df = pd.DataFrame([{"a": "2017-01-01", "b": "2017-01-02"}, {"a": "2017-01-01"}])
     df["a_dt"] = pd.to_datetime(df["a"])
     df["b_dt"] = pd.to_datetime(df["b"])
@@ -291,7 +294,11 @@ def test_decimal_columns_equal():
             {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
             {"a": Decimal("1.3"), "b": Decimal("1.3"), "expected": True},
             {"a": Decimal("1.000003"), "b": Decimal("1.000003"), "expected": True},
-            {"a": Decimal("1.000000004"), "b": Decimal("1.000000003"), "expected": False},
+            {
+                "a": Decimal("1.000000004"),
+                "b": Decimal("1.000000003"),
+                "expected": False,
+            },
             {"a": Decimal("1.3"), "b": Decimal("1.2"), "expected": False},
             {"a": np.nan, "b": np.nan, "expected": True},
             {"a": np.nan, "b": Decimal("1"), "expected": False},
@@ -309,7 +316,11 @@ def test_decimal_columns_equal_rel():
             {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
             {"a": Decimal("1.3"), "b": Decimal("1.3"), "expected": True},
             {"a": Decimal("1.000003"), "b": Decimal("1.000003"), "expected": True},
-            {"a": Decimal("1.000000004"), "b": Decimal("1.000000003"), "expected": True},
+            {
+                "a": Decimal("1.000000004"),
+                "b": Decimal("1.000000003"),
+                "expected": True,
+            },
             {"a": Decimal("1.3"), "b": Decimal("1.2"), "expected": False},
             {"a": np.nan, "b": np.nan, "expected": True},
             {"a": np.nan, "b": Decimal("1"), "expected": False},
@@ -383,7 +394,9 @@ def test_mixed_column_with_ignore_spaces_and_case():
             {"a": "hi", "b": "hi ", "expected": True},
         ]
     )
-    actual_out = datacompy.columns_equal(df.a, df.b, ignore_spaces=True, ignore_case=True)
+    actual_out = datacompy.columns_equal(
+        df.a, df.b, ignore_spaces=True, ignore_case=True
+    )
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -465,16 +478,16 @@ def test_columns_maintain_order_through_set_operations():
     df1 = pd.DataFrame(
         [
             (("A"), (0), (1), (2), (3), (4), (-2)),
-            (("B"), (0), (2), (2), (3), (4), (-3))
+            (("B"), (0), (2), (2), (3), (4), (-3)),
         ],
-        columns=["join", "f", "g", "b", "h", "a", "c"]
+        columns=["join", "f", "g", "b", "h", "a", "c"],
     )
     df2 = pd.DataFrame(
         [
             (("A"), (0), (1), (2), (-1), (4), (-3)),
-            (("B"), (1), (2), (3), (-1), (4), (-2))
+            (("B"), (1), (2), (3), (-1), (4), (-2)),
         ],
-        columns=["join", "e", "h", "b", "a", "g", "d"]
+        columns=["join", "e", "h", "b", "a", "g", "d"],
     )
     compare = datacompy.Compare(df1, df2, ["join"])
     assert list(compare.df1_unq_columns()) == ["f", "c"]
@@ -591,7 +604,9 @@ def test_index_joining_strings_i_guess():
 
 def test_index_joining_non_overlapping():
     df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    df2 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}])
+    df2 = pd.DataFrame(
+        [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
+    )
     compare = datacompy.Compare(df1, df2, on_index=True)
     assert not compare.matches()
     assert compare.all_columns_match()
@@ -603,22 +618,17 @@ def test_index_joining_non_overlapping():
 
 def test_temp_column_name():
     df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    df2 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}])
+    df2 = pd.DataFrame(
+        [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
+    )
     actual = datacompy.temp_column_name(df1, df2)
     assert actual == "_temp_0"
 
 
 def test_temp_column_name_one_has():
     df1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
-    df2 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}])
-    actual = datacompy.temp_column_name(df1, df2)
-    assert actual == "_temp_1"
-
-
-def test_temp_column_name_both_have():
-    df1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
     df2 = pd.DataFrame(
-        [{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
+        [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
     )
     actual = datacompy.temp_column_name(df1, df2)
     assert actual == "_temp_1"
@@ -627,7 +637,24 @@ def test_temp_column_name_both_have():
 def test_temp_column_name_both_have():
     df1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
     df2 = pd.DataFrame(
-        [{"_temp_0": "hi", "b": 2}, {"_temp_1": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
+        [
+            {"_temp_0": "hi", "b": 2},
+            {"_temp_0": "bye", "b": 2},
+            {"a": "back fo mo", "b": 3},
+        ]
+    )
+    actual = datacompy.temp_column_name(df1, df2)
+    assert actual == "_temp_1"
+
+
+def test_temp_column_name_both_have():
+    df1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
+    df2 = pd.DataFrame(
+        [
+            {"_temp_0": "hi", "b": 2},
+            {"_temp_1": "bye", "b": 2},
+            {"a": "back fo mo", "b": 3},
+        ]
     )
     actual = datacompy.temp_column_name(df1, df2)
     assert actual == "_temp_2"
@@ -636,7 +663,11 @@ def test_temp_column_name_both_have():
 def test_temp_column_name_one_already():
     df1 = pd.DataFrame([{"_temp_1": "hi", "b": 2}, {"_temp_1": "bye", "b": 2}])
     df2 = pd.DataFrame(
-        [{"_temp_1": "hi", "b": 2}, {"_temp_1": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
+        [
+            {"_temp_1": "hi", "b": 2},
+            {"_temp_1": "bye", "b": 2},
+            {"a": "back fo mo", "b": 3},
+        ]
     )
     actual = datacompy.temp_column_name(df1, df2)
     assert actual == "_temp_0"
@@ -705,6 +736,9 @@ def test_simple_dupes_one_field_three_to_two_vals():
     # Just render the report to make sure it renders.
     t = compare.report()
 
+    assert "(First 1 Columns)" in compare.report(column_count=1)
+    assert "(First 2 Columns)" in compare.report(column_count=2)
+
 
 def test_dupes_from_real_data():
     data = """acct_id,acct_sfx_num,trxn_post_dt,trxn_post_seq_num,trxn_amt,trxn_dt,debit_cr_cd,cash_adv_trxn_comn_cntry_cd,mrch_catg_cd,mrch_pstl_cd,visa_mail_phn_cd,visa_rqstd_pmt_svc_cd,mc_pmt_facilitator_idn_num
@@ -733,7 +767,9 @@ def test_dupes_from_real_data():
     compare_acct = datacompy.Compare(df1, df2, join_columns=["acct_id"])
     assert compare_acct.matches()
     compare_unq = datacompy.Compare(
-        df1, df2, join_columns=["acct_id", "acct_sfx_num", "trxn_post_dt", "trxn_post_seq_num"]
+        df1,
+        df2,
+        join_columns=["acct_id", "acct_sfx_num", "trxn_post_dt", "trxn_post_seq_num"],
     )
     assert compare_unq.matches()
     # Just render the report to make sure it renders.
@@ -986,7 +1022,9 @@ def test_dupes_with_nulls():
             "fld_2": ["A", np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
         }
     )
-    df2 = pd.DataFrame({"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", np.nan, np.nan, np.nan, np.nan]})
+    df2 = pd.DataFrame(
+        {"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", np.nan, np.nan, np.nan, np.nan]}
+    )
     comp = datacompy.Compare(df1, df2, join_columns=["fld_1", "fld_2"])
     assert comp.subset()
 
@@ -995,18 +1033,31 @@ def test_dupes_with_nulls():
     "dataframe,expected",
     [
         (pd.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}), pd.Series([0, 0, 0])),
-        (pd.DataFrame({"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}), pd.Series([0, 1, 0])),
-        (pd.DataFrame({"a": [-999, 2, 3], "b": [1, 2, 3]}), pd.Series([0, 0, 0])),
-        (pd.DataFrame({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}), pd.Series([0, 0, 1])),
-        (pd.DataFrame({"a": ["1", np.nan, np.nan], "b": ["1", "2", "2"]}), pd.Series([0, 0, 1])),
         (
-            pd.DataFrame({"a": [datetime(2018, 1, 1), np.nan, np.nan], "b": ["1", "2", "2"]}),
+            pd.DataFrame({"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}),
+            pd.Series([0, 1, 0]),
+        ),
+        (pd.DataFrame({"a": [-999, 2, 3], "b": [1, 2, 3]}), pd.Series([0, 0, 0])),
+        (
+            pd.DataFrame({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}),
+            pd.Series([0, 0, 1]),
+        ),
+        (
+            pd.DataFrame({"a": ["1", np.nan, np.nan], "b": ["1", "2", "2"]}),
+            pd.Series([0, 0, 1]),
+        ),
+        (
+            pd.DataFrame(
+                {"a": [datetime(2018, 1, 1), np.nan, np.nan], "b": ["1", "2", "2"]}
+            ),
             pd.Series([0, 0, 1]),
         ),
     ],
 )
 def test_generate_id_within_group(dataframe, expected):
-    assert (datacompy.core.generate_id_within_group(dataframe, ["a", "b"]) == expected).all()
+    assert (
+        datacompy.core.generate_id_within_group(dataframe, ["a", "b"]) == expected
+    ).all()
 
 
 @pytest.mark.parametrize(
@@ -1024,8 +1075,7 @@ def test_generate_id_within_group_valueerror(dataframe, message):
 
 
 def test_lower():
-    """This function tests the toggle to use lower case for column names or not
-    """
+    """This function tests the toggle to use lower case for column names or not"""
     # should match
     df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
     df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
@@ -1034,7 +1084,9 @@ def test_lower():
     # should not match
     df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
     df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
-    compare = datacompy.Compare(df1, df2, join_columns=["a"], cast_column_names_lower=False)
+    compare = datacompy.Compare(
+        df1, df2, join_columns=["a"], cast_column_names_lower=False
+    )
     assert not compare.matches()
 
     # test join column
@@ -1048,12 +1100,13 @@ def test_lower():
     df2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
     expected_message = "df2 must have all columns from join_columns"
     with raises(ValueError, match=expected_message):
-        compare = datacompy.Compare(df1, df2, join_columns=["a"], cast_column_names_lower=False)
+        compare = datacompy.Compare(
+            df1, df2, join_columns=["a"], cast_column_names_lower=False
+        )
 
 
 def test_integer_column_names():
-    """This function tests that integer column names would also work
-    """
+    """This function tests that integer column names would also work"""
     df1 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
     df2 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
     compare = datacompy.Compare(df1, df2, join_columns=[1])

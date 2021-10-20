@@ -24,10 +24,8 @@ two dataframes.
 import logging
 import os
 
-
 import numpy as np
 import pandas as pd
-
 from ordered_set import OrderedSet
 
 LOG = logging.getLogger(__name__)
@@ -102,7 +100,9 @@ class Compare:
             self.join_columns = []
         elif isinstance(join_columns, (str, int, float)):
             self.join_columns = [
-                str(join_columns).lower() if self.cast_column_names_lower else str(join_columns)
+                str(join_columns).lower()
+                if self.cast_column_names_lower
+                else str(join_columns)
             ]
             self.on_index = False
         else:
@@ -131,7 +131,9 @@ class Compare:
     def df1(self, df1):
         """Check that it is a dataframe and has the join columns"""
         self._df1 = df1
-        self._validate_dataframe("df1", cast_column_names_lower=self.cast_column_names_lower)
+        self._validate_dataframe(
+            "df1", cast_column_names_lower=self.cast_column_names_lower
+        )
 
     @property
     def df2(self):
@@ -141,7 +143,9 @@ class Compare:
     def df2(self, df2):
         """Check that it is a dataframe and has the join columns"""
         self._df2 = df2
-        self._validate_dataframe("df2", cast_column_names_lower=self.cast_column_names_lower)
+        self._validate_dataframe(
+            "df2", cast_column_names_lower=self.cast_column_names_lower
+        )
 
     def _validate_dataframe(self, index, cast_column_names_lower=True):
         """Check that it is a dataframe and has the join columns
@@ -172,7 +176,9 @@ class Compare:
             if dataframe.index.duplicated().sum() > 0:
                 self._any_dupes = True
         else:
-            if len(dataframe.drop_duplicates(subset=self.join_columns)) < len(dataframe):
+            if len(dataframe.drop_duplicates(subset=self.join_columns)) < len(
+                dataframe
+            ):
                 self._any_dupes = True
 
     def _compare(self, ignore_spaces, ignore_case):
@@ -187,14 +193,24 @@ class Compare:
             LOG.info("df1 Pandas.DataFrame.equals df2")
         else:
             LOG.info("df1 does not Pandas.DataFrame.equals df2")
-        LOG.info("Number of columns in common: {}".format(len(self.intersect_columns())))
+        LOG.info(
+            "Number of columns in common: {}".format(len(self.intersect_columns()))
+        )
         LOG.debug("Checking column overlap")
         for col in self.df1_unq_columns():
             LOG.info("Column in df1 and not in df2: {}".format(col))
-        LOG.info("Number of columns in df1 and not in df2: {}".format(len(self.df1_unq_columns())))
+        LOG.info(
+            "Number of columns in df1 and not in df2: {}".format(
+                len(self.df1_unq_columns())
+            )
+        )
         for col in self.df2_unq_columns():
             LOG.info("Column in df2 and not in df1: {}".format(col))
-        LOG.info("Number of columns in df2 and not in df1: {}".format(len(self.df2_unq_columns())))
+        LOG.info(
+            "Number of columns in df2 and not in df1: {}".format(
+                len(self.df2_unq_columns())
+            )
+        )
         LOG.debug("Merging dataframes")
         self._dataframe_merge(ignore_spaces)
         self._intersect_compare(ignore_spaces, ignore_case)
@@ -237,8 +253,12 @@ class Compare:
 
             # Create order column for uniqueness of match
             order_column = temp_column_name(self.df1, self.df2)
-            self.df1[order_column] = generate_id_within_group(self.df1, temp_join_columns)
-            self.df2[order_column] = generate_id_within_group(self.df2, temp_join_columns)
+            self.df1[order_column] = generate_id_within_group(
+                self.df1, temp_join_columns
+            )
+            self.df2[order_column] = generate_id_within_group(
+                self.df2, temp_join_columns
+            )
             temp_join_columns.append(order_column)
 
             params = {"on": temp_join_columns}
@@ -273,14 +293,22 @@ class Compare:
         df2_cols = get_merged_columns(self.df2, outer_join, "_df2")
 
         LOG.debug("Selecting df1 unique rows")
-        self.df1_unq_rows = outer_join[outer_join["_merge"] == "left_only"][df1_cols].copy()
+        self.df1_unq_rows = outer_join[outer_join["_merge"] == "left_only"][
+            df1_cols
+        ].copy()
         self.df1_unq_rows.columns = self.df1.columns
 
         LOG.debug("Selecting df2 unique rows")
-        self.df2_unq_rows = outer_join[outer_join["_merge"] == "right_only"][df2_cols].copy()
+        self.df2_unq_rows = outer_join[outer_join["_merge"] == "right_only"][
+            df2_cols
+        ].copy()
         self.df2_unq_rows.columns = self.df2.columns
-        LOG.info("Number of rows in df1 and not in df2: {}".format(len(self.df1_unq_rows)))
-        LOG.info("Number of rows in df2 and not in df1: {}".format(len(self.df2_unq_rows)))
+        LOG.info(
+            "Number of rows in df1 and not in df2: {}".format(len(self.df1_unq_rows))
+        )
+        LOG.info(
+            "Number of rows in df2 and not in df1: {}".format(len(self.df2_unq_rows))
+        )
 
         LOG.debug("Selecting intersecting rows")
         self.intersect_rows = outer_join[outer_join["_merge"] == "both"].copy()
@@ -322,14 +350,19 @@ class Compare:
                     self.intersect_rows[col_1], self.intersect_rows[col_2]
                 )
                 null_diff = (
-                    (self.intersect_rows[col_1].isnull()) ^ (self.intersect_rows[col_2].isnull())
+                    (self.intersect_rows[col_1].isnull())
+                    ^ (self.intersect_rows[col_2].isnull())
                 ).sum()
 
             if row_cnt > 0:
                 match_rate = float(match_cnt) / row_cnt
             else:
                 match_rate = 0
-            LOG.info("{}: {} / {} ({:.2%}) match".format(column, match_cnt, row_cnt, match_rate))
+            LOG.info(
+                "{}: {} / {} ({:.2%}) match".format(
+                    column, match_cnt, row_cnt, match_rate
+                )
+            )
 
             self.column_stats.append(
                 {
@@ -340,7 +373,10 @@ class Compare:
                     "dtype1": str(self.df1[column].dtype),
                     "dtype2": str(self.df2[column].dtype),
                     "all_match": all(
-                        (self.df1[column].dtype == self.df2[column].dtype, row_cnt == match_cnt)
+                        (
+                            self.df1[column].dtype == self.df2[column].dtype,
+                            row_cnt == match_cnt,
+                        )
                     ),
                     "max_diff": max_diff,
                     "null_diff": null_diff,
@@ -468,7 +504,7 @@ class Compare:
         mm_bool = self.intersect_rows[match_list].all(axis="columns")
         return self.intersect_rows[~mm_bool][self.join_columns + return_list]
 
-    def report(self, sample_count=10):
+    def report(self, sample_count=10, column_count=10):
         """Returns a string representation of a report.  The representation can
         then be printed or saved to a file.
 
@@ -476,6 +512,9 @@ class Compare:
         ----------
         sample_count : int, optional
             The number of sample records to return.  Defaults to 10.
+
+        column_count : int, optional
+            The number of columns to display in the sample records output.  Defaults to 10.
 
         Returns
         -------
@@ -551,7 +590,9 @@ class Compare:
                 )
                 if column["unequal_cnt"] > 0:
                     match_sample.append(
-                        self.sample_mismatch(column["column"], sample_count, for_display=True)
+                        self.sample_mismatch(
+                            column["column"], sample_count, for_display=True
+                        )
                     )
 
         if any_mismatch:
@@ -582,19 +623,27 @@ class Compare:
                     report += "\n\n"
 
         if min(sample_count, self.df1_unq_rows.shape[0]) > 0:
-            report += "Sample Rows Only in {} (First 10 Columns)\n".format(self.df1_name)
-            report += "---------------------------------------{}\n".format("-" * len(self.df1_name))
+            report += "Sample Rows Only in {} (First {} Columns)\n".format(
+                self.df1_name, column_count
+            )
+            report += "---------------------------------------{}\n".format(
+                "-" * len(self.df1_name)
+            )
             report += "\n"
-            columns = self.df1_unq_rows.columns[:10]
+            columns = self.df1_unq_rows.columns[:column_count]
             unq_count = min(sample_count, self.df1_unq_rows.shape[0])
             report += self.df1_unq_rows.sample(unq_count)[columns].to_string()
             report += "\n\n"
 
         if min(sample_count, self.df2_unq_rows.shape[0]) > 0:
-            report += "Sample Rows Only in {} (First 10 Columns)\n".format(self.df2_name)
-            report += "---------------------------------------{}\n".format("-" * len(self.df2_name))
+            report += "Sample Rows Only in {} (First {} Columns)\n".format(
+                self.df2_name, column_count
+            )
+            report += "---------------------------------------{}\n".format(
+                "-" * len(self.df2_name)
+            )
             report += "\n"
-            columns = self.df2_unq_rows.columns[:10]
+            columns = self.df2_unq_rows.columns[:column_count]
             unq_count = min(sample_count, self.df2_unq_rows.shape[0])
             report += self.df2_unq_rows.sample(unq_count)[columns].to_string()
             report += "\n\n"
@@ -624,7 +673,9 @@ def render(filename, *fields):
         return file_open.read().format(*fields)
 
 
-def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False, ignore_case=False):
+def columns_equal(
+    col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False, ignore_case=False
+):
     """Compares two columns from a dataframe, returning a True/False series,
     with the same index as column 1.
 
@@ -658,7 +709,9 @@ def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False, ignor
         values don't match.
     """
     try:
-        compare = pd.Series(np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True))
+        compare = pd.Series(
+            np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
+        )
     except TypeError:
         try:
             compare = pd.Series(
@@ -687,7 +740,9 @@ def columns_equal(col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False, ignor
                 if {col_1.dtype.kind, col_2.dtype.kind} == {"M", "O"}:
                     compare = compare_string_and_date_columns(col_1, col_2)
                 else:
-                    compare = pd.Series((col_1 == col_2) | (col_1.isnull() & col_2.isnull()))
+                    compare = pd.Series(
+                        (col_1 == col_2) | (col_1.isnull() & col_2.isnull())
+                    )
             except:
                 # Blanket exception should just return all False
                 compare = pd.Series(False, index=col_1.index)
