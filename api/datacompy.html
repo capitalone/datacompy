@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>datacompy package &mdash; datacompy 0.7.2 documentation</title>
+  <title>datacompy package &mdash; datacompy 0.7.3 documentation</title>
   
 
   
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                0.7.2
+                0.7.3
               </div>
             
           
@@ -96,7 +96,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../spark_usage.html">Spark Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_instructions.html">Developer Instructions</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API Reference</span></p>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">datacompy</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">datacompy package</a><ul>
@@ -323,12 +323,15 @@ existence for join option)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="datacompy.core.Compare.report">
-<span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.report" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.report" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a string representation of a report.  The representation can
 then be printed or saved to a file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>sample_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sample records to return.  Defaults to 10.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sample records to return.  Defaults to 10.</p></li>
+<li><p><strong>column_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of columns to display in the sample records output.  Defaults to 10.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>The report, formatted kinda nicely.</p>
