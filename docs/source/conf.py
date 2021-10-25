@@ -15,8 +15,8 @@ import sys
 
 sys.path.insert(0, os.path.abspath("."))
 import sphinx_rtd_theme
-import datacompy
 
+import datacompy
 
 # -- Project information -----------------------------------------------------
 
@@ -34,7 +34,7 @@ release = datacompy.__version__
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc", "numpydoc", "sphinx.ext.autosummary"]
+extensions = ["sphinx.ext.autodoc", "sphinx.ext.napoleon", "sphinx.ext.autosummary"]
 napoleon_use_ivar = True
 numpydoc_show_class_members = False
 
