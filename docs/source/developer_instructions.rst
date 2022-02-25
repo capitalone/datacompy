@@ -63,10 +63,13 @@ The ``setup.cfg`` has configuration details on how to run edgetest. This process
 In order to execute edgetest locally you can run the following after install ``edgetest``:
 
 .. code-block:: bash
+
     edgetest -c setup.cfg -r requirements.txt --export
+
 This should return output like the following and also updating ``requirements.txt``:
 
 .. code-block:: bash
+
     =============  ===============  ===================  =================
     Environment    Passing tests    Upgraded packages    Package version
     =============  ===============  ===================  =================
