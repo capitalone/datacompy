@@ -22,16 +22,14 @@ exec(open("datacompy/_version.py").read())
 EXTRAS_REQUIRE = {
     "spark": ["pyspark>=2.2.0"],
     "docs": ["sphinx", "sphinx_rtd_theme"],
-    "tests": [
-        "pytest",
-        "pytest-cov",
-    ],
+    "tests": ["pytest", "pytest-cov", "pytest-spark"],
     "qa": [
         "pre-commit",
         "black",
         "isort",
     ],
     "build": ["twine", "wheel"],
+    "edgetest": ["edgetest", "edgetest-conda"],
 }
 
 EXTRAS_REQUIRE["dev"] = (
