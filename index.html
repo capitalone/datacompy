@@ -1,76 +1,36 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>DataComPy &mdash; datacompy 0.7.3 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+  <title>DataComPy &mdash; datacompy 0.8.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Installation" href="install.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="#" class="icon icon-home"> datacompy
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
-                0.7.3
+                0.8.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -78,18 +38,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
@@ -102,87 +51,46 @@
 <li class="toctree-l1"><a class="reference external" href="https://github.com/capitalone/datacompy">Github Repo</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="#">datacompy</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="#" class="icon icon-home"></a> &raquo;</li>
-        
       <li>DataComPy</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <a class="reference external image-reference" href="https://github.com/capitalone/datacompy/actions"><img alt="https://github.com/capitalone/datacompy/workflows/Python%20package/badge.svg" src="https://github.com/capitalone/datacompy/workflows/Python%20package/badge.svg" /></a>
 <a class="reference external image-reference" href="https://github.com/ambv/black"><img alt="https://img.shields.io/badge/code%20style-black-000000.svg" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
-<div class="section" id="datacompy">
+<section id="datacompy">
 <h1>DataComPy<a class="headerlink" href="#datacompy" title="Permalink to this headline">¶</a></h1>
 <p>DataComPy is a package to compare two Pandas DataFrames. Originally started to
 be something of a replacement for SAS’s <code class="docutils literal notranslate"><span class="pre">PROC</span> <span class="pre">COMPARE</span></code> for Pandas DataFrames
 with some more functionality than just <code class="docutils literal notranslate"><span class="pre">Pandas.DataFrame.equals(Pandas.DataFrame)</span></code>
 (in that it prints out some stats, and lets you tweak how accurate matches have to be).
 Then extended to carry that functionality over to Spark Dataframes.</p>
-<div class="section" id="quick-installation">
+<section id="quick-installation">
 <h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="pandas-detail">
+</section>
+<section id="pandas-detail">
 <h2>Pandas Detail<a class="headerlink" href="#pandas-detail" title="Permalink to this headline">¶</a></h2>
 <p>DataComPy will try to join two dataframes either on a list of join columns, or
 on indexes.  If the two dataframes have duplicates based on join values, the
@@ -192,7 +100,7 @@ So if, for example, you have a column with <code class="docutils literal notrans
 dataframe and an identically-named column with <code class="docutils literal notranslate"><span class="pre">float64</span></code> dtype in another,
 it will tell you that the dtypes are different but will still try to compare the
 values.</p>
-<div class="section" id="basic-usage">
+<section id="basic-usage">
 <h3>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -234,8 +142,8 @@ values.</p>
 </pre></div>
 </div>
 <p>See docs for more detailed usage instructions and an example of the report output.</p>
-</div>
-<div class="section" id="things-that-are-happening-behind-the-scenes">
+</section>
+<section id="things-that-are-happening-behind-the-scenes">
 <h3>Things that are happening behind the scenes<a class="headerlink" href="#things-that-are-happening-behind-the-scenes" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><p>You pass in two dataframes (<code class="docutils literal notranslate"><span class="pre">df1</span></code>, <code class="docutils literal notranslate"><span class="pre">df2</span></code>) to <code class="docutils literal notranslate"><span class="pre">datacompy.Compare</span></code> and a
@@ -273,9 +181,9 @@ getting intersection, just df1 and just df2 columns (Sets)</p></li>
 </li>
 <li><p>You can turn on logging to see more detailed logs.</p></li>
 </ul>
-</div>
-</div>
-<div class="section" id="spark-detail">
+</section>
+</section>
+<section id="spark-detail">
 <span id="id1"></span><h2>Spark Detail<a class="headerlink" href="#spark-detail" title="Permalink to this headline">¶</a></h2>
 <p>DataComPy’s <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> class will join two dataframes either on a list of join
 columns. It has the capability to map column names that may be different in each
@@ -292,7 +200,7 @@ type mismatch is a problem or not.</p>
 are that your data is too large to fit into memory, or you’re comparing data
 that works well in a Spark environment, like partitioned Parquet, CSV, or JSON
 files, or Cerebro tables.</p>
-<div class="section" id="performance-implications">
+<section id="performance-implications">
 <h3>Performance Implications<a class="headerlink" href="#performance-implications" title="Permalink to this headline">¶</a></h3>
 <p>Spark scales incredibly well, so you can use <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> to compare
 billions of rows of data, provided you spin up a big enough cluster. Still,
@@ -315,8 +223,8 @@ be fine for smaller dataframes, but will be costly for larger ones. You do
 need to ensure that you have enough free cache memory before you do this, so
 this parameter is set to False by default.</p></li>
 </ul>
-</div>
-<div class="section" id="id2">
+</section>
+<section id="id2">
 <h3>Basic Usage<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">datacompy</span>
@@ -355,8 +263,8 @@ this parameter is set to False by default.</p></li>
 <span class="n">comparison</span><span class="o">.</span><span class="n">report</span><span class="p">()</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="using-sparkcompare-on-emr-or-standalone-spark">
+</section>
+<section id="using-sparkcompare-on-emr-or-standalone-spark">
 <h3>Using SparkCompare on EMR or standalone Spark<a class="headerlink" href="#using-sparkcompare-on-emr-or-standalone-spark" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li><p>Set proxy variables</p></li>
@@ -368,8 +276,8 @@ differ based on your installation)</p></li>
 <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$SPARK_HOME/python:$PYTHONPATH</span></code>
 (note that your version of py4j may differ depending on the version of Spark you’re using)</p></li>
 </ol>
-</div>
-<div class="section" id="using-sparkcompare-on-databricks">
+</section>
+<section id="using-sparkcompare-on-databricks">
 <h3>Using SparkCompare on Databricks<a class="headerlink" href="#using-sparkcompare-on-databricks" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li><p>Clone this repository locally</p></li>
@@ -389,20 +297,20 @@ differ based on your installation)</p></li>
 you can choose clusters to attach the library to.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">datacompy</span></code> in a notebook attached to the cluster that the library is attached to and enjoy!</p></li>
 </ol>
-</div>
-<div class="section" id="contributors">
+</section>
+<section id="contributors">
 <h3>Contributors<a class="headerlink" href="#contributors" title="Permalink to this headline">¶</a></h3>
 <p>We welcome and appreciate your contributions! Before we can accept any contributions, we ask that you please be sure to
 sign the <a class="reference external" href="https://cla-assistant.io/capitalone/datacompy">Contributor License Agreement (CLA)</a>.</p>
 <p>This project adheres to the <a class="reference external" href="https://developer.capitalone.com/resources/code-of-conduct/">Open Source Code of Conduct</a>.
 By participating, you are expected to honor this code.</p>
-</div>
-<div class="section" id="roadmap">
+</section>
+<section id="roadmap">
 <h3>Roadmap<a class="headerlink" href="#roadmap" title="Permalink to this headline">¶</a></h3>
 <p>Roadmap details can be found <a class="reference external" href="https://github.com/capitalone/datacompy/blob/develop/ROADMAP.rst">here</a></p>
-</div>
-</div>
-<div class="section" id="contents">
+</section>
+</section>
+<section id="contents">
 <h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
@@ -430,6 +338,7 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#generating-documentation">Generating Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#run-unit-tests">Run unit tests</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#management-of-requirements">Management of Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#edgetest">edgetest</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#release-guide">Release Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer_instructions.html#generating-distribution-archives-pypi">Generating distribution archives (PyPI)</a></li>
 </ul>
@@ -452,62 +361,45 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/capitalone/datacompy">Github Repo</a></li>
 </ul>
 </div>
-</div>
-<div class="section" id="indices-and-tables">
+</section>
+<section id="indices-and-tables">
 <h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="install.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2020, Capital One.
-
-    </p>
+    <p>&#169; Copyright 2020, Capital One.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

@@ -1,77 +1,37 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Pandas Usage &mdash; datacompy 0.7.3 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+  <title>Pandas Usage &mdash; datacompy 0.8.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Spark Usage" href="spark_usage.html" />
     <link rel="prev" title="Installation" href="install.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="index.html" class="icon icon-home"> datacompy
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
-                0.7.3
+                0.8.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -79,18 +39,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Pandas Usage</a><ul>
@@ -114,74 +63,33 @@
 <li class="toctree-l1"><a class="reference external" href="https://github.com/capitalone/datacompy">Github Repo</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">datacompy</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-        
       <li>Pandas Usage</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="_sources/pandas_usage.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="pandas-usage">
+             
+  <section id="pandas-usage">
 <h1>Pandas Usage<a class="headerlink" href="#pandas-usage" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="overview">
+<section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>The main goal of <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> is to provide a human-readable output describing
 differences between two dataframes.  For example, if you have two dataframes
@@ -311,8 +219,8 @@ containing data like:</p>
 <span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data2</span><span class="p">))</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="compare-object-setup">
+</section>
+<section id="compare-object-setup">
 <h2>Compare Object Setup<a class="headerlink" href="#compare-object-setup" title="Permalink to this headline">¶</a></h2>
 <p>There are currently two supported methods for joining your dataframes - by
 join column(s) or by index.</p>
@@ -334,8 +242,8 @@ join column(s) or by index.</p>
 <span class="n">compare</span> <span class="o">=</span> <span class="n">datacompy</span><span class="o">.</span><span class="n">Compare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">on_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="reports">
+</section>
+<section id="reports">
 <h2>Reports<a class="headerlink" href="#reports" title="Permalink to this headline">¶</a></h2>
 <p>A report is generated by calling <code class="docutils literal notranslate"><span class="pre">Compare.report()</span></code>, which returns a string.
 Here is a sample report generated by <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> for the two tables above,
@@ -411,8 +319,8 @@ and/or “df2”.):</p>
 <span class="mi">4</span>  <span class="mi">10000001238</span>        <span class="mf">1.05</span>  <span class="n">Lucille</span> <span class="n">Bluth</span>        <span class="n">NaN</span>  <span class="mi">2017</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">01</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="convenience-methods">
+</section>
+<section id="convenience-methods">
 <h2>Convenience Methods<a class="headerlink" href="#convenience-methods" title="Permalink to this headline">¶</a></h2>
 <p>There are a few convenience methods available after the comparison has been run:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_rows</span><span class="p">[[</span><span class="s1">&#39;name_df1&#39;</span><span class="p">,</span> <span class="s1">&#39;name_df2&#39;</span><span class="p">,</span> <span class="s1">&#39;name_match&#39;</span><span class="p">]])</span>
@@ -442,8 +350,8 @@ and/or “df2”.):</p>
 <span class="c1"># set()</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="duplicate-rows">
+</section>
+<section id="duplicate-rows">
 <h2>Duplicate rows<a class="headerlink" href="#duplicate-rows" title="Permalink to this headline">¶</a></h2>
 <p>Datacompy will try to handle rows that are duplicate in the join columns.  It does this behind the
 scenes by generating a unique ID within each unique group of the join columns.  For example, if you
@@ -558,7 +466,7 @@ have two dataframes you’re trying to join on acct_id:</p>
 ID, before dropping the temp_id again.  So the first two rows in the first dataframe will match the
 first two rows in the second dataframe, and the third row in the second dataframe will be recognized
 as uniquely in the second.</p>
-<div class="section" id="caveats">
+<section id="caveats">
 <h3>Caveats<a class="headerlink" href="#caveats" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><p>Duplicate matching is resilient to nulls in your join columns - it will convert the join
@@ -571,9 +479,9 @@ are duplicates.  Datacompy sorts by the other fields before generating the tempo
 directly on that field.  If there are a lot of duplicates you may need to join on more columns, or
 handle them separately.</p></li>
 </ul>
-</div>
-</div>
-<div class="section" id="limitations">
+</section>
+</section>
+<section id="limitations">
 <h2>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline">¶</a></h2>
 <p>There’s a number of limitations with <code class="docutils literal notranslate"><span class="pre">datacompy</span></code>:</p>
 <ol class="arabic">
@@ -599,55 +507,38 @@ same, you should look at the testing capabilities within Pandas and Numpy:</p>
 </div>
 </li>
 </ol>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="spark_usage.html" class="btn btn-neutral float-right" title="Spark Usage" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="install.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="spark_usage.html" class="btn btn-neutral float-right" title="Spark Usage" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2020, Capital One.
-
-    </p>
+    <p>&#169; Copyright 2020, Capital One.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
