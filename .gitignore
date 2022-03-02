@@ -4,6 +4,7 @@ dist/
 *.egg-info/
 */__pycache__/
 .idea/
+.vscode/
 *.pyc
 .DS_Store
 .pytest_cache/
@@ -18,3 +19,6 @@ derby.log
 # Sphinx documentation
 docs/_build/
 docs/source/api/
+
+#edgetest
+.edgetest/
