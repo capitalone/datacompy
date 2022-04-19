@@ -1,0 +1,21 @@
+# This workflow runs edgetest on datacompy @ 17:30 UTC Fridays.
+# https://github.com/fdosani/run-edgetest-action
+
+name: Run edgetest
+on:
+  schedule:
+    - cron: '30 17 * * 5'
+jobs:
+  edgetest:
+    runs-on: ubuntu-latest
+    name: running edgetest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: develop
+      - id: run-edgetest
+        uses: fdosani/run-edgetest-action@v1.0
+        with:
+          edgetest-flags: '-c setup.cfg -r requirements.txt --export'
+          base-branch: 'develop'
+          skip-pr: 'false'
