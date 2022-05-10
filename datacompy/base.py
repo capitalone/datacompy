@@ -21,16 +21,13 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
-from abc import ABC, abstractmethod
-
 import logging
-
+from abc import ABC, abstractmethod
 
 LOG = logging.getLogger(__name__)
 
 
 class BaseCompare(ABC):
-
     @property
     def df1(self):
         return self._df1

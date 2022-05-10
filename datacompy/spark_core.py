@@ -23,17 +23,17 @@ two dataframes.
 
 import logging
 import os
+import sys
+from enum import Enum
+from itertools import chain
 
 import numpy as np
 import pandas as pd
 import pyspark.sql
 from ordered_set import OrderedSet
-from datacompy.base import BaseCompare
 from pyspark.sql.functions import lit
-import sys
-from enum import Enum
-from itertools import chain
 
+from datacompy.base import BaseCompare
 
 LOG = logging.getLogger(__name__)
 
@@ -292,17 +292,25 @@ class SparkCompare(BaseCompare):
 
     def _generate_merge_indicator(self):
         self.df1 = self.df1.join(
-            self.df1.select(self.join_columns).join(self.df2.select(self.join_columns), on=self.join_columns, how="left_anti").withColumn(
-                "_merge", lit("left_only")
-            ),
+            self.df1.select(self.join_columns)
+            .join(
+                self.df2.select(self.join_columns),
+                on=self.join_columns,
+                how="left_anti",
+            )
+            .withColumn("_merge", lit("left_only")),
             on=self.join_columns,
             how="left",
         ).fillna("both", "_merge")
 
         self.df2 = self.df2.join(
-            self.df2.select(self.join_columns).join(self.df1.select(self.join_columns), on=self.join_columns, how="left_anti").withColumn(
-                "_merge", lit("right_only")
-            ),
+            self.df2.select(self.join_columns)
+            .join(
+                self.df1.select(self.join_columns),
+                on=self.join_columns,
+                how="left_anti",
+            )
+            .withColumn("_merge", lit("right_only")),
             on=self.join_columns,
             how="left",
         ).fillna("both", "_merge")
