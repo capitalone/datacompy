@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Compare two Pandas DataFrames
+Compare two Spark DataFrames
 
 Originally this package was meant to provide similar functionality to
 PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
@@ -26,14 +26,74 @@ import os
 
 import numpy as np
 import pandas as pd
+import pyspark.sql
 from ordered_set import OrderedSet
 from datacompy.base import BaseCompare
+from pyspark.sql.functions import lit
+import sys
+from enum import Enum
+from itertools import chain
+
 
 LOG = logging.getLogger(__name__)
 
 
-class Compare(BaseCompare):
-    """Comparison class to be used to compare whether two dataframes as equal.
+try:
+    from pyspark.sql import functions as F
+except ImportError:
+    pass  # Let non-Spark people at least enjoy the loveliness of the pandas datacompy functionality
+
+
+class MatchType(Enum):
+    MISMATCH, MATCH, KNOWN_DIFFERENCE = range(3)
+
+
+# Used for checking equality with decimal(X, Y) types. Otherwise treated as the string "decimal".
+def decimal_comparator():
+    class DecimalComparator(str):
+        def __eq__(self, other):
+            return len(other) >= 7 and other[0:7] == "decimal"
+
+    return DecimalComparator("decimal")
+
+
+NUMERIC_SPARK_TYPES = [
+    "tinyint",
+    "smallint",
+    "int",
+    "bigint",
+    "float",
+    "double",
+    decimal_comparator(),
+]
+
+
+def _is_comparable(type1, type2):
+    """Checks if two Spark data types can be safely compared.
+
+    Two data types are considered comparable if any of the following apply:
+        1. Both data types are the same
+        2. Both data types are numeric
+
+    Parameters
+    ----------
+    type1 : str
+        A string representation of a Spark data type
+    type2 : str
+        A string representation of a Spark data type
+
+    Returns
+    -------
+    bool
+        True if both data types are comparable
+    """
+    return type1 == type2 or (
+        type1 in NUMERIC_SPARK_TYPES and type2 in NUMERIC_SPARK_TYPES
+    )
+
+
+class SparkCompare(BaseCompare):
+    """Comparison class to be used to compare whether two Spark dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
     with unique column names. Differences between values are compared to
@@ -41,17 +101,15 @@ class Compare(BaseCompare):
 
     Parameters
     ----------
-    df1 : pandas ``DataFrame``
+    spark_session : ``pyspark.sql.SparkSession``
+        A ``SparkSession`` to be used to execute Spark commands in the comparison.
+    df1 : Spark ``DataFrame``
         First dataframe to check
-    df2 : pandas ``DataFrame``
+    df2 : Spark ``DataFrame``
         Second dataframe to check
-    join_columns : list or str, optional
+    join_columns : list or str
         Column(s) to join dataframes on.  If a string is passed in, that one
         column will be used.
-    on_index : bool, optional
-        If True, the index will be used to join the two dataframes.  If both
-        ``join_columns`` and ``on_index`` are provided, an exception will be
-        raised.
     abs_tol : float, optional
         Absolute tolerance between two values.
     rel_tol : float, optional
@@ -72,18 +130,22 @@ class Compare(BaseCompare):
 
     Attributes
     ----------
-    df1_unq_rows : pandas ``DataFrame``
+    spark_session : ``pyspark.sql.SparkSession``
+        A ``SparkSession`` to be used to execute Spark commands in the comparison.
+    cast_column_names_lower: bool
+        Boolean indicator that controls of column names will be cast into lower case
+    df1_unq_rows : Spark ``DataFrame``
         All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : pandas ``DataFrame``
+    df2_unq_rows : Spark ``DataFrame``
         All records that are only in df2 (based on a join on join_columns)
     """
 
     def __init__(
         self,
+        spark_session,
         df1,
         df2,
         join_columns=None,
-        on_index=False,
         abs_tol=0,
         rel_tol=0,
         df1_name="df1",
@@ -93,25 +155,21 @@ class Compare(BaseCompare):
         cast_column_names_lower=True,
     ):
 
+        self.spark = spark_session
         self.cast_column_names_lower = cast_column_names_lower
-        if on_index and join_columns is not None:
-            raise Exception("Only provide on_index or join_columns")
-        elif on_index:
-            self.on_index = True
-            self.join_columns = []
+        if join_columns is None:
+            raise Exception("Please provide join_columns")
         elif isinstance(join_columns, (str, int, float)):
             self.join_columns = [
                 str(join_columns).lower()
                 if self.cast_column_names_lower
                 else str(join_columns)
             ]
-            self.on_index = False
         else:
             self.join_columns = [
                 str(col).lower() if self.cast_column_names_lower else str(col)
                 for col in join_columns
             ]
-            self.on_index = False
 
         self._any_dupes = False
         self.df1 = df1
@@ -124,11 +182,7 @@ class Compare(BaseCompare):
         self.column_stats = []
         self._compare(ignore_spaces, ignore_case)
 
-    @property
-    def df1(self):
-        return self._df1
-
-    @df1.setter
+    @BaseCompare.df1.setter
     def df1(self, df1):
         """Check that it is a dataframe and has the join columns"""
         self._df1 = df1
@@ -136,11 +190,7 @@ class Compare(BaseCompare):
             "df1", cast_column_names_lower=self.cast_column_names_lower
         )
 
-    @property
-    def df2(self):
-        return self._df2
-
-    @df2.setter
+    @BaseCompare.df2.setter
     def df2(self, df2):
         """Check that it is a dataframe and has the join columns"""
         self._df2 = df2
@@ -155,17 +205,19 @@ class Compare(BaseCompare):
         ----------
         index : str
             The "index" of the dataframe - df1 or df2.
+
         cast_column_names_lower: bool, optional
             Boolean indicator that controls of column names will be cast into lower case
         """
         dataframe = getattr(self, index)
-        if not isinstance(dataframe, pd.DataFrame):
-            raise TypeError("{} must be a pandas DataFrame".format(index))
+        if not isinstance(dataframe, pyspark.sql.DataFrame):
+            raise TypeError("{} must be a Spark DataFrame".format(index))
 
         if cast_column_names_lower:
-            dataframe.columns = [str(col).lower() for col in dataframe.columns]
+            dataframe.toDF(*[str(c).lower() for c in dataframe.columns])
         else:
-            dataframe.columns = [str(col) for col in dataframe.columns]
+            dataframe.toDF(*[str(c) for c in dataframe.columns])
+
         # Check if join_columns are present in the dataframe
         if not set(self.join_columns).issubset(set(dataframe.columns)):
             raise ValueError("{} must have all columns from join_columns".format(index))
@@ -173,27 +225,21 @@ class Compare(BaseCompare):
         if len(set(dataframe.columns)) < len(dataframe.columns):
             raise ValueError("{} must have unique column names".format(index))
 
-        if self.on_index:
-            if dataframe.index.duplicated().sum() > 0:
-                self._any_dupes = True
-        else:
-            if len(dataframe.drop_duplicates(subset=self.join_columns)) < len(
-                dataframe
-            ):
-                self._any_dupes = True
+        if (
+            dataframe.drop_duplicates(subset=self.join_columns).count()
+            < dataframe.count()
+        ):
+            self._any_dupes = True
 
     def _compare(self, ignore_spaces, ignore_case):
-        """Actually run the comparison.  This tries to run df1.equals(df2)
-        first so that if they're truly equal we can tell.
+        """Actually run the comparison.
 
         This method will log out information about what is different between
         the two dataframes, and will also return a boolean.
+
+        Unlike Pandas which tries to run df1.equals(df2) first so that if they're truly equal we
+        can tell. Spark does not have the same functionality.
         """
-        LOG.debug("Checking equality")
-        if self.df1.equals(self.df2):
-            LOG.info("df1 Pandas.DataFrame.equals df2")
-        else:
-            LOG.info("df1 does not Pandas.DataFrame.equals df2")
         LOG.info(
             "Number of columns in common: {}".format(len(self.intersect_columns()))
         )
@@ -212,13 +258,19 @@ class Compare(BaseCompare):
                 len(self.df2_unq_columns())
             )
         )
+
+        if self._any_dupes:
+            LOG.info("Dropping duplicates")
+            self.df1 = self.df1.dropDuplicates(self.join_columns)
+            self.df2 = self.df2.dropDuplicates(self.join_columns)
+
         LOG.debug("Merging dataframes")
         self._dataframe_merge(ignore_spaces)
-        self._intersect_compare(ignore_spaces, ignore_case)
-        if self.matches():
-            LOG.info("df1 matches df2")
-        else:
-            LOG.info("df1 does not match df2")
+        # self._intersect_compare(ignore_spaces, ignore_case)
+        # if self.matches():
+        #     LOG.info("df1 matches df2")
+        # else:
+        #     LOG.info("df1 does not match df2")
 
     def df1_unq_columns(self):
         """Get columns that are unique to df1"""
@@ -232,63 +284,51 @@ class Compare(BaseCompare):
         """Get columns that are shared between the two dataframes"""
         return OrderedSet(self.df1.columns) & OrderedSet(self.df2.columns)
 
+    def non_join_columns(self):
+        """Get columns that are shared between the two dataframes excluding join_columns"""
+        return (
+            OrderedSet(self.df1.columns) | OrderedSet(self.df2.columns)
+        ) - OrderedSet(self.join_columns)
+
+    def _generate_merge_indicator(self):
+        self.df1 = self.df1.join(
+            self.df1.select(self.join_columns).join(self.df2.select(self.join_columns), on=self.join_columns, how="left_anti").withColumn(
+                "_merge", lit("left_only")
+            ),
+            on=self.join_columns,
+            how="left",
+        ).fillna("both", "_merge")
+
+        self.df2 = self.df2.join(
+            self.df2.select(self.join_columns).join(self.df1.select(self.join_columns), on=self.join_columns, how="left_anti").withColumn(
+                "_merge", lit("right_only")
+            ),
+            on=self.join_columns,
+            how="left",
+        ).fillna("both", "_merge")
+
     def _dataframe_merge(self, ignore_spaces):
         """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
         and df1 & df2
-
-        If ``on_index`` is True, this will join on index values, otherwise it
-        will join on the ``join_columns``.
         """
-
         LOG.debug("Outer joining")
-        if self._any_dupes:
-            LOG.debug("Duplicate rows found, deduping by order of remaining fields")
-            # Bring index into a column
-            if self.on_index:
-                index_column = temp_column_name(self.df1, self.df2)
-                self.df1[index_column] = self.df1.index
-                self.df2[index_column] = self.df2.index
-                temp_join_columns = [index_column]
-            else:
-                temp_join_columns = list(self.join_columns)
+        params = {"on": self.join_columns}
 
-            # Create order column for uniqueness of match
-            order_column = temp_column_name(self.df1, self.df2)
-            self.df1[order_column] = generate_id_within_group(
-                self.df1, temp_join_columns
-            )
-            self.df2[order_column] = generate_id_within_group(
-                self.df2, temp_join_columns
-            )
-            temp_join_columns.append(order_column)
+        # XXXXXXXX
+        # if ignore_spaces:
+        #     for column in self.join_columns:
+        #         if self.df1[column].dtype.kind == "O":
+        #             self.df1[column] = self.df1[column].str.strip()
+        #         if self.df2[column].dtype.kind == "O":
+        #             self.df2[column] = self.df2[column].str.strip()
 
-            params = {"on": temp_join_columns}
-        elif self.on_index:
-            params = {"left_index": True, "right_index": True}
-        else:
-            params = {"on": self.join_columns}
+        # add suffixes using non_join_columns
+        for c in self.non_join_columns():
+            self.df1 = self.df1.withColumnRenamed(c, "{}{}".format(c, "_df1"))
+            self.df2 = self.df2.withColumnRenamed(c, "{}{}".format(c, "_df2"))
 
-        if ignore_spaces:
-            for column in self.join_columns:
-                if self.df1[column].dtype.kind == "O":
-                    self.df1[column] = self.df1[column].str.strip()
-                if self.df2[column].dtype.kind == "O":
-                    self.df2[column] = self.df2[column].str.strip()
-
-        outer_join = self.df1.merge(
-            self.df2, how="outer", suffixes=("_df1", "_df2"), indicator=True, **params
-        )
-
-        # Clean up temp columns for duplicate row matching
-        if self._any_dupes:
-            if self.on_index:
-                outer_join.index = outer_join[index_column]
-                outer_join.drop(index_column, axis=1, inplace=True)
-                self.df1.drop(index_column, axis=1, inplace=True)
-                self.df2.drop(index_column, axis=1, inplace=True)
-            outer_join.drop(order_column, axis=1, inplace=True)
-            self.df1.drop(order_column, axis=1, inplace=True)
-            self.df2.drop(order_column, axis=1, inplace=True)
+        self._generate_merge_indicator()
+        outer_join = self.df1.join(self.df2, how="outer", **params)
 
         df1_cols = get_merged_columns(self.df1, outer_join, "_df1")
         df2_cols = get_merged_columns(self.df2, outer_join, "_df2")
@@ -467,7 +507,7 @@ class Compare(BaseCompare):
 
         Returns
         -------
-        Pandas.DataFrame
+        Spark.DataFrame
             A sample of the intersection dataframe, containing only the
             "pertinent" columns, for rows that don't match on the provided
             column.
@@ -492,7 +532,7 @@ class Compare(BaseCompare):
 
         Returns
         -------
-        Pandas.DataFrame
+        Spark.DataFrame
             All rows of the intersection dataframe, containing any columns, that don't match.
         """
         match_list = []
@@ -690,9 +730,9 @@ def columns_equal(
 
     Parameters
     ----------
-    col_1 : Pandas.Series
+    col_1 : Spark.Series
         The first column to look at
-    col_2 : Pandas.Series
+    col_2 : Spark.Series
         The second column
     rel_tol : float, optional
         Relative tolerance
@@ -789,9 +829,9 @@ def get_merged_columns(original_df, merged_df, suffix):
 
     Parameters
     ----------
-    original_df : Pandas.DataFrame
+    original_df : Spark.DataFrame
         The original, pre-merge dataframe
-    merged_df : Pandas.DataFrame
+    merged_df : Spark.DataFrame
         Post-merge with another dataframe, with suffixes added in.
     suffix : str
         What suffix was used to distinguish when the original dataframe was
@@ -813,7 +853,7 @@ def temp_column_name(*dataframes):
 
     Parameters
     ----------
-    dataframes : list of Pandas.DataFrame
+    dataframes : list of Spark.DataFrame
         The DataFrames to create a temporary column name for
 
     Returns
@@ -854,32 +894,32 @@ def calculate_max_diff(col_1, col_2):
         return 0
 
 
-def generate_id_within_group(dataframe, join_columns):
-    """Generate an ID column that can be used to deduplicate identical rows.  The series generated
-    is the order within a unique group, and it handles nulls.
-
-    Parameters
-    ----------
-    dataframe : Pandas.DataFrame
-        The dataframe to operate on
-    join_columns : list
-        List of strings which are the join columns
-
-    Returns
-    -------
-    Pandas.Series
-        The ID column that's unique in each group.
-    """
-    default_value = "DATACOMPY_NULL"
-    if dataframe[join_columns].isnull().any().any():
-        if (dataframe[join_columns] == default_value).any().any():
-            raise ValueError("{} was found in your join columns".format(default_value))
-        return (
-            dataframe[join_columns]
-            .astype(str)
-            .fillna(default_value)
-            .groupby(join_columns)
-            .cumcount()
-        )
-    else:
-        return dataframe[join_columns].groupby(join_columns).cumcount()
+# def generate_id_within_group(dataframe, join_columns):
+#     """Generate an ID column that can be used to deduplicate identical rows.  The series generated
+#     is the order within a unique group, and it handles nulls.
+#
+#     Parameters
+#     ----------
+#     dataframe : Spark.DataFrame
+#         The dataframe to operate on
+#     join_columns : list
+#         List of strings which are the join columns
+#
+#     Returns
+#     -------
+#     Pandas.Series
+#         The ID column that's unique in each group.
+#     """
+#     default_value = "DATACOMPY_NULL"
+#     if dataframe[join_columns].isnull().any().any():
+#         if (dataframe[join_columns] == default_value).any().any():
+#             raise ValueError("{} was found in your join columns".format(default_value))
+#         return (
+#             dataframe[join_columns]
+#             .astype(str)
+#             .fillna(default_value)
+#             .groupby(join_columns)
+#             .cumcount()
+#         )
+#     else:
+#         return dataframe[join_columns].groupby(join_columns).cumcount()
