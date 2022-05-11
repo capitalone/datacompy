@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datacompy.core import *
 from datacompy._version import __version__
-from datacompy.spark_core import SparkCompare, NUMERIC_SPARK_TYPES
-from datacompy.koalas_core import KoalasCompare
+from datacompy.core import *
+from datacompy.sparkcompare import NUMERIC_SPARK_TYPES, SparkCompare
