@@ -291,10 +291,10 @@ class SparkCompare(BaseCompare):
         ) - OrderedSet(self.join_columns)
 
     def _generate_merge_indicator(self):
-        self.df1 = self.df1.join(
-            self.df1.select(self.join_columns)
+        self.df1_renamed = self.df1_renamed.join(
+            self.df1_renamed.select(self.join_columns)
             .join(
-                self.df2.select(self.join_columns),
+                self.df2_renamed.select(self.join_columns),
                 on=self.join_columns,
                 how="left_anti",
             )
@@ -303,10 +303,10 @@ class SparkCompare(BaseCompare):
             how="left",
         ).fillna("both", "_merge_left")
 
-        self.df2 = self.df2.join(
-            self.df2.select(self.join_columns)
+        self.df2_renamed = self.df2_renamed.join(
+            self.df2_renamed.select(self.join_columns)
             .join(
-                self.df1.select(self.join_columns),
+                self.df1_renamed.select(self.join_columns),
                 on=self.join_columns,
                 how="left_anti",
             )
@@ -331,12 +331,19 @@ class SparkCompare(BaseCompare):
         #             self.df2[column] = self.df2[column].str.strip()
 
         # add suffixes using non_join_columns
+        self.df1_renamed = self.df1
+        self.df2_renamed = self.df2
+
         for c in self.non_join_columns():
-            self.df1 = self.df1.withColumnRenamed(c, "{}{}".format(c, "_df1"))
-            self.df2 = self.df2.withColumnRenamed(c, "{}{}".format(c, "_df2"))
+            self.df1_renamed = self.df1_renamed.withColumnRenamed(
+                c, "{}{}".format(c, "_df1")
+            )
+            self.df2_renamed = self.df2_renamed.withColumnRenamed(
+                c, "{}{}".format(c, "_df2")
+            )
 
         self._generate_merge_indicator()
-        outer_join = self.df1.join(self.df2, how="outer", **params)
+        outer_join = self.df1_renamed.join(self.df2_renamed, how="outer", **params)
 
         # cleanup _merge_left and _merge_right into _merge
         outer_join = outer_join.withColumn(
@@ -386,7 +393,7 @@ class SparkCompare(BaseCompare):
                 col_2 = column + "_df2"
                 col_match = column + "_match"
 
-                columns_equal(
+                self.intersect_rows = columns_equal(
                     self.intersect_rows,
                     col_1,
                     col_2,
