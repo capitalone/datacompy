@@ -976,34 +976,3 @@ def get_column_dtypes(dataframe, col_1, col_2):
     base_dtype = [d[1] for d in dataframe.dtypes if d[0] == col_1][0]
     compare_dtype = [d[1] for d in dataframe.dtypes if d[0] == col_2][0]
     return base_dtype, compare_dtype
-
-
-# def generate_id_within_group(dataframe, join_columns):
-#     """Generate an ID column that can be used to deduplicate identical rows.  The series generated
-#     is the order within a unique group, and it handles nulls.
-#
-#     Parameters
-#     ----------
-#     dataframe : Spark.DataFrame
-#         The dataframe to operate on
-#     join_columns : list
-#         List of strings which are the join columns
-#
-#     Returns
-#     -------
-#     Pandas.Series
-#         The ID column that's unique in each group.
-#     """
-#     default_value = "DATACOMPY_NULL"
-#     if dataframe[join_columns].isnull().any().any():
-#         if (dataframe[join_columns] == default_value).any().any():
-#             raise ValueError("{} was found in your join columns".format(default_value))
-#         return (
-#             dataframe[join_columns]
-#             .astype(str)
-#             .fillna(default_value)
-#             .groupby(join_columns)
-#             .cumcount()
-#         )
-#     else:
-#         return dataframe[join_columns].groupby(join_columns).cumcount()
