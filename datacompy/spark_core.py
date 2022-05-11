@@ -31,7 +31,16 @@ import numpy as np
 import pandas as pd
 import pyspark.sql
 from ordered_set import OrderedSet
-from pyspark.sql.functions import abs, coalesce, col, isnan, lit, when
+from pyspark.sql.functions import (
+    abs,
+    array,
+    array_contains,
+    coalesce,
+    col,
+    isnan,
+    lit,
+    when,
+)
 
 from datacompy.base import BaseCompare
 
@@ -466,15 +475,21 @@ class SparkCompare(BaseCompare):
         int
             Number of matching rows
         """
-        match_columns = []
+        match_columns_count = 0
         for column in self.intersect_columns():
             if column not in self.join_columns:
-                match_columns.append(column + "_match")
-        return self.intersect_rows[match_columns].all(axis=1).sum()
+                match_columns = column + "_match"
+                match_columns_count = (
+                    match_columns_count
+                    + self.intersect_rows.select(match_columns)
+                    .where(col(match_columns) == True)
+                    .count()
+                )
+        return match_columns_count
 
     def intersect_rows_match(self):
         """Check whether the intersect rows all match"""
-        actual_length = self.intersect_rows.shape[0]
+        actual_length = self.intersect_rows.count()
         return self.count_matching_rows() == actual_length
 
     def matches(self, ignore_extra_columns=False):
@@ -503,14 +518,14 @@ class SparkCompare(BaseCompare):
         """
         if not self.df2_unq_columns() == set():
             return False
-        elif not len(self.df2_unq_rows) == 0:
+        elif not self.df2_unq_rows.count() == 0:
             return False
         elif not self.intersect_rows_match():
             return False
         else:
             return True
 
-    def sample_mismatch(self, column, sample_count=10, for_display=False):
+    def sample_mismatch(self, column, sample_count=10):
         """Returns a sample sub-dataframe which contains the identifying
         columns, and df1 and df2 versions of the column.
 
@@ -520,9 +535,6 @@ class SparkCompare(BaseCompare):
             The raw column name (i.e. without ``_df1`` appended)
         sample_count : int, optional
             The number of sample records to return.  Defaults to 10.
-        for_display : bool, optional
-            Whether this is just going to be used for display (overwrite the
-            column names)
 
         Returns
         -------
@@ -531,23 +543,18 @@ class SparkCompare(BaseCompare):
             "pertinent" columns, for rows that don't match on the provided
             column.
         """
-        row_cnt = self.intersect_rows.shape[0]
-        col_match = self.intersect_rows[column + "_match"]
-        match_cnt = col_match.sum()
+        row_cnt = self.intersect_rows.count()
+        col_match = self.intersect_rows.select(column + "_match")
+        match_cnt = col_match.where(col(column + "_match") == True).count()
         sample_count = min(sample_count, row_cnt - match_cnt)
-        sample = self.intersect_rows[~col_match].sample(sample_count)
+        sample = self.intersect_rows.drop(column + "_match").limit(sample_count)
         return_cols = self.join_columns + [column + "_df1", column + "_df2"]
-        to_return = sample[return_cols]
-        if for_display:
-            to_return.columns = self.join_columns + [
-                column + " (" + self.df1_name + ")",
-                column + " (" + self.df2_name + ")",
-            ]
+        to_return = sample.select(return_cols)
         return to_return
 
     def all_mismatch(self):
-        """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
-        columns.
+        """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the
+        columns and join columns.
 
         Returns
         -------
@@ -561,8 +568,10 @@ class SparkCompare(BaseCompare):
                 match_list.append(col)
                 return_list.extend([col[:-6] + "_df1", col[:-6] + "_df2"])
 
-        mm_bool = self.intersect_rows[match_list].all(axis="columns")
-        return self.intersect_rows[~mm_bool][self.join_columns + return_list]
+        mm_rows = self.intersect_rows.withColumn(
+            "match_array", array(match_list)
+        ).where(array_contains("match_array", False))
+        return mm_rows.select(self.join_columns + return_list)
 
     def report(self, sample_count=10, column_count=10):
         """Returns a string representation of a report.  The representation can
@@ -586,8 +595,8 @@ class SparkCompare(BaseCompare):
         df_header = pd.DataFrame(
             {
                 "DataFrame": [self.df1_name, self.df2_name],
-                "Columns": [self.df1.shape[1], self.df2.shape[1]],
-                "Rows": [self.df1.shape[0], self.df2.shape[0]],
+                "Columns": [len(self.df1.columns), len(self.df2.columns)],
+                "Rows": [self.df1.count(), self.df2.count()],
             }
         )
         report += df_header[["DataFrame", "Columns", "Rows"]].to_string()
@@ -604,19 +613,16 @@ class SparkCompare(BaseCompare):
         )
 
         # Row Summary
-        if self.on_index:
-            match_on = "index"
-        else:
-            match_on = ", ".join(self.join_columns)
+        match_on = ", ".join(self.join_columns)
         report += render(
             "row_summary.txt",
             match_on,
             self.abs_tol,
             self.rel_tol,
-            self.intersect_rows.shape[0],
-            self.df1_unq_rows.shape[0],
-            self.df2_unq_rows.shape[0],
-            self.intersect_rows.shape[0] - self.count_matching_rows(),
+            self.intersect_rows.count(),
+            self.df1_unq_rows.count(),
+            self.df2_unq_rows.count(),
+            self.intersect_rows.count() - self.count_matching_rows(),
             self.count_matching_rows(),
             self.df1_name,
             self.df2_name,
@@ -624,7 +630,7 @@ class SparkCompare(BaseCompare):
         )
 
         # Column Matching
-        cnt_intersect = self.intersect_rows.shape[0]
+        cnt_intersect = self.intersect_rows.count()
         report += render(
             "column_comparison.txt",
             len([col for col in self.column_stats if col["unequal_cnt"] > 0]),
@@ -650,9 +656,7 @@ class SparkCompare(BaseCompare):
                 )
                 if column["unequal_cnt"] > 0:
                     match_sample.append(
-                        self.sample_mismatch(
-                            column["column"], sample_count, for_display=True
-                        )
+                        self.sample_mismatch(column["column"], sample_count)
                     )
 
         if any_mismatch:
@@ -679,10 +683,10 @@ class SparkCompare(BaseCompare):
                 report += "-------------------------------\n"
                 report += "\n"
                 for sample in match_sample:
-                    report += sample.to_string()
+                    report += sample._jdf.showString(20, 20, False)
                     report += "\n\n"
 
-        if min(sample_count, self.df1_unq_rows.shape[0]) > 0:
+        if min(sample_count, self.df1_unq_rows.count()) > 0:
             report += "Sample Rows Only in {} (First {} Columns)\n".format(
                 self.df1_name, column_count
             )
@@ -691,11 +695,15 @@ class SparkCompare(BaseCompare):
             )
             report += "\n"
             columns = self.df1_unq_rows.columns[:column_count]
-            unq_count = min(sample_count, self.df1_unq_rows.shape[0])
-            report += self.df1_unq_rows.sample(unq_count)[columns].to_string()
+            unq_count = min(sample_count, self.df1_unq_rows.count())
+            report += (
+                self.df1_unq_rows.limit(unq_count)
+                .select(columns)
+                ._jdf.showString(20, 20, False)
+            )
             report += "\n\n"
 
-        if min(sample_count, self.df2_unq_rows.shape[0]) > 0:
+        if min(sample_count, self.df2_unq_rows.count()) > 0:
             report += "Sample Rows Only in {} (First {} Columns)\n".format(
                 self.df2_name, column_count
             )
@@ -704,8 +712,12 @@ class SparkCompare(BaseCompare):
             )
             report += "\n"
             columns = self.df2_unq_rows.columns[:column_count]
-            unq_count = min(sample_count, self.df2_unq_rows.shape[0])
-            report += self.df2_unq_rows.sample(unq_count)[columns].to_string()
+            unq_count = min(sample_count, self.df2_unq_rows.count())
+            report += (
+                self.df2_unq_rows.limit(unq_count)
+                .select(columns)
+                ._jdf.showString(20, 20, False)
+            )
             report += "\n\n"
 
         return report
