@@ -23,11 +23,8 @@ two dataframes.
 
 import logging
 import os
-import sys
 from enum import Enum
-from itertools import chain
 
-import numpy as np
 import pandas as pd
 import pyspark.sql
 from ordered_set import OrderedSet
@@ -39,6 +36,8 @@ from pyspark.sql.functions import (
     col,
     isnan,
     lit,
+    trim,
+    upper,
     when,
 )
 
@@ -124,18 +123,20 @@ class SparkCompare(BaseCompare):
     rel_tol : float, optional
         Relative tolerance between two values.
     df1_name : str, optional
-        A string name for the first dataframe.  This allows the reporting to
+        A string name for the first dataframe. This allows the reporting to
         print out an actual name instead of "df1", and allows human users to
         more easily track the dataframes.
     df2_name : str, optional
-        A string name for the second dataframe
+        A string name for the second dataframe. This allows the reporting to
+        print out an actual name instead of "df2", and allows human users to
+        more easily track the dataframes.
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns (including any join
         columns)
     ignore_case : bool, optional
         Flag to ignore the case of string columns
     cast_column_names_lower: bool, optional
-        Boolean indicator that controls of column names will be cast into lower case
+        Boolean indicator that controls if column names will be cast into lower case
 
     Attributes
     ----------
@@ -331,13 +332,14 @@ class SparkCompare(BaseCompare):
         LOG.debug("Outer joining")
         params = {"on": self.join_columns}
 
-        # XXXXXXXX
-        # if ignore_spaces:
-        #     for column in self.join_columns:
-        #         if self.df1[column].dtype.kind == "O":
-        #             self.df1[column] = self.df1[column].str.strip()
-        #         if self.df2[column].dtype.kind == "O":
-        #             self.df2[column] = self.df2[column].str.strip()
+        if ignore_spaces:
+            for column in self.join_columns:
+                df1_dtype, _ = get_column_dtypes(self.df1, column, column)
+                df2_dtype, _ = get_column_dtypes(self.df2, column, column)
+                if df1_dtype == "string":
+                    self.df1 = self.df1.withColumn(column, trim(col(column)))
+                if df2_dtype == "string":
+                    self.df2 = self.df2.withColumn(column, trim(col(column)))
 
         # add suffixes using non_join_columns
         self.df1_renamed = self.df1
@@ -786,7 +788,7 @@ def columns_equal(
 
     Notes
     -----
-    For finite values, isclose uses the following equation to test whether two floating point
+    For finite values, ``isclose`` uses the following equation to test whether two floating point
     values are equivalent. To align with Pandas we will use the same for Spark.
 
     absolute(a - b) <= (atol + rtol * absolute(b))
@@ -812,15 +814,33 @@ def columns_equal(
                         abs(col(col_1) - col(col_2))
                         <= lit(abs_tol) + (lit(rel_tol) * abs(col_2))
                     ),
-                    lit(True),
+                    # corner case of col1 != NaN and col2 == Nan returns True incorrectly
+                    when(
+                        (isnan(col(col_1)) == False) & (isnan(col(col_2)) == True),
+                        lit(False),
+                    ).otherwise(lit(True)),
                 ).otherwise(lit(False)),
             )
         else:  # non-numeric comparison
+            if ignore_case and not ignore_spaces:
+                when_clause = upper(col(col_1)) == upper(col(col_2))
+            elif not ignore_case and ignore_spaces:
+                when_clause = trim(col(col_1)) == trim(col(col_2))
+            elif ignore_case and ignore_spaces:
+                when_clause = upper(trim(col(col_1))) == upper(trim(col(col_2)))
+            else:
+                when_clause = col(col_1) == col(col_2)
+
             dataframe = dataframe.withColumn(
                 col_match,
-                when(col(col_1) == col(col_2), lit(True)).otherwise(lit(False)),
+                when(when_clause, lit(True)).otherwise(lit(False)),
             )
-
+    else:
+        LOG.debug(
+            "Skipping {}({}) and {}({}), columns are not comparable".format(
+                col_1, base_dtype, col_2, compare_dtype
+            )
+        )
     return dataframe
 
 
