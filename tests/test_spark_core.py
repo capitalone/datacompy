@@ -30,6 +30,7 @@ from pandas.util.testing import assert_series_equal
 from pyspark.sql.types import *
 from pytest import raises
 
+import datacompy.spark_core
 from datacompy import SparkCompare
 from datacompy.spark_core import columns_equal
 from tests.utility import assert_columns_equal, spark_to_pandas
@@ -352,7 +353,7 @@ def test_date_columns_equal_with_ignore_spaces_and_case(spark_session):
 
 
 def test_date_columns_unequal(spark_session):
-    """I want datetime fields to match with dates stored as strings"""
+    """different data types are skipped, should always return 0"""
     schema = StructType(
         [
             StructField("a", StringType(), True),
@@ -387,210 +388,143 @@ def test_date_columns_unequal(spark_session):
     )
 
 
-#
-#
-# def test_bad_date_columns():
-#     """If strings can't be coerced into dates then it should be false for the
-#     whole column.
-#     """
-#     df = pd.DataFrame(
-#         [{"a": "2017-01-01", "b": "2017-01-01"}, {"a": "2017-01-01", "b": "217-01-01"}]
-#     )
-#     df["a_dt"] = pd.to_datetime(df["a"])
-#     assert not datacompy.columns_equal(df.a_dt, df.b).any()
-#
-#
-# def test_rounded_date_columns():
-#     """If strings can't be coerced into dates then it should be false for the
-#     whole column.
-#     """
-#     df = pd.DataFrame(
-#         [
-#             {"a": "2017-01-01", "b": "2017-01-01 00:00:00.000000", "exp": True},
-#             {"a": "2017-01-01", "b": "2017-01-01 00:00:00.123456", "exp": False},
-#             {"a": "2017-01-01", "b": "2017-01-01 00:00:01.000000", "exp": False},
-#             {"a": "2017-01-01", "b": "2017-01-01 00:00:00", "exp": True},
-#         ]
-#     )
-#     df["a_dt"] = pd.to_datetime(df["a"])
-#     actual = datacompy.columns_equal(df.a_dt, df.b)
-#     expected = df["exp"]
-#     assert_series_equal(actual, expected, check_names=False)
-#
-#
-# def test_decimal_float_columns_equal():
-#     df = pd.DataFrame(
-#         [
-#             {"a": Decimal("1"), "b": 1, "expected": True},
-#             {"a": Decimal("1.3"), "b": 1.3, "expected": True},
-#             {"a": Decimal("1.000003"), "b": 1.000003, "expected": True},
-#             {"a": Decimal("1.000000004"), "b": 1.000000003, "expected": False},
-#             {"a": Decimal("1.3"), "b": 1.2, "expected": False},
-#             {"a": np.nan, "b": np.nan, "expected": True},
-#             {"a": np.nan, "b": 1, "expected": False},
-#             {"a": Decimal("1"), "b": np.nan, "expected": False},
-#         ]
-#     )
-#     actual_out = datacompy.columns_equal(df.a, df.b)
-#     expect_out = df["expected"]
-#     assert_series_equal(expect_out, actual_out, check_names=False)
-#
-#
-# def test_decimal_float_columns_equal_rel():
-#     df = pd.DataFrame(
-#         [
-#             {"a": Decimal("1"), "b": 1, "expected": True},
-#             {"a": Decimal("1.3"), "b": 1.3, "expected": True},
-#             {"a": Decimal("1.000003"), "b": 1.000003, "expected": True},
-#             {"a": Decimal("1.000000004"), "b": 1.000000003, "expected": True},
-#             {"a": Decimal("1.3"), "b": 1.2, "expected": False},
-#             {"a": np.nan, "b": np.nan, "expected": True},
-#             {"a": np.nan, "b": 1, "expected": False},
-#             {"a": Decimal("1"), "b": np.nan, "expected": False},
-#         ]
-#     )
-#     actual_out = datacompy.columns_equal(df.a, df.b, abs_tol=0.001)
-#     expect_out = df["expected"]
-#     assert_series_equal(expect_out, actual_out, check_names=False)
-#
-#
-# def test_decimal_columns_equal():
-#     df = pd.DataFrame(
-#         [
-#             {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
-#             {"a": Decimal("1.3"), "b": Decimal("1.3"), "expected": True},
-#             {"a": Decimal("1.000003"), "b": Decimal("1.000003"), "expected": True},
-#             {
-#                 "a": Decimal("1.000000004"),
-#                 "b": Decimal("1.000000003"),
-#                 "expected": False,
-#             },
-#             {"a": Decimal("1.3"), "b": Decimal("1.2"), "expected": False},
-#             {"a": np.nan, "b": np.nan, "expected": True},
-#             {"a": np.nan, "b": Decimal("1"), "expected": False},
-#             {"a": Decimal("1"), "b": np.nan, "expected": False},
-#         ]
-#     )
-#     actual_out = datacompy.columns_equal(df.a, df.b)
-#     expect_out = df["expected"]
-#     assert_series_equal(expect_out, actual_out, check_names=False)
-#
-#
-# def test_decimal_columns_equal_rel():
-#     df = pd.DataFrame(
-#         [
-#             {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
-#             {"a": Decimal("1.3"), "b": Decimal("1.3"), "expected": True},
-#             {"a": Decimal("1.000003"), "b": Decimal("1.000003"), "expected": True},
-#             {
-#                 "a": Decimal("1.000000004"),
-#                 "b": Decimal("1.000000003"),
-#                 "expected": True,
-#             },
-#             {"a": Decimal("1.3"), "b": Decimal("1.2"), "expected": False},
-#             {"a": np.nan, "b": np.nan, "expected": True},
-#             {"a": np.nan, "b": Decimal("1"), "expected": False},
-#             {"a": Decimal("1"), "b": np.nan, "expected": False},
-#         ]
-#     )
-#     actual_out = datacompy.columns_equal(df.a, df.b, abs_tol=0.001)
-#     expect_out = df["expected"]
-#     assert_series_equal(expect_out, actual_out, check_names=False)
-#
-#
-# def test_infinity_and_beyond():
-#     df = pd.DataFrame(
-#         [
-#             {"a": np.inf, "b": np.inf, "expected": True},
-#             {"a": -np.inf, "b": -np.inf, "expected": True},
-#             {"a": -np.inf, "b": np.inf, "expected": False},
-#             {"a": np.inf, "b": -np.inf, "expected": False},
-#             {"a": 1, "b": 1, "expected": True},
-#             {"a": 1, "b": 0, "expected": False},
-#         ]
-#     )
-#     actual_out = datacompy.columns_equal(df.a, df.b)
-#     expect_out = df["expected"]
-#     assert_series_equal(expect_out, actual_out, check_names=False)
-#
-#
-# def test_mixed_column():
-#     df = pd.DataFrame(
-#         [
-#             {"a": "hi", "b": "hi", "expected": True},
-#             {"a": 1, "b": 1, "expected": True},
-#             {"a": np.inf, "b": np.inf, "expected": True},
-#             {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
-#             {"a": 1, "b": "1", "expected": False},
-#             {"a": 1, "b": "yo", "expected": False},
-#         ]
-#     )
-#     actual_out = datacompy.columns_equal(df.a, df.b)
-#     expect_out = df["expected"]
-#     assert_series_equal(expect_out, actual_out, check_names=False)
-#
-#
-# def test_mixed_column_with_ignore_spaces():
-#     df = pd.DataFrame(
-#         [
-#             {"a": "hi", "b": "hi ", "expected": True},
-#             {"a": 1, "b": 1, "expected": True},
-#             {"a": np.inf, "b": np.inf, "expected": True},
-#             {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
-#             {"a": 1, "b": "1 ", "expected": False},
-#             {"a": 1, "b": "yo ", "expected": False},
-#         ]
-#     )
-#     actual_out = datacompy.columns_equal(df.a, df.b, ignore_spaces=True)
-#     expect_out = df["expected"]
-#     assert_series_equal(expect_out, actual_out, check_names=False)
-#
-#
-# def test_mixed_column_with_ignore_spaces_and_case():
-#     df = pd.DataFrame(
-#         [
-#             {"a": "hi", "b": "hi ", "expected": True},
-#             {"a": 1, "b": 1, "expected": True},
-#             {"a": np.inf, "b": np.inf, "expected": True},
-#             {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
-#             {"a": 1, "b": "1 ", "expected": False},
-#             {"a": 1, "b": "yo ", "expected": False},
-#             {"a": "Hi", "b": "hI ", "expected": True},
-#             {"a": "HI", "b": "HI ", "expected": True},
-#             {"a": "hi", "b": "hi ", "expected": True},
-#         ]
-#     )
-#     actual_out = datacompy.columns_equal(
-#         df.a, df.b, ignore_spaces=True, ignore_case=True
-#     )
-#     expect_out = df["expected"]
-#     assert_series_equal(expect_out, actual_out, check_names=False)
-#
-#
-# def test_compare_df_setter_bad():
-#     df = pd.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
-#     with raises(TypeError, match="df1 must be a pandas DataFrame"):
-#         compare = datacompy.Compare("a", "a", ["a"])
-#     with raises(ValueError, match="df1 must have all columns from join_columns"):
-#         compare = datacompy.Compare(df, df.copy(), ["b"])
-#     with raises(ValueError, match="df1 must have unique column names"):
-#         compare = datacompy.Compare(df, df.copy(), ["a"])
-#     df_dupe = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
-#     assert datacompy.Compare(df_dupe, df_dupe.copy(), ["a", "b"]).df1.equals(df_dupe)
-#
-#
-# def test_compare_df_setter_good():
-#     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-#     df2 = pd.DataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
-#     compare = datacompy.Compare(df1, df2, ["a"])
-#     assert compare.df1.equals(df1)
-#     assert compare.df2.equals(df2)
-#     assert compare.join_columns == ["a"]
-#     compare = datacompy.Compare(df1, df2, ["A", "b"])
-#     assert compare.df1.equals(df1)
-#     assert compare.df2.equals(df2)
-#     assert compare.join_columns == ["a", "b"]
-#
+def test_decimal_double_columns_equal(spark_session):
+
+    pdf = pd.DataFrame(
+        [
+            {"a": Decimal("1"), "b": 1, "expected": True},
+            {"a": Decimal("1.3"), "b": 1.3, "expected": True},
+            {"a": Decimal("1.000003"), "b": 1.000003, "expected": True},
+            {"a": Decimal("1.000000004"), "b": 1.000000003, "expected": False},
+            {"a": Decimal("1.3"), "b": 1.2, "expected": False},
+            {"a": Decimal("1.3"), "b": np.nan, "expected": False},
+            {"a": Decimal("1.3"), "b": 1, "expected": False},
+            {"a": Decimal("1"), "b": np.nan, "expected": False},
+        ]
+    )
+    df = spark_session.createDataFrame(pdf)
+    actual_out = columns_equal(df, "a", "b", "expected")
+    expect_out = pdf["expected"]
+    assert_series_equal(
+        expect_out, spark_to_pandas(actual_out)["expected"], check_names=False
+    )
+
+
+def test_decimal_double_columns_equal_rel(spark_session):
+    pdf = pd.DataFrame(
+        [
+            {"a": Decimal("1"), "b": 1, "expected": True},
+            {"a": Decimal("1.3"), "b": 1.3, "expected": True},
+            {"a": Decimal("1.000003"), "b": 1.000003, "expected": True},
+            {"a": Decimal("1.000000004"), "b": 1.000000003, "expected": True},
+            {"a": Decimal("1.3"), "b": 1.2, "expected": False},
+            {"a": Decimal("1.3"), "b": np.nan, "expected": False},
+            {"a": Decimal("1.3"), "b": 1, "expected": False},
+            {"a": Decimal("1"), "b": np.nan, "expected": False},
+        ]
+    )
+    df = spark_session.createDataFrame(pdf)
+    actual_out = columns_equal(df, "a", "b", "expected", abs_tol=0.001)
+    expect_out = pdf["expected"]
+    assert_series_equal(
+        expect_out, spark_to_pandas(actual_out)["expected"], check_names=False
+    )
+
+
+def test_decimal_columns_equal(spark_session):
+    pdf = pd.DataFrame(
+        [
+            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
+            {"a": Decimal("1.3"), "b": Decimal("1.3"), "expected": True},
+            {"a": Decimal("1.000003"), "b": Decimal("1.000003"), "expected": True},
+            {
+                "a": Decimal("1.000000004"),
+                "b": Decimal("1.000000003"),
+                "expected": False,
+            },
+            {"a": Decimal("1.3"), "b": Decimal("1.2"), "expected": False},
+        ]
+    )
+    df = spark_session.createDataFrame(pdf)
+    actual_out = columns_equal(df, "a", "b", "expected")
+    expect_out = pdf["expected"]
+    assert_series_equal(
+        expect_out, spark_to_pandas(actual_out)["expected"], check_names=False
+    )
+
+
+def test_decimal_columns_equal_rel(spark_session):
+    pdf = pd.DataFrame(
+        [
+            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
+            {"a": Decimal("1.3"), "b": Decimal("1.3"), "expected": True},
+            {"a": Decimal("1.000003"), "b": Decimal("1.000003"), "expected": True},
+            {
+                "a": Decimal("1.000000004"),
+                "b": Decimal("1.000000003"),
+                "expected": True,
+            },
+            {"a": Decimal("1.3"), "b": Decimal("1.2"), "expected": False},
+        ]
+    )
+    df = spark_session.createDataFrame(pdf)
+    actual_out = columns_equal(df, "a", "b", "expected", abs_tol=0.001)
+    expect_out = pdf["expected"]
+    assert_series_equal(
+        expect_out, spark_to_pandas(actual_out)["expected"], check_names=False
+    )
+
+
+def test_infinity_and_beyond(spark_session):
+    # https://spark.apache.org/docs/latest/sql-ref-datatypes.html#positivenegative-infinity-semantics
+    # Positive/negative infinity multiplied by 0 returns NaN.
+    # Positive infinity sorts lower than NaN and higher than any other values.
+    # Negative infinity sorts lower than any other values.
+    pdf = pd.DataFrame(
+        [
+            {"a": np.inf, "b": np.inf, "expected": True},
+            {"a": -np.inf, "b": -np.inf, "expected": True},
+            {"a": -np.inf, "b": np.inf, "expected": True},
+            {"a": np.inf, "b": -np.inf, "expected": True},
+            {"a": 1, "b": 1, "expected": True},
+            {"a": 1, "b": 0, "expected": False},
+        ]
+    )
+    df = spark_session.createDataFrame(pdf)
+    actual_out = columns_equal(df, "a", "b", "expected")
+    expect_out = pdf["expected"]
+    assert_series_equal(
+        expect_out, spark_to_pandas(actual_out)["expected"], check_names=False
+    )
+
+
+def test_compare_df_setter_bad(spark_session):
+    pdf = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
+    df = spark_session.createDataFrame(pdf)
+    df = df.withColumnRenamed("b", "a")
+    with raises(TypeError, match="df1 must be a Spark DataFrame"):
+        compare = datacompy.spark_core.SparkCompare(spark_session, "a", "a", ["a"])
+    with raises(ValueError, match="df1 must have all columns from join_columns"):
+        compare = datacompy.spark_core.SparkCompare(spark_session, df, df, ["b"])
+    with raises(ValueError, match="df1 must have unique column names"):
+        compare = datacompy.spark_core.SparkCompare(spark_session, df, df, ["a"])
+
+
+def test_compare_df_setter_good(spark_session):
+    pdf1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
+    pdf2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = datacompy.spark_core.SparkCompare(spark_session, df1, df2, ["a"])
+    assert compare.df1 == df1
+    assert compare.df2 == df2
+    assert compare.join_columns == ["a"]
+    compare = datacompy.spark_core.SparkCompare(spark_session, df1, df2, ["a", "b"])
+    assert compare.df1 == df1
+    assert compare.df2 == df2
+    assert compare.join_columns == ["a", "b"]
+
+
 #
 # def test_compare_df_setter_different_cases():
 #     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
