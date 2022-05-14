@@ -30,9 +30,7 @@ from pandas.util.testing import assert_series_equal
 from pyspark.sql.types import *
 from pytest import raises
 
-import datacompy.spark_core
-from datacompy import SparkCompare
-from datacompy.spark_core import columns_equal
+from datacompy.spark_core import SparkCompare, columns_equal, temp_column_name
 from tests.utility import assert_columns_equal, spark_to_pandas
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -503,11 +501,11 @@ def test_compare_df_setter_bad(spark_session):
     df = spark_session.createDataFrame(pdf)
     df = df.withColumnRenamed("b", "a")
     with raises(TypeError, match="df1 must be a Spark DataFrame"):
-        compare = datacompy.spark_core.SparkCompare(spark_session, "a", "a", ["a"])
+        compare = SparkCompare(spark_session, "a", "a", ["a"])
     with raises(ValueError, match="df1 must have all columns from join_columns"):
-        compare = datacompy.spark_core.SparkCompare(spark_session, df, df, ["b"])
+        compare = SparkCompare(spark_session, df, df, ["b"])
     with raises(ValueError, match="df1 must have unique column names"):
-        compare = datacompy.spark_core.SparkCompare(spark_session, df, df, ["a"])
+        compare = SparkCompare(spark_session, df, df, ["a"])
 
 
 def test_compare_df_setter_good(spark_session):
@@ -515,332 +513,339 @@ def test_compare_df_setter_good(spark_session):
     pdf2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     df1 = spark_session.createDataFrame(pdf1)
     df2 = spark_session.createDataFrame(pdf2)
-    compare = datacompy.spark_core.SparkCompare(spark_session, df1, df2, ["a"])
-    assert compare.df1 == df1
-    assert compare.df2 == df2
+    compare = SparkCompare(spark_session, df1, df2, ["a"])
+    assert compare.df1.columns == ["a", "b"]
+    assert compare.df2.columns == ["a", "b"]
     assert compare.join_columns == ["a"]
-    compare = datacompy.spark_core.SparkCompare(spark_session, df1, df2, ["a", "b"])
-    assert compare.df1 == df1
-    assert compare.df2 == df2
+    compare = SparkCompare(spark_session, df1, df2, ["a", "b"])
+    assert compare.df1.columns == ["a", "b"]
+    assert compare.df2.columns == ["a", "b"]
     assert compare.join_columns == ["a", "b"]
 
 
-#
-# def test_compare_df_setter_different_cases():
-#     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-#     df2 = pd.DataFrame([{"A": 1, "b": 2}, {"A": 2, "b": 3}])
-#     compare = datacompy.Compare(df1, df2, ["a"])
-#     assert compare.df1.equals(df1)
-#     assert compare.df2.equals(df2)
-#
-#
-# def test_compare_df_setter_bad_index():
-#     df = pd.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
-#     with raises(TypeError, match="df1 must be a pandas DataFrame"):
-#         compare = datacompy.Compare("a", "a", on_index=True)
-#     with raises(ValueError, match="df1 must have unique column names"):
-#         compare = datacompy.Compare(df, df.copy(), on_index=True)
-#
-#
-# def test_compare_on_index_and_join_columns():
-#     df = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-#     with raises(Exception, match="Only provide on_index or join_columns"):
-#         compare = datacompy.Compare(df, df.copy(), on_index=True, join_columns=["a"])
-#
-#
-# def test_compare_df_setter_good_index():
-#     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-#     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
-#     compare = datacompy.Compare(df1, df2, on_index=True)
-#     assert compare.df1.equals(df1)
-#     assert compare.df2.equals(df2)
-#
-#
-# def test_columns_overlap():
-#     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-#     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
-#     compare = datacompy.Compare(df1, df2, ["a"])
-#     assert compare.df1_unq_columns() == set()
-#     assert compare.df2_unq_columns() == set()
-#     assert compare.intersect_columns() == {"a", "b"}
-#
-#
-# def test_columns_no_overlap():
-#     df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
-#     df2 = pd.DataFrame([{"a": 1, "b": 2, "d": "oh"}, {"a": 2, "b": 3, "d": "ya"}])
-#     compare = datacompy.Compare(df1, df2, ["a"])
-#     assert compare.df1_unq_columns() == {"c"}
-#     assert compare.df2_unq_columns() == {"d"}
-#     assert compare.intersect_columns() == {"a", "b"}
-#
-#
-# def test_columns_maintain_order_through_set_operations():
-#     df1 = pd.DataFrame(
-#         [
-#             (("A"), (0), (1), (2), (3), (4), (-2)),
-#             (("B"), (0), (2), (2), (3), (4), (-3)),
-#         ],
-#         columns=["join", "f", "g", "b", "h", "a", "c"],
-#     )
-#     df2 = pd.DataFrame(
-#         [
-#             (("A"), (0), (1), (2), (-1), (4), (-3)),
-#             (("B"), (1), (2), (3), (-1), (4), (-2)),
-#         ],
-#         columns=["join", "e", "h", "b", "a", "g", "d"],
-#     )
-#     compare = datacompy.Compare(df1, df2, ["join"])
-#     assert list(compare.df1_unq_columns()) == ["f", "c"]
-#     assert list(compare.df2_unq_columns()) == ["e", "d"]
-#     assert list(compare.intersect_columns()) == ["join", "g", "b", "h", "a"]
-#
-#
-# def test_10k_rows():
-#     df1 = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
-#     df1.reset_index(inplace=True)
-#     df1.columns = ["a", "b", "c"]
-#     df2 = df1.copy()
-#     df2["b"] = df2["b"] + 0.1
-#     compare_tol = datacompy.Compare(df1, df2, ["a"], abs_tol=0.2)
-#     assert compare_tol.matches()
-#     assert len(compare_tol.df1_unq_rows) == 0
-#     assert len(compare_tol.df2_unq_rows) == 0
-#     assert compare_tol.intersect_columns() == {"a", "b", "c"}
-#     assert compare_tol.all_columns_match()
-#     assert compare_tol.all_rows_overlap()
-#     assert compare_tol.intersect_rows_match()
-#
-#     compare_no_tol = datacompy.Compare(df1, df2, ["a"])
-#     assert not compare_no_tol.matches()
-#     assert len(compare_no_tol.df1_unq_rows) == 0
-#     assert len(compare_no_tol.df2_unq_rows) == 0
-#     assert compare_no_tol.intersect_columns() == {"a", "b", "c"}
-#     assert compare_no_tol.all_columns_match()
-#     assert compare_no_tol.all_rows_overlap()
-#     assert not compare_no_tol.intersect_rows_match()
-#
-#
-# @mock.patch("datacompy.logging.debug")
-# def test_subset(mock_debug):
-#     df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
-#     df2 = pd.DataFrame([{"a": 1, "c": "hi"}])
-#     comp = datacompy.Compare(df1, df2, ["a"])
-#     assert comp.subset()
-#     assert mock_debug.called_with("Checking equality")
-#
-#
-# @mock.patch("datacompy.logging.info")
-# def test_not_subset(mock_info):
-#     df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
-#     df2 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "great"}])
-#     comp = datacompy.Compare(df1, df2, ["a"])
-#     assert not comp.subset()
-#     assert mock_info.called_with("Sample c mismatch: a: 2, df1: yo, df2: great")
-#
-#
-# def test_large_subset():
-#     df1 = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
-#     df1.reset_index(inplace=True)
-#     df1.columns = ["a", "b", "c"]
-#     df2 = df1[["a", "b"]].sample(50).copy()
-#     comp = datacompy.Compare(df1, df2, ["a"])
-#     assert not comp.matches()
-#     assert comp.subset()
-#
-#
-# def test_string_joiner():
-#     df1 = pd.DataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
-#     df2 = pd.DataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
-#     compare = datacompy.Compare(df1, df2, "ab")
-#     assert compare.matches()
-#
-#
-# def test_decimal_with_joins():
-#     df1 = pd.DataFrame([{"a": Decimal("1"), "b": 2}, {"a": Decimal("2"), "b": 2}])
-#     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-#     compare = datacompy.Compare(df1, df2, "a")
-#     assert compare.matches()
-#     assert compare.all_columns_match()
-#     assert compare.all_rows_overlap()
-#     assert compare.intersect_rows_match()
-#
-#
-# def test_decimal_with_nulls():
-#     df1 = pd.DataFrame([{"a": 1, "b": Decimal("2")}, {"a": 2, "b": Decimal("2")}])
-#     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}, {"a": 3, "b": 2}])
-#     compare = datacompy.Compare(df1, df2, "a")
-#     assert not compare.matches()
-#     assert compare.all_columns_match()
-#     assert not compare.all_rows_overlap()
-#     assert compare.intersect_rows_match()
-#
-#
-# def test_strings_with_joins():
-#     df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-#     df2 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-#     compare = datacompy.Compare(df1, df2, "a")
-#     assert compare.matches()
-#     assert compare.all_columns_match()
-#     assert compare.all_rows_overlap()
-#     assert compare.intersect_rows_match()
-#
-#
-# def test_index_joining():
-#     df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-#     df2 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-#     compare = datacompy.Compare(df1, df2, on_index=True)
-#     assert compare.matches()
-#
-#
-# def test_index_joining_strings_i_guess():
-#     df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-#     df2 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-#     df1.index = df1["a"]
-#     df2.index = df2["a"]
-#     df1.index.name = df2.index.name = None
-#     compare = datacompy.Compare(df1, df2, on_index=True)
-#     assert compare.matches()
-#
-#
-# def test_index_joining_non_overlapping():
-#     df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-#     df2 = pd.DataFrame(
-#         [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
-#     )
-#     compare = datacompy.Compare(df1, df2, on_index=True)
-#     assert not compare.matches()
-#     assert compare.all_columns_match()
-#     assert compare.intersect_rows_match()
-#     assert len(compare.df1_unq_rows) == 0
-#     assert len(compare.df2_unq_rows) == 1
-#     assert list(compare.df2_unq_rows["a"]) == ["back fo mo"]
-#
-#
-# def test_temp_column_name():
-#     df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-#     df2 = pd.DataFrame(
-#         [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
-#     )
-#     actual = datacompy.temp_column_name(df1, df2)
-#     assert actual == "_temp_0"
-#
-#
-# def test_temp_column_name_one_has():
-#     df1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
-#     df2 = pd.DataFrame(
-#         [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
-#     )
-#     actual = datacompy.temp_column_name(df1, df2)
-#     assert actual == "_temp_1"
-#
-#
-# def test_temp_column_name_both_have():
-#     df1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
-#     df2 = pd.DataFrame(
-#         [
-#             {"_temp_0": "hi", "b": 2},
-#             {"_temp_0": "bye", "b": 2},
-#             {"a": "back fo mo", "b": 3},
-#         ]
-#     )
-#     actual = datacompy.temp_column_name(df1, df2)
-#     assert actual == "_temp_1"
-#
-#
-# def test_temp_column_name_both_have():
-#     df1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
-#     df2 = pd.DataFrame(
-#         [
-#             {"_temp_0": "hi", "b": 2},
-#             {"_temp_1": "bye", "b": 2},
-#             {"a": "back fo mo", "b": 3},
-#         ]
-#     )
-#     actual = datacompy.temp_column_name(df1, df2)
-#     assert actual == "_temp_2"
-#
-#
-# def test_temp_column_name_one_already():
-#     df1 = pd.DataFrame([{"_temp_1": "hi", "b": 2}, {"_temp_1": "bye", "b": 2}])
-#     df2 = pd.DataFrame(
-#         [
-#             {"_temp_1": "hi", "b": 2},
-#             {"_temp_1": "bye", "b": 2},
-#             {"a": "back fo mo", "b": 3},
-#         ]
-#     )
-#     actual = datacompy.temp_column_name(df1, df2)
-#     assert actual == "_temp_0"
-#
-#
+def test_compare_df_setter_different_cases(spark_session):
+    pdf1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
+    pdf2 = pd.DataFrame([{"A": 1, "b": 2}, {"A": 2, "b": 3}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, ["a"])
+    assert compare.df1.columns == ["a", "b"]
+    assert compare.df2.columns == ["a", "b"]
+
+
+def test_compare_df_setter_bad_index(spark_session):
+    pdf = pd.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
+    df = df2 = spark_session.createDataFrame(pdf)
+    with raises(TypeError, match="df1 must be a Spark DataFrame"):
+        compare = SparkCompare(spark_session, "a", "a", ["a"])
+    with raises(ValueError, match="df1 must have unique column names"):
+        compare = SparkCompare(spark_session, df, df2, ["a"])
+
+
+def test_columns_overlap(spark_session):
+    pdf1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
+    pdf2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, ["a"])
+    assert compare.df1_unq_columns() == set()
+    assert compare.df2_unq_columns() == set()
+    assert compare.intersect_columns() == {"a", "b"}
+
+
+def test_columns_no_overlap(spark_session):
+    pdf1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
+    pdf2 = pd.DataFrame([{"a": 1, "b": 2, "d": "oh"}, {"a": 2, "b": 3, "d": "ya"}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, ["a"])
+    assert compare.df1_unq_columns() == {"c"}
+    assert compare.df2_unq_columns() == {"d"}
+    assert compare.intersect_columns() == {"a", "b"}
+
+
+def test_columns_maintain_order_through_set_operations(spark_session):
+    pdf1 = pd.DataFrame(
+        [
+            (("A"), (0), (1), (2), (3), (4), (-2)),
+            (("B"), (0), (2), (2), (3), (4), (-3)),
+        ],
+        columns=["join", "f", "g", "b", "h", "a", "c"],
+    )
+    pdf2 = pd.DataFrame(
+        [
+            (("A"), (0), (1), (2), (-1), (4), (-3)),
+            (("B"), (1), (2), (3), (-1), (4), (-2)),
+        ],
+        columns=["join", "e", "h", "b", "a", "g", "d"],
+    )
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, ["join"])
+    assert list(compare.df1_unq_columns()) == ["f", "c"]
+    assert list(compare.df2_unq_columns()) == ["e", "d"]
+    assert list(compare.intersect_columns()) == ["join", "g", "b", "h", "a"]
+
+
+def test_10k_rows(spark_session):
+    pdf1 = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    pdf1.reset_index(inplace=True)
+    pdf1.columns = ["a", "b", "c"]
+    pdf2 = pdf1.copy()
+    pdf2["b"] = pdf2["b"] + 0.1
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare_tol = SparkCompare(spark_session, df1, df2, ["a"], abs_tol=0.2)
+    assert compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"a", "b", "c"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert compare_tol.intersect_rows_match()
+
+    compare_no_tol = SparkCompare(spark_session, df1, df2, ["a"])
+    assert not compare_no_tol.matches()
+    assert compare_no_tol.df1_unq_rows.count() == 0
+    assert compare_no_tol.df2_unq_rows.count() == 0
+    assert compare_no_tol.intersect_columns() == {"a", "b", "c"}
+    assert compare_no_tol.all_columns_match()
+    assert compare_no_tol.all_rows_overlap()
+    assert not compare_no_tol.intersect_rows_match()
+
+
+def test_subset(spark_session):
+    pdf1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
+    pdf2 = pd.DataFrame([{"a": 1, "c": "hi"}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    comp = SparkCompare(spark_session, df1, df2, ["a"])
+    assert comp.subset()
+
+
+def test_not_subset(spark_session):
+    pdf1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
+    pdf2 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "great"}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    comp = SparkCompare(spark_session, df1, df2, ["a"])
+    assert not comp.subset()
+
+
+def test_large_subset(spark_session):
+    pdf1 = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    pdf1.reset_index(inplace=True)
+    pdf1.columns = ["a", "b", "c"]
+    pdf2 = pdf1[["a", "b"]].sample(50).copy()
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    comp = SparkCompare(spark_session, df1, df2, ["a"])
+    assert not comp.matches()
+    assert comp.subset()
+
+
+def test_string_joiner(spark_session):
+    pdf1 = pd.DataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
+    pdf2 = pd.DataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, "ab")
+    assert compare.matches()
+
+
+def test_decimal_with_joins(spark_session):
+    pdf1 = pd.DataFrame([{"a": Decimal("1"), "b": 2}, {"a": Decimal("2"), "b": 2}])
+    pdf2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, "a")
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+
+
+def test_decimal_with_nulls(spark_session):
+    pdf1 = pd.DataFrame([{"a": 1, "b": Decimal("2")}, {"a": 2, "b": Decimal("2")}])
+    pdf2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}, {"a": 3, "b": 2}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, "a")
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+
+
+def test_strings_with_joins(spark_session):
+    pdf1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
+    pdf2 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, "a")
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+
+
+def test_temp_column_name(spark_session):
+    pdf1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
+    pdf2 = pd.DataFrame(
+        [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
+    )
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    actual = temp_column_name(df1, df2)
+    assert actual == "_temp_0"
+
+
+def test_temp_column_name_one_has(spark_session):
+    pdf1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
+    pdf2 = pd.DataFrame(
+        [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
+    )
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    actual = temp_column_name(df1, df2)
+    assert actual == "_temp_1"
+
+
+def test_temp_column_name_both_have(spark_session):
+    pdf1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
+    pdf2 = pd.DataFrame(
+        [
+            {"_temp_0": "hi", "b": 2},
+            {"_temp_0": "bye", "b": 2},
+        ]
+    )
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    actual = temp_column_name(df1, df2)
+    assert actual == "_temp_1"
+
+
+def test_temp_column_name_both_have_2(spark_session):
+    pdf1 = pd.DataFrame(
+        [
+            {"_temp_0": "hi", "_temp_1": "hi", "b": 2},
+            {"_temp_0": "hi", "_temp_1": "hi", "b": 2},
+        ]
+    )
+    pdf2 = pd.DataFrame(
+        [
+            {"_temp_0": "hi", "_temp_1": "hi", "b": 2},
+            {"_temp_0": "hi", "_temp_1": "hi", "b": 2},
+        ]
+    )
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    actual = temp_column_name(df1, df2)
+    assert actual == "_temp_2"
+
+
+def test_temp_column_name_both_have_3(spark_session):
+    pdf1 = pd.DataFrame(
+        [
+            {"_temp_0": "hi", "_temp_1": "hi", "_temp_2": "hi", "b": 2},
+            {"_temp_0": "hi", "_temp_1": "hi", "_temp_2": "hi", "b": 2},
+        ]
+    )
+    pdf2 = pd.DataFrame(
+        [
+            {"_temp_0": "hi", "_temp_1": "hi", "_temp_2": "hi", "b": 2},
+            {"_temp_0": "hi", "_temp_1": "hi", "_temp_2": "hi", "b": 2},
+        ]
+    )
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    actual = temp_column_name(df1, df2)
+    assert actual == "_temp_3"
+
+
+def test_temp_column_name_one_already(spark_session):
+    pdf1 = pd.DataFrame(
+        [
+            {"_temp_1": "hi", "_temp_2": "hi", "b": 2},
+            {"_temp_1": "hi", "_temp_2": "hi", "b": 2},
+        ]
+    )
+    pdf2 = pd.DataFrame(
+        [
+            {"_temp_1": "hi", "_temp_2": "hi", "b": 2},
+            {"_temp_1": "hi", "_temp_2": "hi", "b": 2},
+        ]
+    )
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    actual = temp_column_name(df1, df2)
+    assert actual == "_temp_0"
+
+
 # ### Duplicate testing!
-# def test_simple_dupes_one_field():
-#     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-#     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-#     compare = datacompy.Compare(df1, df2, join_columns=["a"])
-#     assert compare.matches()
-#     # Just render the report to make sure it renders.
-#     t = compare.report()
+def test_simple_dupes_one_field(spark_session):
+    pdf1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    pdf2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, join_columns=["a"])
+    assert compare.matches()
+    # Just render the report to make sure it renders.
+    t = compare.report()
+
+
+def test_simple_dupes_two_fields(spark_session):
+    pdf1 = pd.DataFrame([{"a": 1, "b": 2, "c": 2}, {"a": 1, "b": 2, "c": 2}])
+    pdf2 = pd.DataFrame([{"a": 1, "b": 2, "c": 2}, {"a": 1, "b": 2, "c": 2}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, join_columns=["a", "b"])
+    assert compare.matches()
+    # Just render the report to make sure it renders.
+    t = compare.report()
+
+
+def test_simple_dupes_one_field_two_vals(spark_session):
+    pdf1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    pdf2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, join_columns=["a"])
+    assert compare.matches()
+    # Just render the report to make sure it renders.
+    t = compare.report()
+
+
+def test_simple_dupes_one_field_two_vals_2(spark_session):
+    pdf1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    pdf2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, join_columns=["a"])
+    assert not compare.matches()
+    assert compare.df1_unq_rows.count() == 0
+    assert compare.df2_unq_rows.count() == 1
+    assert compare.intersect_rows.count() == 1
+    # Just render the report to make sure it renders.
+    t = compare.report()
+
+
+def test_simple_dupes_one_field_three_to_two_vals(spark_session):
+    pdf1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    pdf2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkCompare(spark_session, df1, df2, join_columns=["a"])
+    assert compare.matches()
+    assert compare.df1_unq_rows.count() == 0
+    assert compare.df2_unq_rows.count() == 0
+    assert compare.intersect_rows.count() == 1
+    # Just render the report to make sure it renders.
+    t = compare.report()
+
+
 #
-#
-# def test_simple_dupes_two_fields():
-#     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 2}])
-#     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 2}])
-#     compare = datacompy.Compare(df1, df2, join_columns=["a", "b"])
-#     assert compare.matches()
-#     # Just render the report to make sure it renders.
-#     t = compare.report()
-#
-#
-# def test_simple_dupes_index():
-#     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-#     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-#     df1.index = df1["a"]
-#     df2.index = df2["a"]
-#     df1.index.name = df2.index.name = None
-#     compare = datacompy.Compare(df1, df2, on_index=True)
-#     assert compare.matches()
-#     # Just render the report to make sure it renders.
-#     t = compare.report()
-#
-#
-# def test_simple_dupes_one_field_two_vals():
-#     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
-#     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
-#     compare = datacompy.Compare(df1, df2, join_columns=["a"])
-#     assert compare.matches()
-#     # Just render the report to make sure it renders.
-#     t = compare.report()
-#
-#
-# def test_simple_dupes_one_field_two_vals():
-#     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
-#     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
-#     compare = datacompy.Compare(df1, df2, join_columns=["a"])
-#     assert not compare.matches()
-#     assert len(compare.df1_unq_rows) == 1
-#     assert len(compare.df2_unq_rows) == 1
-#     assert len(compare.intersect_rows) == 1
-#     # Just render the report to make sure it renders.
-#     t = compare.report()
-#
-#
-# def test_simple_dupes_one_field_three_to_two_vals():
-#     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}, {"a": 1, "b": 0}])
-#     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
-#     compare = datacompy.Compare(df1, df2, join_columns=["a"])
-#     assert not compare.matches()
-#     assert len(compare.df1_unq_rows) == 1
-#     assert len(compare.df2_unq_rows) == 0
-#     assert len(compare.intersect_rows) == 2
-#     # Just render the report to make sure it renders.
-#     t = compare.report()
-#
-#     assert "(First 1 Columns)" in compare.report(column_count=1)
-#     assert "(First 2 Columns)" in compare.report(column_count=2)
-#
-#
-# def test_dupes_from_real_data():
+# def test_dupes_from_real_data(spark_session):
 #     data = """acct_id,acct_sfx_num,trxn_post_dt,trxn_post_seq_num,trxn_amt,trxn_dt,debit_cr_cd,cash_adv_trxn_comn_cntry_cd,mrch_catg_cd,mrch_pstl_cd,visa_mail_phn_cd,visa_rqstd_pmt_svc_cd,mc_pmt_facilitator_idn_num
 # 100,0,2017-06-17,1537019,30.64,2017-06-15,D,CAN,5812,M2N5P5,,,0.0
 # 200,0,2017-06-24,1022477,485.32,2017-06-22,D,USA,4511,7114,7.0,1,
@@ -862,11 +867,13 @@ def test_compare_df_setter_good(spark_session):
 # 200,0,2017-07-01,1009433,214.12,2017-06-29,D,USA,3640,20170,,A,
 # 100,0,2017-06-20,1607593,1.67,2017-06-19,D,CAN,5814,M2N 6L7,,,0.0
 # 200,0,2017-07-01,1009393,2.01,2017-06-29,D,USA,5814,22102,,F,"""
-#     df1 = pd.read_csv(io.StringIO(data), sep=",")
-#     df2 = df1.copy()
-#     compare_acct = datacompy.Compare(df1, df2, join_columns=["acct_id"])
+#     pdf1 = pd.read_csv(io.StringIO(data), sep=",")
+#     pdf2 = pdf1.copy()
+#     df1 = spark_session.createDataFrame(pdf1)
+#     df2 = spark_session.createDataFrame(pdf2)
+#     compare_acct = SparkCompare(spark_session, df1, df2, join_columns=["acct_id"])
 #     assert compare_acct.matches()
-#     compare_unq = datacompy.Compare(
+#     compare_unq = SparkCompare(spark_session,
 #         df1,
 #         df2,
 #         join_columns=["acct_id", "acct_sfx_num", "trxn_post_dt", "trxn_post_seq_num"],
@@ -875,50 +882,50 @@ def test_compare_df_setter_good(spark_session):
 #     # Just render the report to make sure it renders.
 #     t = compare_acct.report()
 #     r = compare_unq.report()
+
 #
-#
-# def test_strings_with_joins_with_ignore_spaces():
-#     df1 = pd.DataFrame([{"a": "hi", "b": " A"}, {"a": "bye", "b": "A"}])
-#     df2 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A "}])
-#     compare = datacompy.Compare(df1, df2, "a", ignore_spaces=False)
+# def test_strings_with_joins_with_ignore_spaces(spark_session):
+#     pdf1 = pd.DataFrame([{"a": "hi", "b": " A"}, {"a": "bye", "b": "A"}])
+#     pdf2 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A "}])
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_spaces=False)
 #     assert not compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
 #     assert not compare.intersect_rows_match()
 #
-#     compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_spaces=True)
 #     assert compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
 #     assert compare.intersect_rows_match()
 #
 #
-# def test_strings_with_joins_with_ignore_case():
-#     df1 = pd.DataFrame([{"a": "hi", "b": "a"}, {"a": "bye", "b": "A"}])
-#     df2 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "a"}])
-#     compare = datacompy.Compare(df1, df2, "a", ignore_case=False)
+# def test_strings_with_joins_with_ignore_case(spark_session):
+#     pdf1 = pd.DataFrame([{"a": "hi", "b": "a"}, {"a": "bye", "b": "A"}])
+#     pdf2 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "a"}])
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_case=False)
 #     assert not compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
 #     assert not compare.intersect_rows_match()
 #
-#     compare = datacompy.Compare(df1, df2, "a", ignore_case=True)
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_case=True)
 #     assert compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
 #     assert compare.intersect_rows_match()
 #
 #
-# def test_decimal_with_joins_with_ignore_spaces():
-#     df1 = pd.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
-#     df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
-#     compare = datacompy.Compare(df1, df2, "a", ignore_spaces=False)
+# def test_decimal_with_joins_with_ignore_spaces(spark_session):
+#     pdf1 = pd.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
+#     pdf2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_spaces=False)
 #     assert not compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
 #     assert not compare.intersect_rows_match()
 #
-#     compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_spaces=True)
 #     assert compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
@@ -926,15 +933,15 @@ def test_compare_df_setter_good(spark_session):
 #
 #
 # def test_decimal_with_joins_with_ignore_case():
-#     df1 = pd.DataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
-#     df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
-#     compare = datacompy.Compare(df1, df2, "a", ignore_case=False)
+#     pdf1 = pd.DataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
+#     pdf2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_case=False)
 #     assert not compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
 #     assert not compare.intersect_rows_match()
 #
-#     compare = datacompy.Compare(df1, df2, "a", ignore_case=True)
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_case=True)
 #     assert compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
@@ -942,15 +949,15 @@ def test_compare_df_setter_good(spark_session):
 #
 #
 # def test_index_with_joins_with_ignore_spaces():
-#     df1 = pd.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
-#     df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
-#     compare = datacompy.Compare(df1, df2, on_index=True, ignore_spaces=False)
+#     pdf1 = pd.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
+#     pdf2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
+#     compare = SparkCompare(spark_session, df1, df2, on_index=True, ignore_spaces=False)
 #     assert not compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
 #     assert not compare.intersect_rows_match()
 #
-#     compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_spaces=True)
 #     assert compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
@@ -958,15 +965,15 @@ def test_compare_df_setter_good(spark_session):
 #
 #
 # def test_index_with_joins_with_ignore_case():
-#     df1 = pd.DataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
-#     df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
-#     compare = datacompy.Compare(df1, df2, on_index=True, ignore_case=False)
+#     pdf1 = pd.DataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
+#     pdf2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
+#     compare = SparkCompare(spark_session, df1, df2, on_index=True, ignore_case=False)
 #     assert not compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
 #     assert not compare.intersect_rows_match()
 #
-#     compare = datacompy.Compare(df1, df2, "a", ignore_case=True)
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_case=True)
 #     assert compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
@@ -974,15 +981,15 @@ def test_compare_df_setter_good(spark_session):
 #
 #
 # def test_strings_with_ignore_spaces_and_join_columns():
-#     df1 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A"}])
-#     df2 = pd.DataFrame([{"a": " hi ", "b": "A"}, {"a": " bye ", "b": "A"}])
-#     compare = datacompy.Compare(df1, df2, "a", ignore_spaces=False)
+#     pdf1 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A"}])
+#     pdf2 = pd.DataFrame([{"a": " hi ", "b": "A"}, {"a": " bye ", "b": "A"}])
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_spaces=False)
 #     assert not compare.matches()
 #     assert compare.all_columns_match()
 #     assert not compare.all_rows_overlap()
 #     assert compare.count_matching_rows() == 0
 #
-#     compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_spaces=True)
 #     assert compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
@@ -991,16 +998,16 @@ def test_compare_df_setter_good(spark_session):
 #
 #
 # def test_integers_with_ignore_spaces_and_join_columns():
-#     df1 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
-#     df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
-#     compare = datacompy.Compare(df1, df2, "a", ignore_spaces=False)
+#     pdf1 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
+#     pdf2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_spaces=False)
 #     assert compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
 #     assert compare.intersect_rows_match()
 #     assert compare.count_matching_rows() == 2
 #
-#     compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+#     compare = SparkCompare(spark_session, df1, df2, "a", ignore_spaces=True)
 #     assert compare.matches()
 #     assert compare.all_columns_match()
 #     assert compare.all_rows_overlap()
@@ -1028,7 +1035,7 @@ def test_compare_df_setter_good(spark_session):
 #     """
 #     df1 = pd.read_csv(io.StringIO(data1), sep=",")
 #     df2 = pd.read_csv(io.StringIO(data2), sep=",")
-#     compare = datacompy.Compare(df1, df2, "acct_id")
+#     compare = SparkCompare(spark_session, df1, df2, "acct_id")
 #
 #     output = compare.sample_mismatch(column="name", sample_count=1)
 #     assert output.shape[0] == 1
@@ -1063,7 +1070,7 @@ def test_compare_df_setter_good(spark_session):
 #     """
 #     df1 = pd.read_csv(io.StringIO(data1), sep=",")
 #     df2 = pd.read_csv(io.StringIO(data2), sep=",")
-#     compare = datacompy.Compare(df1, df2, "acct_id")
+#     compare = SparkCompare(spark_session, df1, df2, "acct_id")
 #
 #     output = compare.all_mismatch()
 #     assert output.shape[0] == 4
@@ -1116,16 +1123,16 @@ def test_compare_df_setter_good(spark_session):
 #
 #
 # def test_dupes_with_nulls():
-#     df1 = pd.DataFrame(
+#     pdf1 = pd.DataFrame(
 #         {
 #             "fld_1": [1, 2, 2, 3, 3, 4, 5, 5],
 #             "fld_2": ["A", np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
 #         }
 #     )
-#     df2 = pd.DataFrame(
+#     pdf2 = pd.DataFrame(
 #         {"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", np.nan, np.nan, np.nan, np.nan]}
 #     )
-#     comp = datacompy.Compare(df1, df2, join_columns=["fld_1", "fld_2"])
+#     comp = SparkCompare(spark_session, df1, df2, join_columns=["fld_1", "fld_2"])
 #     assert comp.subset()
 #
 #
@@ -1177,37 +1184,37 @@ def test_compare_df_setter_good(spark_session):
 # def test_lower():
 #     """This function tests the toggle to use lower case for column names or not"""
 #     # should match
-#     df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
-#     df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
-#     compare = datacompy.Compare(df1, df2, join_columns=["a"])
+#     pdf1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+#     pdf2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
+#     compare = SparkCompare(spark_session, df1, df2, join_columns=["a"])
 #     assert compare.matches()
 #     # should not match
-#     df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
-#     df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
-#     compare = datacompy.Compare(
+#     pdf1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+#     pdf2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
+#     compare = SparkCompare(spark_session,
 #         df1, df2, join_columns=["a"], cast_column_names_lower=False
 #     )
 #     assert not compare.matches()
 #
 #     # test join column
 #     # should match
-#     df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
-#     df2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
-#     compare = datacompy.Compare(df1, df2, join_columns=["a"])
+#     pdf1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+#     pdf2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
+#     compare = SparkCompare(spark_session, df1, df2, join_columns=["a"])
 #     assert compare.matches()
 #     # should fail because "a" is not found in df2
-#     df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
-#     df2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
+#     pdf1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+#     pdf2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
 #     expected_message = "df2 must have all columns from join_columns"
 #     with raises(ValueError, match=expected_message):
-#         compare = datacompy.Compare(
+#         compare = SparkCompare(spark_session,
 #             df1, df2, join_columns=["a"], cast_column_names_lower=False
 #         )
 #
 #
 # def test_integer_column_names():
 #     """This function tests that integer column names would also work"""
-#     df1 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
-#     df2 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
-#     compare = datacompy.Compare(df1, df2, join_columns=[1])
+#     pdf1 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
+#     pdf2 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
+#     compare = SparkCompare(spark_session, df1, df2, join_columns=[1])
 #     assert compare.matches()

@@ -165,8 +165,15 @@ class SparkCompare(BaseCompare):
         cast_column_names_lower=True,
     ):
 
+        if not isinstance(df1, pyspark.sql.DataFrame):
+            raise TypeError("df1 must be a Spark DataFrame")
+        if not isinstance(df2, pyspark.sql.DataFrame):
+            raise TypeError("df2 must be a Spark DataFrame")
+
         self.spark = spark_session
+        self._any_dupes = False
         self.cast_column_names_lower = cast_column_names_lower
+
         if join_columns is None:
             raise Exception("Please provide join_columns")
         elif isinstance(join_columns, (str, int, float)):
@@ -181,9 +188,13 @@ class SparkCompare(BaseCompare):
                 for col in join_columns
             ]
 
-        self._any_dupes = False
-        self.df1 = df1
-        self.df2 = df2
+        if self.cast_column_names_lower:
+            self.df1 = df1.toDF(*[str(c).lower() for c in df1.columns])
+            self.df2 = df2.toDF(*[str(c).lower() for c in df2.columns])
+        else:
+            self.df1 = df1.toDF(*[str(c) for c in df1.columns])
+            self.df2 = df2.toDF(*[str(c) for c in df2.columns])
+
         self.df1_name = df1_name
         self.df2_name = df2_name
         self.abs_tol = abs_tol
@@ -209,7 +220,7 @@ class SparkCompare(BaseCompare):
         )
 
     def _validate_dataframe(self, index, cast_column_names_lower=True):
-        """Check that it is a dataframe and has the join columns
+        """Check that a dataframe has the join columns
 
         Parameters
         ----------
@@ -220,13 +231,6 @@ class SparkCompare(BaseCompare):
             Boolean indicator that controls of column names will be cast into lower case
         """
         dataframe = getattr(self, index)
-        if not isinstance(dataframe, pyspark.sql.DataFrame):
-            raise TypeError("{} must be a Spark DataFrame".format(index))
-
-        if cast_column_names_lower:
-            dataframe.toDF(*[str(c).lower() for c in dataframe.columns])
-        else:
-            dataframe.toDF(*[str(c) for c in dataframe.columns])
 
         # Check if join_columns are present in the dataframe
         if not set(self.join_columns).issubset(set(dataframe.columns)):
@@ -477,16 +481,14 @@ class SparkCompare(BaseCompare):
         int
             Number of matching rows
         """
-        match_columns_count = 0
+        conditions = []
         for column in self.intersect_columns():
             if column not in self.join_columns:
                 match_columns = column + "_match"
-                match_columns_count = (
-                    match_columns_count
-                    + self.intersect_rows.select(match_columns)
-                    .where(col(match_columns) == True)
-                    .count()
-                )
+                conditions.append("{} == True".format(match_columns))
+        match_columns_count = self.intersect_rows.filter(
+            " and ".join(conditions)
+        ).count()
         return match_columns_count
 
     def intersect_rows_match(self):
@@ -844,39 +846,6 @@ def columns_equal(
     return dataframe
 
 
-def compare_string_and_date_columns(col_1, col_2):
-    """Compare a string column and date column, value-wise.  This tries to
-    convert a string column to a date column and compare that way.
-
-    Parameters
-    ----------
-    col_1 : Pandas.Series
-        The first column to look at
-    col_2 : Pandas.Series
-        The second column
-
-    Returns
-    -------
-    pandas.Series
-        A series of Boolean values.  True == the values match, False == the
-        values don't match.
-    """
-    if col_1.dtype.kind == "O":
-        obj_column = col_1
-        date_column = col_2
-    else:
-        obj_column = col_2
-        date_column = col_1
-
-    try:
-        return pd.Series(
-            (pd.to_datetime(obj_column) == date_column)
-            | (obj_column.isnull() & date_column.isnull())
-        )
-    except:
-        return pd.Series(False, index=col_1.index)
-
-
 def get_merged_columns(original_df, merged_df, suffix):
     """Gets the columns from an original dataframe, in the new merged dataframe
 
@@ -914,12 +883,15 @@ def temp_column_name(*dataframes):
     str
         String column name that looks like '_temp_x' for some integer x
     """
+    column_names = []
+    for dataframe in dataframes:
+        column_names.extend(dataframe.columns)
     i = 0
     while True:
         temp_column = "_temp_{}".format(i)
         unique = True
-        for dataframe in dataframes:
-            if temp_column in dataframe.columns:
+        for col in set(column_names):
+            if temp_column in col:
                 i += 1
                 unique = False
         if unique:
