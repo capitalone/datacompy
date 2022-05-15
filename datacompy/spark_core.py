@@ -35,6 +35,7 @@ from pyspark.sql.functions import (
     coalesce,
     col,
     isnan,
+    isnull,
     lit,
     trim,
     upper,
@@ -135,15 +136,11 @@ class SparkCompare(BaseCompare):
         columns)
     ignore_case : bool, optional
         Flag to ignore the case of string columns
-    cast_column_names_lower: bool, optional
-        Boolean indicator that controls if column names will be cast into lower case
 
     Attributes
     ----------
     spark_session : ``pyspark.sql.SparkSession``
         A ``SparkSession`` to be used to execute Spark commands in the comparison.
-    cast_column_names_lower: bool
-        Boolean indicator that controls of column names will be cast into lower case
     df1_unq_rows : Spark ``DataFrame``
         All records that are only in df1 (based on a join on join_columns)
     df2_unq_rows : Spark ``DataFrame``
@@ -162,7 +159,6 @@ class SparkCompare(BaseCompare):
         df2_name="df2",
         ignore_spaces=False,
         ignore_case=False,
-        cast_column_names_lower=True,
     ):
 
         if not isinstance(df1, pyspark.sql.DataFrame):
@@ -172,28 +168,16 @@ class SparkCompare(BaseCompare):
 
         self.spark = spark_session
         self._any_dupes = False
-        self.cast_column_names_lower = cast_column_names_lower
 
         if join_columns is None:
             raise Exception("Please provide join_columns")
         elif isinstance(join_columns, (str, int, float)):
-            self.join_columns = [
-                str(join_columns).lower()
-                if self.cast_column_names_lower
-                else str(join_columns)
-            ]
+            self.join_columns = [str(join_columns).lower()]
         else:
-            self.join_columns = [
-                str(col).lower() if self.cast_column_names_lower else str(col)
-                for col in join_columns
-            ]
+            self.join_columns = [str(col).lower() for col in join_columns]
 
-        if self.cast_column_names_lower:
-            self.df1 = df1.toDF(*[str(c).lower() for c in df1.columns])
-            self.df2 = df2.toDF(*[str(c).lower() for c in df2.columns])
-        else:
-            self.df1 = df1.toDF(*[str(c) for c in df1.columns])
-            self.df2 = df2.toDF(*[str(c) for c in df2.columns])
+        self.df1 = df1.toDF(*[str(c).lower() for c in df1.columns])
+        self.df2 = df2.toDF(*[str(c).lower() for c in df2.columns])
 
         self.df1_name = df1_name
         self.df2_name = df2_name
@@ -207,28 +191,21 @@ class SparkCompare(BaseCompare):
     def df1(self, df1):
         """Check that it is a dataframe and has the join columns"""
         self._df1 = df1
-        self._validate_dataframe(
-            "df1", cast_column_names_lower=self.cast_column_names_lower
-        )
+        self._validate_dataframe("df1")
 
     @BaseCompare.df2.setter
     def df2(self, df2):
         """Check that it is a dataframe and has the join columns"""
         self._df2 = df2
-        self._validate_dataframe(
-            "df2", cast_column_names_lower=self.cast_column_names_lower
-        )
+        self._validate_dataframe("df2")
 
-    def _validate_dataframe(self, index, cast_column_names_lower=True):
+    def _validate_dataframe(self, index):
         """Check that a dataframe has the join columns
 
         Parameters
         ----------
         index : str
             The "index" of the dataframe - df1 or df2.
-
-        cast_column_names_lower: bool, optional
-            Boolean indicator that controls of column names will be cast into lower case
         """
         dataframe = getattr(self, index)
 
@@ -358,12 +335,56 @@ class SparkCompare(BaseCompare):
             )
 
         self._generate_merge_indicator()
-        outer_join = self.df1_renamed.join(self.df2_renamed, how="outer", **params)
+
+        # Null safe logic for the outer join
+        ############
+        conditions = []
+        for c in self.join_columns:
+            self.df1_renamed = self.df1_renamed.withColumnRenamed(
+                c, "{}{}".format(c, "_df1")
+            )
+            self.df2_renamed = self.df2_renamed.withColumnRenamed(
+                c, "{}{}".format(c, "_df2")
+            )
+            conditions.append(
+                self.df1_renamed[c + "_df1"].eqNullSafe(self.df2_renamed[c + "_df2"])
+            )
+        outer_join = self.df1_renamed.join(self.df2_renamed, conditions, how="outer")
+
+        # merge indicator corner case with nulls
+        outer_join = outer_join.withColumn(
+            "_merge_left",
+            when(
+                (outer_join["_merge_left"] == "both")
+                & (isnull(outer_join["_merge_right"])),
+                "left_only",
+            ).otherwise(outer_join["_merge_left"]),
+        )
+        outer_join = outer_join.withColumn(
+            "_merge_right",
+            when(
+                (outer_join["_merge_right"] == "both")
+                & (isnull(outer_join["_merge_left"])),
+                "right_only",
+            ).otherwise(outer_join["_merge_right"]),
+        )
 
         # cleanup _merge_left and _merge_right into _merge
         outer_join = outer_join.withColumn(
             "_merge", coalesce(outer_join["_merge_left"], outer_join["_merge_right"])
         )
+
+        # collapse join_columns back into one set of columns from _df1 / _df2
+        for c in self.join_columns:
+            outer_join = outer_join.withColumn(
+                c,
+                when(
+                    outer_join["_merge"].isin(["left_only", "both"]),
+                    outer_join[c + "_df1"],
+                ).otherwise(outer_join[c + "_df2"]),
+            )
+            # outer_join = outer_join.withColumn(col, when(outer_join["_merge"] == "right_only", ))
+            outer_join = outer_join.drop(c + "_df1", c + "_df2")
 
         df1_cols = get_merged_columns(self.df1.drop("_merge_left"), outer_join, "_df1")
         df2_cols = get_merged_columns(self.df2.drop("_merge_right"), outer_join, "_df2")
@@ -486,9 +507,12 @@ class SparkCompare(BaseCompare):
             if column not in self.join_columns:
                 match_columns = column + "_match"
                 conditions.append("{} == True".format(match_columns))
-        match_columns_count = self.intersect_rows.filter(
-            " and ".join(conditions)
-        ).count()
+        if len(conditions) > 0:
+            match_columns_count = self.intersect_rows.filter(
+                " and ".join(conditions)
+            ).count()
+        else:
+            match_columns_count = 0
         return match_columns_count
 
     def intersect_rows_match(self):
@@ -551,7 +575,11 @@ class SparkCompare(BaseCompare):
         col_match = self.intersect_rows.select(column + "_match")
         match_cnt = col_match.where(col(column + "_match") == True).count()
         sample_count = min(sample_count, row_cnt - match_cnt)
-        sample = self.intersect_rows.drop(column + "_match").limit(sample_count)
+        sample = (
+            self.intersect_rows.where(col(column + "_match") == False)
+            .drop(column + "_match")
+            .limit(sample_count)
+        )
         return_cols = self.join_columns + [column + "_df1", column + "_df2"]
         to_return = sample.select(return_cols)
         return to_return
@@ -811,7 +839,7 @@ def columns_equal(
             dataframe = dataframe.withColumn(
                 col_match,
                 when(
-                    (col(col_1) == col(col_2))
+                    (col(col_1).eqNullSafe(col(col_2)))
                     | (
                         abs(col(col_1) - col(col_2))
                         <= lit(abs_tol) + (lit(rel_tol) * abs(col_2))
@@ -825,13 +853,15 @@ def columns_equal(
             )
         else:  # non-numeric comparison
             if ignore_case and not ignore_spaces:
-                when_clause = upper(col(col_1)) == upper(col(col_2))
+                when_clause = upper(col(col_1)).eqNullSafe(upper(col(col_2)))
             elif not ignore_case and ignore_spaces:
-                when_clause = trim(col(col_1)) == trim(col(col_2))
+                when_clause = trim(col(col_1)).eqNullSafe(trim(col(col_2)))
             elif ignore_case and ignore_spaces:
-                when_clause = upper(trim(col(col_1))) == upper(trim(col(col_2)))
+                when_clause = upper(trim(col(col_1))).eqNullSafe(
+                    upper(trim(col(col_2)))
+                )
             else:
-                when_clause = col(col_1) == col(col_2)
+                when_clause = col(col_1).eqNullSafe(col(col_2))
 
             dataframe = dataframe.withColumn(
                 col_match,
