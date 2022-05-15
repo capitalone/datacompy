@@ -1,5 +1,5 @@
 #
-# Copyright 2020 Capital One Services, LLC
+# Copyright 2022 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -110,11 +110,11 @@ class SparkCompare(BaseCompare):
 
     Parameters
     ----------
-    spark_session : ``pyspark.sql.SparkSession``
+    spark_session : pyspark.sql.SparkSession
         A ``SparkSession`` to be used to execute Spark commands in the comparison.
-    df1 : Spark ``DataFrame``
+    df1 : pyspark.sql.DataFrame
         First dataframe to check
-    df2 : Spark ``DataFrame``
+    df2 : pyspark.sql.DataFrame
         Second dataframe to check
     join_columns : list or str
         Column(s) to join dataframes on.  If a string is passed in, that one
@@ -139,11 +139,11 @@ class SparkCompare(BaseCompare):
 
     Attributes
     ----------
-    spark_session : ``pyspark.sql.SparkSession``
+    spark_session : pyspark.sql.SparkSession
         A ``SparkSession`` to be used to execute Spark commands in the comparison.
-    df1_unq_rows : Spark ``DataFrame``
+    df1_unq_rows : pyspark.sql.DataFrame
         All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : Spark ``DataFrame``
+    df2_unq_rows : pyspark.sql.DataFrame
         All records that are only in df2 (based on a join on join_columns)
     """
 
@@ -206,6 +206,10 @@ class SparkCompare(BaseCompare):
         ----------
         index : str
             The "index" of the dataframe - df1 or df2.
+
+        Returns
+        -------
+        None
         """
         dataframe = getattr(self, index)
 
@@ -566,7 +570,7 @@ class SparkCompare(BaseCompare):
 
         Returns
         -------
-        Spark.DataFrame
+        pyspark.sql.DataFrame
             A sample of the intersection dataframe, containing only the
             "pertinent" columns, for rows that don't match on the provided
             column.
@@ -590,7 +594,7 @@ class SparkCompare(BaseCompare):
 
         Returns
         -------
-        Spark.DataFrame
+        pyspark.sql.DataFrame
             All rows of the intersection dataframe, containing any columns, that don't match.
         """
         match_list = []
@@ -799,7 +803,7 @@ def columns_equal(
 
     Parameters
     ----------
-    dataframe: Spark.DataFrame
+    dataframe: pyspark.sql.DataFrame
         DataFrame to do comparison on
     col_1 : str
         The first column to look at
@@ -827,7 +831,7 @@ def columns_equal(
 
     Returns
     -------
-    Spark.DataFrame
+    pyspark.sql.DataFrame
         A column of boolean values are added.  True == the values match, False == the
         values don't match.
     """
@@ -881,9 +885,9 @@ def get_merged_columns(original_df, merged_df, suffix):
 
     Parameters
     ----------
-    original_df : Spark.DataFrame
+    original_df : pyspark.sql.DataFrame
         The original, pre-merge dataframe
-    merged_df : Spark.DataFrame
+    merged_df : pyspark.sql.DataFrame
         Post-merge with another dataframe, with suffixes added in.
     suffix : str
         What suffix was used to distinguish when the original dataframe was
@@ -905,7 +909,7 @@ def temp_column_name(*dataframes):
 
     Parameters
     ----------
-    dataframes : list of Spark.DataFrame
+    dataframes : list of pyspark.sql.DataFrame
         The DataFrames to create a temporary column name for
 
     Returns
@@ -933,7 +937,7 @@ def calculate_max_diff(dataframe, col_1, col_2):
 
     Parameters
     ----------
-    dataframe: Spark.DataFrame
+    dataframe: pyspark.sql.DataFrame
         DataFrame to do comparison on
     col_1 : str
         The first column to look at
@@ -966,7 +970,7 @@ def calculate_null_diff(dataframe, col_1, col_2):
 
     Parameters
     ----------
-    dataframe: Spark.DataFrame
+    dataframe: pyspark.sql.DataFrame
         DataFrame to do comparison on
     col_1 : str
         The first column to look at
@@ -1002,7 +1006,7 @@ def get_column_dtypes(dataframe, col_1, col_2):
 
     Parameters
     ----------
-    dataframe: Spark.DataFrame
+    dataframe: pyspark.sql.DataFrame
         DataFrame to do comparison on
     col_1 : str
         The first column to look at
