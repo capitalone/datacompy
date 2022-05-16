@@ -19,9 +19,7 @@ Testing out the Spark datacompy functionality
 import io
 import logging
 import sys
-from datetime import datetime
 from decimal import Decimal
-from unittest import mock
 
 import numpy as np
 import pandas as pd
@@ -36,7 +34,7 @@ from datacompy.spark_core import (
     columns_equal,
     temp_column_name,
 )
-from tests.utility import assert_columns_equal, spark_to_pandas
+from tests.utility import spark_to_pandas
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 

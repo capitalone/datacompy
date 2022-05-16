@@ -51,7 +51,12 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pytest pytest-spark pypandoc
+        python -m pip install pytest pytest-spark
+        if [[ ${{ matrix.spark-version }} == "2.4.8"]]; then
+          python -m pip install pypandoc==1.7.5
+        else
+          python -m pip install pypandoc
+        fi
         python -m pip install pyspark==${{ matrix.spark-version }}
         python -m pip install .[dev,spark]
     
