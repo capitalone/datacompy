@@ -846,7 +846,7 @@ def columns_equal(
                     (col(col_1).eqNullSafe(col(col_2)))
                     | (
                         abs(col(col_1) - col(col_2))
-                        <= lit(abs_tol) + (lit(rel_tol) * abs(col_2))
+                        <= lit(abs_tol) + (lit(rel_tol) * abs(col(col_2)))
                     ),
                     # corner case of col1 != NaN and col2 == Nan returns True incorrectly
                     when(
