@@ -504,7 +504,7 @@ class Compare:
         mm_bool = self.intersect_rows[match_list].all(axis="columns")
         return self.intersect_rows[~mm_bool][self.join_columns + return_list]
 
-    def report(self, sample_count=10, column_count=10):
+    def report(self, sample_count=10, column_count=10, html_file=None):
         """Returns a string representation of a report.  The representation can
         then be printed or saved to a file.
 
@@ -515,6 +515,9 @@ class Compare:
 
         column_count : int, optional
             The number of columns to display in the sample records output.  Defaults to 10.
+
+        html_file : str, optional
+            HTML file name to save report output to. If ``None`` the file creation will be skipped.
 
         Returns
         -------
@@ -647,6 +650,12 @@ class Compare:
             unq_count = min(sample_count, self.df2_unq_rows.shape[0])
             report += self.df2_unq_rows.sample(unq_count)[columns].to_string()
             report += "\n\n"
+
+        if html_file:
+            html_report = report.replace("\n", "<br>").replace(" ", "&nbsp;")
+            html_report = f"<pre>{html_report}</pre>"
+            with open(html_file, "w") as f:
+                f.write(html_report)
 
         return report
 
