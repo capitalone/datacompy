@@ -1111,3 +1111,25 @@ def test_integer_column_names():
     df2 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
     compare = datacompy.Compare(df1, df2, join_columns=[1])
     assert compare.matches()
+
+
+@mock.patch("datacompy.core.render")
+def test_save_html(mock_render):
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+
+    m = mock.mock_open()
+    with mock.patch("datacompy.core.open", m, create=True):
+        # assert without HTML call
+        compare.report()
+        assert mock_render.call_count == 4
+        m.assert_not_called()
+
+    mock_render.reset_mock()
+    m = mock.mock_open()
+    with mock.patch("datacompy.core.open", m, create=True):
+        # assert with HTML call
+        compare.report(html_file="test.html")
+        assert mock_render.call_count == 4
+        m.assert_called_with("test.html", "w")

@@ -1,13 +1,13 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Python package
+name: Test package
 
 on:
   push:
-    branches: [develop, master]
+    branches: [develop, main]
   pull_request:
-    branches: [develop, master]
+    branches: [develop, main]
 
 jobs:
   build:
@@ -47,14 +47,20 @@ jobs:
         rm spark.tgz
         echo "SPARK_HOME=${{ runner.workspace }}/datacompy/spark-${{ matrix.spark-version }}-bin-hadoop${{ matrix.hadoop }}" >> $GITHUB_ENV
         echo "${{ runner.workspace }}/datacompy/spark-${{ matrix.spark-version }}-bin-hadoop${{ matrix.hadoop }}/bin" >> $GITHUB_PATH
-
-    - name: Install dependencies
+    - name: Install dependencies, Spark 2.4.8, Hadoop 2.7
+      if: matrix.spark-version == '2.4.8' && matrix.hadoop == '2.7'
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install pytest pytest-spark pypandoc==1.7.5
+        python -m pip install pyspark==${{ matrix.spark-version }}
+        python -m pip install .[dev,spark]
+    - name: Install dependencies, everything else
+      if: matrix.spark-version != '2.4.8' && matrix.hadoop != '2.7'
       run: |
         python -m pip install --upgrade pip
         python -m pip install pytest pytest-spark pypandoc
         python -m pip install pyspark==${{ matrix.spark-version }}
         python -m pip install .[dev,spark]
-    
     - name: Test with pytest
       run: |
         python -m pytest tests/
