@@ -14,8 +14,8 @@ jobs:
         with:
           ref: develop
       - id: run-edgetest
-        uses: fdosani/run-edgetest-action@v1.0
+        uses: fdosani/run-edgetest-action@v1.2
         with:
-          edgetest-flags: '-c setup.cfg -r requirements.txt --export'
+          edgetest-flags: '-c setup.cfg --export'
           base-branch: 'develop'
           skip-pr: 'false'
