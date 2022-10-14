@@ -119,6 +119,8 @@ class Compare:
         self.df2_name = df2_name
         self.abs_tol = abs_tol
         self.rel_tol = rel_tol
+        self.ignore_spaces = ignore_spaces
+        self.ignore_case = ignore_case
         self.df1_unq_rows = self.df2_unq_rows = self.intersect_rows = None
         self.column_stats = []
         self._compare(ignore_spaces, ignore_case)
@@ -485,9 +487,14 @@ class Compare:
             ]
         return to_return
 
-    def all_mismatch(self):
+    def all_mismatch(self, ignore_matching_cols=False):
         """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
         columns.
+
+        Parameters
+        ----------
+        ignore_matching_cols : bool, optional
+            Whether showing the matching columns in the output or not. The default is False.
 
         Returns
         -------
@@ -498,8 +505,29 @@ class Compare:
         return_list = []
         for col in self.intersect_rows.columns:
             if col.endswith("_match"):
-                match_list.append(col)
-                return_list.extend([col[:-6] + "_df1", col[:-6] + "_df2"])
+                orig_col_name = col[:-6]
+
+                col_comparison = columns_equal(
+                    self.df1[orig_col_name],
+                    self.df2[orig_col_name],
+                    self.rel_tol,
+                    self.abs_tol,
+                    self.ignore_spaces,
+                    self.ignore_case,
+                )
+
+                if not ignore_matching_cols or (
+                    ignore_matching_cols and not col_comparison.all()
+                ):
+                    LOG.debug("Adding column {} to the result.".format(orig_col_name))
+                    match_list.append(col)
+                    return_list.extend([orig_col_name + "_df1", orig_col_name + "_df2"])
+                elif ignore_matching_cols:
+                    LOG.debug(
+                        "Column {} is equal in df1 and df2. It will not be added to the result.".format(
+                            orig_col_name
+                        )
+                    )
 
         mm_bool = self.intersect_rows[match_list].all(axis="columns")
         return self.intersect_rows[~mm_bool][self.join_columns + return_list]
