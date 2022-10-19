@@ -93,7 +93,7 @@ this branch. The reason we squash merge is to prevent the develop branch from be
 when people are developing. Squashing collapses all the commits into one single new commit. It will also make it much easier to
 back out changes if something breaks.
 
-``master`` is where official releases will go. Each release on ``master`` should be tagged properly to denote a "version"
+``main`` is where official releases will go. Each release on ``main`` should be tagged properly to denote a "version"
 that will have the corresponding artifact on pypi for users to ``pip install``.
 
 ``gh-pages`` is where official documentation will go. After each release you should build the docs and push the HTML to

@@ -943,7 +943,7 @@ def test_sample_mismatch():
     assert (output.name_df1 != output.name_df2).all()
 
 
-def test_all_mismatch():
+def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
     10000001235,0.45,Michael Bluth,1,2017-01-01
@@ -967,6 +967,7 @@ def test_all_mismatch():
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
+    assert output.shape[1] == 9
 
     assert (output.name_df1 != output.name_df2).values.sum() == 2
     assert (~(output.name_df1 != output.name_df2)).values.sum() == 2
@@ -976,6 +977,126 @@ def test_all_mismatch():
 
     assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
     assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
+
+    assert (output.date_fld_df1 != output.date_fld_df2).values.sum() == 4
+    assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
+
+
+def test_all_mismatch_not_ignore_matching_cols_some_cols_matching():
+    # Columns dollar_amt and name are matching
+    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+
+    data2 = """acct_id,dollar_amt,name,float_fld,date_fld
+        10000001234,123.45,George Maharis,14530.155,
+        10000001235,0.45,Michael Bluth,,
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Bob Loblaw,345.12,
+        10000001238,1.05,Lucille Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    df1 = pd.read_csv(io.StringIO(data1), sep=",")
+    df2 = pd.read_csv(io.StringIO(data2), sep=",")
+    compare = datacompy.Compare(df1, df2, "acct_id")
+
+    output = compare.all_mismatch()
+    assert output.shape[0] == 4
+    assert output.shape[1] == 9
+
+    assert (output.name_df1 != output.name_df2).values.sum() == 0
+    assert (~(output.name_df1 != output.name_df2)).values.sum() == 4
+
+    assert (output.dollar_amt_df1 != output.dollar_amt_df2).values.sum() == 0
+    assert (~(output.dollar_amt_df1 != output.dollar_amt_df2)).values.sum() == 4
+
+    assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
+    assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
+
+    assert (output.date_fld_df1 != output.date_fld_df2).values.sum() == 4
+    assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
+
+
+def test_all_mismatch_ignore_matching_cols_some_calls_matching():
+    # Columns dollar_amt and name are matching
+    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
+    10000001234,123.45,George Maharis,14530.1555,2017-01-01
+    10000001235,0.45,Michael Bluth,1,2017-01-01
+    10000001236,1345,George Bluth,,2017-01-01
+    10000001237,123456,Bob Loblaw,345.12,2017-01-01
+    10000001239,1.05,Lucille Bluth,,2017-01-01
+    10000001240,123.45,George Maharis,14530.1555,2017-01-02
+    """
+
+    data2 = """acct_id,dollar_amt,name,float_fld,date_fld
+    10000001234,123.45,George Maharis,14530.155,
+    10000001235,0.45,Michael Bluth,,
+    10000001236,1345,George Bluth,1,
+    10000001237,123456,Bob Loblaw,345.12,
+    10000001238,1.05,Lucille Bluth,111,
+    10000001240,123.45,George Maharis,14530.1555,2017-01-02
+    """
+    df1 = pd.read_csv(io.StringIO(data1), sep=",")
+    df2 = pd.read_csv(io.StringIO(data2), sep=",")
+    compare = datacompy.Compare(df1, df2, "acct_id")
+
+    output = compare.all_mismatch(ignore_matching_cols=True)
+
+    assert output.shape[0] == 4
+    assert output.shape[1] == 5
+
+    assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
+    assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
+
+    assert (output.date_fld_df1 != output.date_fld_df2).values.sum() == 4
+    assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
+
+    assert not ("name_df1" in output and "name_df2" in output)
+    assert not ("dollar_amt_df1" in output and "dollar_amt_df1" in output)
+
+
+def test_all_mismatch_ignore_matching_cols_no_cols_matching():
+    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
+    10000001234,123.45,George Maharis,14530.1555,2017-01-01
+    10000001235,0.45,Michael Bluth,1,2017-01-01
+    10000001236,1345,George Bluth,,2017-01-01
+    10000001237,123456,Bob Loblaw,345.12,2017-01-01
+    10000001239,1.05,Lucille Bluth,,2017-01-01
+    10000001240,123.45,George Maharis,14530.1555,2017-01-02
+    """
+
+    data2 = """acct_id,dollar_amt,name,float_fld,date_fld
+    10000001234,123.4,George Michael Bluth,14530.155,
+    10000001235,0.45,Michael Bluth,,
+    10000001236,1345,George Bluth,1,
+    10000001237,123456,Robert Loblaw,345.12,
+    10000001238,1.05,Loose Seal Bluth,111,
+    10000001240,123.45,George Maharis,14530.1555,2017-01-02
+    """
+    df1 = pd.read_csv(io.StringIO(data1), sep=",")
+    df2 = pd.read_csv(io.StringIO(data2), sep=",")
+    compare = datacompy.Compare(df1, df2, "acct_id")
+
+    output = compare.all_mismatch()
+    assert output.shape[0] == 4
+    assert output.shape[1] == 9
+
+    assert (output.name_df1 != output.name_df2).values.sum() == 2
+    assert (~(output.name_df1 != output.name_df2)).values.sum() == 2
+
+    assert (output.dollar_amt_df1 != output.dollar_amt_df2).values.sum() == 1
+    assert (~(output.dollar_amt_df1 != output.dollar_amt_df2)).values.sum() == 3
+
+    assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
+    assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
+
+    assert (output.date_fld_df1 != output.date_fld_df2).values.sum() == 4
+    assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
 
 
 MAX_DIFF_DF = pd.DataFrame(
@@ -1111,3 +1232,25 @@ def test_integer_column_names():
     df2 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
     compare = datacompy.Compare(df1, df2, join_columns=[1])
     assert compare.matches()
+
+
+@mock.patch("datacompy.core.render")
+def test_save_html(mock_render):
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+
+    m = mock.mock_open()
+    with mock.patch("datacompy.core.open", m, create=True):
+        # assert without HTML call
+        compare.report()
+        assert mock_render.call_count == 4
+        m.assert_not_called()
+
+    mock_render.reset_mock()
+    m = mock.mock_open()
+    with mock.patch("datacompy.core.open", m, create=True):
+        # assert with HTML call
+        compare.report(html_file="test.html")
+        assert mock_render.call_count == 4
+        m.assert_called_with("test.html", "w")
