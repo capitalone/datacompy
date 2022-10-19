@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Installation &mdash; datacompy 0.8.1 documentation</title>
+  <title>Installation &mdash; datacompy 0.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -14,7 +14,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -30,7 +32,7 @@
             <a href="index.html" class="icon icon-home"> datacompy
           </a>
               <div class="version">
-                0.8.1
+                0.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -82,20 +84,20 @@
            <div itemprop="articleBody">
              
   <section id="installation">
-<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Moving forward <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> will not support Python 2. Please make sure you are using Python 3.5+</p>
 </div>
 <section id="pypi-basic">
-<h2>PyPI (basic)<a class="headerlink" href="#pypi-basic" title="Permalink to this headline">¶</a></h2>
+<h2>PyPI (basic)<a class="headerlink" href="#pypi-basic" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span>
 </pre></div>
 </div>
 <p>A Conda environment or virtual environment is highly recommended:</p>
 </section>
 <section id="conda-installs-dependencies-from-conda-forge">
-<h2>conda (installs dependencies from Conda Forge)<a class="headerlink" href="#conda-installs-dependencies-from-conda-forge" title="Permalink to this headline">¶</a></h2>
+<h2>conda (installs dependencies from Conda Forge)<a class="headerlink" href="#conda-installs-dependencies-from-conda-forge" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">--</span><span class="n">name</span> <span class="n">test</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.7</span>
 <span class="n">source</span> <span class="n">activate</span> <span class="n">test</span>
 <span class="n">conda</span> <span class="n">config</span> <span class="o">--</span><span class="n">add</span> <span class="n">channels</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span>
@@ -104,7 +106,7 @@
 </div>
 </section>
 <section id="virtualenv-install-dependencies-from-pypi">
-<h2>virtualenv (install dependencies from PyPI)<a class="headerlink" href="#virtualenv-install-dependencies-from-pypi" title="Permalink to this headline">¶</a></h2>
+<h2>virtualenv (install dependencies from PyPI)<a class="headerlink" href="#virtualenv-install-dependencies-from-pypi" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">virtualenv</span> <span class="n">env</span>
 <span class="n">source</span> <span class="n">env</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span>
 <span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">setuptools</span> <span class="n">pip</span>

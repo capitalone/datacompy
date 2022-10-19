@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>datacompy package &mdash; datacompy 0.8.1 documentation</title>
+  <title>datacompy package &mdash; datacompy 0.8.2 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -14,7 +14,9 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -29,7 +31,7 @@
             <a href="../index.html" class="icon icon-home"> datacompy
           </a>
               <div class="version">
-                0.8.1
+                0.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -50,8 +52,23 @@
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">datacompy</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">datacompy package</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-datacompy.core">datacompy.core module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-datacompy.sparkcompare">datacompy.sparkcompare module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-datacompy.core">datacompy.core module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#datacompy.core.Compare"><code class="docutils literal notranslate"><span class="pre">Compare</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#datacompy.core.calculate_max_diff"><code class="docutils literal notranslate"><span class="pre">calculate_max_diff()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#datacompy.core.columns_equal"><code class="docutils literal notranslate"><span class="pre">columns_equal()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#datacompy.core.compare_string_and_date_columns"><code class="docutils literal notranslate"><span class="pre">compare_string_and_date_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#datacompy.core.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#datacompy.core.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#datacompy.core.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#datacompy.core.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-datacompy.sparkcompare">datacompy.sparkcompare module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#datacompy.sparkcompare.MatchType"><code class="docutils literal notranslate"><span class="pre">MatchType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#datacompy.sparkcompare.SparkCompare"><code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#datacompy.sparkcompare.decimal_comparator"><code class="docutils literal notranslate"><span class="pre">decimal_comparator()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#module-datacompy">Module contents</a></li>
 </ul>
 </li>
@@ -86,12 +103,12 @@
            <div itemprop="articleBody">
              
   <section id="datacompy-package">
-<h1>datacompy package<a class="headerlink" href="#datacompy-package" title="Permalink to this headline">¶</a></h1>
+<h1>datacompy package<a class="headerlink" href="#datacompy-package" title="Permalink to this heading">¶</a></h1>
 <section id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
 </section>
 <section id="module-datacompy.core">
-<span id="datacompy-core-module"></span><h2>datacompy.core module<a class="headerlink" href="#module-datacompy.core" title="Permalink to this headline">¶</a></h2>
+<span id="datacompy-core-module"></span><h2>datacompy.core module<a class="headerlink" href="#module-datacompy.core" title="Permalink to this heading">¶</a></h2>
 <p>Compare two Pandas DataFrames</p>
 <p>Originally this package was meant to provide similar functionality to
 PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
@@ -141,15 +158,18 @@ columns)</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="datacompy.core.Compare.all_mismatch">
-<span class="sig-name descname"><span class="pre">all_mismatch</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.all_mismatch" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">all_mismatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_matching_cols</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.all_mismatch" title="Permalink to this definition">¶</a></dt>
 <dd><p>All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
 columns.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>All rows of the intersection dataframe, containing any columns, that don’t match.</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ignore_matching_cols</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether showing the matching columns in the output or not. The default is False.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Pandas.DataFrame</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>All rows of the intersection dataframe, containing any columns, that don’t match.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Pandas.DataFrame</p>
 </dd>
 </dl>
 </dd></dl>
@@ -230,7 +250,7 @@ existence for join option)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="datacompy.core.Compare.report">
-<span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.report" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">html_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.core.Compare.report" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a string representation of a report.  The representation can
 then be printed or saved to a file.</p>
 <dl class="field-list simple">
@@ -238,6 +258,7 @@ then be printed or saved to a file.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>sample_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sample records to return.  Defaults to 10.</p></li>
 <li><p><strong>column_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of columns to display in the sample records output.  Defaults to 10.</p></li>
+<li><p><strong>html_file</strong> (<em>str</em><em>, </em><em>optional</em>) – HTML file name to save report output to. If <code class="docutils literal notranslate"><span class="pre">None</span></code> the file creation will be skipped.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -427,7 +448,7 @@ templates directory before opening</p></li>
 <dd><p>Gets a temp column name that isn’t included in columns of any dataframes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>dataframes</strong> (<em>list of Pandas.DataFrame</em>) – The DataFrames to create a temporary column name for</p>
+<dd class="field-odd"><p><strong>dataframes</strong> (<em>list</em><em> of </em><em>Pandas.DataFrame</em>) – The DataFrames to create a temporary column name for</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>String column name that looks like ‘_temp_x’ for some integer x</p>
@@ -440,11 +461,11 @@ templates directory before opening</p></li>
 
 </section>
 <section id="module-datacompy.sparkcompare">
-<span id="datacompy-sparkcompare-module"></span><h2>datacompy.sparkcompare module<a class="headerlink" href="#module-datacompy.sparkcompare" title="Permalink to this headline">¶</a></h2>
+<span id="datacompy-sparkcompare-module"></span><h2>datacompy.sparkcompare module<a class="headerlink" href="#module-datacompy.sparkcompare" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="datacompy.sparkcompare.MatchType">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">datacompy.sparkcompare.</span></span><span class="sig-name descname"><span class="pre">MatchType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.sparkcompare.MatchType" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
 <p>An enumeration.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="datacompy.sparkcompare.MatchType.KNOWN_DIFFERENCE">
@@ -683,7 +704,7 @@ this to an output file, as in the example.</p>
 
 </section>
 <section id="module-datacompy">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-datacompy" title="Permalink to this headline">¶</a></h2>
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-datacompy" title="Permalink to this heading">¶</a></h2>
 </section>
 </section>
 

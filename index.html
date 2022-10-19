@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DataComPy &mdash; datacompy 0.8.1 documentation</title>
+  <title>DataComPy &mdash; datacompy 0.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -14,7 +14,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -29,7 +31,7 @@
             <a href="#" class="icon icon-home"> datacompy
           </a>
               <div class="version">
-                0.8.1
+                0.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -78,20 +80,20 @@
   <a class="reference external image-reference" href="https://github.com/capitalone/datacompy/actions"><img alt="https://github.com/capitalone/datacompy/workflows/Python%20package/badge.svg" src="https://github.com/capitalone/datacompy/workflows/Python%20package/badge.svg" /></a>
 <a class="reference external image-reference" href="https://github.com/ambv/black"><img alt="https://img.shields.io/badge/code%20style-black-000000.svg" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
 <section id="datacompy">
-<h1>DataComPy<a class="headerlink" href="#datacompy" title="Permalink to this headline">¶</a></h1>
+<h1>DataComPy<a class="headerlink" href="#datacompy" title="Permalink to this heading">¶</a></h1>
 <p>DataComPy is a package to compare two Pandas DataFrames. Originally started to
 be something of a replacement for SAS’s <code class="docutils literal notranslate"><span class="pre">PROC</span> <span class="pre">COMPARE</span></code> for Pandas DataFrames
 with some more functionality than just <code class="docutils literal notranslate"><span class="pre">Pandas.DataFrame.equals(Pandas.DataFrame)</span></code>
 (in that it prints out some stats, and lets you tweak how accurate matches have to be).
 Then extended to carry that functionality over to Spark Dataframes.</p>
 <section id="quick-installation">
-<h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Permalink to this headline">¶</a></h2>
+<h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span>
 </pre></div>
 </div>
 </section>
 <section id="pandas-detail">
-<h2>Pandas Detail<a class="headerlink" href="#pandas-detail" title="Permalink to this headline">¶</a></h2>
+<h2>Pandas Detail<a class="headerlink" href="#pandas-detail" title="Permalink to this heading">¶</a></h2>
 <p>DataComPy will try to join two dataframes either on a list of join columns, or
 on indexes.  If the two dataframes have duplicates based on join values, the
 match process sorts by the remaining fields and joins based on that row number.</p>
@@ -101,7 +103,7 @@ dataframe and an identically-named column with <code class="docutils literal not
 it will tell you that the dtypes are different but will still try to compare the
 values.</p>
 <section id="basic-usage">
-<h3>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h3>
+<h3>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">datacompy</span>
@@ -144,7 +146,7 @@ values.</p>
 <p>See docs for more detailed usage instructions and an example of the report output.</p>
 </section>
 <section id="things-that-are-happening-behind-the-scenes">
-<h3>Things that are happening behind the scenes<a class="headerlink" href="#things-that-are-happening-behind-the-scenes" title="Permalink to this headline">¶</a></h3>
+<h3>Things that are happening behind the scenes<a class="headerlink" href="#things-that-are-happening-behind-the-scenes" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>You pass in two dataframes (<code class="docutils literal notranslate"><span class="pre">df1</span></code>, <code class="docutils literal notranslate"><span class="pre">df2</span></code>) to <code class="docutils literal notranslate"><span class="pre">datacompy.Compare</span></code> and a
 column to join on (or list of columns) to <code class="docutils literal notranslate"><span class="pre">join_columns</span></code>.  By default the
@@ -184,7 +186,7 @@ getting intersection, just df1 and just df2 columns (Sets)</p></li>
 </section>
 </section>
 <section id="spark-detail">
-<span id="id1"></span><h2>Spark Detail<a class="headerlink" href="#spark-detail" title="Permalink to this headline">¶</a></h2>
+<span id="id1"></span><h2>Spark Detail<a class="headerlink" href="#spark-detail" title="Permalink to this heading">¶</a></h2>
 <p>DataComPy’s <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> class will join two dataframes either on a list of join
 columns. It has the capability to map column names that may be different in each
 dataframe, including in the join columns. You are responsible for creating the
@@ -201,7 +203,7 @@ are that your data is too large to fit into memory, or you’re comparing data
 that works well in a Spark environment, like partitioned Parquet, CSV, or JSON
 files, or Cerebro tables.</p>
 <section id="performance-implications">
-<h3>Performance Implications<a class="headerlink" href="#performance-implications" title="Permalink to this headline">¶</a></h3>
+<h3>Performance Implications<a class="headerlink" href="#performance-implications" title="Permalink to this heading">¶</a></h3>
 <p>Spark scales incredibly well, so you can use <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> to compare
 billions of rows of data, provided you spin up a big enough cluster. Still,
 joining billions of rows of data is an inherently large task, so there are a
@@ -225,7 +227,7 @@ this parameter is set to False by default.</p></li>
 </ul>
 </section>
 <section id="id2">
-<h3>Basic Usage<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<h3>Basic Usage<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">datacompy</span>
 <span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">Row</span>
@@ -265,7 +267,7 @@ this parameter is set to False by default.</p></li>
 </div>
 </section>
 <section id="using-sparkcompare-on-emr-or-standalone-spark">
-<h3>Using SparkCompare on EMR or standalone Spark<a class="headerlink" href="#using-sparkcompare-on-emr-or-standalone-spark" title="Permalink to this headline">¶</a></h3>
+<h3>Using SparkCompare on EMR or standalone Spark<a class="headerlink" href="#using-sparkcompare-on-emr-or-standalone-spark" title="Permalink to this heading">¶</a></h3>
 <ol class="arabic simple">
 <li><p>Set proxy variables</p></li>
 <li><p>Create a virtual environment, if desired (<code class="docutils literal notranslate"><span class="pre">virtualenv</span> <span class="pre">venv;</span> <span class="pre">source</span> <span class="pre">venv/bin/activate</span></code>)</p></li>
@@ -278,7 +280,7 @@ differ based on your installation)</p></li>
 </ol>
 </section>
 <section id="using-sparkcompare-on-databricks">
-<h3>Using SparkCompare on Databricks<a class="headerlink" href="#using-sparkcompare-on-databricks" title="Permalink to this headline">¶</a></h3>
+<h3>Using SparkCompare on Databricks<a class="headerlink" href="#using-sparkcompare-on-databricks" title="Permalink to this heading">¶</a></h3>
 <ol class="arabic simple">
 <li><p>Clone this repository locally</p></li>
 <li><p>Create a datacompy egg by running <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">bdist_egg</span></code> from the repo root directory.</p></li>
@@ -299,19 +301,19 @@ you can choose clusters to attach the library to.</p></li>
 </ol>
 </section>
 <section id="contributors">
-<h3>Contributors<a class="headerlink" href="#contributors" title="Permalink to this headline">¶</a></h3>
+<h3>Contributors<a class="headerlink" href="#contributors" title="Permalink to this heading">¶</a></h3>
 <p>We welcome and appreciate your contributions! Before we can accept any contributions, we ask that you please be sure to
 sign the <a class="reference external" href="https://cla-assistant.io/capitalone/datacompy">Contributor License Agreement (CLA)</a>.</p>
 <p>This project adheres to the <a class="reference external" href="https://developer.capitalone.com/resources/code-of-conduct/">Open Source Code of Conduct</a>.
 By participating, you are expected to honor this code.</p>
 </section>
 <section id="roadmap">
-<h3>Roadmap<a class="headerlink" href="#roadmap" title="Permalink to this headline">¶</a></h3>
+<h3>Roadmap<a class="headerlink" href="#roadmap" title="Permalink to this heading">¶</a></h3>
 <p>Roadmap details can be found <a class="reference external" href="https://github.com/capitalone/datacompy/blob/develop/ROADMAP.rst">here</a></p>
 </section>
 </section>
 <section id="contents">
-<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
@@ -351,8 +353,23 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l1"><a class="reference internal" href="api/modules.html">datacompy</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="api/datacompy.html">datacompy package</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.core">datacompy.core module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.sparkcompare">datacompy.sparkcompare module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.core">datacompy.core module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.Compare"><code class="docutils literal notranslate"><span class="pre">Compare</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.calculate_max_diff"><code class="docutils literal notranslate"><span class="pre">calculate_max_diff()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.columns_equal"><code class="docutils literal notranslate"><span class="pre">columns_equal()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.compare_string_and_date_columns"><code class="docutils literal notranslate"><span class="pre">compare_string_and_date_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.sparkcompare">datacompy.sparkcompare module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.sparkcompare.MatchType"><code class="docutils literal notranslate"><span class="pre">MatchType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.sparkcompare.SparkCompare"><code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.sparkcompare.decimal_comparator"><code class="docutils literal notranslate"><span class="pre">decimal_comparator()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy">Module contents</a></li>
 </ul>
 </li>
@@ -363,7 +380,7 @@ By participating, you are expected to honor this code.</p>
 </div>
 </section>
 <section id="indices-and-tables">
-<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
