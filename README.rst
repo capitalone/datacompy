@@ -1,5 +1,5 @@
-.. image:: https://github.com/capitalone/datacompy/workflows/Python%20package/badge.svg
-    :target: https://github.com/capitalone/datacompy/actions
+.. image:: https://img.shields.io/pypi/dm/datacompy
+    :target: https://pypi.org/project/datacompy/
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/ambv/black
 
