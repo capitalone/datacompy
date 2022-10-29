@@ -641,7 +641,7 @@ class Compare:
 
         if min(sample_count, self.df1_unq_rows.shape[0]) > 0:
             report += f"Sample Rows Only in {self.df1_name} (First {column_count} Columns)\n"
-            report += f"---------------------------------------{"-" * len(self.df1_name)}\n"
+            report += f"---------------------------------------{'-' * len(self.df1_name)}\n"
             report += "\n"
             columns = self.df1_unq_rows.columns[:column_count]
             unq_count = min(sample_count, self.df1_unq_rows.shape[0])
@@ -650,7 +650,7 @@ class Compare:
 
         if min(sample_count, self.df2_unq_rows.shape[0]) > 0:
             report += f"Sample Rows Only in {self.df2_name} (First {column_count} Columns)\n"
-            report += f"---------------------------------------{"-" * len(self.df2_name)}\n"
+            report += f"---------------------------------------{'-' * len(self.df2_name)}\n"
             report += "\n"
             columns = self.df2_unq_rows.columns[:column_count]
             unq_count = min(sample_count, self.df2_unq_rows.shape[0])
