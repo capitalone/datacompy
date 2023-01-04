@@ -1022,6 +1022,45 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching():
     assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
 
 
+def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows():
+    # Case where there are rows on either dataset which don't match up.
+    # Columns dollar_amt and name are matching
+    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
+    10000001234,123.45,George Maharis,14530.1555,2017-01-01
+    10000001235,0.45,Michael Bluth,1,2017-01-01
+    10000001236,1345,George Bluth,,2017-01-01
+    10000001237,123456,Bob Loblaw,345.12,2017-01-01
+    10000001239,1.05,Lucille Bluth,,2017-01-01
+    10000001240,123.45,George Maharis,14530.1555,2017-01-02
+    10000001241,1111.05,Lucille Bluth,
+    """
+
+    data2 = """acct_id,dollar_amt,name,float_fld,date_fld
+    10000001234,123.45,George Maharis,14530.155,
+    10000001235,0.45,Michael Bluth,,
+    10000001236,1345,George Bluth,1,
+    10000001237,123456,Bob Loblaw,345.12,
+    10000001238,1.05,Lucille Bluth,111,
+    """
+    df1 = pd.read_csv(io.StringIO(data1), sep=",")
+    df2 = pd.read_csv(io.StringIO(data2), sep=",")
+    compare = datacompy.Compare(df1, df2, "acct_id")
+
+    output = compare.all_mismatch(ignore_matching_cols=True)
+
+    assert output.shape[0] == 4
+    assert output.shape[1] == 5
+
+    assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
+    assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
+
+    assert (output.date_fld_df1 != output.date_fld_df2).values.sum() == 4
+    assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
+
+    assert not ("name_df1" in output and "name_df2" in output)
+    assert not ("dollar_amt_df1" in output and "dollar_amt_df1" in output)
+
+
 def test_all_mismatch_ignore_matching_cols_some_calls_matching():
     # Columns dollar_amt and name are matching
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld

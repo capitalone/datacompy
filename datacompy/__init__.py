@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "0.8.3"
+__version__ = "0.8.4"
 
 from datacompy.core import *
 from datacompy.sparkcompare import NUMERIC_SPARK_TYPES, SparkCompare
