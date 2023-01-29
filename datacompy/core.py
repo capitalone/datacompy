@@ -355,9 +355,7 @@ class Compare:
             else:
                 match_rate = 0
             LOG.info(
-                "{}: {} / {} ({:.2%}) match".format(
-                    column, match_cnt, row_cnt, match_rate
-                )
+                f"{column}: {match_cnt} / {row_cnt} ({match_rate:.2%}) match"
             )
 
             self.column_stats.append(
