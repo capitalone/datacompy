@@ -520,22 +520,22 @@ def test_10k_rows():
     assert not compare_no_tol.intersect_rows_match()
 
 
-@mock.patch("datacompy.logging.debug")
-def test_subset(mock_debug):
+def test_subset(caplog):
+    caplog.set_level(logging.DEBUG)
     df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
     df2 = pd.DataFrame([{"a": 1, "c": "hi"}])
     comp = datacompy.Compare(df1, df2, ["a"])
     assert comp.subset()
-    assert mock_debug.called_with("Checking equality")
+    assert "Checking equality" in caplog.text
 
 
-@mock.patch("datacompy.logging.info")
-def test_not_subset(mock_info):
+def test_not_subset(caplog):
+    caplog.set_level(logging.INFO)
     df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
     df2 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "great"}])
     comp = datacompy.Compare(df1, df2, ["a"])
     assert not comp.subset()
-    assert mock_info.called_with("Sample c mismatch: a: 2, df1: yo, df2: great")
+    assert "c: 1 / 2 (50.00%) match" in caplog.text
 
 
 def test_large_subset():
