@@ -272,23 +272,19 @@ class SparkCompare:
         """ Prints the column summary details"""
         print("\n****** Column Summary ******", file=myfile)
         print(
-            "Number of columns in common with matching schemas: {}".format(
-                len(self._columns_with_matching_schema())
-            ),
+            f"Number of columns in common with matching schemas: {len(self._columns_with_matching_schema())}",
             file=myfile,
         )
         print(
-            "Number of columns in common with schema differences: {}".format(
-                len(self._columns_with_schemadiff())
-            ),
+            f"Number of columns in common with schema differences: {len(self._columns_with_schemadiff())}",
             file=myfile,
         )
         print(
-            "Number of columns in base but not compare: {}".format(len(self.columns_only_base)),
+            f"Number of columns in base but not compare: {len(self.columns_only_base)}",
             file=myfile,
         )
         print(
-            "Number of columns in compare but not base: {}".format(len(self.columns_only_compare)),
+            f"Number of columns in compare but not base: {len(self.columns_only_compare)}",
             file=myfile,
         )
 
@@ -303,7 +299,7 @@ class SparkCompare:
             df = self.compare_df
         else:
             raise ValueError(
-                'base_or_compare must be BASE or COMPARE, but was "{}"'.format(base_or_compare)
+                f'base_or_compare must be BASE or COMPARE, but was "{base_or_compare}"'
             )
 
         # If there are no columns only in this dataframe, don't display this section
@@ -311,9 +307,9 @@ class SparkCompare:
             return
 
         max_length = max([len(col) for col in columns] + [11])
-        format_pattern = "{{:{max}s}}".format(max=max_length)
+        format_pattern = f"{{:{max_length}s}}"
 
-        print("\n****** Columns In {} Only ******".format(base_or_compare.title()), file=myfile)
+        print(f"\n****** Columns In {base_or_compare.title()} Only ******", file=myfile)
         print((format_pattern + "  Dtype").format("Column Name"), file=myfile)
         print("-" * max_length + "  -------------", file=myfile)
 
@@ -493,12 +489,10 @@ class SparkCompare:
 
         print("\n****** Row Comparison ******", file=myfile)
         print(
-            "Number of rows with some columns unequal: {}".format(
-                self.common_row_count - matched_rows
-            ),
+            f"Number of rows with some columns unequal: {self.common_row_count - matched_rows}",
             file=myfile,
         )
-        print("Number of rows with all columns equal: {}".format(matched_rows), file=myfile)
+        print(f"Number of rows with all columns equal: {matched_rows}", file=myfile)
 
     def _populate_columns_match_dict(self):
         """
@@ -605,27 +599,21 @@ class SparkCompare:
         compare_df_with_dup_cnt = self._original_compare_df.count()
 
         print("\n****** Row Summary ******", file=myfile)
-        print("Number of rows in common: {}".format(self.common_row_count), file=myfile)
+        print(f"Number of rows in common: {self.common_row_count}", file=myfile)
         print(
-            "Number of rows in base but not compare: {}".format(
-                base_df_cnt - self.common_row_count
-            ),
+            f"Number of rows in base but not compare: {base_df_cnt - self.common_row_count}",
             file=myfile,
         )
         print(
-            "Number of rows in compare but not base: {}".format(
-                compare_df_cnt - self.common_row_count
-            ),
+            f"Number of rows in compare but not base: {compare_df_cnt - self.common_row_count}",
             file=myfile,
         )
         print(
-            "Number of duplicate rows found in base: {}".format(base_df_with_dup_cnt - base_df_cnt),
+            f"Number of duplicate rows found in base: {base_df_with_dup_cnt - base_df_cnt}",
             file=myfile,
         )
         print(
-            "Number of duplicate rows found in compare: {}".format(
-                compare_df_with_dup_cnt - compare_df_cnt
-            ),
+            f"Number of duplicate rows found in compare: {compare_df_with_dup_cnt - compare_df_cnt}",
             file=myfile,
         )
 
@@ -705,36 +693,24 @@ class SparkCompare:
 
         if self._known_differences:
             print(
-                "Number of columns compared with unexpected differences in some values: {}".format(
-                    len(columns_with_mismatches)
-                ),
+                f"Number of columns compared with unexpected differences in some values: {len(columns_with_mismatches)}",
                 file=myfile,
             )
             print(
-                "Number of columns compared with all values equal but known differences found: {}".format(
-                    len(self.columns_compared)
-                    - len(columns_with_mismatches)
-                    - len(columns_fully_matching)
-                ),
+                f"Number of columns compared with all values equal but known differences found: {len(self.columns_compared) - len(columns_with_mismatches) - len(columns_fully_matching)}",
                 file=myfile,
             )
             print(
-                "Number of columns compared with all values completely equal: {}".format(
-                    len(columns_fully_matching)
-                ),
+                f"Number of columns compared with all values completely equal: {len(columns_fully_matching)}",
                 file=myfile,
             )
         else:
             print(
-                "Number of columns compared with some values unequal: {}".format(
-                    len(columns_with_mismatches)
-                ),
+                f"Number of columns compared with some values unequal: {len(columns_with_mismatches)}",
                 file=myfile,
             )
             print(
-                "Number of columns compared with all values equal: {}".format(
-                    len(columns_fully_matching)
-                ),
+                f"Number of columns compared with all values equal: {len(columns_fully_matching)}",
                 file=myfile,
             )
 
