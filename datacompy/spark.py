@@ -24,38 +24,16 @@ two dataframes.
 import logging
 import os
 
-import numpy as np
 import pyspark.pandas as ps
-from pandas.api.types import is_numeric_dtype
 from ordered_set import OrderedSet
-import time
+from pandas.api.types import is_numeric_dtype
 
 ps.set_option("compute.ops_on_diff_frames", True)
 LOG = logging.getLogger(__name__)
 
 
-# Used for checking equality with decimal(X, Y) types. Otherwise treated as the string "decimal".
-def decimal_comparator():
-    class DecimalComparator(str):
-        def __eq__(self, other):
-            return len(other) >= 7 and other[0:7] == "decimal"
-
-    return DecimalComparator("decimal")
-
-
-NUMERIC_SPARK_TYPES = [
-    "tinyint",
-    "smallint",
-    "int",
-    "bigint",
-    "float",
-    "double",
-    decimal_comparator(),
-]
-
-
-class Compare:
-    """Comparison class to be used to compare whether two dataframes as equal.
+class SparkCompare:
+    """Comparison class to be used to compare whether two PySpark on Pandas dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
     with unique column names. Differences between values are compared to

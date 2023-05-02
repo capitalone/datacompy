@@ -409,61 +409,6 @@ def test_infinity_and_beyond():
         expect_out.to_pandas(), actual_out.to_pandas(), check_names=False
     )
 
-
-# def test_mixed_column():
-#     df = ps.DataFrame(
-#         [
-#             {"a": "hi", "b": "hi", "expected": True},
-#             {"a": 1, "b": 1, "expected": True},
-#             {"a": np.inf, "b": np.inf, "expected": True},
-#             {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
-#             {"a": 1, "b": "1", "expected": False},
-#             {"a": 1, "b": "yo", "expected": False},
-#         ], dtype=str
-#     )
-#     df.expected = df.expected.astype("bool")  # force back to bool
-#     actual_out = datacompy.columns_equal(df.a, df.b)
-#     expect_out = df["expected"]
-#     assert_series_equal(expect_out.to_pandas(), actual_out.to_pandas(), check_names=False)
-
-
-# def test_mixed_column_with_ignore_spaces():
-#     df = ps.DataFrame(
-#         [
-#             {"a": "hi", "b": "hi ", "expected": True},
-#             {"a": 1, "b": 1, "expected": True},
-#             {"a": np.inf, "b": np.inf, "expected": True},
-#             {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
-#             {"a": 1, "b": "1 ", "expected": False},
-#             {"a": 1, "b": "yo ", "expected": False},
-#         ]
-#     )
-#     actual_out = datacompy.columns_equal(df.a, df.b, ignore_spaces=True)
-#     expect_out = df["expected"]
-#     assert_series_equal(expect_out.to_pandas(), actual_out.to_pandas(), check_names=False)
-#
-#
-# def test_mixed_column_with_ignore_spaces_and_case():
-#     df = ps.DataFrame(
-#         [
-#             {"a": "hi", "b": "hi ", "expected": True},
-#             {"a": 1, "b": 1, "expected": True},
-#             {"a": np.inf, "b": np.inf, "expected": True},
-#             {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
-#             {"a": 1, "b": "1 ", "expected": False},
-#             {"a": 1, "b": "yo ", "expected": False},
-#             {"a": "Hi", "b": "hI ", "expected": True},
-#             {"a": "HI", "b": "HI ", "expected": True},
-#             {"a": "hi", "b": "hi ", "expected": True},
-#         ]
-#     )
-#     actual_out = datacompy.columns_equal(
-#         df.a, df.b, ignore_spaces=True, ignore_case=True
-#     )
-#     expect_out = df["expected"]
-#     assert_series_equal(expect_out.to_pandas(), actual_out.to_pandas(), check_names=False)
-
-
 def test_compare_df_setter_bad():
     df = ps.DataFrame([{"a": 1, "c": 2}, {"a": 2, "c": 2}])
     with raises(TypeError, match="df1 must be a pyspark.pandas.frame.DataFrame"):
@@ -1017,7 +962,7 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching(tmp_path):
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
-    assert output.shape[1] == 9
+    assert output.shape[1] == 10
 
     assert (output.name_df1 != output.name_df2).values.sum() == 0
     assert (~(output.name_df1 != output.name_df2)).values.sum() == 4
@@ -1064,7 +1009,7 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows(tmp_path
     output = compare.all_mismatch(ignore_matching_cols=True)
 
     assert output.shape[0] == 4
-    assert output.shape[1] == 5
+    assert output.shape[1] == 6
 
     assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
     assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
@@ -1107,7 +1052,7 @@ def test_all_mismatch_ignore_matching_cols_some_calls_matching(tmp_path):
     output = compare.all_mismatch(ignore_matching_cols=True)
 
     assert output.shape[0] == 4
-    assert output.shape[1] == 5
+    assert output.shape[1] == 6
 
     assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
     assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
@@ -1148,7 +1093,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching(tmp_path):
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
-    assert output.shape[1] == 9
+    assert output.shape[1] == 10
 
     assert (output.name_df1 != output.name_df2).values.sum() == 2
     assert (~(output.name_df1 != output.name_df2)).values.sum() == 2
@@ -1268,19 +1213,6 @@ def test_generate_id_within_group(dataframe, expected):
         datacompy.spark.generate_id_within_group(dataframe, ["a", "b"]) == expected
     ).all()
 
-
-# @pytest.mark.parametrize(
-#     "dataframe, message",
-#     [
-#         (
-#             ps.DataFrame({"a": [1, np.nan, "DATACOMPY_NULL"], "b": [1, 2, 3]}),
-#             "DATACOMPY_NULL was found in your join columns",
-#         )
-#     ],
-# )
-# def test_generate_id_within_group_valueerror(dataframe, message):
-#     with raises(ValueError, match=message):
-#         datacompy.spark.generate_id_within_group(dataframe, ["a", "b"])
 
 
 def test_lower():
