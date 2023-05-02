@@ -16,7 +16,6 @@
 """
 Testing out the datacompy functionality
 """
-import io
 import logging
 import sys
 from datetime import datetime
@@ -45,7 +44,9 @@ NULL|NULL|True"""
 
     file = tmp_path / "tmp.txt"
     file.write_text(data)
-    df = ps.read_csv(file.resolve().as_posix(), sep="|", dtype={"a": np.float64, "b": np.float64})
+    df = ps.read_csv(
+        file.resolve().as_posix(), sep="|", dtype={"a": np.float64, "b": np.float64}
+    )
     actual_out = datacompy.columns_equal(df.a, df.b, abs_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(
@@ -63,7 +64,9 @@ NULL|4|False
 NULL|NULL|True"""
     file = tmp_path / "tmp.txt"
     file.write_text(data)
-    df = ps.read_csv(file.resolve().as_posix(), sep="|", dtype={"a": np.float64, "b": np.float64})
+    df = ps.read_csv(
+        file.resolve().as_posix(), sep="|", dtype={"a": np.float64, "b": np.float64}
+    )
     actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(
@@ -312,7 +315,9 @@ def test_decimal_float_columns_equal():
     )
     actual_out = datacompy.columns_equal(df.a, df.b)
     expect_out = df["expected"]
-    assert_series_equal(expect_out.to_pandas(), actual_out.to_pandas(), check_names=False)
+    assert_series_equal(
+        expect_out.to_pandas(), actual_out.to_pandas(), check_names=False
+    )
 
 
 def test_decimal_float_columns_equal_rel():
@@ -330,7 +335,9 @@ def test_decimal_float_columns_equal_rel():
     )
     actual_out = datacompy.columns_equal(df.a, df.b, abs_tol=0.001)
     expect_out = df["expected"]
-    assert_series_equal(expect_out.to_pandas(), actual_out.to_pandas(), check_names=False)
+    assert_series_equal(
+        expect_out.to_pandas(), actual_out.to_pandas(), check_names=False
+    )
 
 
 def test_decimal_columns_equal():
@@ -352,7 +359,9 @@ def test_decimal_columns_equal():
     )
     actual_out = datacompy.columns_equal(df.a, df.b)
     expect_out = df["expected"]
-    assert_series_equal(expect_out.to_pandas(), actual_out.to_pandas(), check_names=False)
+    assert_series_equal(
+        expect_out.to_pandas(), actual_out.to_pandas(), check_names=False
+    )
 
 
 def test_decimal_columns_equal_rel():
@@ -374,7 +383,9 @@ def test_decimal_columns_equal_rel():
     )
     actual_out = datacompy.columns_equal(df.a, df.b, abs_tol=0.001)
     expect_out = df["expected"]
-    assert_series_equal(expect_out.to_pandas(), actual_out.to_pandas(), check_names=False)
+    assert_series_equal(
+        expect_out.to_pandas(), actual_out.to_pandas(), check_names=False
+    )
 
 
 def test_infinity_and_beyond():
@@ -394,7 +405,9 @@ def test_infinity_and_beyond():
     )
     actual_out = datacompy.columns_equal(df.a, df.b)
     expect_out = df["expected"]
-    assert_series_equal(expect_out.to_pandas(), actual_out.to_pandas(), check_names=False)
+    assert_series_equal(
+        expect_out.to_pandas(), actual_out.to_pandas(), check_names=False
+    )
 
 
 # def test_mixed_column():
@@ -458,7 +471,12 @@ def test_compare_df_setter_bad():
     with raises(ValueError, match="df1 must have all columns from join_columns"):
         compare = datacompy.Compare(df, df.copy(), ["b"])
     df_dupe = ps.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
-    assert datacompy.Compare(df_dupe, df_dupe.copy(), ["a", "b"]).df1.equals(df_dupe).all().all()
+    assert (
+        datacompy.Compare(df_dupe, df_dupe.copy(), ["a", "b"])
+        .df1.equals(df_dupe)
+        .all()
+        .all()
+    )
 
 
 def test_compare_df_setter_good():
@@ -478,28 +496,6 @@ def test_compare_df_setter_different_cases():
     df1 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = ps.DataFrame([{"A": 1, "b": 2}, {"A": 2, "b": 3}])
     compare = datacompy.Compare(df1, df2, ["a"])
-    assert compare.df1.equals(df1).all().all()
-    assert compare.df2.equals(df2).all().all()
-
-
-# def test_compare_df_setter_bad_index():
-#     df = ps.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
-#     with raises(TypeError, match="df1 must be a pandas DataFrame"):
-#         compare = datacompy.Compare("a", "a", on_index=True)
-#     with raises(ValueError, match="df1 must have unique column names"):
-#         compare = datacompy.Compare(df, df.copy(), on_index=True)
-
-
-def test_compare_on_index_and_join_columns():
-    df = ps.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    with raises(Exception, match="Only provide on_index or join_columns"):
-        compare = datacompy.Compare(df, df.copy(), on_index=True, join_columns=["a"])
-
-
-def test_compare_df_setter_good_index():
-    df1 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    df2 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
-    compare = datacompy.Compare(df1, df2, on_index=True)
     assert compare.df1.equals(df1).all().all()
     assert compare.df2.equals(df2).all().all()
 
@@ -590,7 +586,7 @@ def test_large_subset():
     df1 = ps.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
     df1.reset_index(inplace=True)
     df1.columns = ["a", "b", "c"]
-    df2 = df1[["a", "b"]].sample(50).copy()
+    df2 = df1[["a", "b"]].head(50).copy()
     comp = datacompy.Compare(df1, df2, ["a"])
     assert not comp.matches()
     assert comp.subset()
@@ -631,37 +627,6 @@ def test_strings_with_joins():
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert compare.intersect_rows_match()
-
-
-def test_index_joining():
-    df1 = ps.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    df2 = ps.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    compare = datacompy.Compare(df1, df2, on_index=True)
-    assert compare.matches()
-
-
-def test_index_joining_strings_i_guess():
-    df1 = ps.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    df2 = ps.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    df1.index = df1["a"]
-    df2.index = df2["a"]
-    df1.index.name = df2.index.name = None
-    compare = datacompy.Compare(df1, df2, on_index=True)
-    assert compare.matches()
-
-
-def test_index_joining_non_overlapping():
-    df1 = ps.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    df2 = ps.DataFrame(
-        [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
-    )
-    compare = datacompy.Compare(df1, df2, on_index=True)
-    assert not compare.matches()
-    assert compare.all_columns_match()
-    assert compare.intersect_rows_match()
-    assert len(compare.df1_unq_rows) == 0
-    assert len(compare.df2_unq_rows) == 1
-    assert list(compare.df2_unq_rows["a"]) == ["back fo mo"]
 
 
 def test_temp_column_name():
@@ -740,19 +705,7 @@ def test_simple_dupes_two_fields():
     t = compare.report()
 
 
-def test_simple_dupes_index():
-    df1 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    df2 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    df1.index = df1["a"]
-    df2.index = df2["a"]
-    df1.index.name = df2.index.name = None
-    compare = datacompy.Compare(df1, df2, on_index=True)
-    assert compare.matches()
-    # Just render the report to make sure it renders.
-    t = compare.report()
-
-
-def test_simple_dupes_one_field_two_vals():
+def test_simple_dupes_one_field_two_vals_1():
     df1 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     compare = datacompy.Compare(df1, df2, join_columns=["a"])
@@ -761,7 +714,7 @@ def test_simple_dupes_one_field_two_vals():
     t = compare.report()
 
 
-def test_simple_dupes_one_field_two_vals():
+def test_simple_dupes_one_field_two_vals_2():
     df1 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
     compare = datacompy.Compare(df1, df2, join_columns=["a"])
@@ -891,14 +844,9 @@ def test_decimal_with_joins_with_ignore_case():
     assert compare.intersect_rows_match()
 
 
-def test_index_with_joins_with_ignore_spaces():
+def test_joins_with_ignore_spaces():
     df1 = ps.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
     df2 = ps.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
-    compare = datacompy.Compare(df1, df2, on_index=True, ignore_spaces=False)
-    assert not compare.matches()
-    assert compare.all_columns_match()
-    assert compare.all_rows_overlap()
-    assert not compare.intersect_rows_match()
 
     compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
@@ -907,14 +855,9 @@ def test_index_with_joins_with_ignore_spaces():
     assert compare.intersect_rows_match()
 
 
-def test_index_with_joins_with_ignore_case():
+def test_joins_with_ignore_case():
     df1 = ps.DataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
     df2 = ps.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
-    compare = datacompy.Compare(df1, df2, on_index=True, ignore_case=False)
-    assert not compare.matches()
-    assert compare.all_columns_match()
-    assert compare.all_rows_overlap()
-    assert not compare.intersect_rows_match()
 
     compare = datacompy.Compare(df1, df2, "a", ignore_case=True)
     assert compare.matches()
@@ -1029,7 +972,7 @@ def test_all_mismatch_not_ignore_matching_cols_no_cols_matching(tmp_path):
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
-    assert output.shape[1] == 9
+    assert output.shape[1] == 10
 
     assert (output.name_df1 != output.name_df2).values.sum() == 2
     assert (~(output.name_df1 != output.name_df2)).values.sum() == 2
@@ -1247,7 +1190,7 @@ MAX_DIFF_DF = ps.DataFrame(
         ("decimals", 0.1),
         ("null_floats", 0.1),
         ("strings", 0.1),
-        ("mixed_strings", 0),
+        ("mixed_strings", 1),
         ("infinity", np.inf),
     ],
 )
@@ -1257,15 +1200,39 @@ def test_calculate_max_diff(column, expected):
     )
 
 
-def test_dupes_with_nulls():
+def test_dupes_with_nulls_strings():
     df1 = ps.DataFrame(
         {
             "fld_1": [1, 2, 2, 3, 3, 4, 5, 5],
             "fld_2": ["A", np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            "fld_3": [1, 2, 2, 3, 3, 4, 5, 5],
         }
     )
     df2 = ps.DataFrame(
-        {"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", np.nan, np.nan, np.nan, np.nan]}
+        {
+            "fld_1": [1, 2, 3, 4, 5],
+            "fld_2": ["A", np.nan, np.nan, np.nan, np.nan],
+            "fld_3": [1, 2, 3, 4, 5],
+        }
+    )
+    comp = datacompy.Compare(df1, df2, join_columns=["fld_1", "fld_2"])
+    assert comp.subset()
+
+
+def test_dupes_with_nulls_ints():
+    df1 = ps.DataFrame(
+        {
+            "fld_1": [1, 2, 2, 3, 3, 4, 5, 5],
+            "fld_2": [1, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            "fld_3": [1, 2, 2, 3, 3, 4, 5, 5],
+        }
+    )
+    df2 = ps.DataFrame(
+        {
+            "fld_1": [1, 2, 3, 4, 5],
+            "fld_2": [1, np.nan, np.nan, np.nan, np.nan],
+            "fld_3": [1, 2, 3, 4, 5],
+        }
     )
     comp = datacompy.Compare(df1, df2, join_columns=["fld_1", "fld_2"])
     assert comp.subset()

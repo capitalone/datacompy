@@ -26,9 +26,8 @@ import os
 
 import numpy as np
 import pyspark.pandas as ps
-from ordered_set import OrderedSet
 from pandas.api.types import is_numeric_dtype
-
+from ordered_set import OrderedSet
 import time
 
 ps.set_option("compute.ops_on_diff_frames", True)
@@ -71,10 +70,6 @@ class Compare:
     join_columns : list or str, optional
         Column(s) to join dataframes on.  If a string is passed in, that one
         column will be used.
-    on_index : bool, optional
-        If True, the index will be used to join the two dataframes.  If both
-        ``join_columns`` and ``on_index`` are provided, an exception will be
-        raised.
     abs_tol : float, optional
         Absolute tolerance between two values.
     rel_tol : float, optional
@@ -105,8 +100,7 @@ class Compare:
         self,
         df1,
         df2,
-        join_columns=None,
-        on_index=False,
+        join_columns,
         abs_tol=0,
         rel_tol=0,
         df1_name="df1",
@@ -116,24 +110,17 @@ class Compare:
         cast_column_names_lower=True,
     ):
         self.cast_column_names_lower = cast_column_names_lower
-        if on_index and join_columns is not None:
-            raise Exception("Only provide on_index or join_columns")
-        elif on_index:
-            self.on_index = True
-            self.join_columns = []
-        elif isinstance(join_columns, (str, int, float)):
+        if isinstance(join_columns, (str, int, float)):
             self.join_columns = [
                 str(join_columns).lower()
                 if self.cast_column_names_lower
                 else str(join_columns)
             ]
-            self.on_index = False
         else:
             self.join_columns = [
                 str(col).lower() if self.cast_column_names_lower else str(col)
                 for col in join_columns
             ]
-            self.on_index = False
 
         self._any_dupes = False
         self.df1 = df1
@@ -147,8 +134,6 @@ class Compare:
         self.df1_unq_rows = self.df2_unq_rows = self.intersect_rows = None
         self.column_stats = []
         self._compare(ignore_spaces, ignore_case)
-        # XXXXXXXXXX
-        # make a copy of df1 / df2
 
     @property
     def df1(self):
@@ -199,14 +184,8 @@ class Compare:
         if len(set(dataframe.columns)) < len(dataframe.columns):
             raise ValueError(f"{index} must have unique column names")
 
-        if self.on_index:
-            if dataframe.index.has_duplicates:
-                self._any_dupes = True
-        else:
-            if len(dataframe.drop_duplicates(subset=self.join_columns)) < len(
-                dataframe
-            ):
-                self._any_dupes = True
+        if len(dataframe.drop_duplicates(subset=self.join_columns)) < len(dataframe):
+            self._any_dupes = True
 
     def _compare(self, ignore_spaces, ignore_case):
         """Actually run the comparison.  This tries to run df1.equals(df2)
@@ -255,94 +234,100 @@ class Compare:
     def _dataframe_merge(self, ignore_spaces):
         """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
         and df1 & df2
-
-        If ``on_index`` is True, this will join on index values, otherwise it
-        will join on the ``join_columns``.
         """
 
         LOG.debug("Outer joining")
+
+        df1 = self.df1.copy()
+        df2 = self.df2.copy()
+
         if self._any_dupes:
             LOG.debug("Duplicate rows found, deduping by order of remaining fields")
-            # Bring index into a column
-            if self.on_index:
-                index_column = temp_column_name(self.df1, self.df2)
-                self.df1[index_column] = self.df1.index
-                self.df2[index_column] = self.df2.index
-                temp_join_columns = [index_column]
-            else:
-                temp_join_columns = list(self.join_columns)
+            temp_join_columns = list(self.join_columns)
 
             # Create order column for uniqueness of match
-            order_column = temp_column_name(self.df1, self.df2)
-            self.df1[order_column] = generate_id_within_group(
-                self.df1, temp_join_columns
-            )
-            self.df2[order_column] = generate_id_within_group(
-                self.df2, temp_join_columns
-            )
+            order_column = temp_column_name(df1, df2)
+            df1[order_column] = generate_id_within_group(df1, temp_join_columns)
+            df2[order_column] = generate_id_within_group(df2, temp_join_columns)
             temp_join_columns.append(order_column)
 
             params = {"on": temp_join_columns}
-        elif self.on_index:
-            params = {"left_index": True, "right_index": True}
         else:
             params = {"on": self.join_columns}
 
         if ignore_spaces:
             for column in self.join_columns:
-                if self.df1[column].dtype.kind == "O":
-                    self.df1[column] = self.df1[column].str.strip()
-                if self.df2[column].dtype.kind == "O":
-                    self.df2[column] = self.df2[column].str.strip()
+                if df1[column].dtype.kind == "O":
+                    df1[column] = df1[column].str.strip()
+                if df2[column].dtype.kind == "O":
+                    df2[column] = df2[column].str.strip()
+
+        non_join_columns = (
+            OrderedSet(df1.columns) | OrderedSet(df2.columns)
+        ) - OrderedSet(self.join_columns)
+
+        for c in non_join_columns:
+            df1.rename(columns={c: c + "_df1"}, inplace=True)
+            df2.rename(columns={c: c + "_df2"}, inplace=True)
 
         # generate merge indicator
-        self.df1["_merge_left"] = True
-        self.df2["_merge_right"] = True
+        df1["_merge_left"] = True
+        df2["_merge_right"] = True
 
-        outer_join = self.df1.merge(
-            self.df2, how="outer", suffixes=("_df1", "_df2"), **params
+        for c in self.join_columns:
+            df1.rename(columns={c: c + "_df1"}, inplace=True)
+            df2.rename(columns={c: c + "_df2"}, inplace=True)
+
+        # NULL SAFE Outer join using ON
+        on = " and ".join([f"df1.{c}_df1 <=> df2.{c}_df2" for c in params["on"]])
+        outer_join = ps.sql(
+            """
+        SELECT * FROM
+        {df1} df1 FULL OUTER JOIN {df2} df2
+        ON     
+        """
+            + on,
+            df1=df1,
+            df2=df2,
         )
+
         outer_join["_merge"] = None  # initialize col
 
         # process merge indicator
         outer_join["_merge"] = outer_join._merge.mask(
-            (outer_join["_merge_left"] == True) & (outer_join["_merge_right"] == True), "both"
+            (outer_join["_merge_left"] == True) & (outer_join["_merge_right"] == True),
+            "both",
         )
         outer_join["_merge"] = outer_join._merge.mask(
-            (outer_join["_merge_left"] == True) & (outer_join["_merge_right"] != True), "left_only"
+            (outer_join["_merge_left"] == True) & (outer_join["_merge_right"] != True),
+            "left_only",
         )
         outer_join["_merge"] = outer_join._merge.mask(
-            (outer_join["_merge_left"] != True) & (outer_join["_merge_right"] == True), "right_only"
+            (outer_join["_merge_left"] != True) & (outer_join["_merge_right"] == True),
+            "right_only",
         )
-
-        self.df1 = self.df1.drop(columns="_merge_left")
-        self.df2 = self.df2.drop(columns="_merge_right")
 
         # Clean up temp columns for duplicate row matching
         if self._any_dupes:
-            if self.on_index:
-                outer_join.index = outer_join[index_column]
-                outer_join = outer_join.drop(index_column, axis=1)
-                self.df1 = self.df1.drop(index_column, axis=1)
-                self.df2 = self.df2.drop(index_column, axis=1)
-            outer_join = outer_join.drop(order_column, axis=1)
-            self.df1 = self.df1.drop(order_column, axis=1)
-            self.df2 = self.df2.drop(order_column, axis=1)
+            outer_join = outer_join.drop(
+                [order_column + "_df1", order_column + "_df2"], axis=1
+            )
+            df1 = df1.drop([order_column + "_df1", order_column + "_df2"], axis=1)
+            df2 = df2.drop([order_column + "_df1", order_column + "_df2"], axis=1)
 
-        df1_cols = get_merged_columns(self.df1, outer_join, "_df1")
-        df2_cols = get_merged_columns(self.df2, outer_join, "_df2")
+        df1_cols = get_merged_columns(df1, outer_join, "_df1")
+        df2_cols = get_merged_columns(df2, outer_join, "_df2")
 
         LOG.debug("Selecting df1 unique rows")
         self.df1_unq_rows = outer_join[outer_join["_merge"] == "left_only"][
             df1_cols
         ].copy()
-        self.df1_unq_rows.columns = self.df1.columns
 
         LOG.debug("Selecting df2 unique rows")
         self.df2_unq_rows = outer_join[outer_join["_merge"] == "right_only"][
             df2_cols
         ].copy()
-        self.df2_unq_rows.columns = self.df2.columns
+
         LOG.info(f"Number of rows in df1 and not in df2: {len(self.df1_unq_rows)}")
         LOG.info(f"Number of rows in df2 and not in df1: {len(self.df2_unq_rows)}")
 
@@ -436,11 +421,21 @@ class Compare:
         int
             Number of matching rows
         """
+        conditions = []
         match_columns = []
         for column in self.intersect_columns():
             if column not in self.join_columns:
                 match_columns.append(column + "_match")
-        return self.intersect_rows[match_columns].to_numpy().all(axis=1).sum()
+                conditions.append(f"{column}_match == True")
+        if len(conditions) > 0:
+            match_columns_count = (
+                self.intersect_rows[match_columns]
+                .query(" and ".join(conditions))
+                .shape[0]
+            )
+        else:
+            match_columns_count = 0
+        return match_columns_count
 
     def intersect_rows_match(self):
         """Check whether the intersect rows all match"""
@@ -505,7 +500,11 @@ class Compare:
         col_match = self.intersect_rows[column + "_match"]
         match_cnt = col_match.sum()
         sample_count = min(sample_count, row_cnt - match_cnt)
-        sample = self.intersect_rows[~col_match].sample(sample_count)
+        sample = self.intersect_rows[~col_match].head(sample_count)
+
+        for c in self.join_columns:
+            sample[c] = sample[c + "_df1"]
+
         return_cols = self.join_columns + [column + "_df1", column + "_df2"]
         to_return = sample[return_cols]
         if for_display:
@@ -555,8 +554,14 @@ class Compare:
                         f"Column {orig_col_name} is equal in df1 and df2. It will not be added to the result."
                     )
 
-        mm_bool = self.intersect_rows[match_list].all(axis="columns")
-        return self.intersect_rows[~mm_bool][self.join_columns + return_list]
+        mm_bool = self.intersect_rows[match_list].T.all()
+
+        updated_join_columns = []
+        for c in self.join_columns:
+            updated_join_columns.append(c + "_df1")
+            updated_join_columns.append(c + "_df2")
+
+        return self.intersect_rows[~mm_bool][updated_join_columns + return_list]
 
     def report(self, sample_count=10, column_count=10, html_file=None):
         """Returns a string representation of a report.  The representation can
@@ -601,10 +606,7 @@ class Compare:
         )
 
         # Row Summary
-        if self.on_index:
-            match_on = "index"
-        else:
-            match_on = ", ".join(self.join_columns)
+        match_on = ", ".join(self.join_columns)
         report += render(
             "row_summary.txt",
             match_on,
@@ -689,7 +691,7 @@ class Compare:
             report += "\n"
             columns = self.df1_unq_rows.columns[:column_count]
             unq_count = min(sample_count, self.df1_unq_rows.shape[0])
-            report += self.df1_unq_rows.sample(unq_count)[columns].to_string()
+            report += self.df1_unq_rows.head(unq_count)[columns].to_string()
             report += "\n\n"
 
         if min(sample_count, self.df2_unq_rows.shape[0]) > 0:
@@ -702,7 +704,7 @@ class Compare:
             report += "\n"
             columns = self.df2_unq_rows.columns[:column_count]
             unq_count = min(sample_count, self.df2_unq_rows.shape[0])
-            report += self.df2_unq_rows.sample(unq_count)[columns].to_string()
+            report += self.df2_unq_rows.head(unq_count)[columns].to_string()
             report += "\n\n"
 
         if html_file:
