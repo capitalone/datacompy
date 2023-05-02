@@ -1,3 +1,6 @@
+coverage:
+	pytest --verbose --cov=datacompy
+
 sphinx:
 	cd docs && \
 	make -f Makefile clean && \
