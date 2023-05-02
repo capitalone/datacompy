@@ -29,7 +29,7 @@ import pytest
 from pandas.util.testing import assert_series_equal
 from pytest import raises
 
-import datacompy
+from datacompy.pandas import *
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
