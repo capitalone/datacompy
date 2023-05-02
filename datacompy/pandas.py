@@ -31,8 +31,8 @@ from ordered_set import OrderedSet
 LOG = logging.getLogger(__name__)
 
 
-class Compare:
-    """Comparison class to be used to compare whether two dataframes as equal.
+class PandasCompare:
+    """Comparison class to be used to compare whether two Pandas dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
     with unique column names. Differences between values are compared to
