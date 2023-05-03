@@ -20,12 +20,14 @@ import logging
 import sys
 from datetime import datetime
 from decimal import Decimal
+from io import StringIO
 from unittest import mock
 
 import numpy as np
+import pandas as pd
 import pyspark.pandas as ps
 import pytest
-from pandas.util.testing import assert_series_equal
+from pandas.testing import assert_series_equal
 from pytest import raises
 
 from datacompy.spark import *
@@ -33,7 +35,7 @@ from datacompy.spark import *
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
-def test_numeric_columns_equal_abs(tmp_path):
+def test_numeric_columns_equal_abs():
     data = """a|b|expected
 1|1|True
 2|2.1|True
@@ -42,11 +44,7 @@ def test_numeric_columns_equal_abs(tmp_path):
 NULL|4|False
 NULL|NULL|True"""
 
-    file = tmp_path / "tmp.txt"
-    file.write_text(data)
-    df = ps.read_csv(
-        file.resolve().as_posix(), sep="|", dtype={"a": np.float64, "b": np.float64}
-    )
+    df = ps.from_pandas(pd.read_csv(StringIO(data), sep="|"))
     actual_out = columns_equal(df.a, df.b, abs_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(
@@ -54,7 +52,7 @@ NULL|NULL|True"""
     )
 
 
-def test_numeric_columns_equal_rel(tmp_path):
+def test_numeric_columns_equal_rel():
     data = """a|b|expected
 1|1|True
 2|2.1|True
@@ -62,11 +60,7 @@ def test_numeric_columns_equal_rel(tmp_path):
 4|NULL|False
 NULL|4|False
 NULL|NULL|True"""
-    file = tmp_path / "tmp.txt"
-    file.write_text(data)
-    df = ps.read_csv(
-        file.resolve().as_posix(), sep="|", dtype={"a": np.float64, "b": np.float64}
-    )
+    df = ps.from_pandas(pd.read_csv(StringIO(data), sep="|"))
     actual_out = columns_equal(df.a, df.b, rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(
@@ -74,7 +68,7 @@ NULL|NULL|True"""
     )
 
 
-def test_string_columns_equal(tmp_path):
+def test_string_columns_equal():
     data = """a|b|expected
 Hi|Hi|True
 Yo|Yo|True
@@ -89,9 +83,7 @@ datacompy|DataComPy|False
 something||False
 |something|False
 ||True"""
-    file = tmp_path / "tmp.txt"
-    file.write_text(data)
-    df = ps.read_csv(file.resolve().as_posix(), sep="|")
+    df = ps.from_pandas(pd.read_csv(StringIO(data), sep="|"))
     actual_out = columns_equal(df.a, df.b, rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(
@@ -99,7 +91,7 @@ something||False
     )
 
 
-def test_string_columns_equal_with_ignore_spaces(tmp_path):
+def test_string_columns_equal_with_ignore_spaces():
     data = """a|b|expected
 Hi|Hi|True
 Yo|Yo|True
@@ -114,9 +106,7 @@ datacompy|DataComPy|False
 something||False
 |something|False
 ||True"""
-    file = tmp_path / "tmp.txt"
-    file.write_text(data)
-    df = ps.read_csv(file.resolve().as_posix(), sep="|")
+    df = ps.from_pandas(pd.read_csv(StringIO(data), sep="|"))
     actual_out = columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
     assert_series_equal(
@@ -124,7 +114,7 @@ something||False
     )
 
 
-def test_string_columns_equal_with_ignore_spaces_and_case(tmp_path):
+def test_string_columns_equal_with_ignore_spaces_and_case():
     data = """a|b|expected
 Hi|Hi|True
 Yo|Yo|True
@@ -139,9 +129,7 @@ datacompy|DataComPy|True
 something||False
 |something|False
 ||True"""
-    file = tmp_path / "tmp.txt"
-    file.write_text(data)
-    df = ps.read_csv(file.resolve().as_posix(), sep="|")
+    df = ps.from_pandas(pd.read_csv(StringIO(data), sep="|"))
     actual_out = columns_equal(
         df.a, df.b, rel_tol=0.2, ignore_spaces=True, ignore_case=True
     )
@@ -159,9 +147,7 @@ def test_date_columns_equal(tmp_path):
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    file = tmp_path / "tmp.txt"
-    file.write_text(data)
-    df = ps.read_csv(file.resolve().as_posix(), sep="|")
+    df = ps.from_pandas(pd.read_csv(StringIO(data), sep="|"))
     # First compare just the strings
     actual_out = columns_equal(df.a, df.b, rel_tol=0.2)
     expect_out = df["expected"]
@@ -192,9 +178,7 @@ def test_date_columns_equal_with_ignore_spaces(tmp_path):
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    file = tmp_path / "tmp.txt"
-    file.write_text(data)
-    df = ps.read_csv(file.resolve().as_posix(), sep="|")
+    df = ps.from_pandas(pd.read_csv(StringIO(data), sep="|"))
     # First compare just the strings
     actual_out = columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
@@ -225,9 +209,7 @@ def test_date_columns_equal_with_ignore_spaces_and_case(tmp_path):
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    file = tmp_path / "tmp.txt"
-    file.write_text(data)
-    df = ps.read_csv(file.resolve().as_posix(), sep="|")
+    df = ps.from_pandas(pd.read_csv(StringIO(data), sep="|"))
     # First compare just the strings
     actual_out = columns_equal(
         df.a, df.b, rel_tol=0.2, ignore_spaces=True, ignore_case=True
@@ -683,7 +665,7 @@ def test_simple_dupes_one_field_three_to_two_vals():
     assert "(First 2 Columns)" in compare.report(column_count=2)
 
 
-def test_dupes_from_real_data(tmp_path):
+def test_dupes_from_real_data():
     data = """acct_id,acct_sfx_num,trxn_post_dt,trxn_post_seq_num,trxn_amt,trxn_dt,debit_cr_cd,cash_adv_trxn_comn_cntry_cd,mrch_catg_cd,mrch_pstl_cd,visa_mail_phn_cd,visa_rqstd_pmt_svc_cd,mc_pmt_facilitator_idn_num
 100,0,2017-06-17,1537019,30.64,2017-06-15,D,CAN,5812,M2N5P5,,,0.0
 200,0,2017-06-24,1022477,485.32,2017-06-22,D,USA,4511,7114,7.0,1,
@@ -705,9 +687,7 @@ def test_dupes_from_real_data(tmp_path):
 200,0,2017-07-01,1009433,214.12,2017-06-29,D,USA,3640,20170,,A,
 100,0,2017-06-20,1607593,1.67,2017-06-19,D,CAN,5814,M2N 6L7,,,0.0
 200,0,2017-07-01,1009393,2.01,2017-06-29,D,USA,5814,22102,,F,"""
-    file = tmp_path / "tmp.txt"
-    file.write_text(data)
-    df1 = ps.read_csv(file.resolve().as_posix(), sep=",")
+    df1 = ps.from_pandas(pd.read_csv(StringIO(data), sep=","))
     df2 = df1.copy()
     compare_acct = SparkCompare(df1, df2, join_columns=["acct_id"])
     assert compare_acct.matches()
@@ -843,7 +823,7 @@ def test_integers_with_ignore_spaces_and_join_columns():
     assert compare.count_matching_rows() == 2
 
 
-def test_sample_mismatch(tmp_path):
+def test_sample_mismatch():
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
     10000001235,0.45,Michael Bluth,1,2017-01-01
@@ -862,13 +842,8 @@ def test_sample_mismatch(tmp_path):
     10000001240,123.45,George Maharis,14530.1555,2017-01-02
     """
 
-    file1 = tmp_path / "tmp1.txt"
-    file1.write_text(data1)
-    df1 = ps.read_csv(file1.resolve().as_posix(), sep=",")
-
-    file2 = tmp_path / "tmp2.txt"
-    file2.write_text(data2)
-    df2 = ps.read_csv(file2.resolve().as_posix(), sep=",")
+    df1 = ps.from_pandas(pd.read_csv(StringIO(data1), sep=","))
+    df2 = ps.from_pandas(pd.read_csv(StringIO(data2), sep=","))
 
     compare = SparkCompare(df1, df2, "acct_id")
 
@@ -885,7 +860,7 @@ def test_sample_mismatch(tmp_path):
     assert (output.name_df1 != output.name_df2).all()
 
 
-def test_all_mismatch_not_ignore_matching_cols_no_cols_matching(tmp_path):
+def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
     10000001235,0.45,Michael Bluth,1,2017-01-01
@@ -903,13 +878,8 @@ def test_all_mismatch_not_ignore_matching_cols_no_cols_matching(tmp_path):
     10000001238,1.05,Loose Seal Bluth,111,
     10000001240,123.45,George Maharis,14530.1555,2017-01-02
     """
-    file1 = tmp_path / "tmp1.txt"
-    file1.write_text(data1)
-    df1 = ps.read_csv(file1.resolve().as_posix(), sep=",")
-
-    file2 = tmp_path / "tmp2.txt"
-    file2.write_text(data2)
-    df2 = ps.read_csv(file2.resolve().as_posix(), sep=",")
+    df1 = ps.from_pandas(pd.read_csv(StringIO(data1), sep=","))
+    df2 = ps.from_pandas(pd.read_csv(StringIO(data2), sep=","))
     compare = SparkCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch()
@@ -929,7 +899,7 @@ def test_all_mismatch_not_ignore_matching_cols_no_cols_matching(tmp_path):
     assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
 
 
-def test_all_mismatch_not_ignore_matching_cols_some_cols_matching(tmp_path):
+def test_all_mismatch_not_ignore_matching_cols_some_cols_matching():
     # Columns dollar_amt and name are matching
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
         10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -948,13 +918,8 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching(tmp_path):
         10000001238,1.05,Lucille Bluth,111,
         10000001240,123.45,George Maharis,14530.1555,2017-01-02
         """
-    file1 = tmp_path / "tmp1.txt"
-    file1.write_text(data1)
-    df1 = ps.read_csv(file1.resolve().as_posix(), sep=",")
-
-    file2 = tmp_path / "tmp2.txt"
-    file2.write_text(data2)
-    df2 = ps.read_csv(file2.resolve().as_posix(), sep=",")
+    df1 = ps.from_pandas(pd.read_csv(StringIO(data1), sep=","))
+    df2 = ps.from_pandas(pd.read_csv(StringIO(data2), sep=","))
     compare = SparkCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch()
@@ -974,7 +939,7 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching(tmp_path):
     assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
 
 
-def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows(tmp_path):
+def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows():
     # Case where there are rows on either dataset which don't match up.
     # Columns dollar_amt and name are matching
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
@@ -994,13 +959,8 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows(tmp_path
     10000001237,123456,Bob Loblaw,345.12,
     10000001238,1.05,Lucille Bluth,111,
     """
-    file1 = tmp_path / "tmp1.txt"
-    file1.write_text(data1)
-    df1 = ps.read_csv(file1.resolve().as_posix(), sep=",")
-
-    file2 = tmp_path / "tmp2.txt"
-    file2.write_text(data2)
-    df2 = ps.read_csv(file2.resolve().as_posix(), sep=",")
+    df1 = ps.from_pandas(pd.read_csv(StringIO(data1), sep=","))
+    df2 = ps.from_pandas(pd.read_csv(StringIO(data2), sep=","))
     compare = SparkCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch(ignore_matching_cols=True)
@@ -1018,7 +978,7 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows(tmp_path
     assert not ("dollar_amt_df1" in output and "dollar_amt_df1" in output)
 
 
-def test_all_mismatch_ignore_matching_cols_some_calls_matching(tmp_path):
+def test_all_mismatch_ignore_matching_cols_some_calls_matching():
     # Columns dollar_amt and name are matching
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -1037,13 +997,8 @@ def test_all_mismatch_ignore_matching_cols_some_calls_matching(tmp_path):
     10000001238,1.05,Lucille Bluth,111,
     10000001240,123.45,George Maharis,14530.1555,2017-01-02
     """
-    file1 = tmp_path / "tmp1.txt"
-    file1.write_text(data1)
-    df1 = ps.read_csv(file1.resolve().as_posix(), sep=",")
-
-    file2 = tmp_path / "tmp2.txt"
-    file2.write_text(data2)
-    df2 = ps.read_csv(file2.resolve().as_posix(), sep=",")
+    df1 = ps.from_pandas(pd.read_csv(StringIO(data1), sep=","))
+    df2 = ps.from_pandas(pd.read_csv(StringIO(data2), sep=","))
     compare = SparkCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch(ignore_matching_cols=True)
@@ -1061,7 +1016,7 @@ def test_all_mismatch_ignore_matching_cols_some_calls_matching(tmp_path):
     assert not ("dollar_amt_df1" in output and "dollar_amt_df1" in output)
 
 
-def test_all_mismatch_ignore_matching_cols_no_cols_matching(tmp_path):
+def test_all_mismatch_ignore_matching_cols_no_cols_matching():
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
     10000001235,0.45,Michael Bluth,1,2017-01-01
@@ -1079,13 +1034,8 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching(tmp_path):
     10000001238,1.05,Loose Seal Bluth,111,
     10000001240,123.45,George Maharis,14530.1555,2017-01-02
     """
-    file1 = tmp_path / "tmp1.txt"
-    file1.write_text(data1)
-    df1 = ps.read_csv(file1.resolve().as_posix(), sep=",")
-
-    file2 = tmp_path / "tmp2.txt"
-    file2.write_text(data2)
-    df2 = ps.read_csv(file2.resolve().as_posix(), sep=",")
+    df1 = ps.from_pandas(pd.read_csv(StringIO(data1), sep=","))
+    df2 = ps.from_pandas(pd.read_csv(StringIO(data2), sep=","))
     compare = SparkCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch()

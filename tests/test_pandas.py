@@ -26,7 +26,7 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.util.testing import assert_series_equal
+from pandas.testing import assert_series_equal
 from pytest import raises
 
 from datacompy.pandas import *
