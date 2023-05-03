@@ -28,10 +28,12 @@ import numpy as np
 import pandas as pd
 from ordered_set import OrderedSet
 
+from datacompy.base import BaseCompare
+
 LOG = logging.getLogger(__name__)
 
 
-class PandasCompare:
+class PandasCompare(BaseCompare):
     """Comparison class to be used to compare whether two Pandas dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
@@ -91,7 +93,6 @@ class PandasCompare:
         ignore_case=False,
         cast_column_names_lower=True,
     ):
-
         self.cast_column_names_lower = cast_column_names_lower
         if on_index and join_columns is not None:
             raise Exception("Only provide on_index or join_columns")
@@ -195,9 +196,7 @@ class PandasCompare:
             LOG.info("df1 Pandas.DataFrame.equals df2")
         else:
             LOG.info("df1 does not Pandas.DataFrame.equals df2")
-        LOG.info(
-            f"Number of columns in common: {len(self.intersect_columns())}"
-        )
+        LOG.info(f"Number of columns in common: {len(self.intersect_columns())}")
         LOG.debug("Checking column overlap")
         for col in self.df1_unq_columns():
             LOG.info(f"Column in df1 and not in df2: {col}")
@@ -301,12 +300,8 @@ class PandasCompare:
             df2_cols
         ].copy()
         self.df2_unq_rows.columns = self.df2.columns
-        LOG.info(
-            f"Number of rows in df1 and not in df2: {len(self.df1_unq_rows)}"
-        )
-        LOG.info(
-            f"Number of rows in df2 and not in df1: {len(self.df2_unq_rows)}"
-        )
+        LOG.info(f"Number of rows in df1 and not in df2: {len(self.df1_unq_rows)}")
+        LOG.info(f"Number of rows in df2 and not in df1: {len(self.df2_unq_rows)}")
 
         LOG.debug("Selecting intersecting rows")
         self.intersect_rows = outer_join[outer_join["_merge"] == "both"].copy()
@@ -354,9 +349,7 @@ class PandasCompare:
                 match_rate = float(match_cnt) / row_cnt
             else:
                 match_rate = 0
-            LOG.info(
-                f"{column}: {match_cnt} / {row_cnt} ({match_rate:.2%}) match"
-            )
+            LOG.info(f"{column}: {match_cnt} / {row_cnt} ({match_rate:.2%}) match")
 
             self.column_stats.append(
                 {
@@ -644,8 +637,12 @@ class PandasCompare:
                     report += "\n\n"
 
         if min(sample_count, self.df1_unq_rows.shape[0]) > 0:
-            report += f"Sample Rows Only in {self.df1_name} (First {column_count} Columns)\n"
-            report += f"---------------------------------------{'-' * len(self.df1_name)}\n"
+            report += (
+                f"Sample Rows Only in {self.df1_name} (First {column_count} Columns)\n"
+            )
+            report += (
+                f"---------------------------------------{'-' * len(self.df1_name)}\n"
+            )
             report += "\n"
             columns = self.df1_unq_rows.columns[:column_count]
             unq_count = min(sample_count, self.df1_unq_rows.shape[0])
@@ -653,8 +650,12 @@ class PandasCompare:
             report += "\n\n"
 
         if min(sample_count, self.df2_unq_rows.shape[0]) > 0:
-            report += f"Sample Rows Only in {self.df2_name} (First {column_count} Columns)\n"
-            report += f"---------------------------------------{'-' * len(self.df2_name)}\n"
+            report += (
+                f"Sample Rows Only in {self.df2_name} (First {column_count} Columns)\n"
+            )
+            report += (
+                f"---------------------------------------{'-' * len(self.df2_name)}\n"
+            )
             report += "\n"
             columns = self.df2_unq_rows.columns[:column_count]
             unq_count = min(sample_count, self.df2_unq_rows.shape[0])

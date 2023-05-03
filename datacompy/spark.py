@@ -28,11 +28,13 @@ import pyspark.pandas as ps
 from ordered_set import OrderedSet
 from pandas.api.types import is_numeric_dtype
 
+from datacompy.base import BaseCompare
+
 ps.set_option("compute.ops_on_diff_frames", True)
 LOG = logging.getLogger(__name__)
 
 
-class SparkCompare:
+class SparkCompare(BaseCompare):
     """Comparison class to be used to compare whether two PySpark on Pandas dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
