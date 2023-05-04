@@ -1,5 +1,5 @@
 #
-# Copyright 2020 Capital One Services, LLC
+# Copyright 2023 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,9 +42,9 @@ class PandasCompare(BaseCompare):
 
     Parameters
     ----------
-    df1 : pandas ``DataFrame``
+    df1 : pandas.core.frame.DataFrame
         First dataframe to check
-    df2 : pandas ``DataFrame``
+    df2 : pandas.core.frame.DataFrame
         Second dataframe to check
     join_columns : list or str, optional
         Column(s) to join dataframes on.  If a string is passed in, that one
@@ -73,9 +73,9 @@ class PandasCompare(BaseCompare):
 
     Attributes
     ----------
-    df1_unq_rows : pandas ``DataFrame``
+    df1_unq_rows : pandas.core.frame.DataFrame
         All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : pandas ``DataFrame``
+    df2_unq_rows : pandas.core.frame.DataFrame
         All records that are only in df2 (based on a join on join_columns)
     """
 
@@ -453,7 +453,7 @@ class PandasCompare(BaseCompare):
 
         Returns
         -------
-        Pandas.DataFrame
+        pandas.core.frame.DataFrame
             A sample of the intersection dataframe, containing only the
             "pertinent" columns, for rows that don't match on the provided
             column.
@@ -483,7 +483,7 @@ class PandasCompare(BaseCompare):
 
         Returns
         -------
-        Pandas.DataFrame
+        pandas.core.frame.DataFrame
             All rows of the intersection dataframe, containing any columns, that don't match.
         """
         match_list = []
@@ -709,9 +709,9 @@ def columns_equal(
 
     Parameters
     ----------
-    col_1 : Pandas.Series
+    col_1 : pandas.core.series.Series
         The first column to look at
-    col_2 : Pandas.Series
+    col_2 : pandas.core.series.Series
         The second column
     rel_tol : float, optional
         Relative tolerance
@@ -724,7 +724,7 @@ def columns_equal(
 
     Returns
     -------
-    pandas.Series
+    pandas.core.series.Series
         A series of Boolean values.  True == the values match, False == the
         values don't match.
     """
@@ -776,14 +776,14 @@ def compare_string_and_date_columns(col_1, col_2):
 
     Parameters
     ----------
-    col_1 : Pandas.Series
+    col_1 : pandas.core.series.Series
         The first column to look at
-    col_2 : Pandas.Series
+    col_2 : pandas.core.series.Series
         The second column
 
     Returns
     -------
-    pandas.Series
+    pandas.core.series.Series
         A series of Boolean values.  True == the values match, False == the
         values don't match.
     """
@@ -808,9 +808,9 @@ def get_merged_columns(original_df, merged_df, suffix):
 
     Parameters
     ----------
-    original_df : Pandas.DataFrame
+    original_df : pandas.core.frame.DataFrame
         The original, pre-merge dataframe
-    merged_df : Pandas.DataFrame
+    merged_df : pandas.core.frame.DataFrame
         Post-merge with another dataframe, with suffixes added in.
     suffix : str
         What suffix was used to distinguish when the original dataframe was
@@ -832,7 +832,7 @@ def temp_column_name(*dataframes):
 
     Parameters
     ----------
-    dataframes : list of Pandas.DataFrame
+    dataframes : list of pandas.core.frame.DataFrame
         The DataFrames to create a temporary column name for
 
     Returns
@@ -857,9 +857,9 @@ def calculate_max_diff(col_1, col_2):
 
     Parameters
     ----------
-    col_1 : Pandas.Series
+    col_1 : pandas.core.series.Series
         The first column
-    col_2 : Pandas.Series
+    col_2 : pandas.core.series.Series
         The second column
 
     Returns
@@ -879,14 +879,14 @@ def generate_id_within_group(dataframe, join_columns):
 
     Parameters
     ----------
-    dataframe : Pandas.DataFrame
+    dataframe : pandas.core.frame.DataFrame
         The dataframe to operate on
     join_columns : list
         List of strings which are the join columns
 
     Returns
     -------
-    Pandas.Series
+    pandas.core.series.Series
         The ID column that's unique in each group.
     """
     default_value = "DATACOMPY_NULL"
