@@ -1,5 +1,5 @@
 #
-# Copyright 2020 Capital One Services, LLC
+# Copyright 2023 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Compare two Spark DataFrames
+Compare two Pandas on Spark DataFrames
 
 Originally this package was meant to provide similar functionality to
 PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
@@ -35,7 +35,7 @@ LOG = logging.getLogger(__name__)
 
 
 class SparkCompare(BaseCompare):
-    """Comparison class to be used to compare whether two PySpark on Pandas dataframes as equal.
+    """Comparison class to be used to compare whether two Pandas on Spark dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
     with unique column names. Differences between values are compared to
@@ -70,9 +70,9 @@ class SparkCompare(BaseCompare):
 
     Attributes
     ----------
-    df1_unq_rows : pandas ``DataFrame``
+    df1_unq_rows : pyspark.pandas.frame.DataFrame
         All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : pandas ``DataFrame``
+    df2_unq_rows : pyspark.pandas.frame.DataFrame
         All records that are only in df2 (based on a join on join_columns)
     """
 
@@ -471,7 +471,7 @@ class SparkCompare(BaseCompare):
 
         Returns
         -------
-        Pandas.DataFrame
+        pyspark.pandas.frame.DataFrame
             A sample of the intersection dataframe, containing only the
             "pertinent" columns, for rows that don't match on the provided
             column.
@@ -505,7 +505,7 @@ class SparkCompare(BaseCompare):
 
         Returns
         -------
-        Pandas.DataFrame
+        pyspark.pandas.frame.DataFrame
             All rows of the intersection dataframe, containing any columns, that don't match.
         """
         match_list = []
@@ -838,9 +838,9 @@ def get_merged_columns(original_df, merged_df, suffix):
 
     Parameters
     ----------
-    original_df : Pandas.DataFrame
+    original_df : pyspark.pandas.frame.DataFrame
         The original, pre-merge dataframe
-    merged_df : Pandas.DataFrame
+    merged_df : pyspark.pandas.frame.DataFrame
         Post-merge with another dataframe, with suffixes added in.
     suffix : str
         What suffix was used to distinguish when the original dataframe was
@@ -862,7 +862,7 @@ def temp_column_name(*dataframes):
 
     Parameters
     ----------
-    dataframes : list of Pandas.DataFrame
+    dataframes : list of pyspark.pandas.frame.DataFrame
         The DataFrames to create a temporary column name for
 
     Returns
@@ -909,7 +909,7 @@ def generate_id_within_group(dataframe, join_columns):
 
     Parameters
     ----------
-    dataframe : Pandas.DataFrame
+    dataframe : pyspark.pandas.frame.DataFrame
         The dataframe to operate on
     join_columns : list
         List of strings which are the join columns

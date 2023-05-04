@@ -2,9 +2,24 @@
 Installation
 ============
 
+
+``datacompy`` supports the following configuration:
+
+- python ``3.8.*`` - ``3.11.*``
+- pyspark ``3.4.0``
+- pandas ``1.3.4`` - ``1.5.3`` (Test matrix includes: ``1.5.3, 1.4.4, 1.3.5``)
+
 .. note::
 
     Moving forward ``datacompy`` will not support Python 2. Please make sure you are using Python 3.8+
+
+.. note::
+
+    pandas ``2.0`` + is not supported due to a bug: https://issues.apache.org/jira/browse/SPARK-43194
+
+.. note::
+
+    Due to compatibility issues datacompy only supports pyspark ``3.4.0`` currently
 
 
 PyPI (basic)

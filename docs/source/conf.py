@@ -21,8 +21,8 @@ import datacompy
 # -- Project information -----------------------------------------------------
 
 project = "datacompy"
-copyright = "2020, Capital One"
-author = "Ian Robertson, Dan Coates, Usman Azhar"
+copyright = "2023, Capital One"
+author = "Ian Robertson, Dan Coates, Faisal Dosani"
 
 # The full version, including alpha/beta/rc tags
 version = datacompy.__version__

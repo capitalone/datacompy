@@ -22,4 +22,10 @@ docs/source/api/
 
 #edgetest
 .edgetest/
-tmp/
+
+# tox
+.tox/
+
+# coverage
+.coverage*
+
