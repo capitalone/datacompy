@@ -1,7 +1,10 @@
+import fugue.api as fa
 import numpy as np
 import pandas as pd
+import polars as pl
+import duckdb
 import pytest
-import fugue.api as fa
+
 from datacompy import is_match
 
 
@@ -115,3 +118,74 @@ def test_is_match_spark(
     assert not is_match(
         rdf, upper_col_df, join_columns="a", cast_column_names_lower=False
     )
+
+    assert is_match(
+        spark_session.sql("SELECT 'a' AS a, 'b' AS b"),
+        spark_session.sql("SELECT 'a' AS a, 'b' AS b"),
+        join_columns="a",
+    )
+
+
+def test_is_match_polars(
+    ref_df,
+    shuffle_df,
+    float_off_df,
+    upper_case_df,
+    space_df,
+    upper_col_df,
+):
+    rdf = pl.from_pandas(ref_df)
+
+    assert is_match(rdf, shuffle_df, join_columns="a")
+
+    assert not is_match(rdf, float_off_df, join_columns="a")
+    assert not is_match(rdf, float_off_df, abs_tol=0.00001, join_columns="a")
+    assert is_match(rdf, float_off_df, abs_tol=0.001, join_columns="a")
+    assert is_match(rdf, float_off_df, abs_tol=0.001, join_columns="a")
+
+    assert not is_match(rdf, upper_case_df, join_columns="a")
+    assert is_match(rdf, upper_case_df, join_columns="a", ignore_case=True)
+
+    assert not is_match(rdf, space_df, join_columns="a")
+    assert is_match(rdf, space_df, join_columns="a", ignore_spaces=True)
+
+    assert is_match(rdf, upper_col_df, join_columns="a")
+    assert not is_match(
+        rdf, upper_col_df, join_columns="a", cast_column_names_lower=False
+    )
+
+
+def test_is_match_duckdb(
+    ref_df,
+    shuffle_df,
+    float_off_df,
+    upper_case_df,
+    space_df,
+    upper_col_df,
+):
+    with duckdb.connect():
+        rdf = duckdb.from_df(ref_df)
+
+        assert is_match(rdf, shuffle_df, join_columns="a")
+
+        assert not is_match(rdf, float_off_df, join_columns="a")
+        assert not is_match(rdf, float_off_df, abs_tol=0.00001, join_columns="a")
+        assert is_match(rdf, float_off_df, abs_tol=0.001, join_columns="a")
+        assert is_match(rdf, float_off_df, abs_tol=0.001, join_columns="a")
+
+        assert not is_match(rdf, upper_case_df, join_columns="a")
+        assert is_match(rdf, upper_case_df, join_columns="a", ignore_case=True)
+
+        assert not is_match(rdf, space_df, join_columns="a")
+        assert is_match(rdf, space_df, join_columns="a", ignore_spaces=True)
+
+        assert is_match(rdf, upper_col_df, join_columns="a")
+        assert not is_match(
+            rdf, upper_col_df, join_columns="a", cast_column_names_lower=False
+        )
+
+        assert is_match(
+            duckdb.sql("SELECT 'a' AS a, 'b' AS b"),
+            duckdb.sql("SELECT 'a' AS a, 'b' AS b"),
+            join_columns="a",
+        )
