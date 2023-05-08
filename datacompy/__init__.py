@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "0.9.0"
+__version__ = "1.0.0"
 
 from datacompy.core import *
+from datacompy.fuguecompare import is_match
 from datacompy.sparkcompare import NUMERIC_SPARK_TYPES, SparkCompare
