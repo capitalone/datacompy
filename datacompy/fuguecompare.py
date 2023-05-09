@@ -1,5 +1,5 @@
 #
-# Copyright 2020 Capital One Services, LLC
+# Copyright 2023 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -77,6 +77,14 @@ def is_match(
         Flag to ignore the case of string columns
     cast_column_names_lower: bool, optional
         Boolean indicator that controls of column names will be cast into lower case
+    parallelism: int, optional
+        An integer representing the amount of parallelism. Entering a value for this
+        will force to use of Fugue over just vanilla Pandas
+
+    Returns
+    -------
+    bool
+        Returns boolean as to if the DataFrames match.
     """
     if (
         isinstance(df1, pd.DataFrame)
