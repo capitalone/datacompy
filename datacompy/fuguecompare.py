@@ -44,6 +44,7 @@ def is_match(
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
     parallelism: Optional[int] = None,
+    strict_schema: bool = False,
 ) -> bool:
     """Check whether two dataframes match.
 
@@ -80,6 +81,8 @@ def is_match(
     parallelism: int, optional
         An integer representing the amount of parallelism. Entering a value for this
         will force to use of Fugue over just vanilla Pandas
+    strict_schema: bool, optional
+        The schema must match exactly if set to ``True``. This includes the names and types. Allows for a fast fail.
 
     Returns
     -------
@@ -113,8 +116,6 @@ def is_match(
         hash_cols = [join_columns]
     else:
         hash_cols = join_columns
-    # ensure all cols exist
-    hash_cols = tdf1.schema.extract(hash_cols).names
 
     if cast_column_names_lower:
         tdf1 = tdf1.rename(
@@ -125,7 +126,12 @@ def is_match(
         )
         hash_cols = [col.lower() for col in hash_cols]
 
-    if tdf1.schema != tdf2.schema:
+    if strict_schema:
+        if tdf1.schema != tdf2.schema:
+            return False
+
+    # check that hash columns exist
+    if hash_cols not in tdf1.schema or hash_cols not in tdf2.schema:
         return False
 
     all_cols = tdf1.schema.names
