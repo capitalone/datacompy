@@ -2077,7 +2077,7 @@ def text_alignment_validator(
 
                 if not match:
                     raise AssertionError(
-                        'Did not find a match for line: "{}"'.format(line)
+                        f'Did not find a match for line: "{line}"'
                     )
 
                 for n in left_indices:

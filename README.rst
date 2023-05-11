@@ -119,6 +119,12 @@ Things that are happening behind the scenes
 Spark Detail
 ============
 
+.. important::
+
+    With version ``v0.9.0`` SparkCompare now uses Null Safe (``<=>``) comparisons
+
+..
+
 DataComPy's ``SparkCompare`` class will join two dataframes either on a list of join
 columns. It has the capability to map column names that may be different in each
 dataframe, including in the join columns. You are responsible for creating the

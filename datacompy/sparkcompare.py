@@ -67,7 +67,9 @@ def _is_comparable(type1, type2):
         True if both data types are comparable
     """
 
-    return type1 == type2 or (type1 in NUMERIC_SPARK_TYPES and type2 in NUMERIC_SPARK_TYPES)
+    return type1 == type2 or (
+        type1 in NUMERIC_SPARK_TYPES and type2 in NUMERIC_SPARK_TYPES
+    )
 
 
 class SparkCompare:
@@ -218,7 +220,9 @@ class SparkCompare:
         """list[str]: Get columns to be compared in both dataframes (all
         columns in both excluding the join key(s)"""
         return [
-            column for column in list(self.columns_in_both) if column not in self._join_column_names
+            column
+            for column in list(self.columns_in_both)
+            if column not in self._join_column_names
         ]
 
     @property
@@ -269,26 +273,22 @@ class SparkCompare:
         )
 
     def _print_columns_summary(self, myfile):
-        """ Prints the column summary details"""
+        """Prints the column summary details"""
         print("\n****** Column Summary ******", file=myfile)
         print(
-            "Number of columns in common with matching schemas: {}".format(
-                len(self._columns_with_matching_schema())
-            ),
+            f"Number of columns in common with matching schemas: {len(self._columns_with_matching_schema())}",
             file=myfile,
         )
         print(
-            "Number of columns in common with schema differences: {}".format(
-                len(self._columns_with_schemadiff())
-            ),
+            f"Number of columns in common with schema differences: {len(self._columns_with_schemadiff())}",
             file=myfile,
         )
         print(
-            "Number of columns in base but not compare: {}".format(len(self.columns_only_base)),
+            f"Number of columns in base but not compare: {len(self.columns_only_base)}",
             file=myfile,
         )
         print(
-            "Number of columns in compare but not base: {}".format(len(self.columns_only_compare)),
+            f"Number of columns in compare but not base: {len(self.columns_only_compare)}",
             file=myfile,
         )
 
@@ -303,7 +303,7 @@ class SparkCompare:
             df = self.compare_df
         else:
             raise ValueError(
-                'base_or_compare must be BASE or COMPARE, but was "{}"'.format(base_or_compare)
+                f'base_or_compare must be BASE or COMPARE, but was "{base_or_compare}"'
             )
 
         # If there are no columns only in this dataframe, don't display this section
@@ -311,9 +311,9 @@ class SparkCompare:
             return
 
         max_length = max([len(col) for col in columns] + [11])
-        format_pattern = "{{:{max}s}}".format(max=max_length)
+        format_pattern = f"{{:{max_length}s}}"
 
-        print("\n****** Columns In {} Only ******".format(base_or_compare.title()), file=myfile)
+        print(f"\n****** Columns In {base_or_compare.title()} Only ******", file=myfile)
         print((format_pattern + "  Dtype").format("Column Name"), file=myfile)
         print("-" * max_length + "  -------------", file=myfile)
 
@@ -322,7 +322,7 @@ class SparkCompare:
             print((format_pattern + "  {:13s}").format(column, col_type), file=myfile)
 
     def _columns_with_matching_schema(self):
-        """ This function will identify the columns which has matching schema"""
+        """This function will identify the columns which has matching schema"""
         col_schema_match = {}
         base_columns_dict = dict(self.base_df.dtypes)
         compare_columns_dict = dict(self.compare_df.dtypes)
@@ -335,7 +335,7 @@ class SparkCompare:
         return col_schema_match
 
     def _columns_with_schemadiff(self):
-        """ This function will identify the columns which has different schema"""
+        """This function will identify the columns which has different schema"""
         col_schema_diff = {}
         base_columns_dict = dict(self.base_df.dtypes)
         compare_columns_dict = dict(self.compare_df.dtypes)
@@ -344,7 +344,8 @@ class SparkCompare:
             if base_row in compare_columns_dict:
                 if base_type not in compare_columns_dict.get(base_row):
                     col_schema_diff[base_row] = dict(
-                        base_type=base_type, compare_type=compare_columns_dict.get(base_row)
+                        base_type=base_type,
+                        compare_type=compare_columns_dict.get(base_row),
                     )
         return col_schema_diff
 
@@ -372,7 +373,7 @@ class SparkCompare:
             base_rows.createOrReplaceTempView("baseRows")
             self.base_df.createOrReplaceTempView("baseTable")
             join_condition = " AND ".join(
-                ["A." + name + "=B." + name for name in self._join_column_names]
+                ["A." + name + "<=>B." + name for name in self._join_column_names]
             )
             sql_query = "select A.* from baseTable as A, baseRows as B where {}".format(
                 join_condition
@@ -392,10 +393,12 @@ class SparkCompare:
             compare_rows.createOrReplaceTempView("compareRows")
             self.compare_df.createOrReplaceTempView("compareTable")
             where_condition = " AND ".join(
-                ["A." + name + "=B." + name for name in self._join_column_names]
+                ["A." + name + "<=>B." + name for name in self._join_column_names]
             )
-            sql_query = "select A.* from compareTable as A, compareRows as B where {}".format(
-                where_condition
+            sql_query = (
+                "select A.* from compareTable as A, compareRows as B where {}".format(
+                    where_condition
+                )
             )
             self._rows_only_compare = self.spark.sql(sql_query)
 
@@ -443,19 +446,27 @@ class SparkCompare:
         full_joined_dataframe.createOrReplaceTempView("full_matched_table")
 
         select_statement = self._generate_select_statement(False)
-        select_query = """SELECT {} FROM full_matched_table A""".format(select_statement)
+        select_query = """SELECT {} FROM full_matched_table A""".format(
+            select_statement
+        )
 
-        self._all_matched_rows = self.spark.sql(select_query).orderBy(self._join_column_names)
+        self._all_matched_rows = self.spark.sql(select_query).orderBy(
+            self._join_column_names
+        )
         self._all_matched_rows.createOrReplaceTempView("matched_table")
 
-        where_cond = " OR ".join(["A." + name + "_match= False" for name in self.columns_compared])
+        where_cond = " OR ".join(
+            ["A." + name + "_match= False" for name in self.columns_compared]
+        )
         mismatch_query = """SELECT * FROM matched_table A WHERE {}""".format(where_cond)
-        self._all_rows_mismatched = self.spark.sql(mismatch_query).orderBy(self._join_column_names)
+        self._all_rows_mismatched = self.spark.sql(mismatch_query).orderBy(
+            self._join_column_names
+        )
 
     def _get_or_create_joined_dataframe(self):
         if self._joined_dataframe is None:
             join_condition = " AND ".join(
-                ["A." + name + "=B." + name for name in self._join_column_names]
+                ["A." + name + "<=>B." + name for name in self._join_column_names]
             )
             select_statement = self._generate_select_statement(match_data=True)
 
@@ -479,26 +490,31 @@ class SparkCompare:
 
     def _print_num_of_rows_with_column_equality(self, myfile):
         # match_dataframe contains columns from both dataframes with flag to indicate if columns matched
-        match_dataframe = self._get_or_create_joined_dataframe().select(*self.columns_compared)
+        match_dataframe = self._get_or_create_joined_dataframe().select(
+            *self.columns_compared
+        )
         match_dataframe.createOrReplaceTempView("matched_df")
 
         where_cond = " AND ".join(
-            ["A." + name + "=" + str(MatchType.MATCH.value) for name in self.columns_compared]
+            [
+                "A." + name + "=" + str(MatchType.MATCH.value)
+                for name in self.columns_compared
+            ]
         )
-        match_query = r"""SELECT count(*) AS row_count FROM matched_df A WHERE {}""".format(
-            where_cond
+        match_query = (
+            r"""SELECT count(*) AS row_count FROM matched_df A WHERE {}""".format(
+                where_cond
+            )
         )
         all_rows_matched = self.spark.sql(match_query)
         matched_rows = all_rows_matched.head()[0]
 
         print("\n****** Row Comparison ******", file=myfile)
         print(
-            "Number of rows with some columns unequal: {}".format(
-                self.common_row_count - matched_rows
-            ),
+            f"Number of rows with some columns unequal: {self.common_row_count - matched_rows}",
             file=myfile,
         )
-        print("Number of rows with all columns equal: {}".format(matched_rows), file=myfile)
+        print(f"Number of rows with all columns equal: {matched_rows}", file=myfile)
 
     def _populate_columns_match_dict(self):
         """
@@ -511,17 +527,23 @@ class SparkCompare:
         returns: None
         """
 
-        match_dataframe = self._get_or_create_joined_dataframe().select(*self.columns_compared)
+        match_dataframe = self._get_or_create_joined_dataframe().select(
+            *self.columns_compared
+        )
 
         def helper(c):
             # Create a predicate for each match type, comparing column values to the match type value
             predicates = [F.col(c) == k.value for k in MatchType]
             # Create a tuple(number of match types found for each match type in this column)
-            return F.struct([F.lit(F.sum(pred.cast("integer"))) for pred in predicates]).alias(c)
+            return F.struct(
+                [F.lit(F.sum(pred.cast("integer"))) for pred in predicates]
+            ).alias(c)
 
         # For each column, create a single tuple. This tuple's values correspond to the number of times
         # each match type appears in that column
-        match_data = match_dataframe.agg(*[helper(col) for col in self.columns_compared]).collect()
+        match_data = match_dataframe.agg(
+            *[helper(col) for col in self.columns_compared]
+        ).collect()
         match_data = match_data[0]
 
         for c in self.columns_compared:
@@ -531,8 +553,10 @@ class SparkCompare:
         if self._known_differences:
             match_type_comparison = ""
             for k in MatchType:
-                match_type_comparison += " WHEN (A.{name}={match_value}) THEN '{match_name}'".format(
-                    name=name, match_value=str(k.value), match_name=k.name
+                match_type_comparison += (
+                    " WHEN (A.{name}={match_value}) THEN '{match_name}'".format(
+                        name=name, match_value=str(k.value), match_name=k.name
+                    )
                 )
             return "A.{name}_base, A.{name}_compare, (CASE WHEN (A.{name}={match_failure}) THEN False ELSE True END) AS {name}_match, (CASE {match_type_comparison} ELSE 'UNDEFINED' END) AS {name}_match_type ".format(
                 name=name,
@@ -605,27 +629,21 @@ class SparkCompare:
         compare_df_with_dup_cnt = self._original_compare_df.count()
 
         print("\n****** Row Summary ******", file=myfile)
-        print("Number of rows in common: {}".format(self.common_row_count), file=myfile)
+        print(f"Number of rows in common: {self.common_row_count}", file=myfile)
         print(
-            "Number of rows in base but not compare: {}".format(
-                base_df_cnt - self.common_row_count
-            ),
+            f"Number of rows in base but not compare: {base_df_cnt - self.common_row_count}",
             file=myfile,
         )
         print(
-            "Number of rows in compare but not base: {}".format(
-                compare_df_cnt - self.common_row_count
-            ),
+            f"Number of rows in compare but not base: {compare_df_cnt - self.common_row_count}",
             file=myfile,
         )
         print(
-            "Number of duplicate rows found in base: {}".format(base_df_with_dup_cnt - base_df_cnt),
+            f"Number of duplicate rows found in base: {base_df_with_dup_cnt - base_df_cnt}",
             file=myfile,
         )
         print(
-            "Number of duplicate rows found in compare: {}".format(
-                compare_df_with_dup_cnt - compare_df_cnt
-            ),
+            f"Number of duplicate rows found in compare: {compare_df_with_dup_cnt - compare_df_cnt}",
             file=myfile,
         )
 
@@ -653,7 +671,10 @@ class SparkCompare:
             file=myfile,
         )
         print(
-            "-" * base_name_max + "  " + "-" * compare_name_max + "  -------------  -------------",
+            "-" * base_name_max
+            + "  "
+            + "-" * compare_name_max
+            + "  -------------  -------------",
             file=myfile,
         )
 
@@ -662,7 +683,10 @@ class SparkCompare:
 
             print(
                 (format_pattern + "  {:13s}  {:13s}").format(
-                    base_column, compare_column, types["base_type"], types["compare_type"]
+                    base_column,
+                    compare_column,
+                    types["base_type"],
+                    types["compare_type"],
                 ),
                 file=myfile,
             )
@@ -705,36 +729,24 @@ class SparkCompare:
 
         if self._known_differences:
             print(
-                "Number of columns compared with unexpected differences in some values: {}".format(
-                    len(columns_with_mismatches)
-                ),
+                f"Number of columns compared with unexpected differences in some values: {len(columns_with_mismatches)}",
                 file=myfile,
             )
             print(
-                "Number of columns compared with all values equal but known differences found: {}".format(
-                    len(self.columns_compared)
-                    - len(columns_with_mismatches)
-                    - len(columns_fully_matching)
-                ),
+                f"Number of columns compared with all values equal but known differences found: {len(self.columns_compared) - len(columns_with_mismatches) - len(columns_fully_matching)}",
                 file=myfile,
             )
             print(
-                "Number of columns compared with all values completely equal: {}".format(
-                    len(columns_fully_matching)
-                ),
+                f"Number of columns compared with all values completely equal: {len(columns_fully_matching)}",
                 file=myfile,
             )
         else:
             print(
-                "Number of columns compared with some values unequal: {}".format(
-                    len(columns_with_mismatches)
-                ),
+                f"Number of columns compared with some values unequal: {len(columns_with_mismatches)}",
                 file=myfile,
             )
             print(
-                "Number of columns compared with all values equal: {}".format(
-                    len(columns_fully_matching)
-                ),
+                f"Number of columns compared with all values equal: {len(columns_fully_matching)}",
                 file=myfile,
             )
 
@@ -748,14 +760,19 @@ class SparkCompare:
         if self.show_all_columns:
             base_name_max = max([len(key) for key in self.columns_match_dict] + [16])
             compare_name_max = max(
-                [len(self._base_to_compare_name(key)) for key in self.columns_match_dict] + [19]
+                [
+                    len(self._base_to_compare_name(key))
+                    for key in self.columns_match_dict
+                ]
+                + [19]
             )
 
         # For columns with any differences, what are the longest base and compare column name lengths (with minimums)?
         else:
             base_name_max = max([len(key) for key in columns_with_any_diffs] + [16])
             compare_name_max = max(
-                [len(self._base_to_compare_name(key)) for key in columns_with_any_diffs] + [19]
+                [len(self._base_to_compare_name(key)) for key in columns_with_any_diffs]
+                + [19]
             )
 
         """ list of (header, condition, width, align)
@@ -790,9 +807,14 @@ class SparkCompare:
                 for h in headers_columns_unequal_valid
             ]
         )
-        print(format_pattern.format(*[h[0] for h in headers_columns_unequal_valid]), file=myfile)
         print(
-            format_pattern.format(*["-" * len(h[0]) for h in headers_columns_unequal_valid]),
+            format_pattern.format(*[h[0] for h in headers_columns_unequal_valid]),
+            file=myfile,
+        )
+        print(
+            format_pattern.format(
+                *["-" * len(h[0]) for h in headers_columns_unequal_valid]
+            ),
             file=myfile,
         )
 
@@ -820,7 +842,8 @@ class SparkCompare:
                 if self.match_rates:
                     match_rate = 100 * (
                         1
-                        - (column_values[MatchType.MISMATCH.value] + 0.0) / self.common_row_count
+                        - (column_values[MatchType.MISMATCH.value] + 0.0)
+                        / self.common_row_count
                         + 0.0
                     )
                     output_row.append("{:02.5f}".format(match_rate))

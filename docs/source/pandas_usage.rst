@@ -254,7 +254,7 @@ Caveats
   initializing the ``Compare`` class, based on what you know about the data.
 - The duplicate matching is somewhat naïve when it comes to picking which rows to match when there
   are duplicates.  Datacompy sorts by the other fields before generating the temporary ID, then matches
-  directly on that field.  If there are a lot of duplicates you may need to join on more columns, or
+  directly on that field.  If there are a lot of duplicates you may need to join on more columns, or
   handle them separately.
 
 Limitations
