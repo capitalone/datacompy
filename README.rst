@@ -121,7 +121,7 @@ Spark Detail
 
 .. important::
 
-    With version ``v0.8.5`` SparkCompare now uses Null Safe (``<=>``) comparisons
+    With version ``v0.9.0`` SparkCompare now uses Null Safe (``<=>``) comparisons
 
 ..
 
