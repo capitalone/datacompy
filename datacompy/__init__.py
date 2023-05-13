@@ -15,6 +15,6 @@
 
 __version__ = "0.10.0"
 
-from datacompy.fuguecompare import is_match
+from datacompy.fugue import is_match
 from datacompy.pandas import PandasCompare
 from datacompy.spark import SparkCompare

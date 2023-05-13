@@ -30,7 +30,6 @@ from pandas.api.types import is_numeric_dtype
 
 from datacompy.base import BaseCompare
 
-ps.set_option("compute.ops_on_diff_frames", True)
 LOG = logging.getLogger(__name__)
 
 
@@ -89,6 +88,7 @@ class SparkCompare(BaseCompare):
         ignore_case=False,
         cast_column_names_lower=True,
     ):
+        ps.set_option("compute.ops_on_diff_frames", True)
         self.cast_column_names_lower = cast_column_names_lower
         if isinstance(join_columns, (str, int, float)):
             self.join_columns = [

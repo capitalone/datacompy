@@ -26,7 +26,7 @@ import pandas as pd
 import pyarrow as pa
 from fugue import AnyDataFrame
 
-from .core import Compare
+from .pandas import PandasCompare
 
 LOG = logging.getLogger(__name__)
 HASH_COL = "__datacompy__hash__"
@@ -95,7 +95,7 @@ def is_match(
         and parallelism is None  # user did not specify parallelism
         and fa.get_current_parallelism() == 1  # currently on a local execution engine
     ):
-        comp = Compare(
+        comp = PandasCompare(
             df1=df1,
             df2=df2,
             join_columns=join_columns,
@@ -183,7 +183,7 @@ def is_match(
             .sort_values(all_cols)
             .reset_index(drop=True)
         )
-        comp = Compare(
+        comp = PandasCompare(
             df1=df1,
             df2=df2,
             join_columns=join_columns,
