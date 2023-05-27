@@ -760,7 +760,7 @@ def columns_equal(
                     compare = compare_string_and_date_columns(col_1, col_2)
                 else:
                     compare = pd.Series(
-                        (col_1 == col_2) | (col_1.isnull() & col_2.isnull())
+                        ((col_1 == col_2).combine_first(col_1.isna() & col_2.isna())) | (col_1.isnull() & col_2.isnull())
                     )
             except:
                 # Blanket exception should just return all False

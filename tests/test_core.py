@@ -61,8 +61,8 @@ NULL|NULL|True"""
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
-
-def test_string_columns_equal():
+@pytest.mark.parametrize("use_pandas_strings", [True, False])
+def test_string_columns_equal(use_pandas_strings):
     data = """a|b|expected
 Hi|Hi|True
 Yo|Yo|True
@@ -78,6 +78,11 @@ something||False
 |something|False
 ||True"""
     df = pd.read_csv(io.StringIO(data), sep="|")
+    if use_pandas_strings:
+        df['a'] = df['a'].astype("string")
+        df['b'] = df['b'].astype("string")
+        df["expected"] = df["expected"].astype("boolean")
+
     actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -1293,3 +1298,31 @@ def test_save_html(mock_render):
         compare.report(html_file="test.html")
         assert mock_render.call_count == 4
         m.assert_called_with("test.html", "w")
+
+@pytest.mark.parametrize("use_strings", [True, False])
+def test_pandas_string_types_with_na(use_strings):
+    """When comparing pandas strings, we expect pd.NA to be match another pd.NA"""
+    df_two_na = pd.DataFrame({"a": [pd.NA, pd.NA]})
+    df_one_na = pd.DataFrame({"a": ["A", pd.NA]})
+    df_no_na = pd.DataFrame({"a": ["A", "A"]})
+
+    if use_strings:
+        df_two_na = df_two_na.astype("string")
+        df_one_na = df_one_na.astype("string")
+        df_no_na = df_no_na.astype("string")
+
+    # when we compare NA to a non-NA value, expect a mismatch
+    cmp_str_two_to_none = datacompy.Compare(df1=df_two_na, df2=df_no_na, on_index=True)
+    assert cmp_str_two_to_none.count_matching_rows() == 0
+
+    cmp_str_two_to_one = datacompy.Compare(df1=df_two_na, df2=df_one_na, on_index=True)
+    assert cmp_str_two_to_one.count_matching_rows() == 1
+
+    cmp_str_one_to_none = datacompy.Compare(df1=df_one_na, df2=df_no_na, on_index=True)
+    assert cmp_str_one_to_none.count_matching_rows() == 1
+
+    # matching on identical dataframes should return match for each row
+    for df in [df_no_na, df_one_na, df_two_na]:
+        cmp = datacompy.Compare(df1=df, df2=df, on_index=True)
+        assert cmp.count_matching_rows() == len(df)
+
