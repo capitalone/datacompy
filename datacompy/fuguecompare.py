@@ -26,7 +26,7 @@ import pandas as pd
 import pyarrow as pa
 from fugue import AnyDataFrame
 
-from .core import Compare
+from .core import Compare, render
 
 LOG = logging.getLogger(__name__)
 HASH_COL = "__datacompy__hash__"
@@ -129,6 +129,131 @@ def is_match(
         return False
 
     return all(matches)
+
+
+def report(
+    df1: AnyDataFrame,
+    df2: AnyDataFrame,
+    join_columns: Union[str, List[str]],
+    abs_tol: float = 0,
+    rel_tol: float = 0,
+    df1_name: str = "df1",
+    df2_name: str = "df2",
+    ignore_spaces: bool = False,
+    ignore_case: bool = False,
+    cast_column_names_lower: bool = True,
+    sample_count=10,
+    column_count=10,
+    html_file=None,
+    parallelism: Optional[int] = None,
+) -> None:
+    """Returns a string representation of a report.  The representation can
+    then be printed or saved to a file.
+
+    Both df1 and df2 should be dataframes containing all of the join_columns,
+    with unique column names. Differences between values are compared to
+    abs_tol + rel_tol * abs(df2['value']).
+
+    Parameters
+    ----------
+    df1 : ``AnyDataFrame``
+        First dataframe to check
+    df2 : ``AnyDataFrame``
+        Second dataframe to check
+    join_columns : list or str, optional
+        Column(s) to join dataframes on.  If a string is passed in, that one
+        column will be used.
+    abs_tol : float, optional
+        Absolute tolerance between two values.
+    rel_tol : float, optional
+        Relative tolerance between two values.
+    df1_name : str, optional
+        A string name for the first dataframe.  This allows the reporting to
+        print out an actual name instead of "df1", and allows human users to
+        more easily track the dataframes.
+    df2_name : str, optional
+        A string name for the second dataframe
+    ignore_spaces : bool, optional
+        Flag to strip whitespace (including newlines) from string columns (including any join
+        columns)
+    ignore_case : bool, optional
+        Flag to ignore the case of string columns
+    cast_column_names_lower: bool, optional
+        Boolean indicator that controls of column names will be cast into lower case
+    parallelism: int, optional
+        An integer representing the amount of parallelism. Entering a value for this
+        will force to use of Fugue over just vanilla Pandas
+    strict_schema: bool, optional
+        The schema must match exactly if set to ``True``. This includes the names and types. Allows for a fast fail.
+    sample_count : int, optional
+        The number of sample records to return.  Defaults to 10.
+    column_count : int, optional
+        The number of columns to display in the sample records output.  Defaults to 10.
+    html_file : str, optional
+        HTML file name to save report output to. If ``None`` the file creation will be skipped.
+
+
+    Returns
+    -------
+    str
+        The report, formatted kinda nicely.
+    """
+    if (
+        isinstance(df1, pd.DataFrame)
+        and isinstance(df2, pd.DataFrame)
+        and parallelism is None  # user did not specify parallelism
+        and fa.get_current_parallelism() == 1  # currently on a local execution engine
+    ):
+        comp = Compare(
+            df1=df1,
+            df2=df2,
+            join_columns=join_columns,
+            abs_tol=abs_tol,
+            rel_tol=rel_tol,
+            df1_name=df1_name,
+            df2_name=df2_name,
+            ignore_spaces=ignore_spaces,
+            ignore_case=ignore_case,
+            cast_column_names_lower=cast_column_names_lower,
+        )
+        return comp.report(
+            sample_count=sample_count, column_count=column_count, html_file=html_file
+        )
+
+    res = _distributed_compare(
+        df1=df1,
+        df2=df2,
+        join_columns=join_columns,
+        return_obj_func=_get_compare_result,
+        abs_tol=abs_tol,
+        rel_tol=rel_tol,
+        df1_name=df1_name,
+        df2_name=df2_name,
+        ignore_spaces=ignore_spaces,
+        ignore_case=ignore_case,
+        cast_column_names_lower=cast_column_names_lower,
+        parallelism=parallelism,
+        strict_schema=False,
+    )
+
+    first = res[0]
+
+    def sum_shape0(col: str) -> str:
+        return str(sum(x[col][0] for x in res))
+
+    # Header
+    rpt = render("header.txt")
+    df_header = pd.DataFrame(
+        {
+            "DataFrame": [df1_name, df2_name],
+            "Columns": [first["df1_shape"][1], first["df2_shape"][1]],
+            "Rows": [sum_shape0("df1_shape"), sum_shape0("df1_shape")],
+        }
+    )
+    rpt += df_header[["DataFrame", "Columns", "Rows"]].to_string()
+    rpt += "\n\n"
+
+    return rpt
 
 
 def _distributed_compare(
@@ -285,6 +410,39 @@ def _distributed_compare(
         )
     )
     return [pickle.loads(row[0]) for row in objs]
+
+
+def _get_compare_result(compare: Compare) -> Dict[str, Any]:
+    return {
+        "match": compare.matches(),
+        "count_matching_rows": compare.count_matching_rows(),
+        "match_count": compare.match_count,
+        "match_perc": compare.match_perc,
+        "match_cols": compare.match_cols,
+        "mismatch_count": compare.mismatch_count,
+        "mismatch_perc": compare.mismatch_perc,
+        "mismatch_cols": compare.mismatch_cols,
+        "df1_shape": compare.df1.shape,
+        "df1_unq_count": compare.df1_unq_count,
+        "df1_unq_perc": compare.df1_unq_perc,
+        "df1_unq_cols": compare.df1_unq_cols,
+        "df2_shape": compare.df2.shape,
+        "df2_unq_count": compare.df2_unq_count,
+        "df2_unq_perc": compare.df2_unq_perc,
+        "df2_unq_cols": compare.df2_unq_cols,
+        "common_cols": compare.common_cols,
+        "intersect_rows_shape": compare.intersect_rows.shape,
+        "df1_unq_rows": compare.df1_unq_rows.shape,
+        "df2_unq_rows": compare.df2_unq_rows.shape,
+        "abs_tol": compare.abs_tol,
+        "rel_tol": compare.rel_tol,
+        "df1_name": compare.df1_name,
+        "df2_name": compare.df2_name,
+        "ignore_spaces": compare.ignore_spaces,
+        "ignore_case": compare.ignore_case,
+        "cast_column_names_lower": compare.cast_column_names_lower,
+        "_any_dupes": compare._any_dupes,
+    }
 
 
 class _StrictSchemaError(Exception):
