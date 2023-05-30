@@ -19,7 +19,7 @@ Compare two DataFrames that are supported by Fugue
 
 import logging
 import pickle
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import fugue.api as fa
 import pandas as pd
@@ -109,6 +109,90 @@ def is_match(
         )
         return comp.matches()
 
+    try:
+        matches = _distributed_compare(
+            df1=df1,
+            df2=df2,
+            join_columns=join_columns,
+            return_obj_func=lambda comp: comp.matches(),
+            abs_tol=abs_tol,
+            rel_tol=rel_tol,
+            df1_name=df1_name,
+            df2_name=df2_name,
+            ignore_spaces=ignore_spaces,
+            ignore_case=ignore_case,
+            cast_column_names_lower=cast_column_names_lower,
+            parallelism=parallelism,
+            strict_schema=strict_schema,
+        )
+    except _StrictSchemaError:
+        return False
+
+    return all(matches)
+
+
+def _distributed_compare(
+    df1: AnyDataFrame,
+    df2: AnyDataFrame,
+    join_columns: Union[str, List[str]],
+    return_obj_func: Callable[[Compare], Any],
+    abs_tol: float = 0,
+    rel_tol: float = 0,
+    df1_name: str = "df1",
+    df2_name: str = "df2",
+    ignore_spaces: bool = False,
+    ignore_case: bool = False,
+    cast_column_names_lower: bool = True,
+    parallelism: Optional[int] = None,
+    strict_schema: bool = False,
+) -> List[Any]:
+    """Compare the data distributedly using the core Compare class
+
+    Both df1 and df2 should be dataframes containing all of the join_columns,
+    with unique column names. Differences between values are compared to
+    abs_tol + rel_tol * abs(df2['value']).
+
+    Parameters
+    ----------
+    df1 : ``AnyDataFrame``
+        First dataframe to check
+    df2 : ``AnyDataFrame``
+        Second dataframe to check
+    join_columns : list or str
+        Column(s) to join dataframes on.  If a string is passed in, that one
+        column will be used.
+    return_obj_func : Callable[[Compare], Any]
+        A function that takes in a Compare object and returns a picklable value.
+        It determines what is returned from the distributed compare.
+    abs_tol : float, optional
+        Absolute tolerance between two values.
+    rel_tol : float, optional
+        Relative tolerance between two values.
+    df1_name : str, optional
+        A string name for the first dataframe.  This allows the reporting to
+        print out an actual name instead of "df1", and allows human users to
+        more easily track the dataframes.
+    df2_name : str, optional
+        A string name for the second dataframe
+    ignore_spaces : bool, optional
+        Flag to strip whitespace (including newlines) from string columns (including any join
+        columns)
+    ignore_case : bool, optional
+        Flag to ignore the case of string columns
+    cast_column_names_lower: bool, optional
+        Boolean indicator that controls of column names will be cast into lower case
+    parallelism: int, optional
+        An integer representing the amount of parallelism. Entering a value for this
+        will force to use of Fugue over just vanilla Pandas
+    strict_schema: bool, optional
+        The schema must match exactly if set to ``True``. This includes the names and types. Allows for a fast fail.
+
+    Returns
+    -------
+    List[Any]
+        Returns the list of objects returned from the return_obj_func
+    """
+
     tdf1 = fa.as_fugue_df(df1)
     tdf2 = fa.as_fugue_df(df2)
 
@@ -128,11 +212,11 @@ def is_match(
 
     if strict_schema:
         if tdf1.schema != tdf2.schema:
-            return False
+            raise _StrictSchemaError()
 
     # check that hash columns exist
-    if hash_cols not in tdf1.schema or hash_cols not in tdf2.schema:
-        return False
+    assert hash_cols in tdf1.schema, f"{hash_cols} not found in {tdf1.schema}"
+    assert hash_cols in tdf2.schema, f"{hash_cols} not found in {tdf2.schema}"
 
     all_cols = tdf1.schema.names
     str_cols = set(f.name for f in tdf1.schema.fields if pa.types.is_string(f.type))
@@ -193,11 +277,17 @@ def is_match(
             df2_name=df2_name,
             cast_column_names_lower=False,
         )
-        return [[comp.matches()]]
+        return [[pickle.dumps(return_obj_func(comp))]]
 
-    matches = fa.as_pandas(
+    objs = fa.as_array(
         fa.transform(
-            ser, _comp, schema="match:bool", partition=dict(by="key", num=bucket)
+            ser, _comp, schema="obj:binary", partition=dict(by="key", num=bucket)
         )
     )
-    return matches.match.all()
+    return [pickle.loads(row[0]) for row in objs]
+
+
+class _StrictSchemaError(Exception):
+    """Exception raised when strict schema is enabled and the schemas do not match"""
+
+    pass

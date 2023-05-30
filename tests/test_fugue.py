@@ -23,7 +23,7 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
-
+from pytest import raises
 from datacompy import is_match
 
 
@@ -100,13 +100,15 @@ def test_is_match_native(
     )
 
     assert is_match(ref_df, upper_col_df, join_columns="a", parallelism=2)
-    assert not is_match(
-        ref_df,
-        upper_col_df,
-        join_columns="a",
-        cast_column_names_lower=False,
-        parallelism=2,
-    )
+
+    with raises(AssertionError):
+        is_match(
+            ref_df,
+            upper_col_df,
+            join_columns="a",
+            cast_column_names_lower=False,
+            parallelism=2,
+        )
 
 
 def test_is_match_spark(
@@ -134,9 +136,9 @@ def test_is_match_spark(
     assert is_match(rdf, space_df, join_columns="a", ignore_spaces=True)
 
     assert is_match(rdf, upper_col_df, join_columns="a")
-    assert not is_match(
-        rdf, upper_col_df, join_columns="a", cast_column_names_lower=False
-    )
+
+    with raises(AssertionError):
+        is_match(rdf, upper_col_df, join_columns="a", cast_column_names_lower=False)
 
     assert is_match(
         spark_session.sql("SELECT 'a' AS a, 'b' AS b"),
@@ -169,9 +171,8 @@ def test_is_match_polars(
     assert is_match(rdf, space_df, join_columns="a", ignore_spaces=True)
 
     assert is_match(rdf, upper_col_df, join_columns="a")
-    assert not is_match(
-        rdf, upper_col_df, join_columns="a", cast_column_names_lower=False
-    )
+    with raises(AssertionError):
+        is_match(rdf, upper_col_df, join_columns="a", cast_column_names_lower=False)
 
 
 def test_is_match_duckdb(
@@ -199,9 +200,8 @@ def test_is_match_duckdb(
         assert is_match(rdf, space_df, join_columns="a", ignore_spaces=True)
 
         assert is_match(rdf, upper_col_df, join_columns="a")
-        assert not is_match(
-            rdf, upper_col_df, join_columns="a", cast_column_names_lower=False
-        )
+        with raises(AssertionError):
+            is_match(rdf, upper_col_df, join_columns="a", cast_column_names_lower=False)
 
         assert is_match(
             duckdb.sql("SELECT 'a' AS a, 'b' AS b"),
