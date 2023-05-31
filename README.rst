@@ -197,14 +197,15 @@ For example, if you want compare Ray datasets, you must do
 
     pip install datacompy[ray]
 
+
 How it works
 ------------
 
 DataComPy uses Fugue to partition the two dataframes into chunks, and then compare each chunk in parallel
 using the Pandas-based ``Compare``. The comparison results are then aggregated to produce the final result.
-Different from the join operation done in ``SparkCompare``, the Fugue version is using the ``cogroup -> map``
-like semantic (not exactly the same), which guarantees full data comparison with consistent result compared
-to Pandas-based ``Compare``.
+Different from the join operation used in ``SparkCompare``, the Fugue version uses the ``cogroup -> map``
+like semantic (not exactly the same, Fugue adopts a coarse version to achieve great performance), which
+guarantees full data comparison with consistent result compared to Pandas-based ``Compare``.
 
 
 
