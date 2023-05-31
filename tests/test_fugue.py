@@ -24,7 +24,8 @@ import pandas as pd
 import polars as pl
 import pytest
 from pytest import raises
-from datacompy import is_match
+
+from datacompy import Compare, is_match, report
 
 
 @pytest.fixture
@@ -62,6 +63,16 @@ def space_df(shuffle_df):
 @pytest.fixture
 def upper_col_df(shuffle_df):
     return shuffle_df.rename(columns={"a": "A"})
+
+
+@pytest.fixture
+def simple_diff_df1():
+    return pd.DataFrame(dict(a=[0, 1, 0], b=[2.1, 3.1, 4.1]))
+
+
+@pytest.fixture
+def simple_diff_df2():
+    return pd.DataFrame(dict(a=[1, 0, 1], b=[3.1, 4.1, 5.1], c=["a", "b", "c"]))
 
 
 def test_is_match_native(
@@ -208,3 +219,19 @@ def test_is_match_duckdb(
             duckdb.sql("SELECT 'a' AS a, 'b' AS b"),
             join_columns="a",
         )
+
+
+def test_report_pandas(simple_diff_df1, simple_diff_df2):
+    comp = Compare(simple_diff_df1, simple_diff_df2, join_columns=["a"])
+    a = report(simple_diff_df1, simple_diff_df2, "a")
+    assert a == comp.report()
+    a = report(simple_diff_df1, simple_diff_df2, "a", parallelism=2)
+    assert a == comp.report()
+
+
+def test_report_spark(spark_session, simple_diff_df1, simple_diff_df2):
+    df1 = spark_session.createDataFrame(simple_diff_df1)
+    df2 = spark_session.createDataFrame(simple_diff_df2)
+    comp = Compare(simple_diff_df1, simple_diff_df2, join_columns=["a"])
+    a = report(df1, df2, "a")
+    assert a == comp.report()
