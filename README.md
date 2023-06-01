@@ -25,6 +25,20 @@ or
 conda install datacompy
 ```
 
+### Installing extras
+
+If you would like to use Spark or any other backends please make sure you install via extras:
+
+```shell
+pip install datacompy[spark]
+pip install datacompy[dask]
+pip install datacompy[duckdb]
+pip install datacompy[polars]
+pip install datacompy[ray]
+
+```
+
+
 ## Pandas Detail
 
 DataComPy will try to join two dataframes either on a list of join columns, or
