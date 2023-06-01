@@ -16,5 +16,5 @@
 __version__ = "0.10.0"
 
 from datacompy.core import *
-from datacompy.fuguecompare import is_match, report
-from datacompy.sparkcompare import NUMERIC_SPARK_TYPES, SparkCompare
+from datacompy.fugue import is_match, report
+from datacompy.spark import NUMERIC_SPARK_TYPES, SparkCompare

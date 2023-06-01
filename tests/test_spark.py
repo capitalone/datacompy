@@ -33,7 +33,7 @@ from pyspark.sql.types import (
 
 import datacompy
 from datacompy import SparkCompare
-from datacompy.sparkcompare import _is_comparable
+from datacompy.spark import _is_comparable
 
 # Turn off py4j debug messages for all tests in this module
 logging.getLogger("py4j").setLevel(logging.INFO)

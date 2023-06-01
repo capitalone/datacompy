@@ -1,11 +1,11 @@
-.. image:: https://img.shields.io/pypi/dm/datacompy
-    :target: https://pypi.org/project/datacompy/
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-    :target: https://github.com/ambv/black
+# DataComPy
 
-=========
-DataComPy
-=========
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/datacompy)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![PyPI version](https://badge.fury.io/py/datacompy.svg)](https://badge.fury.io/py/datacompy)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/datacompy/badges/version.svg)](https://anaconda.org/conda-forge/datacompy)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/datacompy)
+
 
 DataComPy is a package to compare two Pandas DataFrames. Originally started to
 be something of a replacement for SAS's ``PROC COMPARE`` for Pandas DataFrames
@@ -13,15 +13,33 @@ with some more functionality than just ``Pandas.DataFrame.equals(Pandas.DataFram
 (in that it prints out some stats, and lets you tweak how accurate matches have to be).
 Then extended to carry that functionality over to Spark Dataframes.
 
-Quick Installation
-==================
+## Quick Installation
 
-::
+```shell
+pip install datacompy
+```
 
-    pip install datacompy
+or 
 
-Pandas Detail
-=============
+```shell
+conda install datacompy
+```
+
+### Installing extras
+
+If you would like to use Spark or any other backends please make sure you install via extras:
+
+```shell
+pip install datacompy[spark]
+pip install datacompy[dask]
+pip install datacompy[duckdb]
+pip install datacompy[polars]
+pip install datacompy[ray]
+
+```
+
+
+## Pandas Detail
 
 DataComPy will try to join two dataframes either on a list of join columns, or
 on indexes.  If the two dataframes have duplicates based on join values, the
@@ -33,53 +51,54 @@ dataframe and an identically-named column with ``float64`` dtype in another,
 it will tell you that the dtypes are different but will still try to compare the
 values.
 
-Basic Usage
------------
 
-.. code-block:: python
+### Basic Usage
 
-    from io import StringIO
-    import pandas as pd
-    import datacompy
+```python
 
-    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.1555,2017-01-01
-    10000001235,0.45,Michael Bluth,1,2017-01-01
-    10000001236,1345,George Bluth,,2017-01-01
-    10000001237,123456,Bob Loblaw,345.12,2017-01-01
-    10000001239,1.05,Lucille Bluth,,2017-01-01
-    """
+from io import StringIO
+import pandas as pd
+import datacompy
 
-    data2 = """acct_id,dollar_amt,name,float_fld
-    10000001234,123.4,George Michael Bluth,14530.155
-    10000001235,0.45,Michael Bluth,
-    10000001236,1345,George Bluth,1
-    10000001237,123456,Robert Loblaw,345.12
-    10000001238,1.05,Loose Seal Bluth,111
-    """
+data1 = """acct_id,dollar_amt,name,float_fld,date_fld
+10000001234,123.45,George Maharis,14530.1555,2017-01-01
+10000001235,0.45,Michael Bluth,1,2017-01-01
+10000001236,1345,George Bluth,,2017-01-01
+10000001237,123456,Bob Loblaw,345.12,2017-01-01
+10000001239,1.05,Lucille Bluth,,2017-01-01
+"""
 
-    df1 = pd.read_csv(StringIO(data1))
-    df2 = pd.read_csv(StringIO(data2))
+data2 = """acct_id,dollar_amt,name,float_fld
+10000001234,123.4,George Michael Bluth,14530.155
+10000001235,0.45,Michael Bluth,
+10000001236,1345,George Bluth,1
+10000001237,123456,Robert Loblaw,345.12
+10000001238,1.05,Loose Seal Bluth,111
+"""
 
-    compare = datacompy.Compare(
-        df1,
-        df2,
-        join_columns='acct_id',  #You can also specify a list of columns
-        abs_tol=0, #Optional, defaults to 0
-        rel_tol=0, #Optional, defaults to 0
-        df1_name='Original', #Optional, defaults to 'df1'
-        df2_name='New' #Optional, defaults to 'df2'
-        )
-    compare.matches(ignore_extra_columns=False)
-    # False
+df1 = pd.read_csv(StringIO(data1))
+df2 = pd.read_csv(StringIO(data2))
 
-    # This method prints out a human-readable report summarizing and sampling differences
-    print(compare.report())
+compare = datacompy.Compare(
+    df1,
+    df2,
+    join_columns='acct_id',  #You can also specify a list of columns
+    abs_tol=0, #Optional, defaults to 0
+    rel_tol=0, #Optional, defaults to 0
+    df1_name='Original', #Optional, defaults to 'df1'
+    df2_name='New' #Optional, defaults to 'df2'
+    )
+compare.matches(ignore_extra_columns=False)
+# False
+
+# This method prints out a human-readable report summarizing and sampling differences
+print(compare.report())
+```
 
 See docs for more detailed usage instructions and an example of the report output.
 
-Things that are happening behind the scenes
--------------------------------------------
+
+### Things that are happening behind the scenes
 
 - You pass in two dataframes (``df1``, ``df2``) to ``datacompy.Compare`` and a
   column to join on (or list of columns) to ``join_columns``.  By default the
@@ -114,92 +133,89 @@ Things that are happening behind the scenes
 - You can turn on logging to see more detailed logs.
 
 
-Fugue Detail
-============
+## Fugue Detail
 
-`Fugue <https://github.com/fugue-project/fugue>`_ is a Python library that provides a unified interface
+[Fugue](https://github.com/fugue-project/fugue) is a Python library that provides a unified interface
 for data processing on Pandas, DuckDB, Polars, Arrow, Spark, Dask, Ray, and many other backends.
 DataComPy integrates with Fugue to provide a simple way to compare data across these backends.
 
-Basic Usage
------------
+### Basic Usage
 
 The following usage example compares two Pandas dataframes, it is equivalent to the Pandas example above.
 
-.. code-block:: python
+```python
+from io import StringIO
+import pandas as pd
+import datacompy
 
-    from io import StringIO
-    import pandas as pd
-    import datacompy
+data1 = """acct_id,dollar_amt,name,float_fld,date_fld
+10000001234,123.45,George Maharis,14530.1555,2017-01-01
+10000001235,0.45,Michael Bluth,1,2017-01-01
+10000001236,1345,George Bluth,,2017-01-01
+10000001237,123456,Bob Loblaw,345.12,2017-01-01
+10000001239,1.05,Lucille Bluth,,2017-01-01
+"""
 
-    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.1555,2017-01-01
-    10000001235,0.45,Michael Bluth,1,2017-01-01
-    10000001236,1345,George Bluth,,2017-01-01
-    10000001237,123456,Bob Loblaw,345.12,2017-01-01
-    10000001239,1.05,Lucille Bluth,,2017-01-01
-    """
+data2 = """acct_id,dollar_amt,name,float_fld
+10000001234,123.4,George Michael Bluth,14530.155
+10000001235,0.45,Michael Bluth,
+10000001236,1345,George Bluth,1
+10000001237,123456,Robert Loblaw,345.12
+10000001238,1.05,Loose Seal Bluth,111
+"""
 
-    data2 = """acct_id,dollar_amt,name,float_fld
-    10000001234,123.4,George Michael Bluth,14530.155
-    10000001235,0.45,Michael Bluth,
-    10000001236,1345,George Bluth,1
-    10000001237,123456,Robert Loblaw,345.12
-    10000001238,1.05,Loose Seal Bluth,111
-    """
+df1 = pd.read_csv(StringIO(data1))
+df2 = pd.read_csv(StringIO(data2))
 
-    df1 = pd.read_csv(StringIO(data1))
-    df2 = pd.read_csv(StringIO(data2))
+datacompy.is_match(
+    df1,
+    df2,
+    join_columns='acct_id',  #You can also specify a list of columns
+    abs_tol=0, #Optional, defaults to 0
+    rel_tol=0, #Optional, defaults to 0
+    df1_name='Original', #Optional, defaults to 'df1'
+    df2_name='New' #Optional, defaults to 'df2'
+)
+# False
 
-    datacompy.is_match(
-        df1,
-        df2,
-        join_columns='acct_id',  #You can also specify a list of columns
-        abs_tol=0, #Optional, defaults to 0
-        rel_tol=0, #Optional, defaults to 0
-        df1_name='Original', #Optional, defaults to 'df1'
-        df2_name='New' #Optional, defaults to 'df2'
-    )
-    # False
-
-    # This method prints out a human-readable report summarizing and sampling differences
-    print(datacompy.report(
-        df1,
-        df2,
-        join_columns='acct_id',  #You can also specify a list of columns
-        abs_tol=0, #Optional, defaults to 0
-        rel_tol=0, #Optional, defaults to 0
-        df1_name='Original', #Optional, defaults to 'df1'
-        df2_name='New' #Optional, defaults to 'df2'
-    ))
+# This method prints out a human-readable report summarizing and sampling differences
+print(datacompy.report(
+    df1,
+    df2,
+    join_columns='acct_id',  #You can also specify a list of columns
+    abs_tol=0, #Optional, defaults to 0
+    rel_tol=0, #Optional, defaults to 0
+    df1_name='Original', #Optional, defaults to 'df1'
+    df2_name='New' #Optional, defaults to 'df2'
+))
+```
 
 In order to compare dataframes of different backends, you just need to replace ``df1`` and ``df2`` with
 dataframes of different backends. Just pass in Dataframes such as Pandas dataframes, DuckDB relations,
 Polars dataframes, Arrow tables, Spark dataframes, Dask dataframes or Ray datasets. For example,
 to compare a Pandas dataframe with a Spark dataframe:
 
-.. code-block:: python
+```python  
+from pyspark.sql import SparkSession
 
-    from pyspark.sql import SparkSession
-
-    spark = SparkSession.builder.getOrCreate()
-    spark_df2 = spark.createDataFrame(df2)
-    datacompy.is_match(
-        df1,
-        spark_df2,
-        join_columns='acct_id',
-    )
+spark = SparkSession.builder.getOrCreate()
+spark_df2 = spark.createDataFrame(df2)
+datacompy.is_match(
+    df1,
+    spark_df2,
+    join_columns='acct_id',
+)
+```
 
 Notice that in order to use a specific backend, you need to have the corresponding library installed.
 For example, if you want compare Ray datasets, you must do
 
-::
+```shell
+pip install datacompy[ray]
+```
 
-    pip install datacompy[ray]
 
-
-How it works
-------------
+### How it works
 
 DataComPy uses Fugue to partition the two dataframes into chunks, and then compare each chunk in parallel
 using the Pandas-based ``Compare``. The comparison results are then aggregated to produce the final result.
@@ -208,17 +224,11 @@ like semantic (not exactly the same, Fugue adopts a coarse version to achieve gr
 guarantees full data comparison with consistent result compared to Pandas-based ``Compare``.
 
 
+## Spark Detail
 
-.. _spark-detail:
-
-Spark Detail
-============
-
-.. important::
-
-    With version ``v0.9.0`` SparkCompare now uses Null Safe (``<=>``) comparisons
-
-..
+:::{important}
+With version ``v0.9.0`` SparkCompare now uses Null Safe (``<=>``) comparisons
+:::
 
 DataComPy's ``SparkCompare`` class will join two dataframes either on a list of join
 columns. It has the capability to map column names that may be different in each
@@ -238,8 +248,8 @@ are that your data is too large to fit into memory, or you're comparing data
 that works well in a Spark environment, like partitioned Parquet, CSV, or JSON
 files, or Cerebro tables.
 
-Performance Implications
-------------------------
+### Performance Implications
+
 
 Spark scales incredibly well, so you can use ``SparkCompare`` to compare
 billions of rows of data, provided you spin up a big enough cluster. Still,
@@ -262,10 +272,10 @@ cliched realm of "big data":
   need to ensure that you have enough free cache memory before you do this, so
   this parameter is set to False by default.
 
-Basic Usage
------------
 
-.. code-block:: python
+### Basic Usage
+
+```python
 
     import datetime
     import datacompy
@@ -302,9 +312,9 @@ Basic Usage
 
     # This prints out a human-readable report summarizing differences
     comparison.report()
+```
 
-Using SparkCompare on EMR or standalone Spark
----------------------------------------------
+### Using SparkCompare on EMR or standalone Spark
 
 1. Set proxy variables
 2. Create a virtual environment, if desired (``virtualenv venv; source venv/bin/activate``)
@@ -316,8 +326,7 @@ Using SparkCompare on EMR or standalone Spark
    (note that your version of py4j may differ depending on the version of Spark you're using)
 
 
-Using SparkCompare on Databricks
---------------------------------
+### Using SparkCompare on Databricks
 
 1. Clone this repository locally
 2. Create a datacompy egg by running ``python setup.py bdist_egg`` from the repo root directory.
@@ -331,17 +340,16 @@ Using SparkCompare on Databricks
    you can choose clusters to attach the library to.
 6. ``import datacompy`` in a notebook attached to the cluster that the library is attached to and enjoy!
 
-Contributors
-------------
+
+## Contributors
 
 We welcome and appreciate your contributions! Before we can accept any contributions, we ask that you please be sure to
-sign the `Contributor License Agreement (CLA) <https://cla-assistant.io/capitalone/datacompy>`_.
+sign the [Contributor License Agreement (CLA)](https://cla-assistant.io/capitalone/datacompy).
 
-This project adheres to the `Open Source Code of Conduct <https://developer.capitalone.com/resources/code-of-conduct/>`_.
+This project adheres to the [Open Source Code of Conduct](https://developer.capitalone.com/resources/code-of-conduct/).
 By participating, you are expected to honor this code.
 
 
-Roadmap
--------
+## Roadmap
 
-Roadmap details can be found `here <https://github.com/capitalone/datacompy/blob/develop/ROADMAP.rst>`_
+Roadmap details can be found [here](https://github.com/capitalone/datacompy/blob/develop/ROADMAP.rst)

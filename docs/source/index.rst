@@ -1,5 +1,6 @@
 
-.. include:: ../../README.rst
+.. include:: ../../README.md
+   :parser: myst_parser.sphinx_
 
 Contents
 ========
@@ -10,6 +11,7 @@ Contents
     Installation <install>
     Pandas Usage <pandas_usage>
     Spark Usage <spark_usage>
+    Fugue Usage <fugue_usage>
     Developer Instructions <developer_instructions>
 
 .. toctree::
