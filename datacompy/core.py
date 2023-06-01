@@ -91,7 +91,6 @@ class Compare:
         ignore_case=False,
         cast_column_names_lower=True,
     ):
-
         self.cast_column_names_lower = cast_column_names_lower
         if on_index and join_columns is not None:
             raise Exception("Only provide on_index or join_columns")
@@ -195,9 +194,7 @@ class Compare:
             LOG.info("df1 Pandas.DataFrame.equals df2")
         else:
             LOG.info("df1 does not Pandas.DataFrame.equals df2")
-        LOG.info(
-            f"Number of columns in common: {len(self.intersect_columns())}"
-        )
+        LOG.info(f"Number of columns in common: {len(self.intersect_columns())}")
         LOG.debug("Checking column overlap")
         for col in self.df1_unq_columns():
             LOG.info(f"Column in df1 and not in df2: {col}")
@@ -275,7 +272,6 @@ class Compare:
         outer_join = self.df1.merge(
             self.df2, how="outer", suffixes=("_df1", "_df2"), indicator=True, **params
         )
-
         # Clean up temp columns for duplicate row matching
         if self._any_dupes:
             if self.on_index:
@@ -301,12 +297,8 @@ class Compare:
             df2_cols
         ].copy()
         self.df2_unq_rows.columns = self.df2.columns
-        LOG.info(
-            f"Number of rows in df1 and not in df2: {len(self.df1_unq_rows)}"
-        )
-        LOG.info(
-            f"Number of rows in df2 and not in df1: {len(self.df2_unq_rows)}"
-        )
+        LOG.info(f"Number of rows in df1 and not in df2: {len(self.df1_unq_rows)}")
+        LOG.info(f"Number of rows in df2 and not in df1: {len(self.df2_unq_rows)}")
 
         LOG.debug("Selecting intersecting rows")
         self.intersect_rows = outer_join[outer_join["_merge"] == "both"].copy()
@@ -354,9 +346,7 @@ class Compare:
                 match_rate = float(match_cnt) / row_cnt
             else:
                 match_rate = 0
-            LOG.info(
-                f"{column}: {match_cnt} / {row_cnt} ({match_rate:.2%}) match"
-            )
+            LOG.info(f"{column}: {match_cnt} / {row_cnt} ({match_rate:.2%}) match")
 
             self.column_stats.append(
                 {
@@ -542,6 +532,12 @@ class Compare:
         str
             The report, formatted kinda nicely.
         """
+
+        def df_to_str(pdf):
+            if not self.on_index:
+                pdf = pdf.reset_index(drop=True)
+            return pdf.to_string()
+
         # Header
         report = render("header.txt")
         df_header = pd.DataFrame(
@@ -640,25 +636,33 @@ class Compare:
                 report += "-------------------------------\n"
                 report += "\n"
                 for sample in match_sample:
-                    report += sample.to_string()
+                    report += df_to_str(sample)
                     report += "\n\n"
 
         if min(sample_count, self.df1_unq_rows.shape[0]) > 0:
-            report += f"Sample Rows Only in {self.df1_name} (First {column_count} Columns)\n"
-            report += f"---------------------------------------{'-' * len(self.df1_name)}\n"
+            report += (
+                f"Sample Rows Only in {self.df1_name} (First {column_count} Columns)\n"
+            )
+            report += (
+                f"---------------------------------------{'-' * len(self.df1_name)}\n"
+            )
             report += "\n"
             columns = self.df1_unq_rows.columns[:column_count]
             unq_count = min(sample_count, self.df1_unq_rows.shape[0])
-            report += self.df1_unq_rows.sample(unq_count)[columns].to_string()
+            report += df_to_str(self.df1_unq_rows.sample(unq_count)[columns])
             report += "\n\n"
 
         if min(sample_count, self.df2_unq_rows.shape[0]) > 0:
-            report += f"Sample Rows Only in {self.df2_name} (First {column_count} Columns)\n"
-            report += f"---------------------------------------{'-' * len(self.df2_name)}\n"
+            report += (
+                f"Sample Rows Only in {self.df2_name} (First {column_count} Columns)\n"
+            )
+            report += (
+                f"---------------------------------------{'-' * len(self.df2_name)}\n"
+            )
             report += "\n"
             columns = self.df2_unq_rows.columns[:column_count]
             unq_count = min(sample_count, self.df2_unq_rows.shape[0])
-            report += self.df2_unq_rows.sample(unq_count)[columns].to_string()
+            report += df_to_str(self.df2_unq_rows.sample(unq_count)[columns])
             report += "\n\n"
 
         if html_file:
