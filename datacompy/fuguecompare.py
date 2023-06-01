@@ -199,6 +199,9 @@ def report(
     str
         The report, formatted kinda nicely.
     """
+    if isinstance(join_columns, str):
+        join_columns = [join_columns]
+
     if (
         isinstance(df1, pd.DataFrame)
         and isinstance(df2, pd.DataFrame)
@@ -466,7 +469,8 @@ def _distributed_compare(
     assert hash_cols in tdf1.schema, f"{hash_cols} not found in {tdf1.schema}"
     assert hash_cols in tdf2.schema, f"{hash_cols} not found in {tdf2.schema}"
 
-    all_cols = tdf1.schema.names
+    df1_cols = tdf1.schema.names
+    df2_cols = tdf2.schema.names
     str_cols = set(f.name for f in tdf1.schema.fields if pa.types.is_string(f.type))
     bucket = (
         parallelism if parallelism is not None else fa.get_current_parallelism() * 2
@@ -507,12 +511,12 @@ def _distributed_compare(
     def _comp(df: List[Dict[str, Any]]) -> List[List[Any]]:
         df1 = (
             pd.concat([pickle.loads(r["data"]) for r in df if r["left"]])
-            .sort_values(all_cols)
+            .sort_values(df1_cols)
             .reset_index(drop=True)
         )
         df2 = (
             pd.concat([pickle.loads(r["data"]) for r in df if not r["left"]])
-            .sort_values(all_cols)
+            .sort_values(df2_cols)
             .reset_index(drop=True)
         )
         comp = Compare(
