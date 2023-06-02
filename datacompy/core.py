@@ -803,7 +803,13 @@ def compare_string_and_date_columns(col_1, col_2):
             | (obj_column.isnull() & date_column.isnull())
         )
     except:
-        return pd.Series(False, index=col_1.index)
+        try:
+            return pd.Series(
+                (pd.to_datetime(obj_column, format="mixed") == date_column)
+                | (obj_column.isnull() & date_column.isnull())
+            )
+        except:
+            return pd.Series(False, index=col_1.index)
 
 
 def get_merged_columns(original_df, merged_df, suffix):

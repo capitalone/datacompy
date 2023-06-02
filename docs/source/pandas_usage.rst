@@ -270,8 +270,8 @@ There's a number of limitations with ``datacompy``:
 
    .. code-block:: python
 
-       from pandas.util.testing import assert_series_equal
-       from pandas.util.testing import assert_frame_equal
+       from pandas.testing import assert_series_equal
+       from pandas.testing import assert_frame_equal
        import numpy.testing as npt
 
        #Compare two series

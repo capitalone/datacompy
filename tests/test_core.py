@@ -26,7 +26,7 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.util.testing import assert_series_equal
+from pandas.testing import assert_series_equal
 from pytest import raises
 
 import datacompy
@@ -167,8 +167,13 @@ def test_date_columns_equal_with_ignore_spaces():
     assert_series_equal(expect_out, actual_out, check_names=False)
 
     # Then compare converted to datetime objects
-    df["a"] = pd.to_datetime(df["a"])
-    df["b"] = pd.to_datetime(df["b"])
+    try:
+        df["a"] = pd.to_datetime(df["a"], format="mixed")
+        df["b"] = pd.to_datetime(df["b"], format="mixed")
+    except ValueError:
+        df["a"] = pd.to_datetime(df["a"])
+        df["b"] = pd.to_datetime(df["b"])
+
     actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -196,8 +201,13 @@ def test_date_columns_equal_with_ignore_spaces_and_case():
     assert_series_equal(expect_out, actual_out, check_names=False)
 
     # Then compare converted to datetime objects
-    df["a"] = pd.to_datetime(df["a"])
-    df["b"] = pd.to_datetime(df["b"])
+    try:
+        df["a"] = pd.to_datetime(df["a"], format="mixed")
+        df["b"] = pd.to_datetime(df["b"], format="mixed")
+    except ValueError:
+        df["a"] = pd.to_datetime(df["a"])
+        df["b"] = pd.to_datetime(df["b"])
+
     actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -246,7 +256,10 @@ def test_rounded_date_columns():
             {"a": "2017-01-01", "b": "2017-01-01 00:00:00", "exp": True},
         ]
     )
-    df["a_dt"] = pd.to_datetime(df["a"])
+    try:
+        df["a_dt"] = pd.to_datetime(df["a"], format="mixed")
+    except ValueError:
+        df["a_dt"] = pd.to_datetime(df["a"])
     actual = datacompy.columns_equal(df.a_dt, df.b)
     expected = df["exp"]
     assert_series_equal(actual, expected, check_names=False)
