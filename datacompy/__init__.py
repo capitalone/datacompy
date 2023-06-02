@@ -1,5 +1,5 @@
 #
-# Copyright 2020 Capital One Services, LLC
+# Copyright 2023 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "0.9.0"
+__version__ = "0.10.0"
 
 from datacompy.core import *
-from datacompy.sparkcompare import NUMERIC_SPARK_TYPES, SparkCompare
+from datacompy.fugue import is_match, report
+from datacompy.spark import NUMERIC_SPARK_TYPES, SparkCompare
