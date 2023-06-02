@@ -1,100 +1,242 @@
-<!DOCTYPE html>
-<html class="writer-html5" lang="en" >
-<head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+<!doctype html>
+<html class="no-js" lang="en">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Installation" href="install.html" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DataComPy &mdash; datacompy 0.9.0 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+    <!-- Generated with Sphinx 6.2.1 and Furo 2023.05.20 -->
+        <title>datacompy 0.10.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=e6660623a769aa55fea372102b9bf3151b292993" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
-    <script src="_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Installation" href="install.html" /> 
-</head>
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
 
-          
-          
-          <a href="#" class="icon icon-home">
-            datacompy
-          </a>
-              <div class="version">
-                0.9.0
-              </div>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="#"><div class="brand">datacompy 0.10.1 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
+  
+  
+  <span class="sidebar-brand-text">datacompy 0.10.1 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="api/modules.html">datacompy</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/modules.html">datacompy</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of datacompy</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/datacompy.html">datacompy package</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/capitalone/datacompy">Github Repo</a></li>
 </ul>
 
-        </div>
-      </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">datacompy</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">DataComPy</li>
-      <li class="wy-breadcrumbs-aside">
-            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
-      </li>
-  </ul>
-  <hr/>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
-  <a class="reference external image-reference" href="https://pypi.org/project/datacompy/"><img alt="https://img.shields.io/pypi/dm/datacompy" src="https://img.shields.io/pypi/dm/datacompy" /></a>
-<a class="reference external image-reference" href="https://github.com/ambv/black"><img alt="https://img.shields.io/badge/code%20style-black-000000.svg" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
-<section id="datacompy">
-<h1>DataComPy<a class="headerlink" href="#datacompy" title="Permalink to this heading">¶</a></h1>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section class="tex2jax_ignore mathjax_ignore" id="datacompy">
+<h1>DataComPy<a class="headerlink" href="#datacompy" title="Permalink to this heading">#</a></h1>
+<p><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/datacompy" />
+<a class="reference external" href="https://github.com/ambv/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
+<a class="reference external" href="https://badge.fury.io/py/datacompy"><img alt="PyPI version" src="https://badge.fury.io/py/datacompy.svg" /></a>
+<a class="reference external" href="https://anaconda.org/conda-forge/datacompy"><img alt="Anaconda-Server Badge" src="https://anaconda.org/conda-forge/datacompy/badges/version.svg" /></a>
+<img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/datacompy" /></p>
 <p>DataComPy is a package to compare two Pandas DataFrames. Originally started to
 be something of a replacement for SAS’s <code class="docutils literal notranslate"><span class="pre">PROC</span> <span class="pre">COMPARE</span></code> for Pandas DataFrames
 with some more functionality than just <code class="docutils literal notranslate"><span class="pre">Pandas.DataFrame.equals(Pandas.DataFrame)</span></code>
 (in that it prints out some stats, and lets you tweak how accurate matches have to be).
 Then extended to carry that functionality over to Spark Dataframes.</p>
 <section id="quick-installation">
-<h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Permalink to this heading">¶</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span>
+<h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Permalink to this heading">#</a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>datacompy
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>datacompy
+</pre></div>
+</div>
+<section id="installing-extras">
+<h3>Installing extras<a class="headerlink" href="#installing-extras" title="Permalink to this heading">#</a></h3>
+<p>If you would like to use Spark or any other backends please make sure you install via extras:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>datacompy<span class="o">[</span>spark<span class="o">]</span>
+pip<span class="w"> </span>install<span class="w"> </span>datacompy<span class="o">[</span>dask<span class="o">]</span>
+pip<span class="w"> </span>install<span class="w"> </span>datacompy<span class="o">[</span>duckdb<span class="o">]</span>
+pip<span class="w"> </span>install<span class="w"> </span>datacompy<span class="o">[</span>polars<span class="o">]</span>
+pip<span class="w"> </span>install<span class="w"> </span>datacompy<span class="o">[</span>ray<span class="o">]</span>
 </pre></div>
 </div>
 </section>
+</section>
 <section id="pandas-detail">
-<h2>Pandas Detail<a class="headerlink" href="#pandas-detail" title="Permalink to this heading">¶</a></h2>
+<h2>Pandas Detail<a class="headerlink" href="#pandas-detail" title="Permalink to this heading">#</a></h2>
 <p>DataComPy will try to join two dataframes either on a list of join columns, or
 on indexes.  If the two dataframes have duplicates based on join values, the
 match process sorts by the remaining fields and joins based on that row number.</p>
@@ -104,8 +246,9 @@ dataframe and an identically-named column with <code class="docutils literal not
 it will tell you that the dtypes are different but will still try to compare the
 values.</p>
 <section id="basic-usage">
-<h3>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this heading">¶</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+<h3>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">datacompy</span>
 
@@ -147,7 +290,7 @@ values.</p>
 <p>See docs for more detailed usage instructions and an example of the report output.</p>
 </section>
 <section id="things-that-are-happening-behind-the-scenes">
-<h3>Things that are happening behind the scenes<a class="headerlink" href="#things-that-are-happening-behind-the-scenes" title="Permalink to this heading">¶</a></h3>
+<h3>Things that are happening behind the scenes<a class="headerlink" href="#things-that-are-happening-behind-the-scenes" title="Permalink to this heading">#</a></h3>
 <ul class="simple">
 <li><p>You pass in two dataframes (<code class="docutils literal notranslate"><span class="pre">df1</span></code>, <code class="docutils literal notranslate"><span class="pre">df2</span></code>) to <code class="docutils literal notranslate"><span class="pre">datacompy.Compare</span></code> and a
 column to join on (or list of columns) to <code class="docutils literal notranslate"><span class="pre">join_columns</span></code>.  By default the
@@ -159,7 +302,7 @@ the index instead.</p></li>
 </ul>
 </li>
 <li><p>The class validates that you passed dataframes, that they contain all of the
-columns in <cite>join_columns</cite> and have unique column names other than that.  The
+columns in <code class="docutils literal notranslate"><span class="pre">join_columns</span></code> and have unique column names other than that.  The
 class also lowercases all column names to disambiguate.</p></li>
 <li><p>On initialization the class validates inputs, and runs the comparison.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Compare.matches()</span></code> will return <code class="docutils literal notranslate"><span class="pre">True</span></code> if the dataframes match, <code class="docutils literal notranslate"><span class="pre">False</span></code>
@@ -186,8 +329,92 @@ getting intersection, just df1 and just df2 columns (Sets)</p></li>
 </ul>
 </section>
 </section>
+<section id="fugue-detail">
+<h2>Fugue Detail<a class="headerlink" href="#fugue-detail" title="Permalink to this heading">#</a></h2>
+<p><a class="reference external" href="https://github.com/fugue-project/fugue">Fugue</a> is a Python library that provides a unified interface
+for data processing on Pandas, DuckDB, Polars, Arrow, Spark, Dask, Ray, and many other backends.
+DataComPy integrates with Fugue to provide a simple way to compare data across these backends.</p>
+<section id="id1">
+<h3>Basic Usage<a class="headerlink" href="#id1" title="Permalink to this heading">#</a></h3>
+<p>The following usage example compares two Pandas dataframes, it is equivalent to the Pandas example above.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">datacompy</span>
+
+<span class="n">data1</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld,date_fld</span>
+<span class="s2">10000001234,123.45,George Maharis,14530.1555,2017-01-01</span>
+<span class="s2">10000001235,0.45,Michael Bluth,1,2017-01-01</span>
+<span class="s2">10000001236,1345,George Bluth,,2017-01-01</span>
+<span class="s2">10000001237,123456,Bob Loblaw,345.12,2017-01-01</span>
+<span class="s2">10000001239,1.05,Lucille Bluth,,2017-01-01</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">data2</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld</span>
+<span class="s2">10000001234,123.4,George Michael Bluth,14530.155</span>
+<span class="s2">10000001235,0.45,Michael Bluth,</span>
+<span class="s2">10000001236,1345,George Bluth,1</span>
+<span class="s2">10000001237,123456,Robert Loblaw,345.12</span>
+<span class="s2">10000001238,1.05,Loose Seal Bluth,111</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">df1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data1</span><span class="p">))</span>
+<span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data2</span><span class="p">))</span>
+
+<span class="n">datacompy</span><span class="o">.</span><span class="n">is_match</span><span class="p">(</span>
+    <span class="n">df1</span><span class="p">,</span>
+    <span class="n">df2</span><span class="p">,</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1">#You can also specify a list of columns</span>
+    <span class="n">abs_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Optional, defaults to 0</span>
+    <span class="n">rel_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Optional, defaults to 0</span>
+    <span class="n">df1_name</span><span class="o">=</span><span class="s1">&#39;Original&#39;</span><span class="p">,</span> <span class="c1">#Optional, defaults to &#39;df1&#39;</span>
+    <span class="n">df2_name</span><span class="o">=</span><span class="s1">&#39;New&#39;</span> <span class="c1">#Optional, defaults to &#39;df2&#39;</span>
+<span class="p">)</span>
+<span class="c1"># False</span>
+
+<span class="c1"># This method prints out a human-readable report summarizing and sampling differences</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">datacompy</span><span class="o">.</span><span class="n">report</span><span class="p">(</span>
+    <span class="n">df1</span><span class="p">,</span>
+    <span class="n">df2</span><span class="p">,</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1">#You can also specify a list of columns</span>
+    <span class="n">abs_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Optional, defaults to 0</span>
+    <span class="n">rel_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Optional, defaults to 0</span>
+    <span class="n">df1_name</span><span class="o">=</span><span class="s1">&#39;Original&#39;</span><span class="p">,</span> <span class="c1">#Optional, defaults to &#39;df1&#39;</span>
+    <span class="n">df2_name</span><span class="o">=</span><span class="s1">&#39;New&#39;</span> <span class="c1">#Optional, defaults to &#39;df2&#39;</span>
+<span class="p">))</span>
+</pre></div>
+</div>
+<p>In order to compare dataframes of different backends, you just need to replace <code class="docutils literal notranslate"><span class="pre">df1</span></code> and <code class="docutils literal notranslate"><span class="pre">df2</span></code> with
+dataframes of different backends. Just pass in Dataframes such as Pandas dataframes, DuckDB relations,
+Polars dataframes, Arrow tables, Spark dataframes, Dask dataframes or Ray datasets. For example,
+to compare a Pandas dataframe with a Spark dataframe:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
+
+<span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+<span class="n">spark_df2</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">df2</span><span class="p">)</span>
+<span class="n">datacompy</span><span class="o">.</span><span class="n">is_match</span><span class="p">(</span>
+    <span class="n">df1</span><span class="p">,</span>
+    <span class="n">spark_df2</span><span class="p">,</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Notice that in order to use a specific backend, you need to have the corresponding library installed.
+For example, if you want compare Ray datasets, you must do</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>datacompy<span class="o">[</span>ray<span class="o">]</span>
+</pre></div>
+</div>
+</section>
+<section id="how-it-works">
+<h3>How it works<a class="headerlink" href="#how-it-works" title="Permalink to this heading">#</a></h3>
+<p>DataComPy uses Fugue to partition the two dataframes into chunks, and then compare each chunk in parallel
+using the Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code>. The comparison results are then aggregated to produce the final result.
+Different from the join operation used in <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>, the Fugue version uses the <code class="docutils literal notranslate"><span class="pre">cogroup</span> <span class="pre">-&gt;</span> <span class="pre">map</span></code>
+like semantic (not exactly the same, Fugue adopts a coarse version to achieve great performance), which
+guarantees full data comparison with consistent result compared to Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code>.</p>
+</section>
+</section>
 <section id="spark-detail">
-<span id="id1"></span><h2>Spark Detail<a class="headerlink" href="#spark-detail" title="Permalink to this heading">¶</a></h2>
+<h2>Spark Detail<a class="headerlink" href="#spark-detail" title="Permalink to this heading">#</a></h2>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p>With version <code class="docutils literal notranslate"><span class="pre">v0.9.0</span></code> SparkCompare now uses Null Safe (<code class="docutils literal notranslate"><span class="pre">&lt;=&gt;</span></code>) comparisons</p>
@@ -208,7 +435,7 @@ are that your data is too large to fit into memory, or you’re comparing data
 that works well in a Spark environment, like partitioned Parquet, CSV, or JSON
 files, or Cerebro tables.</p>
 <section id="performance-implications">
-<h3>Performance Implications<a class="headerlink" href="#performance-implications" title="Permalink to this heading">¶</a></h3>
+<h3>Performance Implications<a class="headerlink" href="#performance-implications" title="Permalink to this heading">#</a></h3>
 <p>Spark scales incredibly well, so you can use <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> to compare
 billions of rows of data, provided you spin up a big enough cluster. Still,
 joining billions of rows of data is an inherently large task, so there are a
@@ -232,47 +459,48 @@ this parameter is set to False by default.</p></li>
 </ul>
 </section>
 <section id="id2">
-<h3>Basic Usage<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">import</span> <span class="nn">datacompy</span>
-<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">Row</span>
+<h3>Basic Usage<a class="headerlink" href="#id2" title="Permalink to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+    <span class="kn">import</span> <span class="nn">datetime</span>
+    <span class="kn">import</span> <span class="nn">datacompy</span>
+    <span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">Row</span>
 
-<span class="c1"># This example assumes you have a SparkSession named &quot;spark&quot; in your environment, as you</span>
-<span class="c1"># do when running `pyspark` from the terminal or in a Databricks notebook (Spark v2.0 and higher)</span>
+    <span class="c1"># This example assumes you have a SparkSession named &quot;spark&quot; in your environment, as you</span>
+    <span class="c1"># do when running `pyspark` from the terminal or in a Databricks notebook (Spark v2.0 and higher)</span>
 
-<span class="n">data1</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Maharis&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.1555</span><span class="p">,</span>
-        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Bob Loblaw&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">,</span>
-        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001239</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Lucille Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="p">]</span>
+    <span class="n">data1</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Maharis&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.1555</span><span class="p">,</span>
+            <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+            <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Bob Loblaw&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">,</span>
+            <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001239</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Lucille Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="p">]</span>
 
-<span class="n">data2</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.4</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.155</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Robert Loblaw&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001238</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Loose Seal Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">111.0</span><span class="p">)</span>
-<span class="p">]</span>
+    <span class="n">data2</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.4</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.155</span><span class="p">),</span>
+        <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
+        <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+        <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Robert Loblaw&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">),</span>
+        <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001238</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Loose Seal Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">111.0</span><span class="p">)</span>
+    <span class="p">]</span>
 
-<span class="n">base_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">data1</span><span class="p">)</span>
-<span class="n">compare_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">data2</span><span class="p">)</span>
+    <span class="n">base_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">data1</span><span class="p">)</span>
+    <span class="n">compare_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">data2</span><span class="p">)</span>
 
-<span class="n">comparison</span> <span class="o">=</span> <span class="n">datacompy</span><span class="o">.</span><span class="n">SparkCompare</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">base_df</span><span class="p">,</span> <span class="n">compare_df</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;acct_id&#39;</span><span class="p">])</span>
+    <span class="n">comparison</span> <span class="o">=</span> <span class="n">datacompy</span><span class="o">.</span><span class="n">SparkCompare</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">base_df</span><span class="p">,</span> <span class="n">compare_df</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;acct_id&#39;</span><span class="p">])</span>
 
-<span class="c1"># This prints out a human-readable report summarizing differences</span>
-<span class="n">comparison</span><span class="o">.</span><span class="n">report</span><span class="p">()</span>
+    <span class="c1"># This prints out a human-readable report summarizing differences</span>
+    <span class="n">comparison</span><span class="o">.</span><span class="n">report</span><span class="p">()</span>
 </pre></div>
 </div>
 </section>
 <section id="using-sparkcompare-on-emr-or-standalone-spark">
-<h3>Using SparkCompare on EMR or standalone Spark<a class="headerlink" href="#using-sparkcompare-on-emr-or-standalone-spark" title="Permalink to this heading">¶</a></h3>
+<h3>Using SparkCompare on EMR or standalone Spark<a class="headerlink" href="#using-sparkcompare-on-emr-or-standalone-spark" title="Permalink to this heading">#</a></h3>
 <ol class="arabic simple">
 <li><p>Set proxy variables</p></li>
 <li><p>Create a virtual environment, if desired (<code class="docutils literal notranslate"><span class="pre">virtualenv</span> <span class="pre">venv;</span> <span class="pre">source</span> <span class="pre">venv/bin/activate</span></code>)</p></li>
@@ -285,40 +513,36 @@ differ based on your installation)</p></li>
 </ol>
 </section>
 <section id="using-sparkcompare-on-databricks">
-<h3>Using SparkCompare on Databricks<a class="headerlink" href="#using-sparkcompare-on-databricks" title="Permalink to this heading">¶</a></h3>
+<h3>Using SparkCompare on Databricks<a class="headerlink" href="#using-sparkcompare-on-databricks" title="Permalink to this heading">#</a></h3>
 <ol class="arabic simple">
 <li><p>Clone this repository locally</p></li>
 <li><p>Create a datacompy egg by running <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">bdist_egg</span></code> from the repo root directory.</p></li>
 <li><p>From the Databricks front page, click the “Library” link under the “New” section.</p></li>
-<li><dl class="simple">
-<dt>On the New library page:</dt><dd><ol class="loweralpha simple">
-<li><p>Change source to “Upload Python Egg or PyPi”</p></li>
-<li><p>Under “Upload Egg”, Library Name should be “datacompy”</p></li>
-<li><p>Drag the egg file in datacompy/dist/ to the “Drop library egg here to upload” box</p></li>
-<li><p>Click the “Create Library” button</p></li>
-</ol>
-</dd>
-</dl>
-</li>
+<li><p>On the New library page:
+a. Change source to “Upload Python Egg or PyPi”
+b. Under “Upload Egg”, Library Name should be “datacompy”
+c. Drag the egg file in datacompy/dist/ to the “Drop library egg here to upload” box
+d. Click the “Create Library” button</p></li>
 <li><p>Once the library has been created, from the library page (which you can find in your /Users/{login} workspace),
 you can choose clusters to attach the library to.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">datacompy</span></code> in a notebook attached to the cluster that the library is attached to and enjoy!</p></li>
 </ol>
 </section>
+</section>
 <section id="contributors">
-<h3>Contributors<a class="headerlink" href="#contributors" title="Permalink to this heading">¶</a></h3>
+<h2>Contributors<a class="headerlink" href="#contributors" title="Permalink to this heading">#</a></h2>
 <p>We welcome and appreciate your contributions! Before we can accept any contributions, we ask that you please be sure to
 sign the <a class="reference external" href="https://cla-assistant.io/capitalone/datacompy">Contributor License Agreement (CLA)</a>.</p>
 <p>This project adheres to the <a class="reference external" href="https://developer.capitalone.com/resources/code-of-conduct/">Open Source Code of Conduct</a>.
 By participating, you are expected to honor this code.</p>
 </section>
 <section id="roadmap">
-<h3>Roadmap<a class="headerlink" href="#roadmap" title="Permalink to this heading">¶</a></h3>
+<h2>Roadmap<a class="headerlink" href="#roadmap" title="Permalink to this heading">#</a></h2>
 <p>Roadmap details can be found <a class="reference external" href="https://github.com/capitalone/datacompy/blob/develop/ROADMAP.rst">here</a></p>
 </section>
 </section>
 <section id="contents">
-<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this heading">¶</a></h2>
+<h1>Contents<a class="headerlink" href="#contents" title="Permalink to this heading">#</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
@@ -338,6 +562,13 @@ By participating, you are expected to honor this code.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="spark_usage.html#known-differences">Known Differences</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="fugue_usage.html#basic-usage">Basic Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fugue_usage.html#cross-comparing">Cross Comparing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fugue_usage.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fugue_usage.html#future-releases">Future releases</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a><ul>
@@ -369,10 +600,15 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.sparkcompare">datacompy.sparkcompare module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.sparkcompare.MatchType"><code class="docutils literal notranslate"><span class="pre">MatchType</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.sparkcompare.SparkCompare"><code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.sparkcompare.decimal_comparator"><code class="docutils literal notranslate"><span class="pre">decimal_comparator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.fugue">datacompy.fugue module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.fugue.is_match"><code class="docutils literal notranslate"><span class="pre">is_match()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.fugue.report"><code class="docutils literal notranslate"><span class="pre">report()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.spark">datacompy.spark module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.MatchType"><code class="docutils literal notranslate"><span class="pre">MatchType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.SparkCompare"><code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.decimal_comparator"><code class="docutils literal notranslate"><span class="pre">decimal_comparator()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy">Module contents</a></li>
@@ -385,43 +621,101 @@ By participating, you are expected to honor this code.</p>
 </div>
 </section>
 <section id="indices-and-tables">
-<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading">¶</a></h2>
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading">#</a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
 </section>
-</section>
 
-
-           </div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="install.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Installation</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2023, Capital One
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="install.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
     </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">DataComPy</a><ul>
+<li><a class="reference internal" href="#quick-installation">Quick Installation</a><ul>
+<li><a class="reference internal" href="#installing-extras">Installing extras</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pandas-detail">Pandas Detail</a><ul>
+<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li><a class="reference internal" href="#things-that-are-happening-behind-the-scenes">Things that are happening behind the scenes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#fugue-detail">Fugue Detail</a><ul>
+<li><a class="reference internal" href="#id1">Basic Usage</a></li>
+<li><a class="reference internal" href="#how-it-works">How it works</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#spark-detail">Spark Detail</a><ul>
+<li><a class="reference internal" href="#performance-implications">Performance Implications</a></li>
+<li><a class="reference internal" href="#id2">Basic Usage</a></li>
+<li><a class="reference internal" href="#using-sparkcompare-on-emr-or-standalone-spark">Using SparkCompare on EMR or standalone Spark</a></li>
+<li><a class="reference internal" href="#using-sparkcompare-on-databricks">Using SparkCompare on Databricks</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#contributors">Contributors</a></li>
+<li><a class="reference internal" href="#roadmap">Roadmap</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#contents">Contents</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
 
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2020, Capital One.</p>
-  </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
-</footer>
+          </div>
         </div>
       </div>
-    </section>
+      
+      
+    </aside>
   </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
-
-</body>
+</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/scripts/furo.js"></script>
+    </body>
 </html>

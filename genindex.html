@@ -1,320 +1,475 @@
-<!DOCTYPE html>
-<html class="writer-html5" lang="en" >
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; datacompy 0.9.0 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+<!doctype html>
+<html class="no-js" lang="en">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="#" /><link rel="search" title="Search" href="search.html" />
+
+    <!-- Generated with Sphinx 6.2.1 and Furo 2023.05.20 --><title>Index - datacompy 0.10.1 documentation</title>
+<link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=e6660623a769aa55fea372102b9bf3151b292993" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
-    <script src="_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="#" />
-    <link rel="search" title="Search" href="search.html" /> 
-</head>
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
 
-          
-          
-          <a href="index.html" class="icon icon-home">
-            datacompy
-          </a>
-              <div class="version">
-                0.9.0
-              </div>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">datacompy 0.10.1 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  
+  <span class="sidebar-brand-text">datacompy 0.10.1 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="api/modules.html">datacompy</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/modules.html">datacompy</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of datacompy</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/datacompy.html">datacompy package</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/capitalone/datacompy">Github Repo</a></li>
 </ul>
 
-        </div>
+</div>
+</div>
+
       </div>
-    </nav>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          
+<section class="genindex-section">
+  <h1 id="index">Index</h1>
+  <div class="genindex-jumpbox"><a href="#A"><strong>A</strong></a> | <a href="#B"><strong>B</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#D"><strong>D</strong></a> | <a href="#G"><strong>G</strong></a> | <a href="#I"><strong>I</strong></a> | <a href="#K"><strong>K</strong></a> | <a href="#M"><strong>M</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#T"><strong>T</strong></a></div>
+</section>
+<section id="A" class="genindex-section">
+  <h2>A</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.all_columns_match">all_columns_match() (datacompy.core.Compare method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.all_mismatch">all_mismatch() (datacompy.core.Compare method)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.all_rows_overlap">all_rows_overlap() (datacompy.core.Compare method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">datacompy</a>
-      </nav>
+<section id="B" class="genindex-section">
+  <h2>B</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.base_row_count">base_row_count (datacompy.spark.SparkCompare property)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Index</li>
-      <li class="wy-breadcrumbs-aside">
-      </li>
-  </ul>
-  <hr/>
-</div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
+<section id="C" class="genindex-section">
+  <h2>C</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.core.calculate_max_diff">calculate_max_diff() (in module datacompy.core)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.columns_compared">columns_compared (datacompy.spark.SparkCompare property)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.core.columns_equal">columns_equal() (in module datacompy.core)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.columns_in_both">columns_in_both (datacompy.spark.SparkCompare property)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.columns_only_base">columns_only_base (datacompy.spark.SparkCompare property)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.columns_only_compare">columns_only_compare (datacompy.spark.SparkCompare property)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.common_row_count">common_row_count (datacompy.spark.SparkCompare property)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.core.Compare">Compare (class in datacompy.core)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.compare_row_count">compare_row_count (datacompy.spark.SparkCompare property)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.core.compare_string_and_date_columns">compare_string_and_date_columns() (in module datacompy.core)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.count_matching_rows">count_matching_rows() (datacompy.core.Compare method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h1 id="index">Index</h1>
-
-<div class="genindex-jumpbox">
- <a href="#A"><strong>A</strong></a>
- | <a href="#B"><strong>B</strong></a>
- | <a href="#C"><strong>C</strong></a>
- | <a href="#D"><strong>D</strong></a>
- | <a href="#G"><strong>G</strong></a>
- | <a href="#I"><strong>I</strong></a>
- | <a href="#K"><strong>K</strong></a>
- | <a href="#M"><strong>M</strong></a>
- | <a href="#R"><strong>R</strong></a>
- | <a href="#S"><strong>S</strong></a>
- | <a href="#T"><strong>T</strong></a>
- 
-</div>
-<h2 id="A">A</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.all_columns_match">all_columns_match() (datacompy.core.Compare method)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.all_mismatch">all_mismatch() (datacompy.core.Compare method)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.all_rows_overlap">all_rows_overlap() (datacompy.core.Compare method)</a>
-</li>
-  </ul></td>
-</tr></table>
-
-<h2 id="B">B</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare.base_row_count">base_row_count (datacompy.sparkcompare.SparkCompare property)</a>
-</li>
-  </ul></td>
-</tr></table>
-
-<h2 id="C">C</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.core.calculate_max_diff">calculate_max_diff() (in module datacompy.core)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare.columns_compared">columns_compared (datacompy.sparkcompare.SparkCompare property)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.core.columns_equal">columns_equal() (in module datacompy.core)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare.columns_in_both">columns_in_both (datacompy.sparkcompare.SparkCompare property)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare.columns_only_base">columns_only_base (datacompy.sparkcompare.SparkCompare property)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare.columns_only_compare">columns_only_compare (datacompy.sparkcompare.SparkCompare property)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare.common_row_count">common_row_count (datacompy.sparkcompare.SparkCompare property)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.core.Compare">Compare (class in datacompy.core)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare.compare_row_count">compare_row_count (datacompy.sparkcompare.SparkCompare property)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.core.compare_string_and_date_columns">compare_string_and_date_columns() (in module datacompy.core)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.count_matching_rows">count_matching_rows() (datacompy.core.Compare method)</a>
-</li>
-  </ul></td>
-</tr></table>
-
-<h2 id="D">D</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li>
+<section id="D" class="genindex-section">
+  <h2>D</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li>
     datacompy
 
-      <ul>
-        <li><a href="api/datacompy.html#module-datacompy">module</a>
+        <ul>
+          <li><a href="api/datacompy.html#module-datacompy">module</a>
 </li>
-      </ul></li>
-      <li>
+        </ul></li>
+        <li>
     datacompy.core
 
-      <ul>
-        <li><a href="api/datacompy.html#module-datacompy.core">module</a>
+        <ul>
+          <li><a href="api/datacompy.html#module-datacompy.core">module</a>
 </li>
-      </ul></li>
-      <li>
-    datacompy.sparkcompare
+        </ul></li>
+        <li>
+    datacompy.fugue
 
-      <ul>
-        <li><a href="api/datacompy.html#module-datacompy.sparkcompare">module</a>
+        <ul>
+          <li><a href="api/datacompy.html#module-datacompy.fugue">module</a>
 </li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.decimal_comparator">decimal_comparator() (in module datacompy.sparkcompare)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.df1">df1 (datacompy.core.Compare property)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.df1_unq_columns">df1_unq_columns() (datacompy.core.Compare method)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.df2">df2 (datacompy.core.Compare property)</a>
-</li>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.df2_unq_columns">df2_unq_columns() (datacompy.core.Compare method)</a>
-</li>
-  </ul></td>
-</tr></table>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li>
+    datacompy.spark
 
-<h2 id="G">G</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.core.generate_id_within_group">generate_id_within_group() (in module datacompy.core)</a>
+        <ul>
+          <li><a href="api/datacompy.html#module-datacompy.spark">module</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.core.get_merged_columns">get_merged_columns() (in module datacompy.core)</a>
+        </ul></li>
+        <li><a href="api/datacompy.html#datacompy.spark.decimal_comparator">decimal_comparator() (in module datacompy.spark)</a>
 </li>
-  </ul></td>
-</tr></table>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.df1">df1 (datacompy.core.Compare property)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.df1_unq_columns">df1_unq_columns() (datacompy.core.Compare method)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.df2">df2 (datacompy.core.Compare property)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.df2_unq_columns">df2_unq_columns() (datacompy.core.Compare method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="I">I</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.intersect_columns">intersect_columns() (datacompy.core.Compare method)</a>
+<section id="G" class="genindex-section">
+  <h2>G</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.core.generate_id_within_group">generate_id_within_group() (in module datacompy.core)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.intersect_rows_match">intersect_rows_match() (datacompy.core.Compare method)</a>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.core.get_merged_columns">get_merged_columns() (in module datacompy.core)</a>
 </li>
-  </ul></td>
-</tr></table>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="K">K</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.MatchType.KNOWN_DIFFERENCE">KNOWN_DIFFERENCE (datacompy.sparkcompare.MatchType attribute)</a>
+<section id="I" class="genindex-section">
+  <h2>I</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.intersect_columns">intersect_columns() (datacompy.core.Compare method)</a>
 </li>
-  </ul></td>
-</tr></table>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.intersect_rows_match">intersect_rows_match() (datacompy.core.Compare method)</a>
+</li>
+        <li><a href="api/datacompy.html#datacompy.fugue.is_match">is_match() (in module datacompy.fugue)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="M">M</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.MatchType.MATCH">MATCH (datacompy.sparkcompare.MatchType attribute)</a>
+<section id="K" class="genindex-section">
+  <h2>K</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.spark.MatchType.KNOWN_DIFFERENCE">KNOWN_DIFFERENCE (datacompy.spark.MatchType attribute)</a>
 </li>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.matches">matches() (datacompy.core.Compare method)</a>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="M" class="genindex-section">
+  <h2>M</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.spark.MatchType.MATCH">MATCH (datacompy.spark.MatchType attribute)</a>
 </li>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.MatchType">MatchType (class in datacompy.sparkcompare)</a>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.matches">matches() (datacompy.core.Compare method)</a>
 </li>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.MatchType.MISMATCH">MISMATCH (datacompy.sparkcompare.MatchType attribute)</a>
+        <li><a href="api/datacompy.html#datacompy.spark.MatchType">MatchType (class in datacompy.spark)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li>
+        <li><a href="api/datacompy.html#datacompy.spark.MatchType.MISMATCH">MISMATCH (datacompy.spark.MatchType attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li>
     module
 
-      <ul>
-        <li><a href="api/datacompy.html#module-datacompy">datacompy</a>
+        <ul>
+          <li><a href="api/datacompy.html#module-datacompy">datacompy</a>
 </li>
-        <li><a href="api/datacompy.html#module-datacompy.core">datacompy.core</a>
+          <li><a href="api/datacompy.html#module-datacompy.core">datacompy.core</a>
 </li>
-        <li><a href="api/datacompy.html#module-datacompy.sparkcompare">datacompy.sparkcompare</a>
+          <li><a href="api/datacompy.html#module-datacompy.fugue">datacompy.fugue</a>
 </li>
-      </ul></li>
-  </ul></td>
-</tr></table>
+          <li><a href="api/datacompy.html#module-datacompy.spark">datacompy.spark</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="R">R</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.core.render">render() (in module datacompy.core)</a>
+<section id="R" class="genindex-section">
+  <h2>R</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.core.render">render() (in module datacompy.core)</a>
 </li>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.report">report() (datacompy.core.Compare method)</a>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.report">report() (datacompy.core.Compare method)</a>
 
-      <ul>
-        <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare.report">(datacompy.sparkcompare.SparkCompare method)</a>
+        <ul>
+          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.report">(datacompy.spark.SparkCompare method)</a>
 </li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare.rows_both_all">rows_both_all (datacompy.sparkcompare.SparkCompare property)</a>
+          <li><a href="api/datacompy.html#datacompy.fugue.report">(in module datacompy.fugue)</a>
 </li>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare.rows_both_mismatch">rows_both_mismatch (datacompy.sparkcompare.SparkCompare property)</a>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.rows_both_all">rows_both_all (datacompy.spark.SparkCompare property)</a>
 </li>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare.rows_only_base">rows_only_base (datacompy.sparkcompare.SparkCompare property)</a>
+        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.rows_both_mismatch">rows_both_mismatch (datacompy.spark.SparkCompare property)</a>
 </li>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare.rows_only_compare">rows_only_compare (datacompy.sparkcompare.SparkCompare property)</a>
+        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.rows_only_base">rows_only_base (datacompy.spark.SparkCompare property)</a>
 </li>
-  </ul></td>
-</tr></table>
-
-<h2 id="S">S</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.sample_mismatch">sample_mismatch() (datacompy.core.Compare method)</a>
+        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.rows_only_compare">rows_only_compare (datacompy.spark.SparkCompare property)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.sparkcompare.SparkCompare">SparkCompare (class in datacompy.sparkcompare)</a>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="S" class="genindex-section">
+  <h2>S</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.sample_mismatch">sample_mismatch() (datacompy.core.Compare method)</a>
 </li>
-      <li><a href="api/datacompy.html#datacompy.core.Compare.subset">subset() (datacompy.core.Compare method)</a>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare">SparkCompare (class in datacompy.spark)</a>
 </li>
-  </ul></td>
-</tr></table>
-
-<h2 id="T">T</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/datacompy.html#datacompy.core.temp_column_name">temp_column_name() (in module datacompy.core)</a>
+        <li><a href="api/datacompy.html#datacompy.core.Compare.subset">subset() (datacompy.core.Compare method)</a>
 </li>
-  </ul></td>
-</tr></table>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="T" class="genindex-section">
+  <h2>T</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/datacompy.html#datacompy.core.temp_column_name">temp_column_name() (in module datacompy.core)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
 
-
-           </div>
-          </div>
-          <footer>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2020, Capital One.</p>
-  </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
-</footer>
-        </div>
+        </article>
       </div>
-    </section>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2023, Capital One
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
   </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
-
-</body>
+</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/scripts/furo.js"></script>
+    </body>
 </html>

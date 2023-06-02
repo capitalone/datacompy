@@ -12,10 +12,18 @@ datacompy.core module
    :undoc-members:
    :show-inheritance:
 
-datacompy.sparkcompare module
------------------------------
+datacompy.fugue module
+----------------------
 
-.. automodule:: datacompy.sparkcompare
+.. automodule:: datacompy.fugue
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+datacompy.spark module
+----------------------
+
+.. automodule:: datacompy.spark
    :members:
    :undoc-members:
    :show-inheritance:

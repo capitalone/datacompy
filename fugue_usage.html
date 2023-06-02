@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Pandas Usage" href="pandas_usage.html" /><link rel="prev" title="DataComPy" href="index.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Developer Instructions" href="developer_instructions.html" /><link rel="prev" title="Spark Usage" href="spark_usage.html" />
 
     <!-- Generated with Sphinx 6.2.1 and Furo 2023.05.20 -->
-        <title>Installation - datacompy 0.10.1 documentation</title>
+        <title>Fugue Detail - datacompy 0.10.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=e6660623a769aa55fea372102b9bf3151b292993" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -155,10 +155,10 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
@@ -202,36 +202,104 @@
           </label>
         </div>
         <article role="main">
-          <section id="installation">
-<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">#</a></h1>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Moving forward <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> will not support Python 2. Please make sure you are using Python 3.8+</p>
-</div>
-<section id="pypi-basic">
-<h2>PyPI (basic)<a class="headerlink" href="#pypi-basic" title="Permalink to this heading">#</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span>
+          <section id="fugue-detail">
+<h1>Fugue Detail<a class="headerlink" href="#fugue-detail" title="Permalink to this heading">#</a></h1>
+<p><a class="reference external" href="https://github.com/fugue-project/fugue">Fugue</a> is a Python library that provides a unified interface
+for data processing on Pandas, DuckDB, Polars, Arrow, Spark, Dask, Ray, and many other backends.
+DataComPy integrates with Fugue to provide a simple way to compare data across these backends.</p>
+<section id="basic-usage">
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this heading">#</a></h2>
+<p>The Fugue implementation can be accessed via the:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.is_match</span></code></p></li>
+<li><p>and <code class="docutils literal notranslate"><span class="pre">datacompy.report</span></code> functions</p></li>
+</ul>
+<p>Please note this is different than the native Pandas implementation which can be accessed via the <code class="docutils literal notranslate"><span class="pre">Compare</span></code> class,
+the Fugue implementation is using the <code class="docutils literal notranslate"><span class="pre">Compare</span></code> class in the background though.</p>
+<p>The following usage example compares two Pandas dataframes, it is equivalent to the Pandas usage example.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">datacompy</span>
+
+<span class="n">data1</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld,date_fld</span>
+<span class="s2">10000001234,123.45,George Maharis,14530.1555,2017-01-01</span>
+<span class="s2">10000001235,0.45,Michael Bluth,1,2017-01-01</span>
+<span class="s2">10000001236,1345,George Bluth,,2017-01-01</span>
+<span class="s2">10000001237,123456,Bob Loblaw,345.12,2017-01-01</span>
+<span class="s2">10000001239,1.05,Lucille Bluth,,2017-01-01</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">data2</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld</span>
+<span class="s2">10000001234,123.4,George Michael Bluth,14530.155</span>
+<span class="s2">10000001235,0.45,Michael Bluth,</span>
+<span class="s2">10000001236,1345,George Bluth,1</span>
+<span class="s2">10000001237,123456,Robert Loblaw,345.12</span>
+<span class="s2">10000001238,1.05,Loose Seal Bluth,111</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">df1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data1</span><span class="p">))</span>
+<span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data2</span><span class="p">))</span>
+
+<span class="n">datacompy</span><span class="o">.</span><span class="n">is_match</span><span class="p">(</span>
+    <span class="n">df1</span><span class="p">,</span>
+    <span class="n">df2</span><span class="p">,</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1">#You can also specify a list of columns</span>
+    <span class="n">abs_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Optional, defaults to 0</span>
+    <span class="n">rel_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Optional, defaults to 0</span>
+    <span class="n">df1_name</span><span class="o">=</span><span class="s1">&#39;Original&#39;</span><span class="p">,</span> <span class="c1">#Optional, defaults to &#39;df1&#39;</span>
+    <span class="n">df2_name</span><span class="o">=</span><span class="s1">&#39;New&#39;</span> <span class="c1">#Optional, defaults to &#39;df2&#39;</span>
+<span class="p">)</span>
+<span class="c1"># False</span>
+
+<span class="c1"># This method prints out a human-readable report summarizing and sampling differences</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">datacompy</span><span class="o">.</span><span class="n">report</span><span class="p">(</span>
+    <span class="n">df1</span><span class="p">,</span>
+    <span class="n">df2</span><span class="p">,</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1">#You can also specify a list of columns</span>
+    <span class="n">abs_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Optional, defaults to 0</span>
+    <span class="n">rel_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Optional, defaults to 0</span>
+    <span class="n">df1_name</span><span class="o">=</span><span class="s1">&#39;Original&#39;</span><span class="p">,</span> <span class="c1">#Optional, defaults to &#39;df1&#39;</span>
+    <span class="n">df2_name</span><span class="o">=</span><span class="s1">&#39;New&#39;</span> <span class="c1">#Optional, defaults to &#39;df2&#39;</span>
+<span class="p">))</span>
 </pre></div>
 </div>
-<p>A Conda environment or virtual environment is highly recommended:</p>
 </section>
-<section id="conda-installs-dependencies-from-conda-forge">
-<h2>conda (installs dependencies from Conda Forge)<a class="headerlink" href="#conda-installs-dependencies-from-conda-forge" title="Permalink to this heading">#</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">--</span><span class="n">name</span> <span class="n">test</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.9</span>
-<span class="n">source</span> <span class="n">activate</span> <span class="n">test</span>
-<span class="n">conda</span> <span class="n">config</span> <span class="o">--</span><span class="n">add</span> <span class="n">channels</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span>
-<span class="n">conda</span> <span class="n">install</span> <span class="n">datacompy</span>
+<section id="cross-comparing">
+<h2>Cross Comparing<a class="headerlink" href="#cross-comparing" title="Permalink to this heading">#</a></h2>
+<p>In order to compare dataframes of different backends, you just need to replace <code class="docutils literal notranslate"><span class="pre">df1</span></code> and <code class="docutils literal notranslate"><span class="pre">df2</span></code> with
+dataframes of different backends. Just pass in Dataframes such as Pandas dataframes, DuckDB relations,
+Polars dataframes, Arrow tables, Spark dataframes, Dask dataframes or Ray datasets. For example,
+to compare a Pandas dataframe with a Spark dataframe:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
+
+<span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+<span class="n">spark_df2</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">df2</span><span class="p">)</span>
+<span class="n">datacompy</span><span class="o">.</span><span class="n">is_match</span><span class="p">(</span>
+    <span class="n">df1</span><span class="p">,</span>
+    <span class="n">spark_df2</span><span class="p">,</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Notice that in order to use a specific backend, you need to have the corresponding library installed.
+For example, if you want compare Ray datasets, you must do</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span><span class="p">[</span><span class="n">ray</span><span class="p">]</span>
 </pre></div>
 </div>
 </section>
-<section id="virtualenv-install-dependencies-from-pypi">
-<h2>virtualenv (install dependencies from PyPI)<a class="headerlink" href="#virtualenv-install-dependencies-from-pypi" title="Permalink to this heading">#</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">virtualenv</span> <span class="n">env</span>
-<span class="n">source</span> <span class="n">env</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">setuptools</span> <span class="n">pip</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span>
-</pre></div>
-</div>
+<section id="how-it-works">
+<h2>How it works<a class="headerlink" href="#how-it-works" title="Permalink to this heading">#</a></h2>
+<p>DataComPy uses Fugue to partition the two dataframes into chunks, and then compare each chunk in parallel
+using the Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code>. The comparison results are then aggregated to produce the final result.
+Different from the join operation used in <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>, the Fugue version uses the <code class="docutils literal notranslate"><span class="pre">cogroup</span> <span class="pre">-&gt;</span> <span class="pre">map</span></code>
+like semantic (not exactly the same, Fugue adopts a coarse version to achieve great performance), which
+guarantees full data comparison with consistent result compared to Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code>.</p>
+</section>
+<section id="future-releases">
+<h2>Future releases<a class="headerlink" href="#future-releases" title="Permalink to this heading">#</a></h2>
+<p>We are hoping to pilot Fugue for the community in future releases (0.10+) and gather feedback. With Fugue we get the
+benefits of not having to maintain Framework specific code, and also having cross-framework compatibility. We may in
+future depending on feedback deprecate <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> in favour of just using Fugue to manage non-Pandas use cases.</p>
 </section>
 </section>
 
@@ -240,23 +308,23 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="pandas_usage.html">
+          <a class="next-page" href="developer_instructions.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Pandas Usage</div>
+                <div class="title">Developer Instructions</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="index.html">
+          <a class="prev-page" href="spark_usage.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Home</div>
+                <div class="title">Spark Usage</div>
                 
               </div>
             </a>
@@ -290,10 +358,11 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Installation</a><ul>
-<li><a class="reference internal" href="#pypi-basic">PyPI (basic)</a></li>
-<li><a class="reference internal" href="#conda-installs-dependencies-from-conda-forge">conda (installs dependencies from Conda Forge)</a></li>
-<li><a class="reference internal" href="#virtualenv-install-dependencies-from-pypi">virtualenv (install dependencies from PyPI)</a></li>
+<li><a class="reference internal" href="#">Fugue Detail</a><ul>
+<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li><a class="reference internal" href="#cross-comparing">Cross Comparing</a></li>
+<li><a class="reference internal" href="#how-it-works">How it works</a></li>
+<li><a class="reference internal" href="#future-releases">Future releases</a></li>
 </ul>
 </li>
 </ul>
