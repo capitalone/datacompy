@@ -45,7 +45,12 @@ CACHE_INTERMEDIATES = True
 # (if we need to use these in other modules, move to conftest.py)
 @pytest.fixture(scope="module", name="spark")
 def spark_fixture():
-    spark = SparkSession.builder.master("local[2]").config("spark.driver.bindAddress", "127.0.0.1").appName("pytest").getOrCreate()
+    spark = (
+        SparkSession.builder.master("local[2]")
+        .config("spark.driver.bindAddress", "127.0.0.1")
+        .appName("pytest")
+        .getOrCreate()
+    )
     yield spark
     spark.stop()
 
@@ -2076,9 +2081,7 @@ def text_alignment_validator(
                         break
 
                 if not match:
-                    raise AssertionError(
-                        f'Did not find a match for line: "{line}"'
-                    )
+                    raise AssertionError(f'Did not find a match for line: "{line}"')
 
                 for n in left_indices:
                     assert match_positions[n] == match.start(n)

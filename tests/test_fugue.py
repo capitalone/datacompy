@@ -132,6 +132,7 @@ def test_is_match_spark(
     space_df,
     upper_col_df,
 ):
+    ref_df.iteritems = ref_df.items  # pandas 2 compatibility
     rdf = spark_session.createDataFrame(ref_df)
 
     assert is_match(rdf, shuffle_df, join_columns="a")
@@ -263,6 +264,8 @@ def test_report_pandas(simple_diff_df1, simple_diff_df2):
 
 
 def test_report_spark(spark_session, simple_diff_df1, simple_diff_df2):
+    simple_diff_df1.iteritems = simple_diff_df1.items  # pandas 2 compatibility
+    simple_diff_df2.iteritems = simple_diff_df2.items  # pandas 2 compatibility
     df1 = spark_session.createDataFrame(simple_diff_df1)
     df2 = spark_session.createDataFrame(simple_diff_df2)
     comp = Compare(simple_diff_df1, simple_diff_df2, join_columns="aa")
