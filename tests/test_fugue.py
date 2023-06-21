@@ -288,6 +288,7 @@ def test_unique_columns_native(ref_df):
 
 def test_unique_columns_spark(spark_session, ref_df):
     df1 = ref_df
+    df1_copy = ref_df.copy()
     df2 = ref_df.copy().drop(columns=["c"])
     df3 = ref_df.copy().drop(columns=["a", "b"])
 
@@ -297,7 +298,7 @@ def test_unique_columns_spark(spark_session, ref_df):
     df3.iteritems = df3.items  # pandas 2 compatibility
 
     sdf1 = spark_session.createDataFrame(df1)
-    sdf1_copy = spark_session.createDataFrame(df1.copy())
+    sdf1_copy = spark_session.createDataFrame(df1_copy)
     sdf2 = spark_session.createDataFrame(df2)
     sdf3 = spark_session.createDataFrame(df3)
 
