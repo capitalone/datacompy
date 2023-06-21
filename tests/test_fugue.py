@@ -291,15 +291,15 @@ def test_unique_columns_spark(spark_session, ref_df):
     df2 = ref_df.copy().drop(columns=["c"])
     df3 = ref_df.copy().drop(columns=["a", "b"])
 
+    df1.iteritems = df1.items  # pandas 2 compatibility
+    df1_copy.iteritems = df1_copy.items  # pandas 2 compatibility
+    df2.iteritems = df2.items  # pandas 2 compatibility
+    df3.iteritems = df3.items  # pandas 2 compatibility
+
     sdf1 = spark_session.createDataFrame(df1)
     sdf1_copy = spark_session.createDataFrame(df1.copy())
     sdf2 = spark_session.createDataFrame(df2)
     sdf3 = spark_session.createDataFrame(df3)
-
-    sdf1.iteritems = sdf1.items  # pandas 2 compatibility
-    sdf1_copy.iteritems = sdf1_copy.items  # pandas 2 compatibility
-    sdf2.iteritems = sdf2.items  # pandas 2 compatibility
-    sdf3.iteritems = sdf3.items  # pandas 2 compatibility
 
     assert unq_columns(sdf1, sdf1_copy) == OrderedSet()
     assert unq_columns(sdf1, sdf2) == OrderedSet(["c"])
