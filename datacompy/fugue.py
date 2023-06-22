@@ -55,6 +55,27 @@ def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame):
     return OrderedSet(col1) - OrderedSet(col2)
 
 
+def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame):
+    """Get columns that are shared between the two dataframes
+
+    Parameters
+    ----------
+    df1 : ``AnyDataFrame``
+        First dataframe to check
+
+    df2 : ``AnyDataFrame``
+        Second dataframe to check
+
+    Returns
+    -------
+    OrderedSet
+        Set of that are shared between the two dataframes
+    """
+    col1 = fa.get_column_names(df1)
+    col2 = fa.get_column_names(df2)
+    return OrderedSet(col1) & OrderedSet(col2)
+
+
 def is_match(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
