@@ -16,5 +16,11 @@
 __version__ = "0.10.2"
 
 from datacompy.core import *
-from datacompy.fugue import intersect_columns, is_match, report, unq_columns
+from datacompy.fugue import (
+    all_columns_match,
+    intersect_columns,
+    is_match,
+    report,
+    unq_columns,
+)
 from datacompy.spark import NUMERIC_SPARK_TYPES, SparkCompare
