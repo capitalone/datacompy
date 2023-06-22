@@ -24,9 +24,10 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
+from ordered_set import OrderedSet
 from pytest import raises
 
-from datacompy import Compare, is_match, report
+from datacompy import Compare, intersect_columns, is_match, report, unq_columns
 
 
 @pytest.fixture
@@ -271,3 +272,143 @@ def test_report_spark(spark_session, simple_diff_df1, simple_diff_df2):
     comp = Compare(simple_diff_df1, simple_diff_df2, join_columns="aa")
     a = report(df1, df2, ["aa"])
     assert a == comp.report()
+
+
+def test_unique_columns_native(ref_df):
+    df1 = ref_df
+    df2 = ref_df.copy().drop(columns=["c"])
+    df3 = ref_df.copy().drop(columns=["a", "b"])
+
+    assert unq_columns(df1, df1.copy()) == OrderedSet()
+    assert unq_columns(df1, df2) == OrderedSet(["c"])
+    assert unq_columns(df1, df3) == OrderedSet(["a", "b"])
+    assert unq_columns(df1.copy(), df1) == OrderedSet()
+    assert unq_columns(df3, df2) == OrderedSet(["c"])
+
+
+def test_unique_columns_spark(spark_session, ref_df):
+    df1 = ref_df
+    df1_copy = ref_df.copy()
+    df2 = ref_df.copy().drop(columns=["c"])
+    df3 = ref_df.copy().drop(columns=["a", "b"])
+
+    df1.iteritems = df1.items  # pandas 2 compatibility
+    df1_copy.iteritems = df1_copy.items  # pandas 2 compatibility
+    df2.iteritems = df2.items  # pandas 2 compatibility
+    df3.iteritems = df3.items  # pandas 2 compatibility
+
+    sdf1 = spark_session.createDataFrame(df1)
+    sdf1_copy = spark_session.createDataFrame(df1_copy)
+    sdf2 = spark_session.createDataFrame(df2)
+    sdf3 = spark_session.createDataFrame(df3)
+
+    assert unq_columns(sdf1, sdf1_copy) == OrderedSet()
+    assert unq_columns(sdf1, sdf2) == OrderedSet(["c"])
+    assert unq_columns(sdf1, sdf3) == OrderedSet(["a", "b"])
+    assert unq_columns(sdf1_copy, sdf1) == OrderedSet()
+    assert unq_columns(sdf3, sdf2) == OrderedSet(["c"])
+
+
+def test_unique_columns_polars(ref_df):
+    df1 = ref_df
+    df2 = ref_df.copy().drop(columns=["c"])
+    df3 = ref_df.copy().drop(columns=["a", "b"])
+
+    pdf1 = pl.from_pandas(df1)
+    pdf1_copy = pl.from_pandas(df1.copy())
+    pdf2 = pl.from_pandas(df2)
+    pdf3 = pl.from_pandas(df3)
+
+    assert unq_columns(pdf1, pdf1_copy) == OrderedSet()
+    assert unq_columns(pdf1, pdf2) == OrderedSet(["c"])
+    assert unq_columns(pdf1, pdf3) == OrderedSet(["a", "b"])
+    assert unq_columns(pdf1_copy, pdf1) == OrderedSet()
+    assert unq_columns(pdf3, pdf2) == OrderedSet(["c"])
+
+
+def test_unique_columns_duckdb(ref_df):
+    df1 = ref_df
+    df2 = ref_df.copy().drop(columns=["c"])
+    df3 = ref_df.copy().drop(columns=["a", "b"])
+
+    with duckdb.connect():
+        ddf1 = duckdb.from_df(df1)
+        ddf1_copy = duckdb.from_df(df1.copy())
+        ddf2 = duckdb.from_df(df2)
+        ddf3 = duckdb.from_df(df3)
+
+        assert unq_columns(ddf1, ddf1_copy) == OrderedSet()
+        assert unq_columns(ddf1, ddf2) == OrderedSet(["c"])
+        assert unq_columns(ddf1, ddf3) == OrderedSet(["a", "b"])
+        assert unq_columns(ddf1_copy, ddf1) == OrderedSet()
+        assert unq_columns(ddf3, ddf2) == OrderedSet(["c"])
+
+
+def test_intersect_columns_native(ref_df):
+    df1 = ref_df
+    df2 = ref_df.copy().drop(columns=["c"])
+    df3 = ref_df.copy().drop(columns=["a", "b"])
+
+    assert intersect_columns(df1, df1.copy()) == OrderedSet(["a", "b", "c"])
+    assert intersect_columns(df1, df2) == OrderedSet(["a", "b"])
+    assert intersect_columns(df1, df3) == OrderedSet(["c"])
+    assert intersect_columns(df1.copy(), df1) == OrderedSet(["a", "b", "c"])
+    assert intersect_columns(df3, df2) == OrderedSet()
+
+
+def test_intersect_columns_spark(spark_session, ref_df):
+    df1 = ref_df
+    df1_copy = ref_df.copy()
+    df2 = ref_df.copy().drop(columns=["c"])
+    df3 = ref_df.copy().drop(columns=["a", "b"])
+
+    df1.iteritems = df1.items  # pandas 2 compatibility
+    df1_copy.iteritems = df1_copy.items  # pandas 2 compatibility
+    df2.iteritems = df2.items  # pandas 2 compatibility
+    df3.iteritems = df3.items  # pandas 2 compatibility
+
+    sdf1 = spark_session.createDataFrame(df1)
+    sdf1_copy = spark_session.createDataFrame(df1_copy)
+    sdf2 = spark_session.createDataFrame(df2)
+    sdf3 = spark_session.createDataFrame(df3)
+
+    assert intersect_columns(sdf1, sdf1_copy) == OrderedSet(["a", "b", "c"])
+    assert intersect_columns(sdf1, sdf2) == OrderedSet(["a", "b"])
+    assert intersect_columns(sdf1, sdf3) == OrderedSet(["c"])
+    assert intersect_columns(sdf1_copy, sdf1) == OrderedSet(["a", "b", "c"])
+    assert intersect_columns(sdf3, sdf2) == OrderedSet()
+
+
+def test_intersect_columns_polars(ref_df):
+    df1 = ref_df
+    df2 = ref_df.copy().drop(columns=["c"])
+    df3 = ref_df.copy().drop(columns=["a", "b"])
+
+    pdf1 = pl.from_pandas(df1)
+    pdf1_copy = pl.from_pandas(df1.copy())
+    pdf2 = pl.from_pandas(df2)
+    pdf3 = pl.from_pandas(df3)
+
+    assert intersect_columns(pdf1, pdf1_copy) == OrderedSet(["a", "b", "c"])
+    assert intersect_columns(pdf1, pdf2) == OrderedSet(["a", "b"])
+    assert intersect_columns(pdf1, pdf3) == OrderedSet(["c"])
+    assert intersect_columns(pdf1_copy, pdf1) == OrderedSet(["a", "b", "c"])
+    assert intersect_columns(pdf3, pdf2) == OrderedSet()
+
+
+def test_intersect_columns_duckdb(ref_df):
+    df1 = ref_df
+    df2 = ref_df.copy().drop(columns=["c"])
+    df3 = ref_df.copy().drop(columns=["a", "b"])
+
+    with duckdb.connect():
+        ddf1 = duckdb.from_df(df1)
+        ddf1_copy = duckdb.from_df(df1.copy())
+        ddf2 = duckdb.from_df(df2)
+        ddf3 = duckdb.from_df(df3)
+
+        assert intersect_columns(ddf1, ddf1_copy) == OrderedSet(["a", "b", "c"])
+        assert intersect_columns(ddf1, ddf2) == OrderedSet(["a", "b"])
+        assert intersect_columns(ddf1, ddf3) == OrderedSet(["c"])
+        assert intersect_columns(ddf1_copy, ddf1) == OrderedSet(["a", "b", "c"])
+        assert intersect_columns(ddf3, ddf2) == OrderedSet()

@@ -26,11 +26,54 @@ import fugue.api as fa
 import pandas as pd
 import pyarrow as pa
 from fugue import AnyDataFrame
+from ordered_set import OrderedSet
 
 from .core import Compare, render
 
 LOG = logging.getLogger(__name__)
 HASH_COL = "__datacompy__hash__"
+
+
+def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame):
+    """Get columns that are unique to df1
+
+    Parameters
+    ----------
+    df1 : ``AnyDataFrame``
+        First dataframe to check
+
+    df2 : ``AnyDataFrame``
+        Second dataframe to check
+
+    Returns
+    -------
+    OrderedSet
+        Set of columns that are unique to df1
+    """
+    col1 = fa.get_column_names(df1)
+    col2 = fa.get_column_names(df2)
+    return OrderedSet(col1) - OrderedSet(col2)
+
+
+def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame):
+    """Get columns that are shared between the two dataframes
+
+    Parameters
+    ----------
+    df1 : ``AnyDataFrame``
+        First dataframe to check
+
+    df2 : ``AnyDataFrame``
+        Second dataframe to check
+
+    Returns
+    -------
+    OrderedSet
+        Set of that are shared between the two dataframes
+    """
+    col1 = fa.get_column_names(df1)
+    col2 = fa.get_column_names(df2)
+    return OrderedSet(col1) & OrderedSet(col2)
 
 
 def is_match(
