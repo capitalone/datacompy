@@ -27,7 +27,7 @@ import pytest
 from ordered_set import OrderedSet
 from pytest import raises
 
-from datacompy import Compare, is_match, report, unq_columns, intersect_columns
+from datacompy import Compare, intersect_columns, is_match, report, unq_columns
 
 
 @pytest.fixture
@@ -342,8 +342,6 @@ def test_unique_columns_duckdb(ref_df):
         assert unq_columns(ddf1, ddf3) == OrderedSet(["a", "b"])
         assert unq_columns(ddf1_copy, ddf1) == OrderedSet()
         assert unq_columns(ddf3, ddf2) == OrderedSet(["c"])
-
-
 
 
 def test_intersect_columns_native(ref_df):
