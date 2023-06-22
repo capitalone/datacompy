@@ -50,9 +50,9 @@ def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame):
     OrderedSet
         Set of columns that are unique to df1
     """
-    tdf1 = fa.as_fugue_df(df1)
-    tdf2 = fa.as_fugue_df(df2)
-    return OrderedSet(tdf1.columns) - OrderedSet(tdf2.columns)
+    col1 = fa.get_column_names(df1)
+    col2 = fa.get_column_names(df2)
+    return OrderedSet(col1) - OrderedSet(col2)
 
 
 def is_match(
