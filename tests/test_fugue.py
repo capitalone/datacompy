@@ -19,7 +19,6 @@ Testing out the fugue is_match functionality
 from io import StringIO
 
 import duckdb
-import fugue.api as fa
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -87,6 +86,18 @@ def simple_diff_df1():
 @pytest.fixture
 def simple_diff_df2():
     return pd.DataFrame(dict(aa=[1, 0, 1], bb=[3.1, 4.1, 5.1], cc=["a", "b", "c"]))
+
+
+@pytest.fixture
+def no_intersection_diff_df1():
+    np.random.seed(0)
+    return pd.DataFrame(np.random.randint(0, 5, size=(10000, 2)), columns=["x", "y"])
+
+
+@pytest.fixture
+def no_intersection_diff_df2():
+    np.random.seed(0)
+    return pd.DataFrame(np.random.randint(6, 11, size=(10000, 2)), columns=["x", "y"])
 
 
 def test_is_match_native(
@@ -268,22 +279,49 @@ def test_doc_case():
     )
 
 
-def test_report_pandas(simple_diff_df1, simple_diff_df2):
+def _compare_report(expected, actual, truncate=False):
+    if truncate:
+        expected = expected.split("Sample Rows Only", 1)[0]
+        actual = actual.split("Sample Rows Only", 1)[0]
+    assert expected == actual
+
+
+def test_report_pandas(
+    simple_diff_df1, simple_diff_df2, no_intersection_diff_df1, no_intersection_diff_df2
+):
     comp = Compare(simple_diff_df1, simple_diff_df2, join_columns=["aa"])
     a = report(simple_diff_df1, simple_diff_df2, ["aa"])
-    assert a == comp.report()
+    _compare_report(comp.report(), a)
     a = report(simple_diff_df1, simple_diff_df2, "aa", parallelism=2)
-    assert a == comp.report()
+    _compare_report(comp.report(), a)
+
+    comp = Compare(
+        no_intersection_diff_df1, no_intersection_diff_df2, join_columns=["x"]
+    )
+    a = report(no_intersection_diff_df1, no_intersection_diff_df2, ["x"])
+    _compare_report(comp.report(), a, True)
+    a = report(no_intersection_diff_df1, no_intersection_diff_df2, "x", parallelism=2)
+    _compare_report(comp.report(), a, True)
 
 
-def test_report_spark(spark_session, simple_diff_df1, simple_diff_df2):
-    simple_diff_df1.iteritems = simple_diff_df1.items  # pandas 2 compatibility
-    simple_diff_df2.iteritems = simple_diff_df2.items  # pandas 2 compatibility
+def test_report_spark(
+    spark_session,
+    simple_diff_df1,
+    simple_diff_df2,
+    no_intersection_diff_df1,
+    no_intersection_diff_df2,
+):
     df1 = spark_session.createDataFrame(simple_diff_df1)
     df2 = spark_session.createDataFrame(simple_diff_df2)
     comp = Compare(simple_diff_df1, simple_diff_df2, join_columns="aa")
     a = report(df1, df2, ["aa"])
-    assert a == comp.report()
+    _compare_report(comp.report(), a)
+
+    df1 = spark_session.createDataFrame(no_intersection_diff_df1)
+    df2 = spark_session.createDataFrame(no_intersection_diff_df2)
+    comp = Compare(no_intersection_diff_df1, no_intersection_diff_df2, join_columns="x")
+    a = report(df1, df2, ["x"])
+    _compare_report(comp.report(), a, True)
 
 
 def test_unique_columns_native(ref_df):
