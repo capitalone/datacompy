@@ -534,8 +534,6 @@ def _distributed_compare(
 
     df1_schema = tdf1.schema
     df2_schema = tdf2.schema
-    df1_cols = tdf1.schema.names
-    df2_cols = tdf2.schema.names
     str_cols = set(f.name for f in tdf1.schema.fields if pa.types.is_string(f.type))
     bucket = (
         parallelism if parallelism is not None else fa.get_current_parallelism() * 2
