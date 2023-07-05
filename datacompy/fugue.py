@@ -76,6 +76,25 @@ def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame):
     return OrderedSet(col1) & OrderedSet(col2)
 
 
+def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame):
+    """Whether the columns all match in the dataframes
+
+    Parameters
+    ----------
+    df1 : ``AnyDataFrame``
+        First dataframe to check
+
+    df2 : ``AnyDataFrame``
+        Second dataframe to check
+
+    Returns
+    -------
+    bool
+        Boolean indicating whether the columns all match in the dataframes
+    """
+    return unq_columns(df1, df2) == unq_columns(df2, df1) == set()
+
+
 def is_match(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
