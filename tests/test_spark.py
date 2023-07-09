@@ -51,6 +51,7 @@ def spark_fixture():
         .appName("pytest")
         .getOrCreate()
     )
+    spark.conf.set("spark.sql.shuffle.partitions", 1)
     yield spark
     spark.stop()
 
