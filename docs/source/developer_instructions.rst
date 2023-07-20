@@ -46,8 +46,8 @@ Run ``python -m pytest`` to run all unittests defined in the subfolder
 Management of Requirements
 --------------------------
 
-Requirements of the project should be added to ``requirements.txt``.  Optional requirements used only for testing,
-documentation, or code quality are added to ``setup.py`` and ``EXTRAS_REQUIRE``
+Requirements of the project should be added to ``pyproject.toml``.  Optional requirements used only for testing,
+documentation, or code quality are added to ``pyproject.toml`` in the ``project.optional-dependencies`` section.
 
 
 
@@ -57,16 +57,16 @@ edgetest
 edgetest is a utility to help keep requirements up to date and ensure a subset of testing requirements still work.
 More on edgetest `here <https://github.com/capitalone/edgetest>`_.
 
-The ``setup.cfg`` has configuration details on how to run edgetest. This process can be automated via GitHub Actions.
+The ``pyproject.toml`` has configuration details on how to run edgetest. This process can be automated via GitHub Actions.
 (A future addition, which will come soon).
 
 In order to execute edgetest locally you can run the following after install ``edgetest``:
 
 .. code-block:: bash
 
-    edgetest -c setup.cfg -r requirements.txt --export
+    edgetest -c pyproject.toml --export
 
-This should return output like the following and also updating ``requirements.txt``:
+This should return output like the following and also updating ``pyproject.toml``:
 
 .. code-block:: bash
 
@@ -77,7 +77,6 @@ This should return output like the following and also updating ``requirements.tx
     core           True             pandas               1.3.5
     core           True             PyYAML               6.0
     =============  ===============  ===================  =================
-    No PEP-517 style requirements in setup.cfg to update. Updating requirements.txt
 
 
 
@@ -110,13 +109,13 @@ Generating distribution archives (PyPI)
 After each release the package will need to be uploaded to PyPi. The instructions below are taken
 from `packaging.python.org <https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives>`_
 
-Update / Install ``setuptools``, ``wheel``, and ``twine``::
+Update / Install ``build``, ``wheel``, and ``twine``::
 
-    pip install --upgrade setuptools wheel twine
+    pip install --upgrade build wheel twine
 
 Generate distributions::
 
-    python setup.py sdist bdist_wheel
+    python -m build
 
 Under the ``dist`` folder you should have something as follows::
 
