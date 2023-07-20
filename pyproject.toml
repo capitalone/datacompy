@@ -60,28 +60,28 @@ spark = ["fugue[spark]"]
 dask = ["fugue[dask]"]
 ray = ["fugue[ray]"]
 docs = [
-	"sphinx",
-	"furo",
-	"myst-parser",
+    "sphinx",
+    "furo",
+    "myst-parser",
 ]
 tests = [
-	"pytest",
-	"pytest-cov",
-	"pytest-spark",
+    "pytest",
+    "pytest-cov",
+    "pytest-spark",
 ]
 qa = [
-	"pre-commit",
-	"black",
-	"isort",
+    "pre-commit",
+    "black",
+    "isort",
 ]
 build = [
-	"build",
-	"twine",
-	"wheel",
+    "build",
+    "twine",
+    "wheel",
 ]
 edgetest = [
-	"edgetest",
-	"edgetest-conda",
+    "edgetest",
+    "edgetest-conda",
 ]
 dev = [
     "datacompy[duckdb]",
