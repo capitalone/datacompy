@@ -102,13 +102,15 @@ def no_intersection_diff_df2():
 @pytest.fixture
 def large_diff_df1():
     np.random.seed(0)
-    return pd.DataFrame(np.random.randint(0, 7, size=(10000, 2)), columns=["x", "y"])
+    data = np.random.randint(0, 7, size=10000)
+    return pd.DataFrame({"x": data, "y": np.array([9] * 10000)})
 
 
 @pytest.fixture
 def large_diff_df2():
     np.random.seed(0)
-    return pd.DataFrame(np.random.randint(6, 11, size=(10000, 2)), columns=["x", "y"])
+    data = np.random.randint(6, 11, size=10000)
+    return pd.DataFrame({"x": data, "y": np.array([9] * 10000)})
 
 
 def test_is_match_native(
@@ -319,12 +321,14 @@ def test_report_pandas(
     a = report(no_intersection_diff_df1, no_intersection_diff_df2, "x", parallelism=2)
     _compare_report(comp.report(), a)
 
-    # can't pass due to https://github.com/capitalone/datacompy/issues/221
-    # comp = Compare(large_diff_df1, large_diff_df2, join_columns=["x"])
-    # a = report(large_diff_df1, large_diff_df2, ["x"])
-    # _compare_report(comp.report(), a, truncate=True)
-    # a = report(large_diff_df1, large_diff_df2, "x", parallelism=2)
-    # _compare_report(comp.report(), a, truncate=True)
+    # due to https://github.com/capitalone/datacompy/issues/221
+    # we can have y as a constant to ensure all the x matches are equal
+
+    comp = Compare(large_diff_df1, large_diff_df2, join_columns=["x"])
+    a = report(large_diff_df1, large_diff_df2, ["x"])
+    _compare_report(comp.report(), a, truncate=True)
+    a = report(large_diff_df1, large_diff_df2, "x", parallelism=2)
+    _compare_report(comp.report(), a, truncate=True)
 
 
 def test_report_spark(
@@ -359,12 +363,14 @@ def test_report_spark(
     a = report(df1, df2, ["x"])
     _compare_report(comp.report(), a)
 
-    # can't pass due to https://github.com/capitalone/datacompy/issues/221
-    # df1 = spark_session.createDataFrame(large_diff_df1)
-    # df2 = spark_session.createDataFrame(large_diff_df2)
-    # comp = Compare(large_diff_df1, large_diff_df2, join_columns="x")
-    # a = report(df1, df2, ["x"])
-    # _compare_report(comp.report(), a, truncate=True)
+    # due to https://github.com/capitalone/datacompy/issues/221
+    # we can have y as a constant to ensure all the x matches are equal
+
+    df1 = spark_session.createDataFrame(large_diff_df1)
+    df2 = spark_session.createDataFrame(large_diff_df2)
+    comp = Compare(large_diff_df1, large_diff_df2, join_columns="x")
+    a = report(df1, df2, ["x"])
+    _compare_report(comp.report(), a, truncate=True)
 
 
 def test_unique_columns_native(ref_df):
