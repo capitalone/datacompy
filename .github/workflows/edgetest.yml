@@ -16,6 +16,6 @@ jobs:
       - id: run-edgetest
         uses: fdosani/run-edgetest-action@v1.2
         with:
-          edgetest-flags: '-c setup.cfg --export'
+          edgetest-flags: '-c pyproject.toml --export'
           base-branch: 'develop'
           skip-pr: 'false'
