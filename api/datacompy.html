@@ -5,11 +5,11 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="prev" title="datacompy" href="modules.html" />
 
-    <!-- Generated with Sphinx 7.0.1 and Furo 2023.05.20 -->
-        <title>datacompy package - datacompy 0.10.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=e6660623a769aa55fea372102b9bf3151b292993" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+        <title>datacompy package - datacompy 0.10.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -123,7 +123,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 0.10.2 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 0.10.3 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -146,7 +146,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.10.2 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.10.3 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -564,6 +564,46 @@ templates directory before opening</p></li>
 <span id="datacompy-fugue-module"></span><h2>datacompy.fugue module<a class="headerlink" href="#module-datacompy.fugue" title="Permalink to this heading">#</a></h2>
 <p>Compare two DataFrames that are supported by Fugue</p>
 <dl class="py function">
+<dt class="sig sig-object py" id="datacompy.fugue.all_columns_match">
+<span class="sig-prename descclassname"><span class="pre">datacompy.fugue.</span></span><span class="sig-name descname"><span class="pre">all_columns_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AnyDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AnyDataFrame</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.fugue.all_columns_match" title="Permalink to this definition">#</a></dt>
+<dd><p>Whether the columns all match in the dataframes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df1</strong> (<code class="docutils literal notranslate"><span class="pre">AnyDataFrame</span></code>) – First dataframe to check</p></li>
+<li><p><strong>df2</strong> (<code class="docutils literal notranslate"><span class="pre">AnyDataFrame</span></code>) – Second dataframe to check</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Boolean indicating whether the columns all match in the dataframes</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.fugue.intersect_columns">
+<span class="sig-prename descclassname"><span class="pre">datacompy.fugue.</span></span><span class="sig-name descname"><span class="pre">intersect_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AnyDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AnyDataFrame</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.fugue.intersect_columns" title="Permalink to this definition">#</a></dt>
+<dd><p>Get columns that are shared between the two dataframes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df1</strong> (<code class="docutils literal notranslate"><span class="pre">AnyDataFrame</span></code>) – First dataframe to check</p></li>
+<li><p><strong>df2</strong> (<code class="docutils literal notranslate"><span class="pre">AnyDataFrame</span></code>) – Second dataframe to check</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Set of that are shared between the two dataframes</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>OrderedSet</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="datacompy.fugue.is_match">
 <span class="sig-prename descclassname"><span class="pre">datacompy.fugue.</span></span><span class="sig-name descname"><span class="pre">is_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AnyDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AnyDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df1_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'df1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'df2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_spaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_case</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cast_column_names_lower</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallelism</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict_schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.fugue.is_match" title="Permalink to this definition">#</a></dt>
 <dd><p>Check whether two dataframes match.</p>
@@ -639,6 +679,26 @@ will force to use of Fugue over just vanilla Pandas</p></li>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.fugue.unq_columns">
+<span class="sig-prename descclassname"><span class="pre">datacompy.fugue.</span></span><span class="sig-name descname"><span class="pre">unq_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AnyDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AnyDataFrame</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.fugue.unq_columns" title="Permalink to this definition">#</a></dt>
+<dd><p>Get columns that are unique to df1</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df1</strong> (<code class="docutils literal notranslate"><span class="pre">AnyDataFrame</span></code>) – First dataframe to check</p></li>
+<li><p><strong>df2</strong> (<code class="docutils literal notranslate"><span class="pre">AnyDataFrame</span></code>) – Second dataframe to check</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Set of columns that are unique to df1</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>OrderedSet</p>
 </dd>
 </dl>
 </dd></dl>
@@ -969,8 +1029,11 @@ this to an output file, as in the example.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-datacompy.fugue">datacompy.fugue module</a><ul>
+<li><a class="reference internal" href="#datacompy.fugue.all_columns_match"><code class="docutils literal notranslate"><span class="pre">all_columns_match()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.fugue.intersect_columns"><code class="docutils literal notranslate"><span class="pre">intersect_columns()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.fugue.is_match"><code class="docutils literal notranslate"><span class="pre">is_match()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.fugue.report"><code class="docutils literal notranslate"><span class="pre">report()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.fugue.unq_columns"><code class="docutils literal notranslate"><span class="pre">unq_columns()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-datacompy.spark">datacompy.spark module</a><ul>
@@ -1010,9 +1073,9 @@ this to an output file, as in the example.</p>
       
     </aside>
   </div>
-</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-    <script src="../_static/scripts/furo.js"></script>
+</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=cdbb1c5d"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
     </body>
 </html>
