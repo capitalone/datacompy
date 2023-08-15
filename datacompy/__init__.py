@@ -13,8 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "0.10.2"
+__version__ = "0.10.3"
 
 from datacompy.core import *
-from datacompy.fugue import is_match, report
+from datacompy.fugue import (
+    all_columns_match,
+    intersect_columns,
+    is_match,
+    report,
+    unq_columns,
+)
 from datacompy.spark import NUMERIC_SPARK_TYPES, SparkCompare

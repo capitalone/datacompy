@@ -26,11 +26,74 @@ import fugue.api as fa
 import pandas as pd
 import pyarrow as pa
 from fugue import AnyDataFrame
+from ordered_set import OrderedSet
+from triad import Schema
 
 from .core import Compare, render
 
 LOG = logging.getLogger(__name__)
 HASH_COL = "__datacompy__hash__"
+
+
+def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame):
+    """Get columns that are unique to df1
+
+    Parameters
+    ----------
+    df1 : ``AnyDataFrame``
+        First dataframe to check
+
+    df2 : ``AnyDataFrame``
+        Second dataframe to check
+
+    Returns
+    -------
+    OrderedSet
+        Set of columns that are unique to df1
+    """
+    col1 = fa.get_column_names(df1)
+    col2 = fa.get_column_names(df2)
+    return OrderedSet(col1) - OrderedSet(col2)
+
+
+def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame):
+    """Get columns that are shared between the two dataframes
+
+    Parameters
+    ----------
+    df1 : ``AnyDataFrame``
+        First dataframe to check
+
+    df2 : ``AnyDataFrame``
+        Second dataframe to check
+
+    Returns
+    -------
+    OrderedSet
+        Set of that are shared between the two dataframes
+    """
+    col1 = fa.get_column_names(df1)
+    col2 = fa.get_column_names(df2)
+    return OrderedSet(col1) & OrderedSet(col2)
+
+
+def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame):
+    """Whether the columns all match in the dataframes
+
+    Parameters
+    ----------
+    df1 : ``AnyDataFrame``
+        First dataframe to check
+
+    df2 : ``AnyDataFrame``
+        Second dataframe to check
+
+    Returns
+    -------
+    bool
+        Boolean indicating whether the columns all match in the dataframes
+    """
+    return unq_columns(df1, df2) == unq_columns(df2, df1) == set()
 
 
 def is_match(
@@ -469,8 +532,8 @@ def _distributed_compare(
     assert hash_cols in tdf1.schema, f"{hash_cols} not found in {tdf1.schema}"
     assert hash_cols in tdf2.schema, f"{hash_cols} not found in {tdf2.schema}"
 
-    df1_cols = tdf1.schema.names
-    df2_cols = tdf2.schema.names
+    df1_schema = tdf1.schema
+    df2_schema = tdf2.schema
     str_cols = set(f.name for f in tdf1.schema.fields if pa.types.is_string(f.type))
     bucket = (
         parallelism if parallelism is not None else fa.get_current_parallelism() * 2
@@ -508,17 +571,19 @@ def _distributed_compare(
         distinct=False,
     )
 
+    def _deserialize(
+        df: List[Dict[str, Any]], left: bool, schema: Schema
+    ) -> pd.DataFrame:
+        arr = [pickle.loads(r["data"]) for r in df if r["left"] == left]
+        if len(arr) > 0:
+            return pd.concat(arr).sort_values(schema.names).reset_index(drop=True)
+        return pd.DataFrame(
+            {k: pd.Series(dtype=v) for k, v in schema.pandas_dtype.items()}
+        )
+
     def _comp(df: List[Dict[str, Any]]) -> List[List[Any]]:
-        df1 = (
-            pd.concat([pickle.loads(r["data"]) for r in df if r["left"]])
-            .sort_values(df1_cols)
-            .reset_index(drop=True)
-        )
-        df2 = (
-            pd.concat([pickle.loads(r["data"]) for r in df if not r["left"]])
-            .sort_values(df2_cols)
-            .reset_index(drop=True)
-        )
+        df1 = _deserialize(df, True, df1_schema)
+        df2 = _deserialize(df, False, df2_schema)
         comp = Compare(
             df1=df1,
             df2=df2,
