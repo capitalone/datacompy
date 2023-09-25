@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "0.10.3"
+__version__ = "0.10.4"
 
 from datacompy.core import *
 from datacompy.fugue import (
