@@ -1,12 +1,12 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="./">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="datacompy" href="api/modules.html" /><link rel="prev" title="Fugue Detail" href="fugue_usage.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
-        <title>Developer Instructions - datacompy 0.10.3 documentation</title>
+    <!-- Generated with Sphinx 7.2.6 and Furo 2023.09.10 -->
+        <title>Developer Instructions - datacompy 0.10.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
@@ -123,7 +123,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.10.3 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.10.4 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -146,7 +146,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.10.3 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.10.4 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -203,10 +203,10 @@
         </div>
         <article role="main">
           <section id="developer-instructions">
-<h1>Developer Instructions<a class="headerlink" href="#developer-instructions" title="Permalink to this heading">#</a></h1>
+<h1>Developer Instructions<a class="headerlink" href="#developer-instructions" title="Link to this heading">#</a></h1>
 <p>Guidance for developers.</p>
 <section id="pre-commit-hooks">
-<h2>Pre-Commit Hooks<a class="headerlink" href="#pre-commit-hooks" title="Permalink to this heading">#</a></h2>
+<h2>Pre-Commit Hooks<a class="headerlink" href="#pre-commit-hooks" title="Link to this heading">#</a></h2>
 <p>We use the excellent <a class="reference external" href="https://pre-commit.com/">pre-commit</a> to run several hooks on all changes before commits.
 <code class="docutils literal notranslate"><span class="pre">pre-commit</span></code> is included in the <code class="docutils literal notranslate"><span class="pre">dev</span></code> extra installs. You’ll have to run <code class="docutils literal notranslate"><span class="pre">pre-commit</span> <span class="pre">install</span></code> once per environment
 before committing changes.</p>
@@ -214,7 +214,7 @@ before committing changes.</p>
 on the collective wisdom of the Python community.</p>
 </section>
 <section id="generating-documentation">
-<h2>Generating Documentation<a class="headerlink" href="#generating-documentation" title="Permalink to this heading">#</a></h2>
+<h2>Generating Documentation<a class="headerlink" href="#generating-documentation" title="Link to this heading">#</a></h2>
 <p>You will need to <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> the <code class="docutils literal notranslate"><span class="pre">dev</span></code> requirements:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span><span class="p">[</span><span class="n">dev</span><span class="p">]</span>
 </pre></div>
@@ -233,18 +233,18 @@ that the branch is clean and then to push to gh-pages you can type:</p>
 Just make sure Sphinx 1.3 or above is installed.</p>
 </section>
 <section id="run-unit-tests">
-<h2>Run unit tests<a class="headerlink" href="#run-unit-tests" title="Permalink to this heading">#</a></h2>
+<h2>Run unit tests<a class="headerlink" href="#run-unit-tests" title="Link to this heading">#</a></h2>
 <p>Run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pytest</span></code> to run all unittests defined in the subfolder
 <code class="docutils literal notranslate"><span class="pre">tests</span></code> with the help of <a class="reference external" href="http://pytest.org/">py.test</a> and
 <a class="reference external" href="https://pypi.python.org/pypi/pytest-runner">pytest-runner</a>.</p>
 </section>
 <section id="management-of-requirements">
-<h2>Management of Requirements<a class="headerlink" href="#management-of-requirements" title="Permalink to this heading">#</a></h2>
+<h2>Management of Requirements<a class="headerlink" href="#management-of-requirements" title="Link to this heading">#</a></h2>
 <p>Requirements of the project should be added to <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>.  Optional requirements used only for testing,
 documentation, or code quality are added to <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> in the <code class="docutils literal notranslate"><span class="pre">project.optional-dependencies</span></code> section.</p>
 </section>
 <section id="edgetest">
-<h2>edgetest<a class="headerlink" href="#edgetest" title="Permalink to this heading">#</a></h2>
+<h2>edgetest<a class="headerlink" href="#edgetest" title="Link to this heading">#</a></h2>
 <p>edgetest is a utility to help keep requirements up to date and ensure a subset of testing requirements still work.
 More on edgetest <a class="reference external" href="https://github.com/capitalone/edgetest">here</a>.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> has configuration details on how to run edgetest. This process can be automated via GitHub Actions.
@@ -265,7 +265,7 @@ core<span class="w">           </span>True<span class="w">             </span>Py
 </div>
 </section>
 <section id="release-guide">
-<h2>Release Guide<a class="headerlink" href="#release-guide" title="Permalink to this heading">#</a></h2>
+<h2>Release Guide<a class="headerlink" href="#release-guide" title="Link to this heading">#</a></h2>
 <p>For <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> we want to use a simple workflow branching style and follow
 <a class="reference external" href="https://semver.org/">Semantic Versioning</a> for each release.</p>
 <p><code class="docutils literal notranslate"><span class="pre">develop</span></code> is the default branch where most people will work with day to day. All features must be squash merged into
@@ -281,7 +281,7 @@ disconnected and independent from the code: <code class="docutils literal notran
 <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">ghpages</span></code> to help streamline building and pushing docs once they are setup right.</p>
 </section>
 <section id="generating-distribution-archives-pypi">
-<h2>Generating distribution archives (PyPI)<a class="headerlink" href="#generating-distribution-archives-pypi" title="Permalink to this heading">#</a></h2>
+<h2>Generating distribution archives (PyPI)<a class="headerlink" href="#generating-distribution-archives-pypi" title="Link to this heading">#</a></h2>
 <p>After each release the package will need to be uploaded to PyPi. The instructions below are taken
 from <a class="reference external" href="https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives">packaging.python.org</a></p>
 <p>Update / Install <code class="docutils literal notranslate"><span class="pre">build</span></code>, <code class="docutils literal notranslate"><span class="pre">wheel</span></code>, and <code class="docutils literal notranslate"><span class="pre">twine</span></code>:</p>
@@ -383,9 +383,9 @@ from <a class="reference external" href="https://packaging.python.org/tutorials/
       
     </aside>
   </div>
-</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=cdbb1c5d"></script>
+</div><script src="_static/documentation_options.js?v=7e173fe4"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>
     </body>
 </html>

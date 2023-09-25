@@ -1,12 +1,12 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="./">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Developer Instructions" href="developer_instructions.html" /><link rel="prev" title="Spark Usage" href="spark_usage.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
-        <title>Fugue Detail - datacompy 0.10.3 documentation</title>
+    <!-- Generated with Sphinx 7.2.6 and Furo 2023.09.10 -->
+        <title>Fugue Detail - datacompy 0.10.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
@@ -123,7 +123,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.10.3 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.10.4 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -146,7 +146,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.10.3 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.10.4 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -203,12 +203,12 @@
         </div>
         <article role="main">
           <section id="fugue-detail">
-<h1>Fugue Detail<a class="headerlink" href="#fugue-detail" title="Permalink to this heading">#</a></h1>
+<h1>Fugue Detail<a class="headerlink" href="#fugue-detail" title="Link to this heading">#</a></h1>
 <p><a class="reference external" href="https://github.com/fugue-project/fugue">Fugue</a> is a Python library that provides a unified interface
 for data processing on Pandas, DuckDB, Polars, Arrow, Spark, Dask, Ray, and many other backends.
 DataComPy integrates with Fugue to provide a simple way to compare data across these backends.</p>
 <section id="basic-usage">
-<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this heading">#</a></h2>
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">#</a></h2>
 <p>The Fugue implementation can be accessed via the:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">datacompy.is_match</span></code></p></li>
@@ -265,7 +265,7 @@ the Fugue implementation is using the <code class="docutils literal notranslate"
 </div>
 </section>
 <section id="cross-comparing">
-<h2>Cross Comparing<a class="headerlink" href="#cross-comparing" title="Permalink to this heading">#</a></h2>
+<h2>Cross Comparing<a class="headerlink" href="#cross-comparing" title="Link to this heading">#</a></h2>
 <p>In order to compare dataframes of different backends, you just need to replace <code class="docutils literal notranslate"><span class="pre">df1</span></code> and <code class="docutils literal notranslate"><span class="pre">df2</span></code> with
 dataframes of different backends. Just pass in Dataframes such as Pandas dataframes, DuckDB relations,
 Polars dataframes, Arrow tables, Spark dataframes, Dask dataframes or Ray datasets. For example,
@@ -288,7 +288,7 @@ For example, if you want compare Ray datasets, you must do</p>
 </div>
 </section>
 <section id="how-it-works">
-<h2>How it works<a class="headerlink" href="#how-it-works" title="Permalink to this heading">#</a></h2>
+<h2>How it works<a class="headerlink" href="#how-it-works" title="Link to this heading">#</a></h2>
 <p>DataComPy uses Fugue to partition the two dataframes into chunks, and then compare each chunk in parallel
 using the Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code>. The comparison results are then aggregated to produce the final result.
 Different from the join operation used in <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>, the Fugue version uses the <code class="docutils literal notranslate"><span class="pre">cogroup</span> <span class="pre">-&gt;</span> <span class="pre">map</span></code>
@@ -296,7 +296,7 @@ like semantic (not exactly the same, Fugue adopts a coarse version to achieve gr
 guarantees full data comparison with consistent result compared to Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code>.</p>
 </section>
 <section id="future-releases">
-<h2>Future releases<a class="headerlink" href="#future-releases" title="Permalink to this heading">#</a></h2>
+<h2>Future releases<a class="headerlink" href="#future-releases" title="Link to this heading">#</a></h2>
 <p>We are hoping to pilot Fugue for the community in future releases (0.10+) and gather feedback. With Fugue we get the
 benefits of not having to maintain Framework specific code, and also having cross-framework compatibility. We may in
 future depending on feedback deprecate <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> in favour of just using Fugue to manage non-Pandas use cases.</p>
@@ -374,9 +374,9 @@ future depending on feedback deprecate <code class="docutils literal notranslate
       
     </aside>
   </div>
-</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=cdbb1c5d"></script>
+</div><script src="_static/documentation_options.js?v=7e173fe4"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>
     </body>
 </html>
