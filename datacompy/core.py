@@ -303,7 +303,7 @@ class Compare:
         LOG.debug("Selecting intersecting rows")
         self.intersect_rows = outer_join[outer_join["_merge"] == "both"].copy()
         LOG.info(
-            "Number of rows in df1 and df2 (not necessarily equal): {len(self.intersect_rows)}"
+            f"Number of rows in df1 and df2 (not necessarily equal): {len(self.intersect_rows)}"
         )
 
     def _intersect_compare(self, ignore_spaces, ignore_case):
