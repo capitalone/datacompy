@@ -18,6 +18,7 @@ __version__ = "0.10.5"
 from datacompy.core import *
 from datacompy.fugue import (
     all_columns_match,
+    all_rows_overlap,
     intersect_columns,
     is_match,
     report,

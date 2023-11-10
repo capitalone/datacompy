@@ -29,6 +29,7 @@ from pytest import raises
 from datacompy import (
     Compare,
     all_columns_match,
+    all_rows_overlap,
     intersect_columns,
     is_match,
     report,
@@ -50,7 +51,14 @@ def ref_df():
     df1_copy = df1.copy()
     df2 = df1.copy().drop(columns=["c"])
     df3 = df1.copy().drop(columns=["a", "b"])
-    return [df1, df1_copy, df2, df3]
+    df4 = pd.DataFrame(
+        dict(
+            a=np.random.randint(1, 12, 100),  # shift the join col
+            b=np.random.rand(100),
+            c=np.random.choice(["aaa", "b_c", "csd"], 100),
+        )
+    )
+    return [df1, df1_copy, df2, df3, df4]
 
 
 @pytest.fixture
@@ -592,3 +600,73 @@ def test_all_columns_match_duckdb(ref_df):
         assert all_columns_match(df1, df3) is False
         assert all_columns_match(df1_copy, df1) is True
         assert all_columns_match(df3, df2) is False
+
+
+def test_all_rows_overlap_native(
+    ref_df,
+    shuffle_df,
+):
+    # defaults to Compare class
+    assert all_rows_overlap(ref_df[0], ref_df[0].copy(), join_columns="a")
+    assert all_rows_overlap(ref_df[0], shuffle_df, join_columns="a")
+    assert not all_rows_overlap(ref_df[0], ref_df[4], join_columns="a")
+    # Fugue
+    assert all_rows_overlap(ref_df[0], shuffle_df, join_columns="a", parallelism=2)
+    assert not all_rows_overlap(ref_df[0], ref_df[4], join_columns="a", parallelism=2)
+
+
+def test_all_rows_overlap_spark(
+    spark_session,
+    ref_df,
+    shuffle_df,
+):
+    ref_df[0].iteritems = ref_df[0].items  # pandas 2 compatibility
+    ref_df[4].iteritems = ref_df[4].items  # pandas 2 compatibility
+    shuffle_df.iteritems = shuffle_df.items  # pandas 2 compatibility
+    rdf = spark_session.createDataFrame(ref_df[0])
+    rdf_copy = spark_session.createDataFrame(ref_df[0])
+    rdf4 = spark_session.createDataFrame(ref_df[4])
+    sdf = spark_session.createDataFrame(shuffle_df)
+
+    assert all_rows_overlap(rdf, rdf_copy, join_columns="a")
+    assert all_rows_overlap(rdf, sdf, join_columns="a")
+    assert not all_rows_overlap(rdf, rdf4, join_columns="a")
+    assert all_rows_overlap(
+        spark_session.sql("SELECT 'a' AS a, 'b' AS b"),
+        spark_session.sql("SELECT 'a' AS a, 'b' AS b"),
+        join_columns="a",
+    )
+
+
+def test_all_rows_overlap_polars(
+    ref_df,
+    shuffle_df,
+):
+    rdf = pl.from_pandas(ref_df[0])
+    rdf_copy = pl.from_pandas(ref_df[0].copy())
+    rdf4 = pl.from_pandas(ref_df[4])
+    sdf = pl.from_pandas(shuffle_df)
+
+    assert all_rows_overlap(rdf, rdf_copy, join_columns="a")
+    assert all_rows_overlap(rdf, sdf, join_columns="a")
+    assert not all_rows_overlap(rdf, rdf4, join_columns="a")
+
+
+def test_all_rows_overlap_duckdb(
+    ref_df,
+    shuffle_df,
+):
+    with duckdb.connect():
+        rdf = duckdb.from_df(ref_df[0])
+        rdf_copy = duckdb.from_df(ref_df[0].copy())
+        rdf4 = duckdb.from_df(ref_df[4])
+        sdf = duckdb.from_df(shuffle_df)
+
+        assert all_rows_overlap(rdf, rdf_copy, join_columns="a")
+        assert all_rows_overlap(rdf, sdf, join_columns="a")
+        assert not all_rows_overlap(rdf, rdf4, join_columns="a")
+        assert all_rows_overlap(
+            duckdb.sql("SELECT 'a' AS a, 'b' AS b"),
+            duckdb.sql("SELECT 'a' AS a, 'b' AS b"),
+            join_columns="a",
+        )
