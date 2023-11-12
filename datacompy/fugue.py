@@ -582,21 +582,21 @@ def _distributed_compare(
         # the correct schema, it avoids pandas schema inference which is wrong.
         # This is not needed when upgrading to Fugue >= 0.8.7
         sample_row: List[Any] = []
-        for col in schema.names:
-            if pa.types.is_string(schema[col].type):
+        for field in schema.fields:
+            if pa.types.is_string(field.type):
                 sample_row.append("x")
-            elif pa.types.is_integer(schema[col].type):
+            elif pa.types.is_integer(field.type):
                 sample_row.append(1)
-            elif pa.types.is_floating(schema[col].type):
+            elif pa.types.is_floating(field.type):
                 sample_row.append(1.1)
-            elif pa.types.is_boolean(schema[col].type):
+            elif pa.types.is_boolean(field.type):
                 sample_row.append(True)
-            elif pa.types.is_timestamp(schema[col].type):
+            elif pa.types.is_timestamp(field.type):
                 sample_row.append(pd.NaT)
             else:
                 sample_row.append(None)
         return (
-            pd.DataFrame([[sample_row]], columns=schema.names)
+            pd.DataFrame([sample_row], columns=schema.names)
             .astype(schema.pandas_dtype)
             .convert_dtypes()
             .head(0)
