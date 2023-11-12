@@ -80,37 +80,39 @@ def upper_col_df(shuffle_df):
 
 @pytest.fixture
 def simple_diff_df1():
-    return pd.DataFrame(dict(aa=[0, 1, 0], bb=[2.1, 3.1, 4.1]))
+    return pd.DataFrame(dict(aa=[0, 1, 0], bb=[2.1, 3.1, 4.1])).convert_dtypes()
 
 
 @pytest.fixture
 def simple_diff_df2():
-    return pd.DataFrame(dict(aa=[1, 0, 1], bb=[3.1, 4.1, 5.1], cc=["a", "b", "c"]))
+    return pd.DataFrame(
+        dict(aa=[1, 0, 1], bb=[3.1, 4.1, 5.1], cc=["a", "b", "c"])
+    ).convert_dtypes()
 
 
 @pytest.fixture
 def no_intersection_diff_df1():
     np.random.seed(0)
-    return pd.DataFrame(dict(x=["a"], y=[0.1]))
+    return pd.DataFrame(dict(x=["a"], y=[0.1])).convert_dtypes()
 
 
 @pytest.fixture
 def no_intersection_diff_df2():
-    return pd.DataFrame(dict(x=["b"], y=[1.1]))
+    return pd.DataFrame(dict(x=["b"], y=[1.1])).convert_dtypes()
 
 
 @pytest.fixture
 def large_diff_df1():
     np.random.seed(0)
     data = np.random.randint(0, 7, size=10000)
-    return pd.DataFrame({"x": data, "y": np.array([9] * 10000)})
+    return pd.DataFrame({"x": data, "y": np.array([9] * 10000)}).convert_dtypes()
 
 
 @pytest.fixture
 def large_diff_df2():
     np.random.seed(0)
     data = np.random.randint(6, 11, size=10000)
-    return pd.DataFrame({"x": data, "y": np.array([9] * 10000)})
+    return pd.DataFrame({"x": data, "y": np.array([9] * 10000)}).convert_dtypes()
 
 
 def test_is_match_native(
