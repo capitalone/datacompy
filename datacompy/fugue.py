@@ -541,6 +541,7 @@ def _distributed_compare(
 
     def _serialize(dfs: Iterable[pd.DataFrame], left: bool) -> Iterable[Dict[str, Any]]:
         for df in dfs:
+            df = df.convert_dtypes()
             cols = {}
             for name in df.columns:
                 col = df[name]
@@ -577,8 +578,28 @@ def _distributed_compare(
         arr = [pickle.loads(r["data"]) for r in df if r["left"] == left]
         if len(arr) > 0:
             return pd.concat(arr).sort_values(schema.names).reset_index(drop=True)
-        return pd.DataFrame(
-            {k: pd.Series(dtype=v) for k, v in schema.pandas_dtype.items()}
+        # The following is how to construct an empty pandas dataframe with
+        # the correct schema, it avoids pandas schema inference which is wrong.
+        # This is not needed when upgrading to Fugue >= 0.8.7
+        sample_row: List[Any] = []
+        for field in schema.fields:
+            if pa.types.is_string(field.type):
+                sample_row.append("x")
+            elif pa.types.is_integer(field.type):
+                sample_row.append(1)
+            elif pa.types.is_floating(field.type):
+                sample_row.append(1.1)
+            elif pa.types.is_boolean(field.type):
+                sample_row.append(True)
+            elif pa.types.is_timestamp(field.type):
+                sample_row.append(pd.NaT)
+            else:
+                sample_row.append(None)
+        return (
+            pd.DataFrame([sample_row], columns=schema.names)
+            .astype(schema.pandas_dtype)
+            .convert_dtypes()
+            .head(0)
         )
 
     def _comp(df: List[Dict[str, Any]]) -> List[List[Any]]:
