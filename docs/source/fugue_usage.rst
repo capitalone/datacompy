@@ -10,6 +10,10 @@ Basic Usage
 
 The Fugue implementation can be accessed via the:
 
+- ``datacompy.unq_columns``
+- ``datacompy.intersect_columns``
+- ``datacompy.all_columns_match``
+- ``datacompy.all_rows_overlap``
 - ``datacompy.is_match``
 - and ``datacompy.report`` functions
 
