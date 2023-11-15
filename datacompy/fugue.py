@@ -195,6 +195,102 @@ def is_match(
     return all(matches)
 
 
+def all_rows_overlap(
+    df1: AnyDataFrame,
+    df2: AnyDataFrame,
+    join_columns: Union[str, List[str]],
+    abs_tol: float = 0,
+    rel_tol: float = 0,
+    df1_name: str = "df1",
+    df2_name: str = "df2",
+    ignore_spaces: bool = False,
+    ignore_case: bool = False,
+    cast_column_names_lower: bool = True,
+    parallelism: Optional[int] = None,
+    strict_schema: bool = False,
+) -> bool:
+    """Check if the rows are all present in both dataframes
+
+    Parameters
+    ----------
+    df1 : ``AnyDataFrame``
+        First dataframe to check
+    df2 : ``AnyDataFrame``
+        Second dataframe to check
+    join_columns : list or str, optional
+        Column(s) to join dataframes on.  If a string is passed in, that one
+        column will be used.
+    abs_tol : float, optional
+        Absolute tolerance between two values.
+    rel_tol : float, optional
+        Relative tolerance between two values.
+    df1_name : str, optional
+        A string name for the first dataframe.  This allows the reporting to
+        print out an actual name instead of "df1", and allows human users to
+        more easily track the dataframes.
+    df2_name : str, optional
+        A string name for the second dataframe
+    ignore_spaces : bool, optional
+        Flag to strip whitespace (including newlines) from string columns (including any join
+        columns)
+    ignore_case : bool, optional
+        Flag to ignore the case of string columns
+    cast_column_names_lower: bool, optional
+        Boolean indicator that controls of column names will be cast into lower case
+    parallelism: int, optional
+        An integer representing the amount of parallelism. Entering a value for this
+        will force to use of Fugue over just vanilla Pandas
+    strict_schema: bool, optional
+        The schema must match exactly if set to ``True``. This includes the names and types. Allows for a fast fail.
+
+    Returns
+    -------
+    bool
+        True if all rows in df1 are in df2 and vice versa (based on
+        existence for join option)
+    """
+    if (
+        isinstance(df1, pd.DataFrame)
+        and isinstance(df2, pd.DataFrame)
+        and parallelism is None  # user did not specify parallelism
+        and fa.get_current_parallelism() == 1  # currently on a local execution engine
+    ):
+        comp = Compare(
+            df1=df1,
+            df2=df2,
+            join_columns=join_columns,
+            abs_tol=abs_tol,
+            rel_tol=rel_tol,
+            df1_name=df1_name,
+            df2_name=df2_name,
+            ignore_spaces=ignore_spaces,
+            ignore_case=ignore_case,
+            cast_column_names_lower=cast_column_names_lower,
+        )
+        return comp.all_rows_overlap()
+
+    try:
+        overlap = _distributed_compare(
+            df1=df1,
+            df2=df2,
+            join_columns=join_columns,
+            return_obj_func=lambda comp: comp.all_rows_overlap(),
+            abs_tol=abs_tol,
+            rel_tol=rel_tol,
+            df1_name=df1_name,
+            df2_name=df2_name,
+            ignore_spaces=ignore_spaces,
+            ignore_case=ignore_case,
+            cast_column_names_lower=cast_column_names_lower,
+            parallelism=parallelism,
+            strict_schema=strict_schema,
+        )
+    except _StrictSchemaError:
+        return False
+
+    return all(overlap)
+
+
 def report(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
@@ -210,7 +306,7 @@ def report(
     column_count=10,
     html_file=None,
     parallelism: Optional[int] = None,
-) -> None:
+) -> str:
     """Returns a string representation of a report.  The representation can
     then be printed or saved to a file.
 
@@ -460,7 +556,7 @@ def _distributed_compare(
     parallelism: Optional[int] = None,
     strict_schema: bool = False,
 ) -> List[Any]:
-    """Compare the data distributedly using the core Compare class
+    """Compare the data distributively using the core Compare class
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
     with unique column names. Differences between values are compared to
@@ -541,6 +637,7 @@ def _distributed_compare(
 
     def _serialize(dfs: Iterable[pd.DataFrame], left: bool) -> Iterable[Dict[str, Any]]:
         for df in dfs:
+            df = df.convert_dtypes()
             cols = {}
             for name in df.columns:
                 col = df[name]
@@ -577,8 +674,28 @@ def _distributed_compare(
         arr = [pickle.loads(r["data"]) for r in df if r["left"] == left]
         if len(arr) > 0:
             return pd.concat(arr).sort_values(schema.names).reset_index(drop=True)
-        return pd.DataFrame(
-            {k: pd.Series(dtype=v) for k, v in schema.pandas_dtype.items()}
+        # The following is how to construct an empty pandas dataframe with
+        # the correct schema, it avoids pandas schema inference which is wrong.
+        # This is not needed when upgrading to Fugue >= 0.8.7
+        sample_row: List[Any] = []
+        for field in schema.fields:
+            if pa.types.is_string(field.type):
+                sample_row.append("x")
+            elif pa.types.is_integer(field.type):
+                sample_row.append(1)
+            elif pa.types.is_floating(field.type):
+                sample_row.append(1.1)
+            elif pa.types.is_boolean(field.type):
+                sample_row.append(True)
+            elif pa.types.is_timestamp(field.type):
+                sample_row.append(pd.NaT)
+            else:
+                sample_row.append(None)
+        return (
+            pd.DataFrame([sample_row], columns=schema.names)
+            .astype(schema.pandas_dtype)
+            .convert_dtypes()
+            .head(0)
         )
 
     def _comp(df: List[Dict[str, Any]]) -> List[List[Any]]:

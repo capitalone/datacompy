@@ -13,11 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "0.10.4"
+__version__ = "0.10.5"
 
 from datacompy.core import *
 from datacompy.fugue import (
     all_columns_match,
+    all_rows_overlap,
     intersect_columns,
     is_match,
     report,
