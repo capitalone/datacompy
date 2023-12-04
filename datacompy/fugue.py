@@ -20,7 +20,7 @@ Compare two DataFrames that are supported by Fugue
 import logging
 import pickle
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, cast
 
 import fugue.api as fa
 import pandas as pd
@@ -35,7 +35,7 @@ LOG = logging.getLogger(__name__)
 HASH_COL = "__datacompy__hash__"
 
 
-def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame):
+def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
     """Get columns that are unique to df1
 
     Parameters
@@ -53,10 +53,10 @@ def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame):
     """
     col1 = fa.get_column_names(df1)
     col2 = fa.get_column_names(df2)
-    return OrderedSet(col1) - OrderedSet(col2)
+    return cast(OrderedSet[str], OrderedSet(col1) - OrderedSet(col2))
 
 
-def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame):
+def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
     """Get columns that are shared between the two dataframes
 
     Parameters
@@ -77,7 +77,7 @@ def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame):
     return OrderedSet(col1) & OrderedSet(col2)
 
 
-def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame):
+def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame) -> bool:
     """Whether the columns all match in the dataframes
 
     Parameters
@@ -99,7 +99,7 @@ def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame):
 def is_match(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
-    join_columns: Union[str, List[str]],
+    join_columns: str | List[str],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -107,7 +107,7 @@ def is_match(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    parallelism: Optional[int] = None,
+    parallelism: int | None = None,
     strict_schema: bool = False,
 ) -> bool:
     """Check whether two dataframes match.
@@ -198,7 +198,7 @@ def is_match(
 def all_rows_overlap(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
-    join_columns: Union[str, List[str]],
+    join_columns: str | List[str],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -206,7 +206,7 @@ def all_rows_overlap(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    parallelism: Optional[int] = None,
+    parallelism: int | None = None,
     strict_schema: bool = False,
 ) -> bool:
     """Check if the rows are all present in both dataframes
@@ -294,7 +294,7 @@ def all_rows_overlap(
 def report(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
-    join_columns: Union[str, List[str]],
+    join_columns: str | list[str],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -305,7 +305,7 @@ def report(
     sample_count=10,
     column_count=10,
     html_file=None,
-    parallelism: Optional[int] = None,
+    parallelism: int | None = None,
 ) -> str:
     """Returns a string representation of a report.  The representation can
     then be printed or saved to a file.
@@ -544,7 +544,7 @@ def report(
 def _distributed_compare(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
-    join_columns: Union[str, List[str]],
+    join_columns: str | list[str],
     return_obj_func: Callable[[Compare], Any],
     abs_tol: float = 0,
     rel_tol: float = 0,
@@ -553,9 +553,9 @@ def _distributed_compare(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    parallelism: Optional[int] = None,
+    parallelism: int | None = None,
     strict_schema: bool = False,
-) -> List[Any]:
+) -> list[Any]:
     """Compare the data distributively using the core Compare class
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
@@ -635,7 +635,7 @@ def _distributed_compare(
         parallelism if parallelism is not None else fa.get_current_parallelism() * 2
     )
 
-    def _serialize(dfs: Iterable[pd.DataFrame], left: bool) -> Iterable[Dict[str, Any]]:
+    def _serialize(dfs: Iterable[pd.DataFrame], left: bool) -> Iterable[dict[str, Any]]:
         for df in dfs:
             df = df.convert_dtypes()
             cols = {}
@@ -669,7 +669,7 @@ def _distributed_compare(
     )
 
     def _deserialize(
-        df: List[Dict[str, Any]], left: bool, schema: Schema
+        df: list[dict[str, Any]], left: bool, schema: Schema
     ) -> pd.DataFrame:
         arr = [pickle.loads(r["data"]) for r in df if r["left"] == left]
         if len(arr) > 0:
@@ -698,7 +698,7 @@ def _distributed_compare(
             .head(0)
         )
 
-    def _comp(df: List[Dict[str, Any]]) -> List[List[Any]]:
+    def _comp(df: list[dict[str, Any]]) -> list[list[Any]]:
         df1 = _deserialize(df, True, df1_schema)
         df2 = _deserialize(df, False, df2_schema)
         comp = Compare(
@@ -723,7 +723,7 @@ def _distributed_compare(
 
 def _get_compare_result(
     compare: Compare, sample_count: int, column_count: int
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     mismatch_samples: Dict[str, pd.DataFrame] = {}
     for column in compare.column_stats:
         if not column["all_match"]:
@@ -773,7 +773,7 @@ def _get_compare_result(
 
 def _aggregate_stats(
     compares, sample_count
-) -> Tuple[List[Dict[str, Any]], List[pd.DataFrame]]:
+) -> tuple[list[dict[str, Any]], list[pd.DataFrame]]:
     samples = defaultdict(list)
     stats = []
     for compare in compares:
