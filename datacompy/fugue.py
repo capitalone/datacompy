@@ -20,7 +20,7 @@ Compare two DataFrames that are supported by Fugue
 import logging
 import pickle
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, cast, Union, Optional
 
 import fugue.api as fa
 import pandas as pd
@@ -35,7 +35,7 @@ LOG = logging.getLogger(__name__)
 HASH_COL = "__datacompy__hash__"
 
 
-def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame):
+def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
     """Get columns that are unique to df1
 
     Parameters
@@ -53,10 +53,10 @@ def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame):
     """
     col1 = fa.get_column_names(df1)
     col2 = fa.get_column_names(df2)
-    return OrderedSet(col1) - OrderedSet(col2)
+    return cast(OrderedSet[str], OrderedSet(col1) - OrderedSet(col2))
 
 
-def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame):
+def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
     """Get columns that are shared between the two dataframes
 
     Parameters
@@ -77,7 +77,7 @@ def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame):
     return OrderedSet(col1) & OrderedSet(col2)
 
 
-def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame):
+def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame) -> bool:
     """Whether the columns all match in the dataframes
 
     Parameters
@@ -99,7 +99,7 @@ def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame):
 def is_match(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
-    join_columns: Union[str, List[str]],
+    join_columns: str | list[str],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -107,7 +107,7 @@ def is_match(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    parallelism: Optional[int] = None,
+    parallelism: int | None = None,
     strict_schema: bool = False,
 ) -> bool:
     """Check whether two dataframes match.
@@ -198,7 +198,7 @@ def is_match(
 def all_rows_overlap(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
-    join_columns: Union[str, List[str]],
+    join_columns: str | list[str],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -206,7 +206,7 @@ def all_rows_overlap(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    parallelism: Optional[int] = None,
+    parallelism: int | None = None,
     strict_schema: bool = False,
 ) -> bool:
     """Check if the rows are all present in both dataframes
@@ -294,7 +294,7 @@ def all_rows_overlap(
 def report(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
-    join_columns: Union[str, List[str]],
+    join_columns: str | list[str],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -302,10 +302,10 @@ def report(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    sample_count=10,
-    column_count=10,
-    html_file=None,
-    parallelism: Optional[int] = None,
+    sample_count: int = 10,
+    column_count: int = 10,
+    html_file: str | None = None,
+    parallelism: int | None = None,
 ) -> str:
     """Returns a string representation of a report.  The representation can
     then be printed or saved to a file.
@@ -406,7 +406,7 @@ def report(
     def shape0(col: str) -> int:
         return sum(x[col][0] for x in res)
 
-    def shape1(col: str) -> int:
+    def shape1(col: str) -> Any:
         return first[col][1]
 
     def _sum(col: str) -> int:
@@ -454,6 +454,8 @@ def report(
         "Yes" if _any("_any_dupes") else "No",
     )
 
+    column_stats: list[dict[str, Any]]
+    match_sample: list[pd.DataFrame]
     column_stats, match_sample = _aggregate_stats(res, sample_count=sample_count)
     any_mismatch = len(match_sample) > 0
 
@@ -669,15 +671,18 @@ def _distributed_compare(
     )
 
     def _deserialize(
-        df: List[Dict[str, Any]], left: bool, schema: Schema
+        df: list[dict[str, Any]], left: bool, schema: Schema
     ) -> pd.DataFrame:
         arr = [pickle.loads(r["data"]) for r in df if r["left"] == left]
         if len(arr) > 0:
-            return pd.concat(arr).sort_values(schema.names).reset_index(drop=True)
+            return cast(
+                pd.DataFrame,
+                pd.concat(arr).sort_values(schema.names).reset_index(drop=True),
+            )
         # The following is how to construct an empty pandas dataframe with
         # the correct schema, it avoids pandas schema inference which is wrong.
         # This is not needed when upgrading to Fugue >= 0.8.7
-        sample_row: List[Any] = []
+        sample_row: list[Any] = []
         for field in schema.fields:
             if pa.types.is_string(field.type):
                 sample_row.append("x")
@@ -723,7 +728,7 @@ def _distributed_compare(
 
 def _get_compare_result(
     compare: Compare, sample_count: int, column_count: int
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     mismatch_samples: Dict[str, pd.DataFrame] = {}
     for column in compare.column_stats:
         if not column["all_match"]:
@@ -772,8 +777,8 @@ def _get_compare_result(
 
 
 def _aggregate_stats(
-    compares, sample_count
-) -> Tuple[List[Dict[str, Any]], List[pd.DataFrame]]:
+    compares: list[Any], sample_count: int
+) -> tuple[list[dict[str, Any]], list[pd.DataFrame]]:
     samples = defaultdict(list)
     stats = []
     for compare in compares:
@@ -798,9 +803,16 @@ def _aggregate_stats(
         )
         .reset_index(drop=False)
     )
-    return df.to_dict(orient="records"), [
-        _sample(pd.concat(v), sample_count=sample_count) for v in samples.values()
-    ]
+    return cast(
+        tuple[list[dict[str, Any]], list[pd.DataFrame]],
+        (
+            df.to_dict(orient="records"),
+            [
+                _sample(pd.concat(v), sample_count=sample_count)
+                for v in samples.values()
+            ],
+        ),
+    )
 
 
 def _sample(df: pd.DataFrame, sample_count: int) -> pd.DataFrame:
