@@ -146,9 +146,9 @@ class SparkCompare:
 
     def __init__(
         self,
-        spark_session: SparkSessionType,
-        base_df: SparkDataFrame,
-        compare_df: SparkDataFrame,
+        spark_session: "SparkSessionType",
+        base_df: "SparkDataFrame",
+        compare_df: "SparkDataFrame",
         join_columns: List[Union[str, Tuple[str, str]]],
         column_mapping: Optional[List[Tuple[str, str]]] = None,
         cache_intermediates: bool = False,
@@ -190,11 +190,11 @@ class SparkCompare:
         self._base_row_count: Optional[int] = None
         self._compare_row_count: Optional[int] = None
         self._common_row_count: Optional[int] = None
-        self._joined_dataframe: Optional[SparkDataFrame] = None
-        self._rows_only_base: Optional[SparkDataFrame] = None
-        self._rows_only_compare: Optional[SparkDataFrame] = None
-        self._all_matched_rows: Optional[SparkDataFrame] = None
-        self._all_rows_mismatched: Optional[SparkDataFrame] = None
+        self._joined_dataframe: Optional["SparkDataFrame"] = None
+        self._rows_only_base: Optional["SparkDataFrame"] = None
+        self._rows_only_compare: Optional["SparkDataFrame"] = None
+        self._all_matched_rows: Optional["SparkDataFrame"] = None
+        self._all_rows_mismatched: Optional["SparkDataFrame"] = None
         self.columns_match_dict: Dict[str, Any] = {}
 
         # drop the duplicates before actual comparison made.
@@ -269,13 +269,13 @@ class SparkCompare:
 
         return self._common_row_count
 
-    def _get_unq_base_rows(self) -> SparkDataFrame:
+    def _get_unq_base_rows(self) -> "SparkDataFrame":
         """Get the rows only from base data frame"""
         return self.base_df.select(self._join_column_names).subtract(
             self.compare_df.select(self._join_column_names)
         )
 
-    def _get_compare_rows(self) -> SparkDataFrame:
+    def _get_compare_rows(self) -> "SparkDataFrame":
         """Get the rows only from compare data frame"""
         return self.compare_df.select(self._join_column_names).subtract(
             self.base_df.select(self._join_column_names)
@@ -364,7 +364,7 @@ class SparkCompare:
         return col_schema_diff
 
     @property
-    def rows_both_mismatch(self) -> Optional[SparkDataFrame]:
+    def rows_both_mismatch(self) -> Optional["SparkDataFrame"]:
         """pyspark.sql.DataFrame: Returns all rows in both dataframes that have mismatches"""
         if self._all_rows_mismatched is None:
             self._merge_dataframes()
@@ -372,7 +372,7 @@ class SparkCompare:
         return self._all_rows_mismatched
 
     @property
-    def rows_both_all(self) -> Optional[SparkDataFrame]:
+    def rows_both_all(self) -> Optional["SparkDataFrame"]:
         """pyspark.sql.DataFrame: Returns all rows in both dataframes"""
         if self._all_matched_rows is None:
             self._merge_dataframes()
@@ -380,7 +380,7 @@ class SparkCompare:
         return self._all_matched_rows
 
     @property
-    def rows_only_base(self) -> SparkDataFrame:
+    def rows_only_base(self) -> "SparkDataFrame":
         """pyspark.sql.DataFrame: Returns rows only in the base dataframe"""
         if not self._rows_only_base:
             base_rows = self._get_unq_base_rows()
@@ -400,7 +400,7 @@ class SparkCompare:
         return self._rows_only_base
 
     @property
-    def rows_only_compare(self) -> Optional[SparkDataFrame]:
+    def rows_only_compare(self) -> Optional["SparkDataFrame"]:
         """pyspark.sql.DataFrame: Returns rows only in the compare dataframe"""
         if not self._rows_only_compare:
             compare_rows = self._get_compare_rows()
@@ -476,7 +476,7 @@ class SparkCompare:
             self._join_column_names  # type: ignore[arg-type]
         )
 
-    def _get_or_create_joined_dataframe(self) -> SparkDataFrame:
+    def _get_or_create_joined_dataframe(self) -> "SparkDataFrame":
         if self._joined_dataframe is None:
             join_condition = " AND ".join(
                 ["A." + name + "<=>B." + name for name in self._join_column_names]
