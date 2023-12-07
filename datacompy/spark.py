@@ -16,16 +16,17 @@
 import sys
 from enum import Enum
 from itertools import chain
-from typing import Any, TextIO, NewType, List, Union, Tuple, Optional, Dict, Set
-
-import pyspark
+from typing import Any, TextIO, List, Union, Tuple, Optional, Dict, Set
 
 try:
+    import pyspark
     from pyspark.sql import functions as F
+
+    SparkSessionType = pyspark.sql.SparkSession
+    SparkDataFrame = pyspark.sql.DataFrame
+
 except ImportError:
     pass  # Let non-Spark people at least enjoy the loveliness of the pandas datacompy functionality
-
-SparkDataFrame = pyspark.sql.DataFrame
 
 
 class MatchType(Enum):
@@ -145,7 +146,7 @@ class SparkCompare:
 
     def __init__(
         self,
-        spark_session: pyspark.sql.SparkSession,
+        spark_session: SparkSessionType,
         base_df: SparkDataFrame,
         compare_df: SparkDataFrame,
         join_columns: List[Union[str, Tuple[str, str]]],
