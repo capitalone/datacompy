@@ -543,7 +543,7 @@ class SparkCompare:
             *self.columns_compared
         )
 
-        def helper(c: str) -> pyspark.sql.Column:
+        def helper(c: str) -> "pyspark.sql.Column":
             # Create a predicate for each match type, comparing column values to the match type value
             predicates = [F.col(c) == k.value for k in MatchType]
             # Create a tuple(number of match types found for each match type in this column)
