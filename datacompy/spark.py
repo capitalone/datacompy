@@ -16,7 +16,7 @@
 import sys
 from enum import Enum
 from itertools import chain
-from typing import Any, TextIO, TypeAlias
+from typing import Any, TextIO, NewType, List, Union, Tuple, Optional, Dict, Set
 
 import pyspark
 
@@ -25,7 +25,7 @@ try:
 except ImportError:
     pass  # Let non-Spark people at least enjoy the loveliness of the pandas datacompy functionality
 
-SparkDataFrame: TypeAlias = pyspark.sql.DataFrame
+SparkDataFrame = pyspark.sql.DataFrame
 
 
 class MatchType(Enum):
@@ -146,12 +146,12 @@ class SparkCompare:
     def __init__(
         self,
         spark_session: pyspark.sql.SparkSession,
-        base_df: pyspark.sql.DataFrame,
-        compare_df: pyspark.sql.DataFrame,
-        join_columns: list[str | tuple[str, str]],
-        column_mapping: list[tuple[str, str]] | None = None,
+        base_df: SparkDataFrame,
+        compare_df: SparkDataFrame,
+        join_columns: List[Union[str, Tuple[str, str]]],
+        column_mapping: Optional[List[Tuple[str, str]]] = None,
         cache_intermediates: bool = False,
-        known_differences: list[dict[str, Any]] | None = None,
+        known_differences: Optional[List[Dict[str, Any]]] = None,
         rel_tol: float = 0,
         abs_tol: float = 0,
         show_all_columns: bool = False,
@@ -186,15 +186,15 @@ class SparkCompare:
 
         self.spark = spark_session
         self.base_unq_rows = self.compare_unq_rows = None
-        self._base_row_count: int | None = None
-        self._compare_row_count: int | None = None
-        self._common_row_count: int | None = None
-        self._joined_dataframe: SparkDataFrame | None = None
-        self._rows_only_base: SparkDataFrame | None = None
-        self._rows_only_compare: SparkDataFrame | None = None
-        self._all_matched_rows: SparkDataFrame | None = None
-        self._all_rows_mismatched: SparkDataFrame | None = None
-        self.columns_match_dict: dict[str, Any] = {}
+        self._base_row_count: Optional[int] = None
+        self._compare_row_count: Optional[int] = None
+        self._common_row_count: Optional[int] = None
+        self._joined_dataframe: Optional[SparkDataFrame] = None
+        self._rows_only_base: Optional[SparkDataFrame] = None
+        self._rows_only_compare: Optional[SparkDataFrame] = None
+        self._all_matched_rows: Optional[SparkDataFrame] = None
+        self._all_rows_mismatched: Optional[SparkDataFrame] = None
+        self.columns_match_dict: Dict[str, Any] = {}
 
         # drop the duplicates before actual comparison made.
         self.base_df = base_df.dropDuplicates(self._join_column_names)
@@ -207,9 +207,9 @@ class SparkCompare:
             self._compare_row_count = self.compare_df.count()
 
     def _tuplizer(
-        self, input_list: list[str | tuple[str, str]]
-    ) -> list[tuple[str, str]]:
-        join_columns: list[tuple[str, str]] = []
+        self, input_list: List[Union[str, Tuple[str, str]]]
+    ) -> List[Tuple[str, str]]:
+        join_columns: List[Tuple[str, str]] = []
         for val in input_list:
             if isinstance(val, str):
                 join_columns.append((val, val))
@@ -219,12 +219,12 @@ class SparkCompare:
         return join_columns
 
     @property
-    def columns_in_both(self) -> set[str]:
+    def columns_in_both(self) -> Set[str]:
         """set[str]: Get columns in both dataframes"""
         return set(self.base_df.columns) & set(self.compare_df.columns)
 
     @property
-    def columns_compared(self) -> list[str]:
+    def columns_compared(self) -> List[str]:
         """list[str]: Get columns to be compared in both dataframes (all
         columns in both excluding the join key(s)"""
         return [
@@ -234,12 +234,12 @@ class SparkCompare:
         ]
 
     @property
-    def columns_only_base(self) -> set[str]:
+    def columns_only_base(self) -> Set[str]:
         """set[str]: Get columns that are unique to the base dataframe"""
         return set(self.base_df.columns) - set(self.compare_df.columns)
 
     @property
-    def columns_only_compare(self) -> set[str]:
+    def columns_only_compare(self) -> Set[str]:
         """set[str]: Get columns that are unique to the compare dataframe"""
         return set(self.compare_df.columns) - set(self.base_df.columns)
 
@@ -268,13 +268,13 @@ class SparkCompare:
 
         return self._common_row_count
 
-    def _get_unq_base_rows(self) -> pyspark.sql.DataFrame:
+    def _get_unq_base_rows(self) -> SparkDataFrame:
         """Get the rows only from base data frame"""
         return self.base_df.select(self._join_column_names).subtract(
             self.compare_df.select(self._join_column_names)
         )
 
-    def _get_compare_rows(self) -> pyspark.sql.DataFrame:
+    def _get_compare_rows(self) -> SparkDataFrame:
         """Get the rows only from compare data frame"""
         return self.compare_df.select(self._join_column_names).subtract(
             self.base_df.select(self._join_column_names)
@@ -329,7 +329,7 @@ class SparkCompare:
             col_type = df.select(column).dtypes[0][1]
             print((format_pattern + "  {:13s}").format(column, col_type), file=myfile)
 
-    def _columns_with_matching_schema(self) -> dict[str, str]:
+    def _columns_with_matching_schema(self) -> Dict[str, str]:
         """This function will identify the columns which has matching schema"""
         col_schema_match = {}
         base_columns_dict = dict(self.base_df.dtypes)
@@ -343,7 +343,7 @@ class SparkCompare:
 
         return col_schema_match
 
-    def _columns_with_schemadiff(self) -> dict[str, dict[str, str]]:
+    def _columns_with_schemadiff(self) -> Dict[str, Dict[str, str]]:
         """This function will identify the columns which has different schema"""
         col_schema_diff = {}
         base_columns_dict = dict(self.base_df.dtypes)
@@ -363,7 +363,7 @@ class SparkCompare:
         return col_schema_diff
 
     @property
-    def rows_both_mismatch(self) -> SparkDataFrame | None:
+    def rows_both_mismatch(self) -> Optional[SparkDataFrame]:
         """pyspark.sql.DataFrame: Returns all rows in both dataframes that have mismatches"""
         if self._all_rows_mismatched is None:
             self._merge_dataframes()
@@ -371,7 +371,7 @@ class SparkCompare:
         return self._all_rows_mismatched
 
     @property
-    def rows_both_all(self) -> SparkDataFrame | None:
+    def rows_both_all(self) -> Optional[SparkDataFrame]:
         """pyspark.sql.DataFrame: Returns all rows in both dataframes"""
         if self._all_matched_rows is None:
             self._merge_dataframes()
@@ -379,7 +379,7 @@ class SparkCompare:
         return self._all_matched_rows
 
     @property
-    def rows_only_base(self) -> SparkDataFrame | None:
+    def rows_only_base(self) -> SparkDataFrame:
         """pyspark.sql.DataFrame: Returns rows only in the base dataframe"""
         if not self._rows_only_base:
             base_rows = self._get_unq_base_rows()
@@ -399,7 +399,7 @@ class SparkCompare:
         return self._rows_only_base
 
     @property
-    def rows_only_compare(self) -> SparkDataFrame | None:
+    def rows_only_compare(self) -> Optional[SparkDataFrame]:
         """pyspark.sql.DataFrame: Returns rows only in the compare dataframe"""
         if not self._rows_only_compare:
             compare_rows = self._get_compare_rows()
@@ -475,7 +475,7 @@ class SparkCompare:
             self._join_column_names  # type: ignore[arg-type]
         )
 
-    def _get_or_create_joined_dataframe(self) -> pyspark.sql.DataFrame:
+    def _get_or_create_joined_dataframe(self) -> SparkDataFrame:
         if self._joined_dataframe is None:
             join_condition = " AND ".join(
                 ["A." + name + "<=>B." + name for name in self._join_column_names]

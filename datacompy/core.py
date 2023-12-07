@@ -22,7 +22,7 @@ two dataframes.
 """
 import logging
 import os
-from typing import cast, Any
+from typing import cast, Any, List, Dict, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -81,7 +81,7 @@ class Compare:
         self,
         df1: pd.DataFrame,
         df2: pd.DataFrame,
-        join_columns: list[str] | str | None = None,
+        join_columns: Optional[Union[List[str], str]] = None,
         on_index: bool = False,
         abs_tol: float = 0,
         rel_tol: float = 0,
@@ -107,7 +107,7 @@ class Compare:
         else:
             self.join_columns = [
                 str(col).lower() if self.cast_column_names_lower else str(col)
-                for col in cast(list[str], join_columns)
+                for col in cast(List[str], join_columns)
             ]
             self.on_index = False
 
@@ -123,7 +123,7 @@ class Compare:
         self.df1_unq_rows: pd.DataFrame
         self.df2_unq_rows: pd.DataFrame
         self.intersect_rows: pd.DataFrame
-        self.column_stats: list[dict[str, Any]] = []
+        self.column_stats: List[Dict[str, Any]] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
     @property
@@ -243,7 +243,7 @@ class Compare:
         If ``on_index`` is True, this will join on index values, otherwise it
         will join on the ``join_columns``.
         """
-        params: dict[str, Any]
+        params: Dict[str, Any]
         index_column: str
         LOG.debug("Outer joining")
         if self._any_dupes:
@@ -533,7 +533,7 @@ class Compare:
         self,
         sample_count: int = 10,
         column_count: int = 10,
-        html_file: str | None = None,
+        html_file: Optional[str] = None,
     ) -> str:
         """Returns a string representation of a report.  The representation can
         then be printed or saved to a file.
@@ -696,7 +696,7 @@ class Compare:
         return report
 
 
-def render(filename: str, *fields: int | float | str) -> str:
+def render(filename: str, *fields: Union[int, float, str]) -> str:
     """Renders out an individual template.  This basically just reads in a
     template file, and applies ``.format()`` on the fields.
 
@@ -844,7 +844,7 @@ def compare_string_and_date_columns(
 
 def get_merged_columns(
     original_df: pd.DataFrame, merged_df: pd.DataFrame, suffix: str
-) -> list[str]:
+) -> List[str]:
     """Gets the columns from an original dataframe, in the new merged dataframe
 
     Parameters
@@ -915,7 +915,7 @@ def calculate_max_diff(col_1: "pd.Series[Any]", col_2: "pd.Series[Any]") -> floa
 
 
 def generate_id_within_group(
-    dataframe: pd.DataFrame, join_columns: list[str]
+    dataframe: pd.DataFrame, join_columns: List[str]
 ) -> "pd.Series[int]":
     """Generate an ID column that can be used to deduplicate identical rows.  The series generated
     is the order within a unique group, and it handles nulls.

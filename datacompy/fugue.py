@@ -20,7 +20,7 @@ Compare two DataFrames that are supported by Fugue
 import logging
 import pickle
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, List, cast, Union, Optional
+from typing import Any, Callable, Dict, Iterable, List, cast, Union, Optional, Tuple
 
 import fugue.api as fa
 import pandas as pd
@@ -99,7 +99,7 @@ def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame) -> bool:
 def is_match(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
-    join_columns: str | list[str],
+    join_columns: Union[str, List[str]],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -107,7 +107,7 @@ def is_match(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    parallelism: int | None = None,
+    parallelism: Optional[int] = None,
     strict_schema: bool = False,
 ) -> bool:
     """Check whether two dataframes match.
@@ -198,7 +198,7 @@ def is_match(
 def all_rows_overlap(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
-    join_columns: str | list[str],
+    join_columns: Union[str, List[str]],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -206,7 +206,7 @@ def all_rows_overlap(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    parallelism: int | None = None,
+    parallelism: Optional[int] = None,
     strict_schema: bool = False,
 ) -> bool:
     """Check if the rows are all present in both dataframes
@@ -294,7 +294,7 @@ def all_rows_overlap(
 def report(
     df1: AnyDataFrame,
     df2: AnyDataFrame,
-    join_columns: str | list[str],
+    join_columns: Union[str, List[str]],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -304,8 +304,8 @@ def report(
     cast_column_names_lower: bool = True,
     sample_count: int = 10,
     column_count: int = 10,
-    html_file: str | None = None,
-    parallelism: int | None = None,
+    html_file: Optional[str] = None,
+    parallelism: Optional[int] = None,
 ) -> str:
     """Returns a string representation of a report.  The representation can
     then be printed or saved to a file.
@@ -320,7 +320,7 @@ def report(
         First dataframe to check
     df2 : ``AnyDataFrame``
         Second dataframe to check
-    join_columns : list or str, optional
+    join_columns : list or str
         Column(s) to join dataframes on.  If a string is passed in, that one
         column will be used.
     abs_tol : float, optional
@@ -454,8 +454,8 @@ def report(
         "Yes" if _any("_any_dupes") else "No",
     )
 
-    column_stats: list[dict[str, Any]]
-    match_sample: list[pd.DataFrame]
+    column_stats: List[Dict[str, Any]]
+    match_sample: List[pd.DataFrame]
     column_stats, match_sample = _aggregate_stats(res, sample_count=sample_count)
     any_mismatch = len(match_sample) > 0
 
@@ -671,7 +671,7 @@ def _distributed_compare(
     )
 
     def _deserialize(
-        df: list[dict[str, Any]], left: bool, schema: Schema
+        df: List[Dict[str, Any]], left: bool, schema: Schema
     ) -> pd.DataFrame:
         arr = [pickle.loads(r["data"]) for r in df if r["left"] == left]
         if len(arr) > 0:
@@ -682,7 +682,7 @@ def _distributed_compare(
         # The following is how to construct an empty pandas dataframe with
         # the correct schema, it avoids pandas schema inference which is wrong.
         # This is not needed when upgrading to Fugue >= 0.8.7
-        sample_row: list[Any] = []
+        sample_row: List[Any] = []
         for field in schema.fields:
             if pa.types.is_string(field.type):
                 sample_row.append("x")
@@ -728,7 +728,7 @@ def _distributed_compare(
 
 def _get_compare_result(
     compare: Compare, sample_count: int, column_count: int
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     mismatch_samples: Dict[str, pd.DataFrame] = {}
     for column in compare.column_stats:
         if not column["all_match"]:
@@ -777,8 +777,8 @@ def _get_compare_result(
 
 
 def _aggregate_stats(
-    compares: list[Any], sample_count: int
-) -> tuple[list[dict[str, Any]], list[pd.DataFrame]]:
+    compares: List[Any], sample_count: int
+) -> Tuple[List[Dict[str, Any]], List[pd.DataFrame]]:
     samples = defaultdict(list)
     stats = []
     for compare in compares:
@@ -804,7 +804,7 @@ def _aggregate_stats(
         .reset_index(drop=False)
     )
     return cast(
-        tuple[list[dict[str, Any]], list[pd.DataFrame]],
+        Tuple[List[Dict[str, Any]], List[pd.DataFrame]],
         (
             df.to_dict(orient="records"),
             [
