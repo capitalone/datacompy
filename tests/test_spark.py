@@ -20,6 +20,9 @@ import re
 from decimal import Decimal
 
 import pytest
+
+pytest.importorskip("pyspark")
+
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import (
     DateType,
