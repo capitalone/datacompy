@@ -1,3 +1,18 @@
+#
+# Copyright 2020 Capital One Services, LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Test fugue and polars."""
 import pytest
 from ordered_set import OrderedSet
 from pytest import raises
@@ -9,7 +24,9 @@ from datacompy import (
     is_match,
     unq_columns,
 )
+
 pl = pytest.importorskip("polars")
+
 
 def test_is_match_polars(
     ref_df,
@@ -19,7 +36,6 @@ def test_is_match_polars(
     space_df,
     upper_col_df,
 ):
-
     rdf = pl.from_pandas(ref_df[0])
 
     assert is_match(rdf, shuffle_df, join_columns="a")
@@ -39,8 +55,8 @@ def test_is_match_polars(
     with raises(AssertionError):
         is_match(rdf, upper_col_df, join_columns="a", cast_column_names_lower=False)
 
-def test_unique_columns_polars(ref_df):
 
+def test_unique_columns_polars(ref_df):
     df1 = ref_df[0]
     df1_copy = ref_df[1]
     df2 = ref_df[2]
@@ -57,8 +73,8 @@ def test_unique_columns_polars(ref_df):
     assert unq_columns(pdf1_copy, pdf1) == OrderedSet()
     assert unq_columns(pdf3, pdf2) == OrderedSet(["c"])
 
-def test_intersect_columns_polars(ref_df):
 
+def test_intersect_columns_polars(ref_df):
     df1 = ref_df[0]
     df1_copy = ref_df[1]
     df2 = ref_df[2]
@@ -75,8 +91,8 @@ def test_intersect_columns_polars(ref_df):
     assert intersect_columns(pdf1_copy, pdf1) == OrderedSet(["a", "b", "c"])
     assert intersect_columns(pdf3, pdf2) == OrderedSet()
 
-def test_all_columns_match_polars(ref_df):
 
+def test_all_columns_match_polars(ref_df):
     df1 = ref_df[0]
     df1_copy = ref_df[1]
     df2 = ref_df[2]
@@ -93,11 +109,11 @@ def test_all_columns_match_polars(ref_df):
     assert all_columns_match(df1_copy, df1) is True
     assert all_columns_match(df3, df2) is False
 
+
 def test_all_rows_overlap_polars(
     ref_df,
     shuffle_df,
 ):
-
     rdf = pl.from_pandas(ref_df[0])
     rdf_copy = pl.from_pandas(ref_df[0].copy())
     rdf4 = pl.from_pandas(ref_df[4])

@@ -12,10 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""
-Testing out the fugue is_match functionality
-"""
+"""Test the fugue functionality with pandas."""
 from io import StringIO
 import pandas as pd
 from ordered_set import OrderedSet
@@ -31,7 +28,7 @@ from datacompy import (
     unq_columns,
 )
 
-from test_fuge_helpers import _compare_report
+from test_fugue_helpers import _compare_report
 
 
 def test_is_match_native(
@@ -81,9 +78,6 @@ def test_is_match_native(
         )
 
 
-
-
-
 def test_doc_case():
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -114,6 +108,7 @@ def test_doc_case():
         df2_name="New",
         parallelism=2,
     )
+
 
 def test_report_pandas(
     simple_diff_df1,
@@ -146,6 +141,7 @@ def test_report_pandas(
     a = report(large_diff_df1, large_diff_df2, "x", parallelism=2)
     _compare_report(comp.report(), a, truncate=True)
 
+
 def test_unique_columns_native(ref_df):
     df1 = ref_df[0]
     df1_copy = ref_df[1]
@@ -157,9 +153,6 @@ def test_unique_columns_native(ref_df):
     assert unq_columns(df1, df3) == OrderedSet(["a", "b"])
     assert unq_columns(df1.copy(), df1) == OrderedSet()
     assert unq_columns(df3, df2) == OrderedSet(["c"])
-
-
-
 
 
 def test_intersect_columns_native(ref_df):
@@ -175,8 +168,6 @@ def test_intersect_columns_native(ref_df):
     assert intersect_columns(df3, df2) == OrderedSet()
 
 
-
-
 def test_all_columns_match_native(ref_df):
     df1 = ref_df[0]
     df1_copy = ref_df[1]
@@ -190,8 +181,6 @@ def test_all_columns_match_native(ref_df):
     assert all_columns_match(df3, df2) is False
 
 
-
-
 def test_all_rows_overlap_native(
     ref_df,
     shuffle_df,
@@ -203,4 +192,3 @@ def test_all_rows_overlap_native(
     # Fugue
     assert all_rows_overlap(ref_df[0], shuffle_df, join_columns="a", parallelism=2)
     assert not all_rows_overlap(ref_df[0], ref_df[4], join_columns="a", parallelism=2)
-

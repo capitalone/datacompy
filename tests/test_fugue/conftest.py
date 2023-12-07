@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
+
 @pytest.fixture
 def ref_df():
     np.random.seed(0)
