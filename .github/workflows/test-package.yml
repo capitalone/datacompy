@@ -36,7 +36,7 @@ jobs:
         java-version: '8'
         distribution: 'adopt'
 
-    - name: Install Spark
+    - name: Install Spark and datacompy
       run: |
         python -m pip install --upgrade pip
         python -m pip install pytest pytest-spark pypandoc
@@ -64,7 +64,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install Spark
+    - name: Install datacompy
       run: |
         python -m pip install --upgrade pip
         python -m pip install .[tests]
