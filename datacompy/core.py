@@ -286,9 +286,7 @@ class Compare:
         # Clean up temp columns for duplicate row matching
         if self._any_dupes:
             if self.on_index:
-                # outer_join.index = outer_join[index_column]
-                outer_join.set_index(keys=outer_join[index_column], inplace=True)
-                outer_join.drop(index_column, axis=1, inplace=True)
+                outer_join.set_index(keys=index_column, drop=True, inplace=True)
                 self.df1.drop(index_column, axis=1, inplace=True)
                 self.df2.drop(index_column, axis=1, inplace=True)
             outer_join.drop(labels=order_column, axis=1, inplace=True)

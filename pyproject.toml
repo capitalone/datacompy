@@ -74,7 +74,8 @@ qa = [
     "pre-commit",
     "black",
     "isort",
-    "mypy"
+    "mypy",
+    "pandas-stubs",
 ]
 build = [
     "build",
@@ -93,10 +94,6 @@ dev = [
     "datacompy[tests]",
     "datacompy[qa]",
     "datacompy[build]",
-]
-
-mypy = [
-    "pandas-stubs",
 ]
 
 [tool.isort]
