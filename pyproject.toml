@@ -39,6 +39,10 @@ Repository = "https://github.com/capitalone/datacompy.git"
 "Bug Tracker" = "https://github.com/capitalone/datacompy/issues"
 "Source Code" = "https://github.com/capitalone/datacompy"
 
+[build-system]
+requires = ["setuptools>=64.0.0"]
+build-backend = "setuptools.build_meta"
+
 [tool.setuptools]
 packages = ["datacompy"]
 zip-safe = false
@@ -67,8 +71,13 @@ docs = [
 tests = [
     "pytest",
     "pytest-cov",
+]
+
+tests-spark = [
+    "pytest",
+    "pytest-cov",
     "pytest-spark",
-    "fugue[polars,duckdb,spark]",
+    "fugue[spark]",
 ]
 qa = [
     "pre-commit",
@@ -92,6 +101,7 @@ dev = [
     "datacompy[spark]",
     "datacompy[docs]",
     "datacompy[tests]",
+    "datacompy[tests-spark]",
     "datacompy[qa]",
     "datacompy[build]",
 ]
