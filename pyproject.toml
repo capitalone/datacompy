@@ -74,6 +74,8 @@ qa = [
     "pre-commit",
     "black",
     "isort",
+    "mypy",
+    "pandas-stubs",
 ]
 build = [
     "build",
@@ -101,6 +103,17 @@ force_grid_wrap = 0
 use_parentheses = true
 line_length = 88
 profile = "black"
+
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["fugue.*","triad.*"]
+implicit_reexport = true
+
+[[tool.mypy.overrides]]
+module = "pyarrow"
+ignore_missing_imports = true
 
 [edgetest.envs.core]
 python_version = "3.9"
