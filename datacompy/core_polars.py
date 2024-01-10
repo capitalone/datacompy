@@ -638,18 +638,22 @@ class PolarsCompare:
             report += "------------------------------------\n"
             report += "\n"
             df_match_stats = pl.DataFrame(match_stats)
-            df_match_stats.sort_values("Column", inplace=True)
+            df_match_stats = df_match_stats.sort("Column")
             # Have to specify again for sorting
-            report += df_match_stats[
-                [
-                    "Column",
-                    f"{self.df1_name} dtype",
-                    f"{self.df2_name} dtype",
-                    "# Unequal",
-                    "Max Diff",
-                    "# Null Diff",
+            report += (
+                df_match_stats[
+                    [
+                        "Column",
+                        f"{self.df1_name} dtype",
+                        f"{self.df2_name} dtype",
+                        "# Unequal",
+                        "Max Diff",
+                        "# Null Diff",
+                    ]
                 ]
-            ].to_string()
+                .to_pandas()
+                .to_string()
+            )
             report += "\n\n"
 
             if sample_count > 0:
