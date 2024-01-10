@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "0.10.5"
+__version__ = "0.11.0"
 
 from datacompy.core import *
+from datacompy.core_polars import PolarsCompare
 from datacompy.fugue import (
     all_columns_match,
     all_rows_overlap,
