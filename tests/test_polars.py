@@ -31,7 +31,7 @@ from polars.testing import assert_series_equal
 from pytest import raises
 
 from datacompy import PolarsCompare
-from datacompy.core_polars import (
+from datacompy.polars import (
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
@@ -1281,14 +1281,14 @@ def test_lower():
         )
 
 
-@mock.patch("datacompy.core_polars.render")
+@mock.patch("datacompy.polars.render")
 def test_save_html(mock_render):
     df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     compare = PolarsCompare(df1, df2, join_columns=["a"])
 
     m = mock.mock_open()
-    with mock.patch("datacompy.core_polars.open", m, create=True):
+    with mock.patch("datacompy.polars.open", m, create=True):
         # assert without HTML call
         compare.report()
         assert mock_render.call_count == 4
@@ -1296,7 +1296,7 @@ def test_save_html(mock_render):
 
     mock_render.reset_mock()
     m = mock.mock_open()
-    with mock.patch("datacompy.core_polars.open", m, create=True):
+    with mock.patch("datacompy.polars.open", m, create=True):
         # assert with HTML call
         compare.report(html_file="test.html")
         assert mock_render.call_count == 4

@@ -16,7 +16,6 @@
 __version__ = "0.11.0"
 
 from datacompy.core import *
-from datacompy.core_polars import PolarsCompare
 from datacompy.fugue import (
     all_columns_match,
     all_rows_overlap,
@@ -25,4 +24,5 @@ from datacompy.fugue import (
     report,
     unq_columns,
 )
+from datacompy.polars import PolarsCompare
 from datacompy.spark import NUMERIC_SPARK_TYPES, SparkCompare
