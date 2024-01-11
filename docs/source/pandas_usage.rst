@@ -196,6 +196,9 @@ There are a few convenience methods available after the comparison has been run:
     print(compare.df2_unq_columns())
     # set()
 
+
+.. _pandas-dup-rows:
+
 Duplicate rows
 --------------
 
@@ -244,6 +247,8 @@ ID, before dropping the temp_id again.  So the first two rows in the first dataf
 first two rows in the second dataframe, and the third row in the second dataframe will be recognized
 as uniquely in the second.
 
+.. _pandas-caveats:
+
 Caveats
 +++++++
 
@@ -256,6 +261,8 @@ Caveats
   are duplicates.  Datacompy sorts by the other fields before generating the temporary ID, then matches
   directly on that field.  If there are a lot of duplicates you may need to join on more columns, or
   handle them separately.
+
+.. _pandas-limitations:
 
 Limitations
 -----------
