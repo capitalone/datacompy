@@ -27,11 +27,12 @@ import numpy as np
 import pytest
 
 pytest.importorskip("polars")
+pytest.importorskip("pl")
 
 import polars as pl
+from polars import raises
 from polars.exceptions import ComputeError, DuplicateError
 from polars.testing import assert_series_equal
-from pytest import raises
 
 from datacompy import PolarsCompare
 from datacompy.polars import (

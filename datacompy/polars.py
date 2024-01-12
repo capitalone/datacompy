@@ -26,9 +26,13 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union, cast
 
 import numpy as np
-import polars as pl
 from ordered_set import OrderedSet
-from polars.exceptions import ComputeError, InvalidOperationError
+
+try:
+    import polars as pl
+    from pl.exceptions import ComputeError, InvalidOperationError
+except ImportError:
+    pass  # Let non-Polars people at least enjoy the loveliness of the pandas datacompy functionality
 
 LOG = logging.getLogger(__name__)
 
@@ -80,8 +84,8 @@ class PolarsCompare:
 
     def __init__(
         self,
-        df1: pl.DataFrame,
-        df2: pl.DataFrame,
+        df1: "pl.DataFrame",
+        df2: "pl.DataFrame",
         join_columns: Union[List[str], str],
         abs_tol: float = 0,
         rel_tol: float = 0,
@@ -114,18 +118,18 @@ class PolarsCompare:
         self.rel_tol = rel_tol
         self.ignore_spaces = ignore_spaces
         self.ignore_case = ignore_case
-        self.df1_unq_rows: pl.DataFrame
-        self.df2_unq_rows: pl.DataFrame
-        self.intersect_rows: pl.DataFrame
+        self.df1_unq_rows: "pl.DataFrame"
+        self.df2_unq_rows: "pl.DataFrame"
+        self.intersect_rows: "pl.DataFrame"
         self.column_stats: List[Dict[str, Any]] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
     @property
-    def df1(self) -> pl.DataFrame:
+    def df1(self) -> "pl.DataFrame":
         return self._df1
 
     @df1.setter
-    def df1(self, df1: pl.DataFrame) -> None:
+    def df1(self, df1: "pl.DataFrame") -> None:
         """Check that it is a dataframe and has the join columns"""
         self._df1 = df1
         self._validate_dataframe(
@@ -133,11 +137,11 @@ class PolarsCompare:
         )
 
     @property
-    def df2(self) -> pl.DataFrame:
+    def df2(self) -> "pl.DataFrame":
         return self._df2
 
     @df2.setter
-    def df2(self, df2: pl.DataFrame) -> None:
+    def df2(self, df2: "pl.DataFrame") -> None:
         """Check that it is a dataframe and has the join columns"""
         self._df2 = df2
         self._validate_dataframe(
@@ -157,7 +161,7 @@ class PolarsCompare:
             Boolean indicator that controls of column names will be cast into lower case
         """
         dataframe = getattr(self, index)
-        if not isinstance(dataframe, pl.DataFrame):
+        if not isinstance(dataframe, "pl.DataFrame"):
             raise TypeError(f"{index} must be a Polars DataFrame")
 
         if cast_column_names_lower:
@@ -451,7 +455,7 @@ class PolarsCompare:
 
     def sample_mismatch(
         self, column: str, sample_count: int = 10, for_display: bool = False
-    ) -> pl.DataFrame:
+    ) -> "pl.DataFrame":
         """Returns a sample sub-dataframe which contains the identifying
         columns, and df1 and df2 versions of the column.
 
@@ -488,7 +492,7 @@ class PolarsCompare:
             ]
         return to_return
 
-    def all_mismatch(self, ignore_matching_cols: bool = False) -> pl.DataFrame:
+    def all_mismatch(self, ignore_matching_cols: bool = False) -> "pl.DataFrame":
         """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
         columns.
 
@@ -559,7 +563,7 @@ class PolarsCompare:
             The report, formatted kinda nicely.
         """
 
-        def df_to_str(pdf: pl.DataFrame) -> str:
+        def df_to_str(pdf: "pl.DataFrame") -> str:
             return pdf.to_pandas().to_string()
 
         # Header
@@ -846,7 +850,7 @@ def compare_string_and_date_columns(
 
 
 def get_merged_columns(
-    original_df: pl.DataFrame, merged_df: pl.DataFrame, suffix: str
+    original_df: "pl.DataFrame", merged_df: "pl.DataFrame", suffix: str
 ) -> List[str]:
     """Gets the columns from an original dataframe, in the new merged dataframe
 
@@ -871,7 +875,7 @@ def get_merged_columns(
     return columns
 
 
-def temp_column_name(*dataframes: pl.DataFrame) -> str:
+def temp_column_name(*dataframes: "pl.DataFrame") -> str:
     """Gets a temp column name that isn't included in columns of any dataframes
 
     Parameters
@@ -920,7 +924,7 @@ def calculate_max_diff(col_1: "pl.Series[Any]", col_2: "pl.Series[Any]") -> floa
 
 
 def generate_id_within_group(
-    dataframe: pl.DataFrame, join_columns: List[str]
+    dataframe: "pl.DataFrame", join_columns: List[str]
 ) -> "pl.Series[int]":
     """Generate an ID column that can be used to deduplicate identical rows.  The series generated
     is the order within a unique group, and it handles nulls.
