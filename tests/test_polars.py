@@ -24,11 +24,11 @@ from decimal import Decimal
 from unittest import mock
 
 import numpy as np
+import pytest
 
 pytest.importorskip("polars")
 
 import polars as pl
-import pytest
 from polars.exceptions import ComputeError, DuplicateError
 from polars.testing import assert_series_equal
 from pytest import raises
