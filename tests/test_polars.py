@@ -25,12 +25,11 @@ from unittest import mock
 
 import numpy as np
 import pytest
+from pytest import raises
 
 pytest.importorskip("polars")
-pytest.importorskip("pl")
 
 import polars as pl
-from polars import raises
 from polars.exceptions import ComputeError, DuplicateError
 from polars.testing import assert_series_equal
 
@@ -474,7 +473,7 @@ def test_columns_maintain_order_through_set_operations():
 
 def test_10k_rows():
     df1 = pl.DataFrame(np.random.randint(0, 100, size=(10000, 2)), schema=["b", "c"])
-    df1 = df1.with_row_count()
+    df1 = df1.with_row_index()
     df1.columns = ["a", "b", "c"]
     df2 = df1.clone()
     df2 = df2.with_columns(pl.col("b") + 0.1)
@@ -517,7 +516,7 @@ def test_not_subset(caplog):
 
 def test_large_subset():
     df1 = pl.DataFrame(np.random.randint(0, 100, size=(10000, 2)), schema=["b", "c"])
-    df1 = df1.with_row_count()
+    df1 = df1.with_row_index()
     df1.columns = ["a", "b", "c"]
     df2 = df1[["a", "b"]].sample(50).clone()
     comp = PolarsCompare(df1, df2, ["a"])
@@ -1216,25 +1215,25 @@ def test_dupes_with_nulls():
 @pytest.mark.parametrize(
     "dataframe,expected",
     [
-        (pl.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}), pl.Series([0, 0, 0])),
+        (pl.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}), pl.Series([1, 1, 1])),
         (
             pl.DataFrame({"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}),
-            pl.Series([0, 1, 0]),
+            pl.Series([1, 2, 1]),
         ),
-        (pl.DataFrame({"a": [-999, 2, 3], "b": [1, 2, 3]}), pl.Series([0, 0, 0])),
+        (pl.DataFrame({"a": [-999, 2, 3], "b": [1, 2, 3]}), pl.Series([1, 1, 1])),
         (
             pl.DataFrame({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}),
-            pl.Series([0, 0, 1]),
+            pl.Series([1, 1, 2]),
         ),
         (
             pl.DataFrame({"a": ["1", np.nan, np.nan], "b": ["1", "2", "2"]}),
-            pl.Series([0, 0, 1]),
+            pl.Series([1, 1, 2]),
         ),
         (
             pl.DataFrame(
                 {"a": [datetime(2018, 1, 1), np.nan, np.nan], "b": ["1", "2", "2"]}
             ),
-            pl.Series([0, 0, 1]),
+            pl.Series([1, 1, 2]),
         ),
     ],
 )
