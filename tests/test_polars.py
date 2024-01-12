@@ -24,6 +24,9 @@ from decimal import Decimal
 from unittest import mock
 
 import numpy as np
+
+pytest.importorskip("polars")
+
 import polars as pl
 import pytest
 from polars.exceptions import ComputeError, DuplicateError
