@@ -30,7 +30,7 @@ from ordered_set import OrderedSet
 
 try:
     import polars as pl
-    from pl.exceptions import ComputeError, InvalidOperationError
+    from polars.exceptions import ComputeError, InvalidOperationError
 except ImportError:
     pass  # Let non-Polars people at least enjoy the loveliness of the pandas datacompy functionality
 
@@ -103,11 +103,13 @@ class PolarsCompare:
                 if self.cast_column_names_lower
                 else str(join_columns)
             ]
-        else:
+        elif isinstance(join_columns, list):
             self.join_columns = [
                 str(col).lower() if self.cast_column_names_lower else str(col)
-                for col in cast(List[str], join_columns)
+                for col in join_columns
             ]
+        else:
+            raise TypeError(f"{join_columns} must be a string or list of string(s)")
 
         self._any_dupes: bool = False
         self.df1 = df1
@@ -161,7 +163,7 @@ class PolarsCompare:
             Boolean indicator that controls of column names will be cast into lower case
         """
         dataframe = getattr(self, index)
-        if not isinstance(dataframe, "pl.DataFrame"):
+        if not isinstance(dataframe, pl.DataFrame):
             raise TypeError(f"{index} must be a Polars DataFrame")
 
         if cast_column_names_lower:
@@ -317,6 +319,9 @@ class PolarsCompare:
         creates a column column_match which is True for matches, False
         otherwise.
         """
+        match_cnt: Union[int, float]
+        null_diff: Union[int, float]
+
         LOG.debug("Comparing intersection")
         row_cnt = len(self.intersect_rows)
         for column in self.intersect_columns():
@@ -347,7 +352,6 @@ class PolarsCompare:
                     (self.intersect_rows[col_1].is_null())
                     ^ (self.intersect_rows[col_2].is_null())
                 ).sum()
-
             if row_cnt > 0:
                 match_rate = float(match_cnt) / row_cnt
             else:
@@ -402,7 +406,7 @@ class PolarsCompare:
                 match_columns.append(column + "_match")
 
         if len(match_columns) > 0:
-            return (
+            return int(
                 self.intersect_rows[match_columns]
                 .select(pl.all_horizontal(match_columns).alias("__sum"))
                 .sum()
@@ -479,7 +483,7 @@ class PolarsCompare:
         row_cnt = self.intersect_rows.shape[0]
         col_match = self.intersect_rows[column + "_match"]
         match_cnt = col_match.sum()
-        sample_count = min(sample_count, row_cnt - match_cnt)
+        sample_count = min(sample_count, row_cnt - match_cnt)  # type: ignore
         sample = self.intersect_rows.filter(pl.col(column + "_match") != True).sample(
             sample_count
         )
@@ -726,13 +730,13 @@ def render(filename: str, *fields: Union[int, float, str]) -> str:
 
 
 def columns_equal(
-    col_1: "pl.Series[Any]",
-    col_2: "pl.Series[Any]",
+    col_1: "pl.Series",
+    col_2: "pl.Series",
     rel_tol: float = 0,
     abs_tol: float = 0,
     ignore_spaces: bool = False,
     ignore_case: bool = False,
-) -> "pl.Series[bool]":
+) -> "pl.Series":
     """Compares two columns from a dataframe, returning a True/False series,
     with the same index as column 1.
 
@@ -765,7 +769,7 @@ def columns_equal(
         A series of Boolean values.  True == the values match, False == the
         values don't match.
     """
-    compare: pl.Series[bool]
+    compare: pl.Series
     try:
         compare = pl.Series(
             np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
@@ -815,8 +819,8 @@ def columns_equal(
 
 
 def compare_string_and_date_columns(
-    col_1: "pl.Series[Any]", col_2: "pl.Series[Any]"
-) -> "pl.Series[bool]":
+    col_1: "pl.Series", col_2: "pl.Series"
+) -> "pl.Series":
     """Compare a string column and date column, value-wise.  This tries to
     convert a string column to a date column and compare that way.
 
@@ -900,7 +904,7 @@ def temp_column_name(*dataframes: "pl.DataFrame") -> str:
             return temp_column
 
 
-def calculate_max_diff(col_1: "pl.Series[Any]", col_2: "pl.Series[Any]") -> float:
+def calculate_max_diff(col_1: "pl.Series", col_2: "pl.Series") -> float:
     """Get a maximum difference between two columns
 
     Parameters
@@ -925,7 +929,7 @@ def calculate_max_diff(col_1: "pl.Series[Any]", col_2: "pl.Series[Any]") -> floa
 
 def generate_id_within_group(
     dataframe: "pl.DataFrame", join_columns: List[str]
-) -> "pl.Series[int]":
+) -> "pl.Series":
     """Generate an ID column that can be used to deduplicate identical rows.  The series generated
     is the order within a unique group, and it handles nulls.
 
@@ -958,7 +962,7 @@ def generate_id_within_group(
         return (
             dataframe[join_columns]
             .cast(pl.String)
-            .fill_nan(default_value)
+            .fill_null(default_value)
             .select(rn=pl.col(dataframe.columns[0]).cum_count().over(join_columns))
             .to_series()
         )
