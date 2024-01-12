@@ -11,8 +11,8 @@ Contents
     Installation <install>
     Pandas Usage <pandas_usage>
     Spark Usage <spark_usage>
-    Fugue Usage <fugue_usage>
     Polars Usage <polars_usage>
+    Fugue Usage <fugue_usage>
     Developer Instructions <developer_instructions>
 
 .. toctree::
