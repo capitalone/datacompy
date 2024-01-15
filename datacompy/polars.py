@@ -28,6 +28,8 @@ from typing import Any, Dict, List, Optional, Union, cast
 import numpy as np
 from ordered_set import OrderedSet
 
+from datacompy.base import BaseCompare
+
 try:
     import polars as pl
     from polars.exceptions import ComputeError, InvalidOperationError
@@ -40,7 +42,7 @@ STRING_TYPE = ["String", "Utf8"]
 DATE_TYPE = ["Date", "Datetime"]
 
 
-class PolarsCompare:
+class PolarsCompare(BaseCompare):
     """Comparison class to be used to compare whether two dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
@@ -431,6 +433,11 @@ class PolarsCompare:
         ----------
         ignore_extra_columns : bool
             Ignores any columns in one dataframe and not in the other.
+
+        Returns
+        -------
+        bool
+            True or False if the dataframes match.
         """
         if not ignore_extra_columns and not self.all_columns_match():
             return False
@@ -447,6 +454,11 @@ class PolarsCompare:
         Dataframe 2 is considered a subset if all of its columns are in
         dataframe 1, and all of its rows match rows in dataframe 1 for the
         shared columns.
+
+        Returns
+        -------
+        bool
+            True if dataframe 2 is a subset of dataframe 1.
         """
         if not self.df2_unq_columns() == set():
             return False

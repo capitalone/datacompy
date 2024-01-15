@@ -20,7 +20,7 @@ Compare two DataFrames that are supported by Fugue
 import logging
 import pickle
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, List, cast, Union, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import fugue.api as fa
 import pandas as pd

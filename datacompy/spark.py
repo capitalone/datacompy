@@ -16,7 +16,7 @@
 import sys
 from enum import Enum
 from itertools import chain
-from typing import Any, TextIO, List, Union, Tuple, Optional, Dict, Set
+from typing import Any, Dict, List, Optional, Set, TextIO, Tuple, Union
 
 try:
     import pyspark
