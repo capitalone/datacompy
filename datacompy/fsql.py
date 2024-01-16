@@ -14,21 +14,21 @@
 # limitations under the License.
 
 """
-Compare two Polars DataFrames
-
-Originally this package was meant to provide similar functionality to
-PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
-two dataframes.
+Compare any two DataFrames using Fugue SQL
 """
 import logging
-from typing import Any, Dict, List, Optional, Union
+import pickle
+from collections import defaultdict
+from dataclasses import dataclass
+from typing import Any, Dict, Iterable, List, Optional, Union, Tuple
 
 import duckdb
 import fugue.api as fa
 import pandas as pd
 import pyarrow as pa
-from fugue import AnyDataFrame
+from fugue import AnyDataFrame, DataFrame
 from ordered_set import OrderedSet
+from triad import Schema
 from triad.utils.schema import quote_name
 
 LOG = logging.getLogger(__name__)
@@ -36,63 +36,258 @@ LOG = logging.getLogger(__name__)
 _SIDE_FLAG = "_datacompy_side"
 _ROW_DIFF_FLAG = "_datacompy_row_diff"
 _TOTAL_COUNT_COL = "_datacompy_total_count"
+_DIFF_PREFIX = "_datacompy_diff_"
+_MAX_DIFF_PREFIX = "_datacompy_max_diff_"
+_NULL_DIFF_PREFIX = "_datacompy_null_diff_"
 
 
-class FugueSQLBuilder:
+def lower_column_names(df: AnyDataFrame) -> AnyDataFrame:
+    """
+    Lowercase column names in a dataframe
+
+    Args:
+
+        df (AnyDataFrame): Input dataframe
+
+    Returns:
+
+        AnyDataFrame: Dataframe with lowercased column names
+    """
+    names = fa.get_column_names(df)
+    rn = {x: x.lower() for x in names if x != x.lower()}
+    if len(rn) > 0:
+        return fa.rename(df, rn)  # type: ignore
+    return df
+
+
+def drop_duplicates(
+    df: AnyDataFrame, columns: Union[str, List[str]], presort: str = ""
+) -> AnyDataFrame:
+    """
+    Drop duplicates from a dataframe
+
+    Args:
+
+        df (AnyDataFrame): Input dataframe
+        columns (Union[str, List[str]]): Columns to use for dedup
+        presort (str, optional): Value presort expression. Defaults to "".
+
+    Returns:
+
+        AnyDataFrame: Dataframe with duplicates removed
+    """
+    cols = _to_cols(columns, allow_empty=False)
+    return fa.take(df, 1, presort=presort, partition=cols)  # type: ignore
+
+
+def compare_schemas(
+    schema1: Schema,
+    schema2: Schema,
+    join_columns: Union[List[str], str],
+    exact: bool = False,
+) -> "SchemaCompareResult":
+    join_cols = _to_cols(join_columns, allow_empty=False)
+    assert join_cols in schema1, f"Columns {join_cols} not all in {schema1}"
+    assert join_cols in schema2, f"Columns {join_cols} not all in {schema2}"
+    df1_cols_set = OrderedSet(schema1.names)
+    df2_cols_set = OrderedSet(schema2.names)
+    left_only = list(df1_cols_set - df2_cols_set)
+    right_only = list(df2_cols_set - df1_cols_set)
+    intersect_cols = list(df1_cols_set & df2_cols_set)
+    value_cols = list((df1_cols_set & df2_cols_set) - OrderedSet(join_cols))
+    assert len(value_cols) > 0, "No value columns to compare"
+    s1 = schema1.extract(intersect_cols)
+    s2 = schema2.extract(intersect_cols)
+    if s1 != s2:
+        assert not exact, f"Intersecting columns have different types {s1} vs {s2}"
+        for f1, f2 in zip(s1.fields, s2.fields):
+            if f1.type != f2.type:
+                if (
+                    pa.types.is_floating(f1.type)
+                    or pa.types.is_integer(f1.type)
+                    or pa.types.is_decimal(f1.type)
+                ) and (
+                    pa.types.is_floating(f2.type)
+                    or pa.types.is_integer(f2.type)
+                    or pa.types.is_decimal(f2.type)
+                ):
+                    continue
+                if (
+                    hasattr(pa.types, "is_large_string")
+                    and (
+                        pa.types.is_string(f1.type) or pa.types.is_large_string(f1.type)
+                    )
+                    and (
+                        pa.types.is_string(f2.type) or pa.types.is_large_string(f2.type)
+                    )
+                ):
+                    continue
+                if (
+                    hasattr(pa.types, "is_large_binary")
+                    and (
+                        pa.types.is_binary(f1.type) or pa.types.is_large_binary(f1.type)
+                    )
+                    and (
+                        pa.types.is_binary(f2.type) or pa.types.is_large_binary(f2.type)
+                    )
+                ):
+                    continue
+                if (
+                    hasattr(pa.types, "is_large_list")
+                    and (pa.types.is_list(f1.type) or pa.types.is_large_list(f1.type))
+                    and (pa.types.is_list(f2.type) or pa.types.is_large_list(f2.type))
+                ):
+                    continue
+                raise AssertionError(
+                    "Intersecting columns have different and "
+                    f"incompatible types {s1} vs {s2}"
+                )
+
+    return SchemaCompareResult(
+        schema1=schema1,
+        schema2=schema2,
+        intersect_cols=intersect_cols,
+        join_cols=join_cols,
+        value_cols=value_cols,
+        left_only=left_only,
+        right_only=right_only,
+    )
+
+
+def compare(
+    df1: AnyDataFrame,
+    df2: AnyDataFrame,
+    join_columns: Union[List[str], str],
+    exact_type_match: bool = False,
+    abs_tol: float = 0,
+    rel_tol: float = 0,
+    sample_count: int = 10,
+    persist_diff: bool = True,
+    use_map: bool = False,
+    num_buckets: int = 0,
+) -> "CompareResult":
+    _df1, _df2 = fa.as_fugue_df(df1), fa.as_fugue_df(df2)
+    schema_compare = compare_schemas(
+        _df1.schema, _df2.schema, join_columns, exact=exact_type_match
+    )
+    sql_builder = _FugueSQLBuilder(schema_compare, abs_tol, rel_tol)
+    sql = sql_builder.build(persist_diff, sample_count)
+    if use_map:
+        runner = _MapRunner(schema_compare, sql, num_buckets)
+        res = runner.run(_df1, _df2)
+    else:
+        raw = fa.fugue_sql_flow(sql, df1=df1, df2=df2).run()
+        res = {k: fa.as_pandas(v) for k, v in raw.items()}
+    return CompareResult(
+        schema_compare=schema_compare,
+        raw_diff_summary=res["diff_summary"],
+        df1_samples=res.get("df1_samples"),
+        df2_samples=res.get("df2_samples"),
+    )
+
+
+@dataclass
+class SchemaCompareResult:
+    schema1: Schema
+    schema2: Schema
+    intersect_cols: List[str]
+    join_cols: List[str]
+    value_cols: List[str]
+    left_only: List[str]
+    right_only: List[str]
+
+    def is_floating(self, name: str) -> bool:
+        tp = self.schema1[name].type
+        tp2 = self.schema2[name].type
+        return (
+            pa.types.is_floating(tp)
+            or pa.types.is_decimal(tp)
+            or pa.types.is_floating(tp2)
+            or pa.types.is_decimal(tp2)
+        )
+
+    def is_numeric(self, name: str) -> bool:
+        tp = self.schema1[name].type
+        tp2 = self.schema2[name].type
+        return (
+            pa.types.is_floating(tp)
+            or pa.types.is_decimal(tp)
+            or pa.types.is_floating(tp2)
+            or pa.types.is_decimal(tp2)
+            or pa.types.is_integer(tp)
+            or pa.types.is_integer(tp2)
+        )
+
+
+@dataclass
+class CompareResult:
+    schema_compare: SchemaCompareResult
+    raw_diff_summary: pd.DataFrame
+    df1_samples: Optional[pd.DataFrame]
+    df2_samples: Optional[pd.DataFrame]
+
+    def get_row_counts(self) -> Dict[int, int]:
+        return (
+            self.raw_diff_summary.groupby(_SIDE_FLAG)[_TOTAL_COUNT_COL].sum().to_dict()
+        )
+
+    def get_diff_summary(self) -> pd.DataFrame:
+        res: List[Dict[str, Any]] = []
+        df = self.raw_diff_summary[self.raw_diff_summary[_SIDE_FLAG] == 3]
+        for col in self.schema_compare.value_cols:
+            res.append(
+                {
+                    "column": col,
+                    "diff": df[_DIFF_PREFIX + col].sum(),
+                    "null_diff": df[_NULL_DIFF_PREFIX + col].sum(),
+                    "max_diff": df[_MAX_DIFF_PREFIX + col].max(),
+                }
+            )
+        return pd.DataFrame(res)
+
+    def get_unique_samples(self, side: int, sample_count: int = 10) -> pd.DataFrame:
+        assert side in [1, 2], "side must be 1 or 2"
+        return self._get_df(
+            self.df1_samples if side == 1 else self.df2_samples,
+            side,
+            sample_count=sample_count,
+        )
+
+    def get_unequal_samples(
+        self, sample_count: int = 10
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        if self.df1_samples is None or self.df2_samples is None:
+            return pd.DataFrame(), pd.DataFrame()
+        return self._get_df(
+            self.df1_samples, 3, sample_count=sample_count
+        ), self._get_df(self.df2_samples, 3, sample_count=sample_count)
+
+    def _get_df(
+        self, df: Optional[pd.DataFrame], side: int, sample_count: int
+    ) -> pd.DataFrame:
+        if df is None:
+            return pd.DataFrame()
+        return (
+            df[df[_SIDE_FLAG] == side]
+            .nsmallest(sample_count, self.schema_compare.join_cols)
+            .reset_index(drop=True)
+        )
+
+
+class _FugueSQLBuilder:
     def __init__(
         self,
-        df1: AnyDataFrame,
-        df2: AnyDataFrame,
-        join_columns: Union[List[str], str],
+        schema_compare: SchemaCompareResult,
         abs_tol: float = 0,
         rel_tol: float = 0,
-        df1_name: str = "df1",
-        df2_name: str = "df2",
-        ignore_spaces: bool = False,
-        ignore_case: bool = False,
-        cast_column_names_lower: bool = True,
-        dedup: bool = False,
     ) -> None:
         assert rel_tol == 0, "Relative tolerance is not supported"
-        assert not ignore_case, "Ignore case is not supported"
-        assert not ignore_spaces, "Ignore spaces is not supported"
-
-        self.df1_name = df1_name
-        self.df2_name = df2_name
+        assert abs_tol >= 0, "Absolute tolerance must be non-negative"
         self.abs_tol = abs_tol
         self.rel_tol = rel_tol
-        self.ignore_spaces = ignore_spaces
-        self.ignore_case = ignore_case
-        self.dedup = dedup
+        self.schema_compare = schema_compare
 
-        self.df1, self.df2 = fa.as_fugue_df(df1), fa.as_fugue_df(df2)
-        self._schema1, self._schema2 = self.df1.schema, self.df2.schema
-        self._join_cols = (
-            [join_columns] if isinstance(join_columns, str) else join_columns
-        )
-        assert len(self._join_cols) > 0, "Join columns must be specified"
-        df1_map_cols = self._schema1.names
-        df2_map_cols = self._schema2.names
-        if cast_column_names_lower:
-            df1_map_cols = [c.lower() for c in df1_map_cols]
-            df2_map_cols = [c.lower() for c in df2_map_cols]
-            self._join_cols = [c.lower() for c in self._join_cols]
-        self._map1 = {x: y for x, y in zip(df1_map_cols, self._schema1.names)}
-        self._rmap1 = {y: x for x, y in zip(df1_map_cols, self._schema1.names)}
-        self._map2 = {x: y for x, y in zip(df2_map_cols, self._schema2.names)}
-        self._rmap2 = {y: x for x, y in zip(df2_map_cols, self._schema2.names)}
-        df1_cols_set = OrderedSet(df1_map_cols)
-        df2_cols_set = OrderedSet(df2_map_cols)
-        self._df1_unq_cols = df1_cols_set - df2_cols_set
-        self._df2_unq_cols = df2_cols_set - df1_cols_set
-        self._intersect_cols = df1_cols_set & df2_cols_set
-        self._value_cols = self._intersect_cols - OrderedSet(self._join_cols)
-        assert len(self._value_cols) > 0, "No value columns to compare"
-        assert all(
-            x in self._intersect_cols for x in self._join_cols
-        ), f"Join columns {self._join_cols} must be in both df1 amd df2"
-
-    def gen_fsql(self, persist_diff: bool = True, sample_count: int = 10) -> str:
+    def build(self, persist_diff: bool = True, sample_count: int = 10) -> str:
         steps: List[str] = []
         self._declare_a_b(steps)
         self._gen_select_diff(steps, persist=persist_diff and sample_count > 0)
@@ -101,45 +296,32 @@ class FugueSQLBuilder:
         self._gen_cols_summary(steps)
         return "\n".join(steps)
 
-    def run_duckdb(
-        self, persist_diff: bool = False, sample_count: int = 10
-    ) -> Dict[str, pd.DataFrame]:
-        fsql = self.gen_fsql(persist_diff, sample_count)
-        with duckdb.connect() as con:
-            res = fa.fugue_sql_flow(fsql, df1=self.df1, df2=self.df2).run(con)
-            return {k: fa.as_pandas(v) for k, v in res.items()}
-
     def _declare_a_b(self, steps: List[str]) -> None:
-        scols = "\n\t,".join(
-            _quote_name(self._map1[c]) + " AS " + _quote_name(c)
-            for c in self._intersect_cols
+        scols = ", ".join(_quote_name(c) for c in self.schema_compare.intersect_cols)
+        steps.append(
+            f"""
+-- Get intersecting columns")
+a = SELECT {scols} FROM df1
+b = SELECT {scols} FROM df2"""
         )
-        steps.append(f"-- Get intersecting columns from {self.df1_name}")
-        steps.append(f"a = SELECT {scols} FROM df1")
-        if self.dedup:
-            steps.append(f"a = TAKE 1 ROW PREPARTITION BY {self._jcols}")
-        scols = "\n\t,".join(
-            _quote_name(self._map2[c]) + " AS " + _quote_name(c)
-            for c in self._intersect_cols
-        )
-        steps.append(f"-- Get intersecting columns from {self.df2_name}")
-        steps.append(f"b = SELECT {scols} FROM df2")
-        if self.dedup:
-            steps.append(f"b = TAKE 1 ROW PREPARTITION BY {self._jcols}")
 
     def _gen_select_diff(self, steps: List[str], persist: bool) -> None:
         cols_expr: List[str] = []
-        for col in self._join_cols:
-            cols_expr.append(f"a.{_quote_name(col)}")
-        for col in self._value_cols:
-            cols_expr.append(self._gen_col_eq(col))
-        _val_diff = "+".join(_quote_name(x) for x in self._value_cols)
+        for col in self.schema_compare.join_cols:
+            # not using coalesce here
+            ca = "a." + _quote_name(col)
+            cb = "b." + _quote_name(col)
+            cols_expr.append(f"CASE WHEN {ca} IS NULL THEN {cb} ELSE {ca} END AS {col}")
+        for col in self.schema_compare.value_cols:
+            cols_expr.extend(self._gen_col_eq(col))
+        _val_diff = "+".join(
+            _quote_name(_DIFF_PREFIX + x) for x in self.schema_compare.value_cols
+        )
         _fa = "a." + _SIDE_FLAG
         _fb = "b." + _SIDE_FLAG
         cols_expr.append(
             f"""
-        CASE WHEN 
-            {_fa} IS NULL AND {_fb} IS NULL THEN 0
+        CASE WHEN {_fa} IS NULL AND {_fb} IS NULL THEN 0
             WHEN {_fb} IS NULL THEN 1
             WHEN {_fa} IS NULL THEN 2
             ELSE 3 END AS {_SIDE_FLAG}"""
@@ -191,13 +373,21 @@ df2_samples =
 
     def _gen_cols_summary(self, steps: List[str]) -> None:
         cols_expr: List[str] = []
-        for col in list(self._value_cols) + [_ROW_DIFF_FLAG]:
+        for col in self.schema_compare.value_cols:
+            cn = _quote_name(_DIFF_PREFIX + col)
+            cols_expr.append(f"SUM({cn}) AS {cn}")
+            cn = _quote_name(_NULL_DIFF_PREFIX + col)
+            cols_expr.append(f"SUM({cn}) AS {cn}")
+            cn = _quote_name(_MAX_DIFF_PREFIX + col)
+            cols_expr.append(f"MAX({cn}) AS {cn}")
+        for col in [_ROW_DIFF_FLAG]:
             cols_expr.append(f"SUM({_quote_name(col)}) AS {_quote_name(col)}")
         cols = "\n\t,".join(cols_expr)
         query = f"""
--- Get columns summary
-cols_summary =
-    SELECT {_SIDE_FLAG}, {cols},
+-- Get diff summary
+diff_summary =
+    SELECT {cols},
+        {_SIDE_FLAG},
         COUNT(*) AS {_TOTAL_COUNT_COL}
     FROM diff
     GROUP BY {_SIDE_FLAG}
@@ -206,30 +396,144 @@ cols_summary =
 
     @property
     def _jcols(self) -> str:
-        return ", ".join(_quote_name(c) for c in self._join_cols)
+        return ", ".join(_quote_name(c) for c in self.schema_compare.join_cols)
 
     def _gen_join_on(self, name1: str = "a", name2: str = "b") -> str:
         return " AND ".join(
             [
                 f"{name1}.{_quote_name(c)} = {name2}.{_quote_name(c)}"
-                for c in self._join_cols
+                for c in self.schema_compare.join_cols
             ]
         )
 
-    def _gen_col_eq(self, name: str) -> str:
-        tp = self._schema1[self._rmap1[name]].type
+    def _gen_col_eq(self, name: str) -> Iterable[str]:
+        tp = self.schema_compare.schema1[name].type
+        is_floating = self.schema_compare.is_floating(name)
+        is_numeric = self.schema_compare.is_numeric(name)
         _f = _quote_name(name)
         _fa = "a." + _f
         _fb = "b." + _f
         _both_null = f"({_fa} IS NULL AND {_fb} IS NULL)"
+        _one_null = (
+            f"(({_fa} IS NULL AND {_fb} IS NOT NULL) "
+            f"OR ({_fa} IS NOT NULL AND {_fb} IS NULL))"
+        )
+        _no_null = f"({_fa} IS NOT NULL AND {_fb} IS NOT NULL)"
         if pa.types.is_string(tp):
             c = f"{_fa} = {_fb}"
-        elif pa.types.is_floating(tp) and self.abs_tol > 0:
+        elif self.abs_tol > 0 and is_floating:
             c = f"({_fa} - {_fb} <= {self.abs_tol} AND {_fa} - {_fb} >= -1 * {self.abs_tol})"
         else:
             c = f"{_fa} = {_fb}"
-        return f"CASE WHEN {_both_null} OR {c} THEN 0 ELSE 1 END AS {_f}"
+        diff_col = _quote_name(_DIFF_PREFIX + name)
+        yield f"CASE WHEN {_both_null} OR {c} THEN 0 ELSE 1 END AS {diff_col}"
+        null_diff_col = _quote_name(_NULL_DIFF_PREFIX + name)
+        yield f"CASE WHEN {_one_null} THEN 1 ELSE 0 END AS {null_diff_col}"
+        max_diff_col = _quote_name(_MAX_DIFF_PREFIX + name)
+        if is_numeric:
+            yield (
+                f"""CASE WHEN {_no_null}
+            THEN (
+                CASE WHEN {_fa} > {_fb} THEN {_fa} - {_fb} ELSE {_fb} - {_fa} END
+            ) ELSE 0 END AS {max_diff_col}"""
+            )
+        else:
+            yield f"0 AS {max_diff_col}"
+
+
+class _MapRunner:
+    def __init__(
+        self,
+        schema_compare: SchemaCompareResult,
+        sql: str,
+        num_buckets: int,
+    ):
+        self.schema_compare = schema_compare
+        self.sql = sql
+        if num_buckets > 0:
+            self.num_buckets = num_buckets
+        else:
+            self.num_buckets = fa.get_current_parallelism() * 2
+
+    def run(self, df1: DataFrame, df2: DataFrame) -> Dict[str, pd.DataFrame]:
+        ser = fa.union(
+            fa.transform(
+                df1,
+                self._serialize,
+                schema="key:int,left:bool,data:binary",
+                params=dict(left=True),
+            ),
+            fa.transform(
+                df2,
+                self._serialize,
+                schema="key:int,left:bool,data:binary",
+                params=dict(left=False),
+            ),
+            distinct=False,
+        )
+        objs = fa.as_array(
+            fa.transform(
+                ser,
+                self._comp,
+                schema="obj:binary",
+                partition=dict(by="key", num=self.num_buckets),
+            )
+        )
+        dicts = defaultdict(list)
+        for obj in objs:
+            d = pickle.loads(obj)
+            for k, v in d.items():
+                dicts[k].append(v)
+        return {k: pd.concat(v) for k, v in dicts.items()}
+
+    def _serialize(
+        self, dfs: Iterable[pa.Table], left: bool
+    ) -> Iterable[Dict[str, Any]]:
+        for df in dfs:
+            keys = df.select(self.schema_compare.join_cols).to_pandas()
+            gp = pd.util.hash_pandas_object(keys, index=False).mod(self.num_buckets)
+            for k, idx in gp.index.groupby(gp):
+                sub = df.take(pa.Array.from_pandas(idx))
+                yield {"key": k, "left": left, "data": _serialize_pa_table(sub)}
+
+    def _deserialize(self, df: List[Dict[str, Any]], left: bool) -> pa.Table:
+        arr = [_deserialize_pa_table(r["data"]) for r in df if r["left"] == left]
+        if len(arr) > 0:
+            return pa.concat_tables(arr)
+        if left:
+            return self.schema_compare.schema1.create_empty_arrow_table()
+        return self.schema_compare.schema2.create_empty_arrow_table()
+
+    def _comp(self, df: List[Dict[str, Any]]) -> List[List[Any]]:
+        df1 = self._deserialize(df, True)
+        df2 = self._deserialize(df, False)
+        with duckdb.connect() as con:
+            with fa.engine_context(con):
+                res = fa.fugue_sql_flow(self.sql, df1=df1, df2=df2).run(con)
+                data = pickle.dumps({k: fa.as_pandas(v) for k, v in res.items()})
+        return [[data]]
 
 
 def _quote_name(name: str) -> str:
     return quote_name(name, "`")
+
+
+def _to_cols(columns: Union[str, List[str]], allow_empty: bool) -> List[str]:
+    cols = [columns] if isinstance(columns, str) else columns
+    assert all(x.strip() != "" for x in cols), f"Empty column names found in {cols}"
+    assert len(set(cols)) == len(cols), f"Duplicate columns found in {cols}"
+    if not allow_empty:
+        assert len(cols) > 0, "Columns must be specified"
+    return cols
+
+
+def _serialize_pa_table(tb: pa.Table) -> bytes:
+    sink = pa.BufferOutputStream()
+    with pa.ipc.new_stream(sink, tb.schema) as writer:
+        writer.write_table(tb)
+    return sink.getvalue().to_pybytes()
+
+
+def _deserialize_pa_table(buf: bytes) -> pa.Table:
+    with pa.ipc.open_stream(buf) as reader:
+        return reader.read_all()

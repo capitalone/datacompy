@@ -15,7 +15,7 @@ dependencies = [
     "pandas<=2.0.2,>=0.25.0",
     "numpy<=1.26.0,>=1.22.0",
     "ordered-set<=4.1.0,>=4.0.2",
-    "fugue<=0.8.7,>=0.8.7",
+    "fugue[sql,duckdb]==0.9.0.dev2",
 ]
 requires-python = ">=3.8.0"
 classifiers = [
@@ -58,7 +58,6 @@ version = {attr = "datacompy.__version__"}
 python-tag = "py3"
 
 [project.optional-dependencies]
-duckdb = ["fugue[duckdb]"]
 polars = ["fugue[polars]"]
 spark = ["fugue[spark]"]
 dask = ["fugue[dask]"]
