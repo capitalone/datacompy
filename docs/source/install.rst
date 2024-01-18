@@ -22,8 +22,8 @@ conda (installs dependencies from Conda Forge)
 
 ::
 
-    conda create --name test python=3.9
-    source activate test
+    conda create --name datacompy python=3.9 pip conda
+    source activate datacompy
     conda config --add channels conda-forge
     conda install datacompy
 

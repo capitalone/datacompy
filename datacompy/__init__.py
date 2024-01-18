@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "0.10.5"
+__version__ = "0.11.0"
 
 from datacompy.core import *
 from datacompy.fugue import (
@@ -24,4 +24,5 @@ from datacompy.fugue import (
     report,
     unq_columns,
 )
+from datacompy.polars import PolarsCompare
 from datacompy.spark import NUMERIC_SPARK_TYPES, SparkCompare

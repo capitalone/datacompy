@@ -1,11 +1,125 @@
 Spark Usage
 ===========
 
-*Under Construction*
+.. important::
 
-Meanwhile, see the Readme "Spark Detail" section for a usage example and comments on ``SparkCompare``. You may also
-want to checkout the :class:`datacompy.SparkCompare` API documentation, which is pretty well-documented, if I do say
-so myself.
+    With version ``v0.9.0`` SparkCompare now uses Null Safe (``<=>``) comparisons
+
+
+DataComPy's ``SparkCompare`` class will join two dataframes either on a list of join
+columns. It has the capability to map column names that may be different in each
+dataframe, including in the join columns. You are responsible for creating the
+dataframes from any source which Spark can handle and specifying a unique join
+key. If there are duplicates in either dataframe by join key, the match process
+will remove the duplicates before joining (and tell you how many duplicates were
+found).
+
+As with the Pandas-based ``Compare`` class, comparisons will be attempted even
+if dtypes don't match. Any schema differences will be reported in the output
+as well as in any mismatch reports, so that you can assess whether or not a
+type mismatch is a problem or not.
+
+The main reasons why you would choose to use ``SparkCompare`` over ``Compare``
+are that your data is too large to fit into memory, or you're comparing data
+that works well in a Spark environment, like partitioned Parquet, CSV, or JSON
+files, or Cerebro tables.
+
+
+Basic Usage
+-----------
+
+.. code-block:: python
+
+    import datetime
+    import datacompy
+    from pyspark.sql import Row
+
+    # This example assumes you have a SparkSession named "spark" in your environment, as you
+    # do when running `pyspark` from the terminal or in a Databricks notebook (Spark v2.0 and higher)
+
+    data1 = [
+        Row(acct_id=10000001234, dollar_amt=123.45, name='George Maharis', float_fld=14530.1555,
+            date_fld=datetime.date(2017, 1, 1)),
+        Row(acct_id=10000001235, dollar_amt=0.45, name='Michael Bluth', float_fld=1.0,
+            date_fld=datetime.date(2017, 1, 1)),
+        Row(acct_id=10000001236, dollar_amt=1345.0, name='George Bluth', float_fld=None,
+            date_fld=datetime.date(2017, 1, 1)),
+        Row(acct_id=10000001237, dollar_amt=123456.0, name='Bob Loblaw', float_fld=345.12,
+            date_fld=datetime.date(2017, 1, 1)),
+        Row(acct_id=10000001239, dollar_amt=1.05, name='Lucille Bluth', float_fld=None,
+            date_fld=datetime.date(2017, 1, 1))
+    ]
+
+    data2 = [
+        Row(acct_id=10000001234, dollar_amt=123.4, name='George Michael Bluth', float_fld=14530.155),
+        Row(acct_id=10000001235, dollar_amt=0.45, name='Michael Bluth', float_fld=None),
+        Row(acct_id=10000001236, dollar_amt=1345.0, name='George Bluth', float_fld=1.0),
+        Row(acct_id=10000001237, dollar_amt=123456.0, name='Robert Loblaw', float_fld=345.12),
+        Row(acct_id=10000001238, dollar_amt=1.05, name='Loose Seal Bluth', float_fld=111.0)
+    ]
+
+    base_df = spark.createDataFrame(data1)
+    compare_df = spark.createDataFrame(data2)
+
+    comparison = datacompy.SparkCompare(spark, base_df, compare_df, join_columns=['acct_id'])
+
+    # This prints out a human-readable report summarizing differences
+    comparison.report()
+
+
+Using SparkCompare on EMR or standalone Spark
+---------------------------------------------
+
+1. Set proxy variables
+2. Create a virtual environment, if desired (``virtualenv venv; source venv/bin/activate``)
+3. Pip install datacompy and requirements
+4. Ensure your SPARK_HOME environment variable is set (this is probably ``/usr/lib/spark`` but may
+   differ based on your installation)
+5. Augment your PYTHONPATH environment variable with
+   ``export PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$SPARK_HOME/python:$PYTHONPATH``
+   (note that your version of py4j may differ depending on the version of Spark you're using)
+
+
+Using SparkCompare on Databricks
+--------------------------------
+
+1. Clone this repository locally
+2. Create a datacompy egg by running ``python setup.py bdist_egg`` from the repo root directory.
+3. From the Databricks front page, click the "Library" link under the "New" section.
+4. On the New library page:
+    a. Change source to "Upload Python Egg or PyPi"
+    b. Under "Upload Egg", Library Name should be "datacompy"
+    c. Drag the egg file in datacompy/dist/ to the "Drop library egg here to upload" box
+    d. Click the "Create Library" button
+5. Once the library has been created, from the library page (which you can find in your /Users/{login} workspace),
+   you can choose clusters to attach the library to.
+6. ``import datacompy`` in a notebook attached to the cluster that the library is attached to and enjoy!
+
+
+Performance Implications
+------------------------
+
+Spark scales incredibly well, so you can use ``SparkCompare`` to compare
+billions of rows of data, provided you spin up a big enough cluster. Still,
+joining billions of rows of data is an inherently large task, so there are a
+couple of things you may want to take into consideration when getting into the
+cliched realm of "big data":
+
+* ``SparkCompare`` will compare all columns in common in the dataframes and
+  report on the rest. If there are columns in the data that you don't care to
+  compare, use a ``select`` statement/method on the dataframe(s) to filter
+  those out. Particularly when reading from wide Parquet files, this can make
+  a huge difference when the columns you don't care about don't have to be
+  read into memory and included in the joined dataframe.
+* For large datasets, adding ``cache_intermediates=True`` to the ``SparkCompare``
+  call can help optimize performance by caching certain intermediate dataframes
+  in memory, like the de-duped version of each input dataset, or the joined
+  dataframe. Otherwise, Spark's lazy evaluation will recompute those each time
+  it needs the data in a report or as you access instance attributes. This may
+  be fine for smaller dataframes, but will be costly for larger ones. You do
+  need to ensure that you have enough free cache memory before you do this, so
+  this parameter is set to False by default.
+
 
 Known Differences
 -----------------
