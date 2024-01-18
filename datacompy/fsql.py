@@ -30,6 +30,8 @@ from fugue import AnyDataFrame, DataFrame
 from ordered_set import OrderedSet
 from triad import Schema
 from triad.utils.schema import quote_name
+from ._fsql_utils import infer_fugue_engine
+
 
 LOG = logging.getLogger(__name__)
 
@@ -162,22 +164,28 @@ def compare(
     abs_tol: float = 0,
     rel_tol: float = 0,
     sample_count: int = 10,
-    persist_diff: bool = True,
-    use_map: bool = False,
-    num_buckets: int = 0,
+    persist_diff: Optional[bool] = None,
+    use_map: Optional[bool] = None,
+    num_buckets: Optional[int] = None,
 ) -> "CompareResult":
     _df1, _df2 = fa.as_fugue_df(df1), fa.as_fugue_df(df2)
     schema_compare = compare_schemas(
         _df1.schema, _df2.schema, join_columns, exact=exact_type_match
     )
     sql_builder = _FugueSQLBuilder(schema_compare, abs_tol, rel_tol)
-    sql = sql_builder.build(persist_diff, sample_count)
-    if use_map:
-        runner = _MapRunner(schema_compare, sql, num_buckets)
-        res = runner.run(_df1, _df2)
-    else:
-        raw = fa.fugue_sql_flow(sql, df1=df1, df2=df2).run()
-        res = {k: fa.as_pandas(v) for k, v in raw.items()}
+    with infer_fugue_engine(df1, df2) as conf:
+        _persist_diff = (
+            persist_diff if persist_diff is not None else conf["persist_diff"]
+        )
+        _use_map = use_map if use_map is not None else conf["use_map"]
+        _num_buckets = num_buckets if num_buckets is not None else conf["num_buckets"]
+        sql = sql_builder.build(_persist_diff, sample_count)
+        if _use_map:
+            runner = _MapRunner(schema_compare, sql, _num_buckets)
+            res = runner.run(_df1, _df2)
+        else:
+            raw = fa.fugue_sql_flow(sql, df1=df1, df2=df2).run()
+            res = {k: fa.as_pandas(v) for k, v in raw.items()}
     return CompareResult(
         schema_compare=schema_compare,
         raw_diff_summary=res["diff_summary"],
@@ -238,9 +246,9 @@ class CompareResult:
             res.append(
                 {
                     "column": col,
-                    "diff": df[_DIFF_PREFIX + col].sum(),
-                    "null_diff": df[_NULL_DIFF_PREFIX + col].sum(),
-                    "max_diff": df[_MAX_DIFF_PREFIX + col].max(),
+                    "diff": int(df[_DIFF_PREFIX + col].sum()),
+                    "null_diff": int(df[_NULL_DIFF_PREFIX + col].sum()),
+                    "max_diff": float(df[_MAX_DIFF_PREFIX + col].max()),
                 }
             )
         return pd.DataFrame(res)
@@ -481,7 +489,7 @@ class _MapRunner:
         )
         dicts = defaultdict(list)
         for obj in objs:
-            d = pickle.loads(obj)
+            d = pickle.loads(obj[0])
             for k, v in d.items():
                 dicts[k].append(v)
         return {k: pd.concat(v) for k, v in dicts.items()}
@@ -492,7 +500,7 @@ class _MapRunner:
         for df in dfs:
             keys = df.select(self.schema_compare.join_cols).to_pandas()
             gp = pd.util.hash_pandas_object(keys, index=False).mod(self.num_buckets)
-            for k, idx in gp.index.groupby(gp):
+            for k, idx in gp.index.groupby(gp).items():
                 sub = df.take(pa.Array.from_pandas(idx))
                 yield {"key": k, "left": left, "data": _serialize_pa_table(sub)}
 
