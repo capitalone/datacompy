@@ -135,7 +135,7 @@ def test_pa_table_serder() -> None:
 
 
 class CompareTests(ft.FugueTestSuite):
-    def to_df(self, data: List[Any], schema: Any) -> DataFrame:
+    def to_df(self, data: Any, schema: Any) -> DataFrame:
         return fa.as_fugue_df(data, schema=schema)
 
     def test_same_data(self) -> None:
@@ -153,7 +153,7 @@ class CompareTests(ft.FugueTestSuite):
         assert len(res.get_unique_samples(2)) == 0
         assert len(res.get_unequal_samples()[0]) == 0
 
-    def test_overlap_data(self) -> None:
+    def test_overlap(self) -> None:
         df1 = self.to_df(
             [
                 [0, 1, 2, "ab"],  # left unique
@@ -177,8 +177,49 @@ class CompareTests(ft.FugueTestSuite):
         assert len(res.get_unique_samples(2)) == 1
         assert len(res.get_unequal_samples()[0]) == 1
         assert len(res.get_unequal_samples()[1]) == 1
+        diff = res.get_diff_summary().groupby("column")["diff"].sum().to_dict()
+        assert diff == {"b": 1, "c": 0}
+
+    def test_overlap_with_close_numbers(self) -> None:
+        df1 = self.to_df(
+            [
+                [0, 1],
+                [1, 3],
+            ],
+            "id:int,a:int",
+        )
+        df2 = self.to_df(
+            [
+                [0, 1.02],
+                [1, 2.98],
+            ],
+            "id:int,a:double",
+        )
+        for abs_tol in [0, 0.01]:
+            res = compare(df1, df2, "id", abs_tol=abs_tol)
+            assert res.get_row_counts() == {3: 2}
+            assert len(res.get_unequal_samples()[0]) == 2
+            assert len(res.get_unequal_samples()[1]) == 2
+            diff = res.get_diff_summary().groupby("column")["max_diff"].sum().to_dict()
+            assert abs(diff["a"] - 0.02) < 1e-5
+        res = compare(df1, df2, "id", abs_tol=0.1)
+        assert res.get_row_counts() == {3: 2}
+        assert len(res.get_unequal_samples()[0]) == 0
+        assert len(res.get_unequal_samples()[1]) == 0
+        diff = res.get_diff_summary().groupby("column")["max_diff"].sum().to_dict()
+        assert abs(diff["a"] - 0.02) < 1e-5
+
+
+@ft.fugue_test_suite("pandas", mark_test=True)
+class PandasCompareTests(CompareTests):
+    pass
 
 
 @ft.fugue_test_suite("duckdb", mark_test=True)
 class DuckDBCompareTests(CompareTests):
+    pass
+
+
+@ft.fugue_test_suite("ray", mark_test=True)
+class RayCompareTests(CompareTests):
     pass
