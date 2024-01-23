@@ -83,7 +83,7 @@ tests-spark = [
     "pytest",
     "pytest-cov",
     "pytest-spark",
-    "fugue[spark]",
+    "spark",
 ]
 qa = [
     "pre-commit",
