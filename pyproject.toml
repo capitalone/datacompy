@@ -28,6 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 
 dynamic = ["version"]
@@ -59,8 +60,11 @@ python-tag = "py3"
 
 [project.optional-dependencies]
 duckdb = ["fugue[duckdb]"]
-polars = ["fugue[polars]"]
-spark = ["fugue[spark]"]
+polars = ["polars"]
+spark = [
+    "pyspark>=3.1.1; python_version < '3.11'",
+    "pyspark>=3.4; python_version >= '3.11'",
+]
 dask = ["fugue[dask]"]
 ray = ["fugue[ray]"]
 docs = [
@@ -77,7 +81,7 @@ tests-spark = [
     "pytest",
     "pytest-cov",
     "pytest-spark",
-    "fugue[spark]",
+    "spark",
 ]
 qa = [
     "pre-commit",

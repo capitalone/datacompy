@@ -38,6 +38,22 @@ pip install datacompy[ray]
 
 ```
 
+### In-scope Spark versions
+Different versions of Spark play nicely with only certain versions of Python below is a matrix of what we test with
+
+|             | Spark 3.1.3  | Spark 3.2.3 | Spark 3.3.4 | Spark 3.4.4 | Spark 3.5.0 |
+|-------------|--------------|-------------|-------------|-------------|-------------|
+| Python 3.8  | ✅           | ✅           | ✅           | ✅          | ✅          |
+| Python 3.9  | ✅           | ✅           | ✅           | ✅          | ✅          |
+| Python 3.10 | ✅           | ✅           | ✅           | ✅          | ✅          |
+| Python 3.11 | ❌           | ❌           | ❌           | ✅          | ✅          |
+| Python 3.12 | ❌           | ❌           | ❌           | ❌          | ❌          |
+
+
+:::{note}
+At the current time Python ``3.12`` is not supported by Spark and also Ray within Fugue.
+:::
+
 ## Supported backends
 
 - Pandas: ([See documentation](https://capitalone.github.io/datacompy/pandas_usage.html))
