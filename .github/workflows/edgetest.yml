@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     name: running edgetest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: 'edgetest-sparkfix'
       - id: run-edgetest
@@ -20,4 +20,4 @@ jobs:
           edgetest-flags: '-c pyproject.toml --export'
           base-branch: 'edgetest-sparkfix'
           skip-pr: 'false'
-          python-version: "3.10"
+          python-version: '3.10'
