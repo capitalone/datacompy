@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: develop
+          ref: 'edgetest-sparkfix'
       - id: run-edgetest
         uses: edgetest-dev/run-edgetest-action@v1.4
         with:
