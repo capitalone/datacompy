@@ -18,6 +18,6 @@ jobs:
         uses: edgetest-dev/run-edgetest-action@v1.4
         with:
           edgetest-flags: '-c pyproject.toml --export'
-          base-branch: 'develop'
+          base-branch: 'edgetest-sparkfix'
           skip-pr: 'false'
           python-version: "3.10"
