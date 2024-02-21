@@ -24,4 +24,5 @@ jobs:
       - name: DEBUG
         shell: bash -l {0}
         run: |
-          /home/runner/work/datacompy/datacompy/.edgetest/core/bin/pip list
+          echo $PYSPARK_PYTHON
+          echo $PYSPARK_DRIVER_PYTHON
