@@ -24,4 +24,4 @@ jobs:
       - name: DEBUG
         shell: bash -l {0}
         run: |
-          pip list
+          /home/runner/work/datacompy/datacompy/.edgetest/core/bin/pip list
