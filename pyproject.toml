@@ -130,8 +130,8 @@ module = "pyarrow"
 ignore_missing_imports = true
 
 [edgetest.envs.core]
-python_version = "3.11"
-conda_install = ["openjdk=8"]
+python_version = "3.9"
+conda_install = ["openjdk=8", "pandas"]
 extras = ["dev"]
 command = "pytest tests -m 'not integration'"
 upgrade = [
