@@ -5,8 +5,8 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="datacompy package" href="datacompy.html" /><link rel="prev" title="Developer Instructions" href="../developer_instructions.html" />
 
-    <!-- Generated with Sphinx 7.2.6 and Furo 2023.09.10 -->
-        <title>datacompy - datacompy 0.10.5 documentation</title>
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+        <title>datacompy - datacompy 0.11.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
@@ -123,7 +123,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 0.10.5 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 0.11.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -146,7 +146,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.10.5 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.11.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -158,6 +158,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../fugue_usage.html">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_instructions.html">Developer Instructions</a></li>
 </ul>
@@ -208,6 +209,26 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="datacompy.html">datacompy package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="datacompy.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datacompy.html#module-datacompy.base">datacompy.base module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare"><code class="docutils literal notranslate"><span class="pre">BaseCompare</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">BaseCompare.all_columns_match()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.all_mismatch"><code class="docutils literal notranslate"><span class="pre">BaseCompare.all_mismatch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.all_rows_overlap"><code class="docutils literal notranslate"><span class="pre">BaseCompare.all_rows_overlap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.count_matching_rows"><code class="docutils literal notranslate"><span class="pre">BaseCompare.count_matching_rows()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.df1"><code class="docutils literal notranslate"><span class="pre">BaseCompare.df1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.df1_unq_columns"><code class="docutils literal notranslate"><span class="pre">BaseCompare.df1_unq_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.df2"><code class="docutils literal notranslate"><span class="pre">BaseCompare.df2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.df2_unq_columns"><code class="docutils literal notranslate"><span class="pre">BaseCompare.df2_unq_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.intersect_columns"><code class="docutils literal notranslate"><span class="pre">BaseCompare.intersect_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.intersect_rows_match"><code class="docutils literal notranslate"><span class="pre">BaseCompare.intersect_rows_match()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.matches"><code class="docutils literal notranslate"><span class="pre">BaseCompare.matches()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.report"><code class="docutils literal notranslate"><span class="pre">BaseCompare.report()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.sample_mismatch"><code class="docutils literal notranslate"><span class="pre">BaseCompare.sample_mismatch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.subset"><code class="docutils literal notranslate"><span class="pre">BaseCompare.subset()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="datacompy.html#module-datacompy.core">datacompy.core module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.core.Compare"><code class="docutils literal notranslate"><span class="pre">Compare</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.core.Compare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">Compare.all_columns_match()</span></code></a></li>
@@ -242,6 +263,33 @@
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.fugue.is_match"><code class="docutils literal notranslate"><span class="pre">is_match()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.fugue.report"><code class="docutils literal notranslate"><span class="pre">report()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.fugue.unq_columns"><code class="docutils literal notranslate"><span class="pre">unq_columns()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datacompy.html#module-datacompy.polars">datacompy.polars module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare"><code class="docutils literal notranslate"><span class="pre">PolarsCompare</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.all_columns_match()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.all_mismatch"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.all_mismatch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.all_rows_overlap"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.all_rows_overlap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.count_matching_rows"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.count_matching_rows()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.df1"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.df1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.df1_unq_columns"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.df1_unq_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.df2"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.df2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.df2_unq_columns"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.df2_unq_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.intersect_columns"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.intersect_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.intersect_rows_match"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.intersect_rows_match()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.matches"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.matches()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.report"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.report()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.sample_mismatch"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.sample_mismatch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.polars.PolarsCompare.subset"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.subset()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.calculate_max_diff"><code class="docutils literal notranslate"><span class="pre">calculate_max_diff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.columns_equal"><code class="docutils literal notranslate"><span class="pre">columns_equal()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.compare_string_and_date_columns"><code class="docutils literal notranslate"><span class="pre">compare_string_and_date_columns()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="datacompy.html#module-datacompy.spark">datacompy.spark module</a><ul>
@@ -305,7 +353,7 @@
         <div class="bottom-of-page">
           <div class="left-details">
             <div class="copyright">
-                Copyright &#169; 2023, Capital One
+                Copyright &#169; 2024, Capital One
             </div>
             Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
             
@@ -325,7 +373,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=da6fbbfd"></script>
+</div><script src="../_static/documentation_options.js?v=f3b36f1a"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

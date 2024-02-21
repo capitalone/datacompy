@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Fugue Detail" href="fugue_usage.html" /><link rel="prev" title="Pandas Usage" href="pandas_usage.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Polars Usage" href="polars_usage.html" /><link rel="prev" title="Pandas Usage" href="pandas_usage.html" />
 
-    <!-- Generated with Sphinx 7.2.6 and Furo 2023.09.10 -->
-        <title>Spark Usage - datacompy 0.10.5 documentation</title>
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+        <title>Spark Usage - datacompy 0.11.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
@@ -123,7 +123,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.10.5 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.11.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -146,7 +146,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.10.5 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.11.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -158,6 +158,7 @@
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
 </ul>
@@ -204,10 +205,123 @@
         <article role="main">
           <section id="spark-usage">
 <h1>Spark Usage<a class="headerlink" href="#spark-usage" title="Link to this heading">#</a></h1>
-<p><em>Under Construction</em></p>
-<p>Meanwhile, see the Readme “Spark Detail” section for a usage example and comments on <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>. You may also
-want to checkout the <code class="xref py py-class docutils literal notranslate"><span class="pre">datacompy.SparkCompare</span></code> API documentation, which is pretty well-documented, if I do say
-so myself.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>With version <code class="docutils literal notranslate"><span class="pre">v0.9.0</span></code> SparkCompare now uses Null Safe (<code class="docutils literal notranslate"><span class="pre">&lt;=&gt;</span></code>) comparisons</p>
+</div>
+<p>DataComPy’s <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> class will join two dataframes either on a list of join
+columns. It has the capability to map column names that may be different in each
+dataframe, including in the join columns. You are responsible for creating the
+dataframes from any source which Spark can handle and specifying a unique join
+key. If there are duplicates in either dataframe by join key, the match process
+will remove the duplicates before joining (and tell you how many duplicates were
+found).</p>
+<p>As with the Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code> class, comparisons will be attempted even
+if dtypes don’t match. Any schema differences will be reported in the output
+as well as in any mismatch reports, so that you can assess whether or not a
+type mismatch is a problem or not.</p>
+<p>The main reasons why you would choose to use <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> over <code class="docutils literal notranslate"><span class="pre">Compare</span></code>
+are that your data is too large to fit into memory, or you’re comparing data
+that works well in a Spark environment, like partitioned Parquet, CSV, or JSON
+files, or Cerebro tables.</p>
+<section id="basic-usage">
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">datacompy</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">Row</span>
+
+<span class="c1"># This example assumes you have a SparkSession named &quot;spark&quot; in your environment, as you</span>
+<span class="c1"># do when running `pyspark` from the terminal or in a Databricks notebook (Spark v2.0 and higher)</span>
+
+<span class="n">data1</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Maharis&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.1555</span><span class="p">,</span>
+        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Bob Loblaw&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">,</span>
+        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001239</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Lucille Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="p">]</span>
+
+<span class="n">data2</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.4</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.155</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Robert Loblaw&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001238</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Loose Seal Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">111.0</span><span class="p">)</span>
+<span class="p">]</span>
+
+<span class="n">base_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">data1</span><span class="p">)</span>
+<span class="n">compare_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">data2</span><span class="p">)</span>
+
+<span class="n">comparison</span> <span class="o">=</span> <span class="n">datacompy</span><span class="o">.</span><span class="n">SparkCompare</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">base_df</span><span class="p">,</span> <span class="n">compare_df</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;acct_id&#39;</span><span class="p">])</span>
+
+<span class="c1"># This prints out a human-readable report summarizing differences</span>
+<span class="n">comparison</span><span class="o">.</span><span class="n">report</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="using-sparkcompare-on-emr-or-standalone-spark">
+<h2>Using SparkCompare on EMR or standalone Spark<a class="headerlink" href="#using-sparkcompare-on-emr-or-standalone-spark" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p>Set proxy variables</p></li>
+<li><p>Create a virtual environment, if desired (<code class="docutils literal notranslate"><span class="pre">virtualenv</span> <span class="pre">venv;</span> <span class="pre">source</span> <span class="pre">venv/bin/activate</span></code>)</p></li>
+<li><p>Pip install datacompy and requirements</p></li>
+<li><p>Ensure your SPARK_HOME environment variable is set (this is probably <code class="docutils literal notranslate"><span class="pre">/usr/lib/spark</span></code> but may
+differ based on your installation)</p></li>
+<li><p>Augment your PYTHONPATH environment variable with
+<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$SPARK_HOME/python:$PYTHONPATH</span></code>
+(note that your version of py4j may differ depending on the version of Spark you’re using)</p></li>
+</ol>
+</section>
+<section id="using-sparkcompare-on-databricks">
+<h2>Using SparkCompare on Databricks<a class="headerlink" href="#using-sparkcompare-on-databricks" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p>Clone this repository locally</p></li>
+<li><p>Create a datacompy egg by running <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">bdist_egg</span></code> from the repo root directory.</p></li>
+<li><p>From the Databricks front page, click the “Library” link under the “New” section.</p></li>
+<li><dl class="simple">
+<dt>On the New library page:</dt><dd><ol class="loweralpha simple">
+<li><p>Change source to “Upload Python Egg or PyPi”</p></li>
+<li><p>Under “Upload Egg”, Library Name should be “datacompy”</p></li>
+<li><p>Drag the egg file in datacompy/dist/ to the “Drop library egg here to upload” box</p></li>
+<li><p>Click the “Create Library” button</p></li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><p>Once the library has been created, from the library page (which you can find in your /Users/{login} workspace),
+you can choose clusters to attach the library to.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">datacompy</span></code> in a notebook attached to the cluster that the library is attached to and enjoy!</p></li>
+</ol>
+</section>
+<section id="performance-implications">
+<h2>Performance Implications<a class="headerlink" href="#performance-implications" title="Link to this heading">#</a></h2>
+<p>Spark scales incredibly well, so you can use <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> to compare
+billions of rows of data, provided you spin up a big enough cluster. Still,
+joining billions of rows of data is an inherently large task, so there are a
+couple of things you may want to take into consideration when getting into the
+cliched realm of “big data”:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> will compare all columns in common in the dataframes and
+report on the rest. If there are columns in the data that you don’t care to
+compare, use a <code class="docutils literal notranslate"><span class="pre">select</span></code> statement/method on the dataframe(s) to filter
+those out. Particularly when reading from wide Parquet files, this can make
+a huge difference when the columns you don’t care about don’t have to be
+read into memory and included in the joined dataframe.</p></li>
+<li><p>For large datasets, adding <code class="docutils literal notranslate"><span class="pre">cache_intermediates=True</span></code> to the <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>
+call can help optimize performance by caching certain intermediate dataframes
+in memory, like the de-duped version of each input dataset, or the joined
+dataframe. Otherwise, Spark’s lazy evaluation will recompute those each time
+it needs the data in a report or as you access instance attributes. This may
+be fine for smaller dataframes, but will be costly for larger ones. You do
+need to ensure that you have enough free cache memory before you do this, so
+this parameter is set to False by default.</p></li>
+</ul>
+</section>
 <section id="known-differences">
 <h2>Known Differences<a class="headerlink" href="#known-differences" title="Link to this heading">#</a></h2>
 <p>For cases when two dataframes are expected to differ, it can be helpful to cluster detected
@@ -357,12 +471,12 @@ differences can be specified through an optional parameter:</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="fugue_usage.html">
+          <a class="next-page" href="polars_usage.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Fugue Detail</div>
+                <div class="title">Polars Usage</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -381,7 +495,7 @@ differences can be specified through an optional parameter:</p>
         <div class="bottom-of-page">
           <div class="left-details">
             <div class="copyright">
-                Copyright &#169; 2023, Capital One
+                Copyright &#169; 2024, Capital One
             </div>
             Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
             
@@ -408,6 +522,10 @@ differences can be specified through an optional parameter:</p>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Spark Usage</a><ul>
+<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li><a class="reference internal" href="#using-sparkcompare-on-emr-or-standalone-spark">Using SparkCompare on EMR or standalone Spark</a></li>
+<li><a class="reference internal" href="#using-sparkcompare-on-databricks">Using SparkCompare on Databricks</a></li>
+<li><a class="reference internal" href="#performance-implications">Performance Implications</a></li>
 <li><a class="reference internal" href="#known-differences">Known Differences</a></li>
 </ul>
 </li>
@@ -420,7 +538,7 @@ differences can be specified through an optional parameter:</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=da6fbbfd"></script>
+</div><script src="_static/documentation_options.js?v=f3b36f1a"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

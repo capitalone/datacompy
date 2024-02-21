@@ -4,6 +4,14 @@ datacompy package
 Submodules
 ----------
 
+datacompy.base module
+---------------------
+
+.. automodule:: datacompy.base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 datacompy.core module
 ---------------------
 
@@ -16,6 +24,14 @@ datacompy.fugue module
 ----------------------
 
 .. automodule:: datacompy.fugue
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+datacompy.polars module
+-----------------------
+
+.. automodule:: datacompy.polars
    :members:
    :undoc-members:
    :show-inheritance:
