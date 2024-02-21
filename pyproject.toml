@@ -133,7 +133,6 @@ ignore_missing_imports = true
 python_version = "3.10"
 conda_install = ["openjdk=8"]
 extras = ["dev"]
-deps = ["pyspark==3.4.2"]
 command = "pytest tests -m 'not integration'"
 upgrade = [
     "pandas",
