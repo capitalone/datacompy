@@ -16,9 +16,11 @@ jobs:
           ref: edgetest-sparkfix
       
       - name: Set up Python 3.10
-        uses: actions/setup-python@v5
+        uses: conda-incubator/setup-miniconda@v2
         with:
+          auto-update-conda: true
           python-version: '3.10'
+          channels: conda-forge
       
       - name: Setup Java JDK
         uses: actions/setup-java@v3
