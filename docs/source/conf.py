@@ -20,7 +20,7 @@ import datacompy
 # -- Project information -----------------------------------------------------
 
 project = "datacompy"
-copyright = "2023, Capital One"
+copyright = "2024, Capital One"
 author = "Ian Robertson, Dan Coates, Faisal Dosani"
 
 # The full version, including alpha/beta/rc tags

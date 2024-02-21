@@ -24,12 +24,22 @@ from decimal import Decimal
 from unittest import mock
 
 import numpy as np
-import pandas as pd
 import pytest
-from pandas.testing import assert_series_equal
 from pytest import raises
 
-import datacompy
+pytest.importorskip("polars")
+
+import polars as pl
+from polars.exceptions import ComputeError, DuplicateError
+from polars.testing import assert_series_equal
+
+from datacompy import PolarsCompare
+from datacompy.polars import (
+    calculate_max_diff,
+    columns_equal,
+    generate_id_within_group,
+    temp_column_name,
+)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -42,8 +52,8 @@ def test_numeric_columns_equal_abs():
 4|NULL|False
 NULL|4|False
 NULL|NULL|True"""
-    df = pd.read_csv(io.StringIO(data), sep="|")
-    actual_out = datacompy.columns_equal(df.a, df.b, abs_tol=0.2)
+    df = pl.read_csv(io.StringIO(data), separator="|", null_values=["NULL"])
+    actual_out = columns_equal(df["a"], df["b"], abs_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -56,8 +66,8 @@ def test_numeric_columns_equal_rel():
 4|NULL|False
 NULL|4|False
 NULL|NULL|True"""
-    df = pd.read_csv(io.StringIO(data), sep="|")
-    actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2)
+    df = pl.read_csv(io.StringIO(data), separator="|", null_values=["NULL"])
+    actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -71,14 +81,19 @@ résumé|resume|False
 résumé|résumé|True
 💩|💩|True
 💩|🤔|False
- | |True
-  | |False
+" "|" "|True
+"  "|" "|False
 datacompy|DataComPy|False
-something||False
-|something|False
-||True"""
-    df = pd.read_csv(io.StringIO(data), sep="|")
-    actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2)
+something|NULL|False
+NULL|something|False
+NULL|NULL|True"""
+    df = pl.read_csv(
+        io.StringIO(data),
+        separator="|",
+        null_values=["NULL"],
+        missing_utf8_is_empty_string=True,
+    )
+    actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -92,14 +107,19 @@ résumé|resume|False
 résumé|résumé|True
 💩|💩|True
 💩|🤔|False
- | |True
-  |       |True
+" "|" "|True
+"  "|"       "|True
 datacompy|DataComPy|False
 something||False
-|something|False
-||True"""
-    df = pd.read_csv(io.StringIO(data), sep="|")
-    actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
+NULL|something|False
+NULL|NULL|True"""
+    df = pl.read_csv(
+        io.StringIO(data),
+        separator="|",
+        null_values=["NULL"],
+        missing_utf8_is_empty_string=True,
+    )
+    actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -113,15 +133,20 @@ résumé|resume|False
 résumé|résumé|True
 💩|💩|True
 💩|🤔|False
- | |True
-  |       |True
+" "|" "|True
+"  "|"       "|True
 datacompy|DataComPy|True
 something||False
-|something|False
-||True"""
-    df = pd.read_csv(io.StringIO(data), sep="|")
-    actual_out = datacompy.columns_equal(
-        df.a, df.b, rel_tol=0.2, ignore_spaces=True, ignore_case=True
+NULL|something|False
+NULL|NULL|True"""
+    df = pl.read_csv(
+        io.StringIO(data),
+        separator="|",
+        null_values=["NULL"],
+        missing_utf8_is_empty_string=True,
+    )
+    actual_out = columns_equal(
+        df["a"], df["b"], rel_tol=0.2, ignore_spaces=True, ignore_case=True
     )
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -135,21 +160,23 @@ def test_date_columns_equal():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pd.read_csv(io.StringIO(data), sep="|")
+    df = pl.read_csv(
+        io.StringIO(data),
+        separator="|",
+        null_values=["NULL"],
+        missing_utf8_is_empty_string=True,
+    )
     # First compare just the strings
-    actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2)
+    actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
     # Then compare converted to datetime objects
-    df["a"] = pd.to_datetime(df["a"])
-    df["b"] = pd.to_datetime(df["b"])
-    actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2)
+    col_a = df["a"].str.to_datetime(strict=False)
+    col_b = df["b"].str.to_datetime(strict=False)
+    actual_out = columns_equal(col_a, col_b, rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
-    # and reverse
-    actual_out_rev = datacompy.columns_equal(df.b, df.a, rel_tol=0.2)
-    assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
 def test_date_columns_equal_with_ignore_spaces():
@@ -160,28 +187,24 @@ def test_date_columns_equal_with_ignore_spaces():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pd.read_csv(io.StringIO(data), sep="|")
+    df = pl.read_csv(
+        io.StringIO(data),
+        separator="|",
+        null_values=["NULL"],
+        missing_utf8_is_empty_string=True,
+    )
     # First compare just the strings
-    actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
+    actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
     # Then compare converted to datetime objects
-    try:
-        df["a"] = pd.to_datetime(df["a"], format="mixed")
-        df["b"] = pd.to_datetime(df["b"], format="mixed")
-    except ValueError:
-        df["a"] = pd.to_datetime(df["a"])
-        df["b"] = pd.to_datetime(df["b"])
+    col_a = df["a"].str.strip_chars().str.to_date(strict=False)
+    col_b = df["b"].str.strip_chars().str.to_date(strict=False)
 
-    actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
+    actual_out = columns_equal(col_a, col_b, rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
-    # and reverse
-    actual_out_rev = datacompy.columns_equal(
-        df.b, df.a, rel_tol=0.2, ignore_spaces=True
-    )
-    assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
 def test_date_columns_equal_with_ignore_spaces_and_case():
@@ -192,63 +215,59 @@ def test_date_columns_equal_with_ignore_spaces_and_case():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pd.read_csv(io.StringIO(data), sep="|")
+    df = pl.read_csv(
+        io.StringIO(data),
+        separator="|",
+        null_values=["NULL"],
+        missing_utf8_is_empty_string=True,
+    )
     # First compare just the strings
-    actual_out = datacompy.columns_equal(
-        df.a, df.b, rel_tol=0.2, ignore_spaces=True, ignore_case=True
+    actual_out = columns_equal(
+        df["a"], df["b"], rel_tol=0.2, ignore_spaces=True, ignore_case=True
     )
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
     # Then compare converted to datetime objects
-    try:
-        df["a"] = pd.to_datetime(df["a"], format="mixed")
-        df["b"] = pd.to_datetime(df["b"], format="mixed")
-    except ValueError:
-        df["a"] = pd.to_datetime(df["a"])
-        df["b"] = pd.to_datetime(df["b"])
+    col_a = df["a"].str.strip_chars().str.to_date(strict=False)
+    col_b = df["b"].str.strip_chars().str.to_date(strict=False)
 
-    actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
+    actual_out = columns_equal(col_a, col_b, rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
-    # and reverse
-    actual_out_rev = datacompy.columns_equal(
-        df.b, df.a, rel_tol=0.2, ignore_spaces=True
-    )
-    assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
 def test_date_columns_unequal():
     """I want datetime fields to match with dates stored as strings"""
-    df = pd.DataFrame([{"a": "2017-01-01", "b": "2017-01-02"}, {"a": "2017-01-01"}])
-    df["a_dt"] = pd.to_datetime(df["a"])
-    df["b_dt"] = pd.to_datetime(df["b"])
-    assert datacompy.columns_equal(df.a, df.a_dt).all()
-    assert datacompy.columns_equal(df.b, df.b_dt).all()
-    assert datacompy.columns_equal(df.a_dt, df.a).all()
-    assert datacompy.columns_equal(df.b_dt, df.b).all()
-    assert not datacompy.columns_equal(df.b_dt, df.a).any()
-    assert not datacompy.columns_equal(df.a_dt, df.b).any()
-    assert not datacompy.columns_equal(df.a, df.b_dt).any()
-    assert not datacompy.columns_equal(df.b, df.a_dt).any()
+    df = pl.DataFrame([{"a": "2017-01-01", "b": "2017-01-02"}, {"a": "2017-01-01"}])
+    df = df.with_columns(df["a"].str.to_date().alias("a_dt"))
+    df = df.with_columns(df["b"].str.to_date().alias("b_dt"))
+    assert columns_equal(df["a"], df["a_dt"]).all()
+    assert columns_equal(df["b"], df["b_dt"]).all()
+    assert columns_equal(df["a_dt"], df["a"]).all()
+    assert columns_equal(df["b_dt"], df["b"]).all()
+    assert not columns_equal(df["b_dt"], df["a"]).any()
+    assert not columns_equal(df["a_dt"], df["b"]).any()
+    assert not columns_equal(df["a"], df["b_dt"]).any()
+    assert not columns_equal(df["b"], df["a_dt"]).any()
 
 
 def test_bad_date_columns():
     """If strings can't be coerced into dates then it should be false for the
     whole column.
     """
-    df = pd.DataFrame(
-        [{"a": "2017-01-01", "b": "2017-01-01"}, {"a": "2017-01-01", "b": "217-01-01"}]
+    df = pl.DataFrame(
+        [{"a": "2017-01-01", "b": "2017-01-01"}, {"a": "2017-01-01", "b": "2A17-01-01"}]
     )
-    df["a_dt"] = pd.to_datetime(df["a"])
-    assert not datacompy.columns_equal(df.a_dt, df.b).any()
+    df = df.with_columns(df["a"].str.to_date(exact=True).alias("a_dt"))
+    assert not columns_equal(df["a_dt"], df["b"]).any()
 
 
 def test_rounded_date_columns():
     """If strings can't be coerced into dates then it should be false for the
     whole column.
     """
-    df = pd.DataFrame(
+    df = pl.DataFrame(
         [
             {"a": "2017-01-01", "b": "2017-01-01 00:00:00.000000", "exp": True},
             {"a": "2017-01-01", "b": "2017-01-01 00:00:00.123456", "exp": False},
@@ -256,17 +275,15 @@ def test_rounded_date_columns():
             {"a": "2017-01-01", "b": "2017-01-01 00:00:00", "exp": True},
         ]
     )
-    try:
-        df["a_dt"] = pd.to_datetime(df["a"], format="mixed")
-    except ValueError:
-        df["a_dt"] = pd.to_datetime(df["a"])
-    actual = datacompy.columns_equal(df.a_dt, df.b)
+
+    df = df.with_columns(df["a"].str.to_date().alias("a_dt"))
+    actual = columns_equal(df["a_dt"], df["b"])
     expected = df["exp"]
     assert_series_equal(actual, expected, check_names=False)
 
 
 def test_decimal_float_columns_equal():
-    df = pd.DataFrame(
+    df = pl.DataFrame(
         [
             {"a": Decimal("1"), "b": 1, "expected": True},
             {"a": Decimal("1.3"), "b": 1.3, "expected": True},
@@ -278,13 +295,13 @@ def test_decimal_float_columns_equal():
             {"a": Decimal("1"), "b": np.nan, "expected": False},
         ]
     )
-    actual_out = datacompy.columns_equal(df.a, df.b)
+    actual_out = columns_equal(df["a"], df["b"])
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
 def test_decimal_float_columns_equal_rel():
-    df = pd.DataFrame(
+    df = pl.DataFrame(
         [
             {"a": Decimal("1"), "b": 1, "expected": True},
             {"a": Decimal("1.3"), "b": 1.3, "expected": True},
@@ -296,13 +313,13 @@ def test_decimal_float_columns_equal_rel():
             {"a": Decimal("1"), "b": np.nan, "expected": False},
         ]
     )
-    actual_out = datacompy.columns_equal(df.a, df.b, abs_tol=0.001)
+    actual_out = columns_equal(df["a"], df["b"], abs_tol=0.001)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
 def test_decimal_columns_equal():
-    df = pd.DataFrame(
+    df = pl.DataFrame(
         [
             {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
             {"a": Decimal("1.3"), "b": Decimal("1.3"), "expected": True},
@@ -318,13 +335,13 @@ def test_decimal_columns_equal():
             {"a": Decimal("1"), "b": np.nan, "expected": False},
         ]
     )
-    actual_out = datacompy.columns_equal(df.a, df.b)
+    actual_out = columns_equal(df["a"], df["b"])
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
 def test_decimal_columns_equal_rel():
-    df = pd.DataFrame(
+    df = pl.DataFrame(
         [
             {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
             {"a": Decimal("1.3"), "b": Decimal("1.3"), "expected": True},
@@ -340,13 +357,13 @@ def test_decimal_columns_equal_rel():
             {"a": Decimal("1"), "b": np.nan, "expected": False},
         ]
     )
-    actual_out = datacompy.columns_equal(df.a, df.b, abs_tol=0.001)
+    actual_out = columns_equal(df["a"], df["b"], abs_tol=0.001)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
 def test_infinity_and_beyond():
-    df = pd.DataFrame(
+    df = pl.DataFrame(
         [
             {"a": np.inf, "b": np.inf, "expected": True},
             {"a": -np.inf, "b": -np.inf, "expected": True},
@@ -356,165 +373,111 @@ def test_infinity_and_beyond():
             {"a": 1, "b": 0, "expected": False},
         ]
     )
-    actual_out = datacompy.columns_equal(df.a, df.b)
-    expect_out = df["expected"]
-    assert_series_equal(expect_out, actual_out, check_names=False)
-
-
-def test_mixed_column():
-    df = pd.DataFrame(
-        [
-            {"a": "hi", "b": "hi", "expected": True},
-            {"a": 1, "b": 1, "expected": True},
-            {"a": np.inf, "b": np.inf, "expected": True},
-            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
-            {"a": 1, "b": "1", "expected": False},
-            {"a": 1, "b": "yo", "expected": False},
-        ]
-    )
-    actual_out = datacompy.columns_equal(df.a, df.b)
-    expect_out = df["expected"]
-    assert_series_equal(expect_out, actual_out, check_names=False)
-
-
-def test_mixed_column_with_ignore_spaces():
-    df = pd.DataFrame(
-        [
-            {"a": "hi", "b": "hi ", "expected": True},
-            {"a": 1, "b": 1, "expected": True},
-            {"a": np.inf, "b": np.inf, "expected": True},
-            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
-            {"a": 1, "b": "1 ", "expected": False},
-            {"a": 1, "b": "yo ", "expected": False},
-        ]
-    )
-    actual_out = datacompy.columns_equal(df.a, df.b, ignore_spaces=True)
-    expect_out = df["expected"]
-    assert_series_equal(expect_out, actual_out, check_names=False)
-
-
-def test_mixed_column_with_ignore_spaces_and_case():
-    df = pd.DataFrame(
-        [
-            {"a": "hi", "b": "hi ", "expected": True},
-            {"a": 1, "b": 1, "expected": True},
-            {"a": np.inf, "b": np.inf, "expected": True},
-            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
-            {"a": 1, "b": "1 ", "expected": False},
-            {"a": 1, "b": "yo ", "expected": False},
-            {"a": "Hi", "b": "hI ", "expected": True},
-            {"a": "HI", "b": "HI ", "expected": True},
-            {"a": "hi", "b": "hi ", "expected": True},
-        ]
-    )
-    actual_out = datacompy.columns_equal(
-        df.a, df.b, ignore_spaces=True, ignore_case=True
-    )
+    actual_out = columns_equal(df["a"], df["b"])
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
 def test_compare_df_setter_bad():
-    df = pd.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
-    with raises(TypeError, match="df1 must be a pandas DataFrame"):
-        compare = datacompy.Compare("a", "a", ["a"])
+    df = pl.DataFrame([{"a": 1, "c": 2}, {"a": 2, "c": 2}])
+    df_same_col_names = pl.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
+    df_dupe = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
+    with raises(TypeError, match="df1 must be a Polars DataFrame"):
+        compare = PolarsCompare("a", "a", ["a"])
     with raises(ValueError, match="df1 must have all columns from join_columns"):
-        compare = datacompy.Compare(df, df.copy(), ["b"])
-    with raises(ValueError, match="df1 must have unique column names"):
-        compare = datacompy.Compare(df, df.copy(), ["a"])
-    df_dupe = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
-    assert datacompy.Compare(df_dupe, df_dupe.copy(), ["a", "b"]).df1.equals(df_dupe)
+        compare = PolarsCompare(df, df.clone(), ["b"])
+    with raises(DuplicateError, match="duplicate column names found"):
+        compare = PolarsCompare(df_same_col_names, df_same_col_names.clone(), ["a"])
+    assert (
+        PolarsCompare(df_dupe, df_dupe.clone(), ["a", "b"])
+        .df1.drop("_merge_left")
+        .equals(df_dupe)
+    )
 
 
 def test_compare_df_setter_good():
-    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    df2 = pd.DataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
-    compare = datacompy.Compare(df1, df2, ["a"])
-    assert compare.df1.equals(df1)
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
+    df2 = pl.DataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
+    compare = PolarsCompare(df1, df2, ["a"])
+    assert compare.df1.drop("_merge_left").equals(df1)
     assert compare.df2.equals(df2)
     assert compare.join_columns == ["a"]
-    compare = datacompy.Compare(df1, df2, ["A", "b"])
+    compare = PolarsCompare(df1, df2, ["A", "b"])
     assert compare.df1.equals(df1)
     assert compare.df2.equals(df2)
     assert compare.join_columns == ["a", "b"]
 
 
 def test_compare_df_setter_different_cases():
-    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    df2 = pd.DataFrame([{"A": 1, "b": 2}, {"A": 2, "b": 3}])
-    compare = datacompy.Compare(df1, df2, ["a"])
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
+    df2 = pl.DataFrame([{"A": 1, "b": 2}, {"A": 2, "b": 3}])
+    compare = PolarsCompare(df1, df2, ["a"])
     assert compare.df1.equals(df1)
     assert compare.df2.equals(df2)
 
 
 def test_compare_df_setter_bad_index():
-    df = pd.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
-    with raises(TypeError, match="df1 must be a pandas DataFrame"):
-        compare = datacompy.Compare("a", "a", on_index=True)
-    with raises(ValueError, match="df1 must have unique column names"):
-        compare = datacompy.Compare(df, df.copy(), on_index=True)
-
-
-def test_compare_on_index_and_join_columns():
-    df = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    with raises(Exception, match="Only provide on_index or join_columns"):
-        compare = datacompy.Compare(df, df.copy(), on_index=True, join_columns=["a"])
+    df = pl.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
+    with raises(TypeError, match="df1 must be a Polars DataFrame"):
+        compare = PolarsCompare("a", "a", join_columns="a")
+    with raises(DuplicateError, match="duplicate column names found"):
+        compare = PolarsCompare(df, df.clone(), join_columns="a")
 
 
 def test_compare_df_setter_good_index():
-    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
-    compare = datacompy.Compare(df1, df2, on_index=True)
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    compare = PolarsCompare(df1, df2, join_columns="a")
     assert compare.df1.equals(df1)
     assert compare.df2.equals(df2)
 
 
 def test_columns_overlap():
-    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
-    compare = datacompy.Compare(df1, df2, ["a"])
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    compare = PolarsCompare(df1, df2, ["a"])
     assert compare.df1_unq_columns() == set()
     assert compare.df2_unq_columns() == set()
     assert compare.intersect_columns() == {"a", "b"}
 
 
 def test_columns_no_overlap():
-    df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2, "d": "oh"}, {"a": 2, "b": 3, "d": "ya"}])
-    compare = datacompy.Compare(df1, df2, ["a"])
+    df1 = pl.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2, "d": "oh"}, {"a": 2, "b": 3, "d": "ya"}])
+    compare = PolarsCompare(df1, df2, ["a"])
     assert compare.df1_unq_columns() == {"c"}
     assert compare.df2_unq_columns() == {"d"}
     assert compare.intersect_columns() == {"a", "b"}
 
 
 def test_columns_maintain_order_through_set_operations():
-    df1 = pd.DataFrame(
+    df1 = pl.DataFrame(
         [
             (("A"), (0), (1), (2), (3), (4), (-2)),
             (("B"), (0), (2), (2), (3), (4), (-3)),
         ],
-        columns=["join", "f", "g", "b", "h", "a", "c"],
+        schema=["join", "f", "g", "b", "h", "a", "c"],
     )
-    df2 = pd.DataFrame(
+    df2 = pl.DataFrame(
         [
             (("A"), (0), (1), (2), (-1), (4), (-3)),
             (("B"), (1), (2), (3), (-1), (4), (-2)),
         ],
-        columns=["join", "e", "h", "b", "a", "g", "d"],
+        schema=["join", "e", "h", "b", "a", "g", "d"],
     )
-    compare = datacompy.Compare(df1, df2, ["join"])
+    compare = PolarsCompare(df1, df2, ["join"])
     assert list(compare.df1_unq_columns()) == ["f", "c"]
     assert list(compare.df2_unq_columns()) == ["e", "d"]
     assert list(compare.intersect_columns()) == ["join", "g", "b", "h", "a"]
 
 
 def test_10k_rows():
-    df1 = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
-    df1.reset_index(inplace=True)
+    df1 = pl.DataFrame(np.random.randint(0, 100, size=(10000, 2)), schema=["b", "c"])
+    df1 = df1.with_row_index()
     df1.columns = ["a", "b", "c"]
-    df2 = df1.copy()
-    df2["b"] = df2["b"] + 0.1
-    compare_tol = datacompy.Compare(df1, df2, ["a"], abs_tol=0.2)
+    df2 = df1.clone()
+    df2 = df2.with_columns(pl.col("b") + 0.1)
+    compare_tol = PolarsCompare(df1, df2, ["a"], abs_tol=0.2)
     assert compare_tol.matches()
     assert len(compare_tol.df1_unq_rows) == 0
     assert len(compare_tol.df2_unq_rows) == 0
@@ -523,7 +486,7 @@ def test_10k_rows():
     assert compare_tol.all_rows_overlap()
     assert compare_tol.intersect_rows_match()
 
-    compare_no_tol = datacompy.Compare(df1, df2, ["a"])
+    compare_no_tol = PolarsCompare(df1, df2, ["a"])
     assert not compare_no_tol.matches()
     assert len(compare_no_tol.df1_unq_rows) == 0
     assert len(compare_no_tol.df2_unq_rows) == 0
@@ -535,53 +498,50 @@ def test_10k_rows():
 
 def test_subset(caplog):
     caplog.set_level(logging.DEBUG)
-    df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
-    df2 = pd.DataFrame([{"a": 1, "c": "hi"}])
-    comp = datacompy.Compare(df1, df2, ["a"])
+    df1 = pl.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
+    df2 = pl.DataFrame([{"a": 1, "c": "hi"}])
+    comp = PolarsCompare(df1, df2, ["a"])
     assert comp.subset()
     assert "Checking equality" in caplog.text
 
 
 def test_not_subset(caplog):
     caplog.set_level(logging.INFO)
-    df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "great"}])
-    comp = datacompy.Compare(df1, df2, ["a"])
+    df1 = pl.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "great"}])
+    comp = PolarsCompare(df1, df2, ["a"])
     assert not comp.subset()
     assert "c: 1 / 2 (50.00%) match" in caplog.text
 
 
 def test_large_subset():
-    df1 = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
-    df1.reset_index(inplace=True)
+    df1 = pl.DataFrame(np.random.randint(0, 100, size=(10000, 2)), schema=["b", "c"])
+    df1 = df1.with_row_index()
     df1.columns = ["a", "b", "c"]
-    df2 = df1[["a", "b"]].sample(50).copy()
-    comp = datacompy.Compare(df1, df2, ["a"])
+    df2 = df1[["a", "b"]].sample(50).clone()
+    comp = PolarsCompare(df1, df2, ["a"])
     assert not comp.matches()
     assert comp.subset()
 
 
 def test_string_joiner():
-    df1 = pd.DataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
-    df2 = pd.DataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
-    compare = datacompy.Compare(df1, df2, "ab")
+    df1 = pl.DataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
+    df2 = pl.DataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
+    compare = PolarsCompare(df1, df2, "ab")
     assert compare.matches()
 
 
-def test_decimal_with_joins():
-    df1 = pd.DataFrame([{"a": Decimal("1"), "b": 2}, {"a": Decimal("2"), "b": 2}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    compare = datacompy.Compare(df1, df2, "a")
-    assert compare.matches()
-    assert compare.all_columns_match()
-    assert compare.all_rows_overlap()
-    assert compare.intersect_rows_match()
+def test_float_and_string_with_joins():
+    df1 = pl.DataFrame([{"a": float("1"), "b": 2}, {"a": float("2"), "b": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
+    with raises(ComputeError):
+        compare = PolarsCompare(df1, df2, "a")
 
 
 def test_decimal_with_nulls():
-    df1 = pd.DataFrame([{"a": 1, "b": Decimal("2")}, {"a": 2, "b": Decimal("2")}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}, {"a": 3, "b": 2}])
-    compare = datacompy.Compare(df1, df2, "a")
+    df1 = pl.DataFrame([{"a": 1, "b": Decimal("2")}, {"a": 2, "b": Decimal("2")}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}, {"a": 3, "b": 2}])
+    compare = PolarsCompare(df1, df2, "a")
     assert not compare.matches()
     assert compare.all_columns_match()
     assert not compare.all_rows_overlap()
@@ -589,147 +549,104 @@ def test_decimal_with_nulls():
 
 
 def test_strings_with_joins():
-    df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    df2 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    compare = datacompy.Compare(df1, df2, "a")
+    df1 = pl.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
+    df2 = pl.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
+    compare = PolarsCompare(df1, df2, "a")
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert compare.intersect_rows_match()
 
 
-def test_index_joining():
-    df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    df2 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    compare = datacompy.Compare(df1, df2, on_index=True)
-    assert compare.matches()
-
-
-def test_index_joining_strings_i_guess():
-    df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    df2 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    df1.index = df1["a"]
-    df2.index = df2["a"]
-    df1.index.name = df2.index.name = None
-    compare = datacompy.Compare(df1, df2, on_index=True)
-    assert compare.matches()
-
-
-def test_index_joining_non_overlapping():
-    df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    df2 = pd.DataFrame(
-        [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
-    )
-    compare = datacompy.Compare(df1, df2, on_index=True)
-    assert not compare.matches()
-    assert compare.all_columns_match()
-    assert compare.intersect_rows_match()
-    assert len(compare.df1_unq_rows) == 0
-    assert len(compare.df2_unq_rows) == 1
-    assert list(compare.df2_unq_rows["a"]) == ["back fo mo"]
-
-
 def test_temp_column_name():
-    df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    df2 = pd.DataFrame(
+    df1 = pl.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
+    df2 = pl.DataFrame(
         [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
     )
-    actual = datacompy.temp_column_name(df1, df2)
+    actual = temp_column_name(df1, df2)
     assert actual == "_temp_0"
 
 
 def test_temp_column_name_one_has():
-    df1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
-    df2 = pd.DataFrame(
+    df1 = pl.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
+    df2 = pl.DataFrame(
         [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
     )
-    actual = datacompy.temp_column_name(df1, df2)
+    actual = temp_column_name(df1, df2)
     assert actual == "_temp_1"
 
 
 def test_temp_column_name_both_have():
-    df1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
-    df2 = pd.DataFrame(
+    df1 = pl.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
+    df2 = pl.DataFrame(
         [
             {"_temp_0": "hi", "b": 2},
             {"_temp_0": "bye", "b": 2},
             {"a": "back fo mo", "b": 3},
         ]
     )
-    actual = datacompy.temp_column_name(df1, df2)
+    actual = temp_column_name(df1, df2)
     assert actual == "_temp_1"
 
 
 def test_temp_column_name_both_have():
-    df1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
-    df2 = pd.DataFrame(
+    df1 = pl.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
+    df2 = pl.DataFrame(
         [
             {"_temp_0": "hi", "b": 2},
             {"_temp_1": "bye", "b": 2},
             {"a": "back fo mo", "b": 3},
         ]
     )
-    actual = datacompy.temp_column_name(df1, df2)
+    actual = temp_column_name(df1, df2)
     assert actual == "_temp_2"
 
 
 def test_temp_column_name_one_already():
-    df1 = pd.DataFrame([{"_temp_1": "hi", "b": 2}, {"_temp_1": "bye", "b": 2}])
-    df2 = pd.DataFrame(
+    df1 = pl.DataFrame([{"_temp_1": "hi", "b": 2}, {"_temp_1": "bye", "b": 2}])
+    df2 = pl.DataFrame(
         [
             {"_temp_1": "hi", "b": 2},
             {"_temp_1": "bye", "b": 2},
             {"a": "back fo mo", "b": 3},
         ]
     )
-    actual = datacompy.temp_column_name(df1, df2)
+    actual = temp_column_name(df1, df2)
     assert actual == "_temp_0"
 
 
 ### Duplicate testing!
 def test_simple_dupes_one_field():
-    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     t = compare.report()
 
 
 def test_simple_dupes_two_fields():
-    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 2}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 2}])
-    compare = datacompy.Compare(df1, df2, join_columns=["a", "b"])
-    assert compare.matches()
-    # Just render the report to make sure it renders.
-    t = compare.report()
-
-
-def test_simple_dupes_index():
-    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    df1.index = df1["a"]
-    df2.index = df2["a"]
-    df1.index.name = df2.index.name = None
-    compare = datacompy.Compare(df1, df2, on_index=True)
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 2}])
+    compare = PolarsCompare(df1, df2, join_columns=["a", "b"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     t = compare.report()
 
 
 def test_simple_dupes_one_field_two_vals():
-    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
-    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     t = compare.report()
 
 
 def test_simple_dupes_one_field_two_vals():
-    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
-    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
     assert not compare.matches()
     assert len(compare.df1_unq_rows) == 1
     assert len(compare.df2_unq_rows) == 1
@@ -739,9 +656,9 @@ def test_simple_dupes_one_field_two_vals():
 
 
 def test_simple_dupes_one_field_three_to_two_vals():
-    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}, {"a": 1, "b": 0}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
-    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
     assert not compare.matches()
     assert len(compare.df1_unq_rows) == 1
     assert len(compare.df2_unq_rows) == 0
@@ -775,11 +692,11 @@ def test_dupes_from_real_data():
 200,0,2017-07-01,1009433,214.12,2017-06-29,D,USA,3640,20170,,A,
 100,0,2017-06-20,1607593,1.67,2017-06-19,D,CAN,5814,M2N 6L7,,,0.0
 200,0,2017-07-01,1009393,2.01,2017-06-29,D,USA,5814,22102,,F,"""
-    df1 = pd.read_csv(io.StringIO(data), sep=",")
-    df2 = df1.copy()
-    compare_acct = datacompy.Compare(df1, df2, join_columns=["acct_id"])
+    df1 = pl.read_csv(io.StringIO(data), separator=",")
+    df2 = df1.clone()
+    compare_acct = PolarsCompare(df1, df2, join_columns=["acct_id"])
     assert compare_acct.matches()
-    compare_unq = datacompy.Compare(
+    compare_unq = PolarsCompare(
         df1,
         df2,
         join_columns=["acct_id", "acct_sfx_num", "trxn_post_dt", "trxn_post_seq_num"],
@@ -791,15 +708,15 @@ def test_dupes_from_real_data():
 
 
 def test_strings_with_joins_with_ignore_spaces():
-    df1 = pd.DataFrame([{"a": "hi", "b": " A"}, {"a": "bye", "b": "A"}])
-    df2 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A "}])
-    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=False)
+    df1 = pl.DataFrame([{"a": "hi", "b": " A"}, {"a": "bye", "b": "A"}])
+    df2 = pl.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A "}])
+    compare = PolarsCompare(df1, df2, "a", ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+    compare = PolarsCompare(df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -807,15 +724,15 @@ def test_strings_with_joins_with_ignore_spaces():
 
 
 def test_strings_with_joins_with_ignore_case():
-    df1 = pd.DataFrame([{"a": "hi", "b": "a"}, {"a": "bye", "b": "A"}])
-    df2 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "a"}])
-    compare = datacompy.Compare(df1, df2, "a", ignore_case=False)
+    df1 = pl.DataFrame([{"a": "hi", "b": "a"}, {"a": "bye", "b": "A"}])
+    df2 = pl.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "a"}])
+    compare = PolarsCompare(df1, df2, "a", ignore_case=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = datacompy.Compare(df1, df2, "a", ignore_case=True)
+    compare = PolarsCompare(df1, df2, "a", ignore_case=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -823,15 +740,15 @@ def test_strings_with_joins_with_ignore_case():
 
 
 def test_decimal_with_joins_with_ignore_spaces():
-    df1 = pd.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
-    df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
-    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=False)
+    df1 = pl.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
+    df2 = pl.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
+    compare = PolarsCompare(df1, df2, "a", ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+    compare = PolarsCompare(df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -839,47 +756,35 @@ def test_decimal_with_joins_with_ignore_spaces():
 
 
 def test_decimal_with_joins_with_ignore_case():
-    df1 = pd.DataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
-    df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
-    compare = datacompy.Compare(df1, df2, "a", ignore_case=False)
+    df1 = pl.DataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
+    df2 = pl.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
+    compare = PolarsCompare(df1, df2, "a", ignore_case=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = datacompy.Compare(df1, df2, "a", ignore_case=True)
+    compare = PolarsCompare(df1, df2, "a", ignore_case=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert compare.intersect_rows_match()
 
 
-def test_index_with_joins_with_ignore_spaces():
-    df1 = pd.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
-    df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
-    compare = datacompy.Compare(df1, df2, on_index=True, ignore_spaces=False)
-    assert not compare.matches()
-    assert compare.all_columns_match()
-    assert compare.all_rows_overlap()
-    assert not compare.intersect_rows_match()
-
-    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+def test_joins_with_ignore_spaces():
+    df1 = pl.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
+    df2 = pl.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
+    compare = PolarsCompare(df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert compare.intersect_rows_match()
 
 
-def test_index_with_joins_with_ignore_case():
-    df1 = pd.DataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
-    df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
-    compare = datacompy.Compare(df1, df2, on_index=True, ignore_case=False)
-    assert not compare.matches()
-    assert compare.all_columns_match()
-    assert compare.all_rows_overlap()
-    assert not compare.intersect_rows_match()
-
-    compare = datacompy.Compare(df1, df2, "a", ignore_case=True)
+def test_joins_with_ignore_case():
+    df1 = pl.DataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
+    df2 = pl.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
+    compare = PolarsCompare(df1, df2, "a", ignore_case=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -887,15 +792,15 @@ def test_index_with_joins_with_ignore_case():
 
 
 def test_strings_with_ignore_spaces_and_join_columns():
-    df1 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A"}])
-    df2 = pd.DataFrame([{"a": " hi ", "b": "A"}, {"a": " bye ", "b": "A"}])
-    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=False)
+    df1 = pl.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A"}])
+    df2 = pl.DataFrame([{"a": " hi ", "b": "A"}, {"a": " bye ", "b": "A"}])
+    compare = PolarsCompare(df1, df2, "a", ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert not compare.all_rows_overlap()
     assert compare.count_matching_rows() == 0
 
-    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+    compare = PolarsCompare(df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -904,16 +809,16 @@ def test_strings_with_ignore_spaces_and_join_columns():
 
 
 def test_integers_with_ignore_spaces_and_join_columns():
-    df1 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
-    df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
-    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=False)
+    df1 = pl.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
+    df2 = pl.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
+    compare = PolarsCompare(df1, df2, "a", ignore_spaces=False)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert compare.intersect_rows_match()
     assert compare.count_matching_rows() == 2
 
-    compare = datacompy.Compare(df1, df2, "a", ignore_spaces=True)
+    compare = PolarsCompare(df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -939,21 +844,21 @@ def test_sample_mismatch():
     10000001238,1.05,Loose Seal Bluth,111,
     10000001240,123.45,George Maharis,14530.1555,2017-01-02
     """
-    df1 = pd.read_csv(io.StringIO(data1), sep=",")
-    df2 = pd.read_csv(io.StringIO(data2), sep=",")
-    compare = datacompy.Compare(df1, df2, "acct_id")
+    df1 = pl.read_csv(io.StringIO(data1), separator=",")
+    df2 = pl.read_csv(io.StringIO(data2), separator=",")
+    compare = PolarsCompare(df1, df2, "acct_id")
 
     output = compare.sample_mismatch(column="name", sample_count=1)
     assert output.shape[0] == 1
-    assert (output.name_df1 != output.name_df2).all()
+    assert (output["name_df1"] != output["name_df2"]).all()
 
     output = compare.sample_mismatch(column="name", sample_count=2)
     assert output.shape[0] == 2
-    assert (output.name_df1 != output.name_df2).all()
+    assert (output["name_df1"] != output["name_df2"]).all()
 
     output = compare.sample_mismatch(column="name", sample_count=3)
     assert output.shape[0] == 2
-    assert (output.name_df1 != output.name_df2).all()
+    assert (["name_df1"] != output["name_df2"]).all()
 
 
 def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():
@@ -974,25 +879,46 @@ def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():
     10000001238,1.05,Loose Seal Bluth,111,
     10000001240,123.45,George Maharis,14530.1555,2017-01-02
     """
-    df1 = pd.read_csv(io.StringIO(data1), sep=",")
-    df2 = pd.read_csv(io.StringIO(data2), sep=",")
-    compare = datacompy.Compare(df1, df2, "acct_id")
+    df1 = pl.read_csv(io.StringIO(data1), separator=",")
+    df2 = pl.read_csv(io.StringIO(data2), separator=",")
+    compare = PolarsCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
     assert output.shape[1] == 9
 
-    assert (output.name_df1 != output.name_df2).values.sum() == 2
-    assert (~(output.name_df1 != output.name_df2)).values.sum() == 2
+    assert (output["name_df1"] != output["name_df2"]).sum() == 2
+    assert (~(output["name_df1"] != output["name_df2"])).sum() == 2
 
-    assert (output.dollar_amt_df1 != output.dollar_amt_df2).values.sum() == 1
-    assert (~(output.dollar_amt_df1 != output.dollar_amt_df2)).values.sum() == 3
+    assert (output["dollar_amt_df1"] != output["dollar_amt_df2"]).sum() == 1
+    assert (~(output["dollar_amt_df1"] != output["dollar_amt_df2"])).sum() == 3
 
-    assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
-    assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
+    # need to use eq_missing
+    assert (
+        output.filter(pl.col.float_fld_df1.eq_missing(pl.col.float_fld_df2).not_())[
+            "acct_id"
+        ].count()
+        == 3
+    )
+    assert (
+        output.filter(pl.col.float_fld_df1.eq_missing(pl.col.float_fld_df2))[
+            "acct_id"
+        ].count()
+        == 1
+    )
 
-    assert (output.date_fld_df1 != output.date_fld_df2).values.sum() == 4
-    assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
+    assert (
+        output.filter(pl.col.date_fld_df1.eq_missing(pl.col.date_fld_df2).not_())[
+            "acct_id"
+        ].count()
+        == 4
+    )
+    assert (
+        output.filter(pl.col.date_fld_df1.eq_missing(pl.col.date_fld_df2))[
+            "acct_id"
+        ].count()
+        == 0
+    )
 
 
 def test_all_mismatch_not_ignore_matching_cols_some_cols_matching():
@@ -1014,25 +940,46 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching():
         10000001238,1.05,Lucille Bluth,111,
         10000001240,123.45,George Maharis,14530.1555,2017-01-02
         """
-    df1 = pd.read_csv(io.StringIO(data1), sep=",")
-    df2 = pd.read_csv(io.StringIO(data2), sep=",")
-    compare = datacompy.Compare(df1, df2, "acct_id")
+    df1 = pl.read_csv(io.StringIO(data1), separator=",")
+    df2 = pl.read_csv(io.StringIO(data2), separator=",")
+    compare = PolarsCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
     assert output.shape[1] == 9
 
-    assert (output.name_df1 != output.name_df2).values.sum() == 0
-    assert (~(output.name_df1 != output.name_df2)).values.sum() == 4
+    assert (output["name_df1"] != output["name_df2"]).sum() == 0
+    assert (~(output["name_df1"] != output["name_df2"])).sum() == 4
 
-    assert (output.dollar_amt_df1 != output.dollar_amt_df2).values.sum() == 0
-    assert (~(output.dollar_amt_df1 != output.dollar_amt_df2)).values.sum() == 4
+    assert (output["dollar_amt_df1"] != output["dollar_amt_df2"]).sum() == 0
+    assert (~(output["dollar_amt_df1"] != output["dollar_amt_df2"])).sum() == 4
 
-    assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
-    assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
+    # need to use eq_missing
+    assert (
+        output.filter(pl.col.float_fld_df1.eq_missing(pl.col.float_fld_df2).not_())[
+            "acct_id"
+        ].count()
+        == 3
+    )
+    assert (
+        output.filter(pl.col.float_fld_df1.eq_missing(pl.col.float_fld_df2))[
+            "acct_id"
+        ].count()
+        == 1
+    )
 
-    assert (output.date_fld_df1 != output.date_fld_df2).values.sum() == 4
-    assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
+    assert (
+        output.filter(pl.col.date_fld_df1.eq_missing(pl.col.date_fld_df2).not_())[
+            "acct_id"
+        ].count()
+        == 4
+    )
+    assert (
+        output.filter(pl.col.date_fld_df1.eq_missing(pl.col.date_fld_df2))[
+            "acct_id"
+        ].count()
+        == 0
+    )
 
 
 def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows():
@@ -1055,26 +1002,47 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows():
     10000001237,123456,Bob Loblaw,345.12,
     10000001238,1.05,Lucille Bluth,111,
     """
-    df1 = pd.read_csv(io.StringIO(data1), sep=",")
-    df2 = pd.read_csv(io.StringIO(data2), sep=",")
-    compare = datacompy.Compare(df1, df2, "acct_id")
+    df1 = pl.read_csv(io.StringIO(data1), separator=",")
+    df2 = pl.read_csv(io.StringIO(data2), separator=",")
+    compare = PolarsCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch(ignore_matching_cols=True)
 
     assert output.shape[0] == 4
     assert output.shape[1] == 5
 
-    assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
-    assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
+    # need to use eq_missing
+    assert (
+        output.filter(pl.col.float_fld_df1.eq_missing(pl.col.float_fld_df2).not_())[
+            "acct_id"
+        ].count()
+        == 3
+    )
+    assert (
+        output.filter(pl.col.float_fld_df1.eq_missing(pl.col.float_fld_df2))[
+            "acct_id"
+        ].count()
+        == 1
+    )
 
-    assert (output.date_fld_df1 != output.date_fld_df2).values.sum() == 4
-    assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
+    assert (
+        output.filter(pl.col.date_fld_df1.eq_missing(pl.col.date_fld_df2).not_())[
+            "acct_id"
+        ].count()
+        == 4
+    )
+    assert (
+        output.filter(pl.col.date_fld_df1.eq_missing(pl.col.date_fld_df2))[
+            "acct_id"
+        ].count()
+        == 0
+    )
 
     assert not ("name_df1" in output and "name_df2" in output)
     assert not ("dollar_amt_df1" in output and "dollar_amt_df1" in output)
 
 
-def test_all_mismatch_ignore_matching_cols_some_calls_matching():
+def test_all_mismatch_ignore_matching_cols_some_cols_matching():
     # Columns dollar_amt and name are matching
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -1093,20 +1061,41 @@ def test_all_mismatch_ignore_matching_cols_some_calls_matching():
     10000001238,1.05,Lucille Bluth,111,
     10000001240,123.45,George Maharis,14530.1555,2017-01-02
     """
-    df1 = pd.read_csv(io.StringIO(data1), sep=",")
-    df2 = pd.read_csv(io.StringIO(data2), sep=",")
-    compare = datacompy.Compare(df1, df2, "acct_id")
+    df1 = pl.read_csv(io.StringIO(data1), separator=",")
+    df2 = pl.read_csv(io.StringIO(data2), separator=",")
+    compare = PolarsCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch(ignore_matching_cols=True)
 
     assert output.shape[0] == 4
     assert output.shape[1] == 5
 
-    assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
-    assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
+    # need to use eq_missing
+    assert (
+        output.filter(pl.col.float_fld_df1.eq_missing(pl.col.float_fld_df2).not_())[
+            "acct_id"
+        ].count()
+        == 3
+    )
+    assert (
+        output.filter(pl.col.float_fld_df1.eq_missing(pl.col.float_fld_df2))[
+            "acct_id"
+        ].count()
+        == 1
+    )
 
-    assert (output.date_fld_df1 != output.date_fld_df2).values.sum() == 4
-    assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
+    assert (
+        output.filter(pl.col.date_fld_df1.eq_missing(pl.col.date_fld_df2).not_())[
+            "acct_id"
+        ].count()
+        == 4
+    )
+    assert (
+        output.filter(pl.col.date_fld_df1.eq_missing(pl.col.date_fld_df2))[
+            "acct_id"
+        ].count()
+        == 0
+    )
 
     assert not ("name_df1" in output and "name_df2" in output)
     assert not ("dollar_amt_df1" in output and "dollar_amt_df1" in output)
@@ -1130,28 +1119,49 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching():
     10000001238,1.05,Loose Seal Bluth,111,
     10000001240,123.45,George Maharis,14530.1555,2017-01-02
     """
-    df1 = pd.read_csv(io.StringIO(data1), sep=",")
-    df2 = pd.read_csv(io.StringIO(data2), sep=",")
-    compare = datacompy.Compare(df1, df2, "acct_id")
+    df1 = pl.read_csv(io.StringIO(data1), separator=",")
+    df2 = pl.read_csv(io.StringIO(data2), separator=",")
+    compare = PolarsCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
     assert output.shape[1] == 9
 
-    assert (output.name_df1 != output.name_df2).values.sum() == 2
-    assert (~(output.name_df1 != output.name_df2)).values.sum() == 2
+    assert (output["name_df1"] != output["name_df2"]).sum() == 2
+    assert (~(output["name_df1"] != output["name_df2"])).sum() == 2
 
-    assert (output.dollar_amt_df1 != output.dollar_amt_df2).values.sum() == 1
-    assert (~(output.dollar_amt_df1 != output.dollar_amt_df2)).values.sum() == 3
+    assert (output["dollar_amt_df1"] != output["dollar_amt_df2"]).sum() == 1
+    assert (~(output["dollar_amt_df1"] != output["dollar_amt_df2"])).sum() == 3
 
-    assert (output.float_fld_df1 != output.float_fld_df2).values.sum() == 3
-    assert (~(output.float_fld_df1 != output.float_fld_df2)).values.sum() == 1
+    # need to use eq_missing
+    assert (
+        output.filter(pl.col.float_fld_df1.eq_missing(pl.col.float_fld_df2).not_())[
+            "acct_id"
+        ].count()
+        == 3
+    )
+    assert (
+        output.filter(pl.col.float_fld_df1.eq_missing(pl.col.float_fld_df2))[
+            "acct_id"
+        ].count()
+        == 1
+    )
 
-    assert (output.date_fld_df1 != output.date_fld_df2).values.sum() == 4
-    assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
+    assert (
+        output.filter(pl.col.date_fld_df1.eq_missing(pl.col.date_fld_df2).not_())[
+            "acct_id"
+        ].count()
+        == 4
+    )
+    assert (
+        output.filter(pl.col.date_fld_df1.eq_missing(pl.col.date_fld_df2))[
+            "acct_id"
+        ].count()
+        == 0
+    )
 
 
-MAX_DIFF_DF = pd.DataFrame(
+MAX_DIFF_DF = pl.DataFrame(
     {
         "base": [1, 1, 1, 1, 1],
         "floats": [1.1, 1.1, 1.1, 1.2, 0.9],
@@ -1184,116 +1194,104 @@ MAX_DIFF_DF = pd.DataFrame(
 )
 def test_calculate_max_diff(column, expected):
     assert np.isclose(
-        datacompy.calculate_max_diff(MAX_DIFF_DF["base"], MAX_DIFF_DF[column]), expected
+        calculate_max_diff(MAX_DIFF_DF["base"], MAX_DIFF_DF[column]), expected
     )
 
 
 def test_dupes_with_nulls():
-    df1 = pd.DataFrame(
+    df1 = pl.DataFrame(
         {
             "fld_1": [1, 2, 2, 3, 3, 4, 5, 5],
             "fld_2": ["A", np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
         }
     )
-    df2 = pd.DataFrame(
+    df2 = pl.DataFrame(
         {"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", np.nan, np.nan, np.nan, np.nan]}
     )
-    comp = datacompy.Compare(df1, df2, join_columns=["fld_1", "fld_2"])
+    comp = PolarsCompare(df1, df2, join_columns=["fld_1", "fld_2"])
     assert comp.subset()
 
 
 @pytest.mark.parametrize(
     "dataframe,expected",
     [
-        (pd.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}), pd.Series([0, 0, 0])),
+        (pl.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}), pl.Series([1, 1, 1])),
         (
-            pd.DataFrame({"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}),
-            pd.Series([0, 1, 0]),
+            pl.DataFrame({"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}),
+            pl.Series([1, 2, 1]),
         ),
-        (pd.DataFrame({"a": [-999, 2, 3], "b": [1, 2, 3]}), pd.Series([0, 0, 0])),
+        (pl.DataFrame({"a": [-999, 2, 3], "b": [1, 2, 3]}), pl.Series([1, 1, 1])),
         (
-            pd.DataFrame({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}),
-            pd.Series([0, 0, 1]),
-        ),
-        (
-            pd.DataFrame({"a": ["1", np.nan, np.nan], "b": ["1", "2", "2"]}),
-            pd.Series([0, 0, 1]),
+            pl.DataFrame({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}),
+            pl.Series([1, 1, 2]),
         ),
         (
-            pd.DataFrame(
+            pl.DataFrame({"a": ["1", np.nan, np.nan], "b": ["1", "2", "2"]}),
+            pl.Series([1, 1, 2]),
+        ),
+        (
+            pl.DataFrame(
                 {"a": [datetime(2018, 1, 1), np.nan, np.nan], "b": ["1", "2", "2"]}
             ),
-            pd.Series([0, 0, 1]),
+            pl.Series([1, 1, 2]),
         ),
     ],
 )
 def test_generate_id_within_group(dataframe, expected):
-    assert (
-        datacompy.core.generate_id_within_group(dataframe, ["a", "b"]) == expected
-    ).all()
+    assert (generate_id_within_group(dataframe, ["a", "b"]) == expected).all()
 
 
 @pytest.mark.parametrize(
     "dataframe, message",
     [
         (
-            pd.DataFrame({"a": [1, np.nan, "DATACOMPY_NULL"], "b": [1, 2, 3]}),
+            pl.DataFrame({"a": [1, np.nan, "DATACOMPY_NULL"], "b": [1, 2, 3]}),
             "DATACOMPY_NULL was found in your join columns",
         )
     ],
 )
 def test_generate_id_within_group_valueerror(dataframe, message):
     with raises(ValueError, match=message):
-        datacompy.core.generate_id_within_group(dataframe, ["a", "b"])
+        generate_id_within_group(dataframe, ["a", "b"])
 
 
 def test_lower():
     """This function tests the toggle to use lower case for column names or not"""
     # should match
-    df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
-    df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
-    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+    df1 = pl.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+    df2 = pl.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # should not match
-    df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
-    df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
-    compare = datacompy.Compare(
-        df1, df2, join_columns=["a"], cast_column_names_lower=False
-    )
+    df1 = pl.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+    df2 = pl.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
+    compare = PolarsCompare(df1, df2, join_columns=["a"], cast_column_names_lower=False)
     assert not compare.matches()
 
     # test join column
     # should match
-    df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
-    df2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
-    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+    df1 = pl.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+    df2 = pl.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # should fail because "a" is not found in df2
-    df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
-    df2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
+    df1 = pl.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
+    df2 = pl.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
     expected_message = "df2 must have all columns from join_columns"
     with raises(ValueError, match=expected_message):
-        compare = datacompy.Compare(
+        compare = PolarsCompare(
             df1, df2, join_columns=["a"], cast_column_names_lower=False
         )
 
 
-def test_integer_column_names():
-    """This function tests that integer column names would also work"""
-    df1 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
-    df2 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
-    compare = datacompy.Compare(df1, df2, join_columns=[1])
-    assert compare.matches()
-
-
-@mock.patch("datacompy.core.render")
+@mock.patch("datacompy.polars.render")
 def test_save_html(mock_render):
-    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
 
     m = mock.mock_open()
-    with mock.patch("datacompy.core.open", m, create=True):
+    with mock.patch("datacompy.polars.open", m, create=True):
         # assert without HTML call
         compare.report()
         assert mock_render.call_count == 4
@@ -1301,7 +1299,7 @@ def test_save_html(mock_render):
 
     mock_render.reset_mock()
     m = mock.mock_open()
-    with mock.patch("datacompy.core.open", m, create=True):
+    with mock.patch("datacompy.polars.open", m, create=True):
         # assert with HTML call
         compare.report(html_file="test.html")
         assert mock_render.call_count == 4

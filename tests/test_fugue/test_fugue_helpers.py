@@ -12,17 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""One test helper for fugue reports."""
 
-__version__ = "0.11.0"
 
-from datacompy.core import *
-from datacompy.fugue import (
-    all_columns_match,
-    all_rows_overlap,
-    intersect_columns,
-    is_match,
-    report,
-    unq_columns,
-)
-from datacompy.polars import PolarsCompare
-from datacompy.spark import NUMERIC_SPARK_TYPES, SparkCompare
+def _compare_report(expected, actual, truncate=False):
+    """Compare datacompy reports."""
+    if truncate:
+        expected = expected.split("Sample Rows", 1)[0]
+        actual = actual.split("Sample Rows", 1)[0]
+    assert expected == actual

@@ -9,39 +9,101 @@ on:
   pull_request:
     branches: [develop, main]
 
-jobs:
-  build:
+permissions:
+  contents: read
 
-    runs-on: ubuntu-latest 
+jobs:
+  test-dev-install:
+
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.8, 3.9, '3.10']
-        spark-version: [3.0.3, 3.1.3, 3.2.3, 3.3.1, 3.4.0]
+        python-version: [3.8, 3.9, '3.10', '3.11']
+        spark-version: [3.1.3, 3.2.4, 3.3.4, 3.4.2, 3.5.0]
+        exclude:
+          - python-version: '3.11'
+            spark-version: 3.1.3
+          - python-version: '3.11'
+            spark-version: 3.2.4
+          - python-version: '3.11'
+            spark-version: 3.3.4
     env:
-      PYTHON_VERSION: ${{ matrix.python-version }} 
+      PYTHON_VERSION: ${{ matrix.python-version }}
       SPARK_VERSION: ${{ matrix.spark-version }}
 
     steps:
-    - uses: actions/checkout@v2
-      
+    - uses: actions/checkout@v3
+
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    
+
     - name: Setup Java JDK
       uses: actions/setup-java@v3
       with:
         java-version: '8'
         distribution: 'adopt'
-        
-    - name: Install Spark
+
+    - name: Install Spark and datacompy
       run: |
         python -m pip install --upgrade pip
         python -m pip install pytest pytest-spark pypandoc
         python -m pip install pyspark==${{ matrix.spark-version }}
-        python -m pip install .[dev,spark]
+        python -m pip install .[dev]
+    - name: Test with pytest
+      run: |
+        python -m pytest tests/
+
+  test-bare-install:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8, 3.9, '3.10', '3.11']
+    env:
+      PYTHON_VERSION: ${{ matrix.python-version }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install datacompy
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install .[tests]
+    - name: Test with pytest
+      run: |
+        python -m pytest tests/
+
+  test-fugue-install-no-spark:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8, 3.9, '3.10', '3.11']
+    env:
+      PYTHON_VERSION: ${{ matrix.python-version }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install datacompy
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install .[tests,duckdb,polars,dask,ray]
     - name: Test with pytest
       run: |
         python -m pytest tests/

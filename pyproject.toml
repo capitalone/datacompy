@@ -12,8 +12,8 @@ maintainers = [
 ]
 license = {text = "Apache Software License"}
 dependencies = [
-    "pandas<=2.0.2,>=0.25.0",
-    "numpy<=1.26.0,>=1.22.0",
+    "pandas<=2.2.0,>=0.25.0",
+    "numpy<=1.26.4,>=1.22.0",
     "ordered-set<=4.1.0,>=4.0.2",
     "fugue<=0.8.7,>=0.8.7",
 ]
@@ -28,6 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 
 dynamic = ["version"]
@@ -38,6 +39,10 @@ Documentation = "https://capitalone.github.io/datacompy/"
 Repository = "https://github.com/capitalone/datacompy.git"
 "Bug Tracker" = "https://github.com/capitalone/datacompy/issues"
 "Source Code" = "https://github.com/capitalone/datacompy"
+
+[build-system]
+requires = ["setuptools>=64.0.0"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["datacompy"]
@@ -55,8 +60,11 @@ python-tag = "py3"
 
 [project.optional-dependencies]
 duckdb = ["fugue[duckdb]"]
-polars = ["fugue[polars]"]
-spark = ["fugue[spark]"]
+polars = ["polars"]
+spark = [
+    "pyspark>=3.1.1; python_version < '3.11'",
+    "pyspark>=3.4; python_version >= '3.11'",
+]
 dask = ["fugue[dask]"]
 ray = ["fugue[ray]"]
 docs = [
@@ -67,13 +75,20 @@ docs = [
 tests = [
     "pytest",
     "pytest-cov",
+]
+
+tests-spark = [
+    "pytest",
+    "pytest-cov",
     "pytest-spark",
-    "fugue[polars,duckdb,spark]",
+    "spark",
 ]
 qa = [
     "pre-commit",
     "black",
     "isort",
+    "mypy",
+    "pandas-stubs",
 ]
 build = [
     "build",
@@ -90,6 +105,7 @@ dev = [
     "datacompy[spark]",
     "datacompy[docs]",
     "datacompy[tests]",
+    "datacompy[tests-spark]",
     "datacompy[qa]",
     "datacompy[build]",
 ]
@@ -102,8 +118,19 @@ use_parentheses = true
 line_length = 88
 profile = "black"
 
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["fugue.*","triad.*"]
+implicit_reexport = true
+
+[[tool.mypy.overrides]]
+module = "pyarrow"
+ignore_missing_imports = true
+
 [edgetest.envs.core]
-python_version = "3.9"
+python_version = "3.10"
 conda_install = ["openjdk=8"]
 extras = ["dev"]
 command = "pytest tests -m 'not integration'"

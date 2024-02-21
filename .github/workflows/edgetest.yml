@@ -5,17 +5,51 @@ name: Run edgetest
 on:
   schedule:
     - cron: '30 17 * * 5'
+  workflow_dispatch:  # allows manual dispatch
 jobs:
   edgetest:
     runs-on: ubuntu-latest
     name: running edgetest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: develop
-      - id: run-edgetest
-        uses: edgetest-dev/run-edgetest-action@v1.4
+      
+      - name: Set up Python 3.10
+        uses: conda-incubator/setup-miniconda@v2
         with:
-          edgetest-flags: '-c pyproject.toml --export'
-          base-branch: 'develop'
-          skip-pr: 'false'
+          auto-update-conda: true
+          python-version: '3.10'
+          channels: conda-forge
+      
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+
+      - name: Install edgetest
+        shell: bash -el {0}
+        run: |
+          conda install pip
+          conda install edgetest edgetest-conda
+          python -m pip install .[dev]
+      
+      - name: Run edgetest
+        shell: bash -el {0}
+        run: |
+          edgetest -c pyproject.toml --export
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          branch: edgetest-patch
+          base: develop
+          delete-branch: true
+          title: Changes by run-edgetest action
+          commit-message: '[edgetest] automated change'
+          body: Automated changes by [run-edgetest-action](https://github.com/edgetest-dev/run-edgetest-action) GitHub action
+          add-paths: |
+            requirements.txt
+            setup.cfg
+            pyproject.toml
