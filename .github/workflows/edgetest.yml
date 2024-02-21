@@ -11,12 +11,35 @@ jobs:
     runs-on: ubuntu-latest
     name: running edgetest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: edgetest-sparkfix
-      - id: run-edgetest
-        uses: edgetest-dev/run-edgetest-action@v1.4
+      
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
         with:
-          edgetest-flags: '-c pyproject.toml --export'
-          base-branch: 'edgetest-sparkfix'
-          skip-pr: 'false'
+          python-version: '3.10'
+      
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+
+      - name: Install edgetest
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install edgetest edgetest-conda
+      
+      - name: Run edgetest
+        run: |
+          edgetest -c pyproject.toml --export
+
+
+
+      # - id: run-edgetest
+      #   uses: edgetest-dev/run-edgetest-action@v1.4
+      #   with:
+      #     edgetest-flags: '-c pyproject.toml --export'
+      #     base-branch: 'edgetest-sparkfix'
+      #     skip-pr: 'false'
