@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: edgetest-sparkfix
+          ref: develop
       
       - name: Set up Python 3.10
         uses: conda-incubator/setup-miniconda@v2
@@ -40,11 +40,16 @@ jobs:
         run: |
           edgetest -c pyproject.toml --export
 
-
-
-      # - id: run-edgetest
-      #   uses: edgetest-dev/run-edgetest-action@v1.4
-      #   with:
-      #     edgetest-flags: '-c pyproject.toml --export'
-      #     base-branch: 'edgetest-sparkfix'
-      #     skip-pr: 'false'
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          branch: edgetest-patch
+          base: develop
+          delete-branch: true
+          title: Changes by run-edgetest action
+          commit-message: '[edgetest] automated change'
+          body: Automated changes by [run-edgetest-action](https://github.com/edgetest-dev/run-edgetest-action) GitHub action
+          add-paths: |
+            requirements.txt
+            setup.cfg
+            pyproject.toml
