@@ -24,6 +24,7 @@ from datacompy import (
     Compare,
     all_columns_match,
     all_rows_overlap,
+    count_matching_rows,
     intersect_columns,
     is_match,
     report,
@@ -192,3 +193,41 @@ def test_all_rows_overlap_native(
     # Fugue
     assert all_rows_overlap(ref_df[0], shuffle_df, join_columns="a", parallelism=2)
     assert not all_rows_overlap(ref_df[0], ref_df[4], join_columns="a", parallelism=2)
+
+
+def test_count_matching_rows_native(count_matching_rows_df):
+    # defaults to Compare class
+    assert (
+        count_matching_rows(
+            count_matching_rows_df[0],
+            count_matching_rows_df[0].copy(),
+            join_columns="a",
+        )
+        == 100
+    )
+    assert (
+        count_matching_rows(
+            count_matching_rows_df[0], count_matching_rows_df[1], join_columns="a"
+        )
+        == 10
+    )
+    # Fugue
+
+    assert (
+        count_matching_rows(
+            count_matching_rows_df[0],
+            count_matching_rows_df[0].copy(),
+            join_columns="a",
+            parallelism=2,
+        )
+        == 100
+    )
+    assert (
+        count_matching_rows(
+            count_matching_rows_df[0],
+            count_matching_rows_df[1],
+            join_columns="a",
+            parallelism=2,
+        )
+        == 10
+    )

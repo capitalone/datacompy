@@ -1,6 +1,6 @@
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 
 
 @pytest.fixture
@@ -24,7 +24,8 @@ def ref_df():
             c=np.random.choice(["aaa", "b_c", "csd"], 100),
         )
     )
-    return [df1, df1_copy, df2, df3, df4]
+    df5 = df1.sample(frac=0.1)
+    return [df1, df1_copy, df2, df3, df4, df5]
 
 
 @pytest.fixture
@@ -87,3 +88,16 @@ def large_diff_df2():
     np.random.seed(0)
     data = np.random.randint(6, 11, size=10000)
     return pd.DataFrame({"x": data, "y": np.array([9] * 10000)}).convert_dtypes()
+
+
+@pytest.fixture
+def count_matching_rows_df():
+    np.random.seed(0)
+    df1 = pd.DataFrame(
+        dict(
+            a=np.arange(0, 100),
+            b=np.arange(0, 100),
+        )
+    )
+    df2 = df1.sample(frac=0.1)
+    return [df1, df2]
