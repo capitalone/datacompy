@@ -145,7 +145,6 @@ def test_report_pandas(
 
 def test_unique_columns_native(ref_df):
     df1 = ref_df[0]
-    df1_copy = ref_df[1]
     df2 = ref_df[2]
     df3 = ref_df[3]
 

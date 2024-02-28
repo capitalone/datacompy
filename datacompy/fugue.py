@@ -555,7 +555,6 @@ def report(
     any_mismatch = len(match_sample) > 0
 
     # Column Matching
-    cnt_intersect = shape0("intersect_rows_shape")
     rpt += render(
         "column_comparison.txt",
         len([col for col in column_stats if col["unequal_cnt"] > 0]),
