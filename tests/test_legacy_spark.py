@@ -23,8 +23,8 @@ import pytest
 
 pytest.importorskip("pyspark")
 
-from pyspark.sql import Row, SparkSession
-from pyspark.sql.types import (
+from pyspark.sql import Row  # noqa: E402
+from pyspark.sql.types import (  # noqa: E402
     DateType,
     DecimalType,
     DoubleType,
@@ -34,7 +34,11 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from datacompy.legacy import NUMERIC_SPARK_TYPES, LegacySparkCompare, _is_comparable
+from datacompy.legacy import (  # noqa: E402
+    NUMERIC_SPARK_TYPES,
+    LegacySparkCompare,
+    _is_comparable,
+)
 
 # Turn off py4j debug messages for all tests in this module
 logging.getLogger("py4j").setLevel(logging.INFO)
@@ -42,22 +46,8 @@ logging.getLogger("py4j").setLevel(logging.INFO)
 CACHE_INTERMEDIATES = True
 
 
-# Declare fixtures
-# (if we need to use these in other modules, move to conftest.py)
-@pytest.fixture(scope="module", name="spark")
-def spark_fixture():
-    spark = (
-        SparkSession.builder.master("local[2]")
-        .config("spark.driver.bindAddress", "127.0.0.1")
-        .appName("pytest")
-        .getOrCreate()
-    )
-    yield spark
-    spark.stop()
-
-
 @pytest.fixture(scope="module", name="base_df1")
-def base_df1_fixture(spark):
+def base_df1_fixture(spark_session):
     mock_data = [
         Row(
             acct=10000001234,
@@ -96,11 +86,11 @@ def base_df1_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data)
+    return spark_session.createDataFrame(mock_data)
 
 
 @pytest.fixture(scope="module", name="base_df2")
-def base_df2_fixture(spark):
+def base_df2_fixture(spark_session):
     mock_data = [
         Row(
             acct=10000001234,
@@ -139,11 +129,11 @@ def base_df2_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data)
+    return spark_session.createDataFrame(mock_data)
 
 
 @pytest.fixture(scope="module", name="compare_df1")
-def compare_df1_fixture(spark):
+def compare_df1_fixture(spark_session):
     mock_data2 = [
         Row(
             acct=10000001234,
@@ -189,11 +179,11 @@ def compare_df1_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data2)
+    return spark_session.createDataFrame(mock_data2)
 
 
 @pytest.fixture(scope="module", name="compare_df2")
-def compare_df2_fixture(spark):
+def compare_df2_fixture(spark_session):
     mock_data = [
         Row(
             acct=10000001234,
@@ -232,11 +222,11 @@ def compare_df2_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data)
+    return spark_session.createDataFrame(mock_data)
 
 
 @pytest.fixture(scope="module", name="compare_df3")
-def compare_df3_fixture(spark):
+def compare_df3_fixture(spark_session):
     mock_data2 = [
         Row(
             account_identifier=10000001234,
@@ -280,11 +270,11 @@ def compare_df3_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data2)
+    return spark_session.createDataFrame(mock_data2)
 
 
 @pytest.fixture(scope="module", name="base_tol")
-def base_tol_fixture(spark):
+def base_tol_fixture(spark_session):
     tol_data1 = [
         Row(
             account_identifier=10000001234,
@@ -392,11 +382,11 @@ def base_tol_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(tol_data1)
+    return spark_session.createDataFrame(tol_data1)
 
 
 @pytest.fixture(scope="module", name="compare_abs_tol")
-def compare_tol2_fixture(spark):
+def compare_tol2_fixture(spark_session):
     tol_data2 = [
         Row(
             account_identifier=10000001234,
@@ -504,11 +494,11 @@ def compare_tol2_fixture(spark):
         ),  # both NULL
     ]
 
-    return spark.createDataFrame(tol_data2)
+    return spark_session.createDataFrame(tol_data2)
 
 
 @pytest.fixture(scope="module", name="compare_rel_tol")
-def compare_tol3_fixture(spark):
+def compare_tol3_fixture(spark_session):
     tol_data3 = [
         Row(
             account_identifier=10000001234,
@@ -616,11 +606,11 @@ def compare_tol3_fixture(spark):
         ),  # both NULL  #MATCH
     ]
 
-    return spark.createDataFrame(tol_data3)
+    return spark_session.createDataFrame(tol_data3)
 
 
 @pytest.fixture(scope="module", name="compare_both_tol")
-def compare_tol4_fixture(spark):
+def compare_tol4_fixture(spark_session):
     tol_data4 = [
         Row(
             account_identifier=10000001234,
@@ -728,11 +718,11 @@ def compare_tol4_fixture(spark):
         ),  # both NULL
     ]
 
-    return spark.createDataFrame(tol_data4)
+    return spark_session.createDataFrame(tol_data4)
 
 
 @pytest.fixture(scope="module", name="base_td")
-def base_td_fixture(spark):
+def base_td_fixture(spark_session):
     mock_data = [
         Row(
             acct=10000001234,
@@ -771,11 +761,11 @@ def base_td_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data)
+    return spark_session.createDataFrame(mock_data)
 
 
 @pytest.fixture(scope="module", name="compare_source")
-def compare_source_fixture(spark):
+def compare_source_fixture(spark_session):
     mock_data = [
         Row(
             ACCOUNT_IDENTIFIER=10000001234,
@@ -814,17 +804,17 @@ def compare_source_fixture(spark):
         ),
     ]
 
-    return spark.createDataFrame(mock_data)
+    return spark_session.createDataFrame(mock_data)
 
 
 @pytest.fixture(scope="module", name="base_decimal")
-def base_decimal_fixture(spark):
+def base_decimal_fixture(spark_session):
     mock_data = [
         Row(acct=10000001234, dollar_amt=Decimal(123.4)),
         Row(acct=10000001235, dollar_amt=Decimal(0.45)),
     ]
 
-    return spark.createDataFrame(
+    return spark_session.createDataFrame(
         mock_data,
         schema=StructType(
             [
@@ -836,19 +826,19 @@ def base_decimal_fixture(spark):
 
 
 @pytest.fixture(scope="module", name="compare_decimal")
-def compare_decimal_fixture(spark):
+def compare_decimal_fixture(spark_session):
     mock_data = [
         Row(acct=10000001234, dollar_amt=123.4),
         Row(acct=10000001235, dollar_amt=0.456),
     ]
 
-    return spark.createDataFrame(mock_data)
+    return spark_session.createDataFrame(mock_data)
 
 
 @pytest.fixture(scope="module", name="comparison_abs_tol")
-def comparison_abs_tol_fixture(base_tol, compare_abs_tol, spark):
+def comparison_abs_tol_fixture(base_tol, compare_abs_tol, spark_session):
     return LegacySparkCompare(
-        spark,
+        spark_session,
         base_tol,
         compare_abs_tol,
         join_columns=["account_identifier"],
@@ -857,9 +847,9 @@ def comparison_abs_tol_fixture(base_tol, compare_abs_tol, spark):
 
 
 @pytest.fixture(scope="module", name="comparison_rel_tol")
-def comparison_rel_tol_fixture(base_tol, compare_rel_tol, spark):
+def comparison_rel_tol_fixture(base_tol, compare_rel_tol, spark_session):
     return LegacySparkCompare(
-        spark,
+        spark_session,
         base_tol,
         compare_rel_tol,
         join_columns=["account_identifier"],
@@ -868,9 +858,9 @@ def comparison_rel_tol_fixture(base_tol, compare_rel_tol, spark):
 
 
 @pytest.fixture(scope="module", name="comparison_both_tol")
-def comparison_both_tol_fixture(base_tol, compare_both_tol, spark):
+def comparison_both_tol_fixture(base_tol, compare_both_tol, spark_session):
     return LegacySparkCompare(
-        spark,
+        spark_session,
         base_tol,
         compare_both_tol,
         join_columns=["account_identifier"],
@@ -880,9 +870,9 @@ def comparison_both_tol_fixture(base_tol, compare_both_tol, spark):
 
 
 @pytest.fixture(scope="module", name="comparison_neg_tol")
-def comparison_neg_tol_fixture(base_tol, compare_both_tol, spark):
+def comparison_neg_tol_fixture(base_tol, compare_both_tol, spark_session):
     return LegacySparkCompare(
-        spark,
+        spark_session,
         base_tol,
         compare_both_tol,
         join_columns=["account_identifier"],
@@ -892,9 +882,9 @@ def comparison_neg_tol_fixture(base_tol, compare_both_tol, spark):
 
 
 @pytest.fixture(scope="module", name="show_all_columns_and_match_rate")
-def show_all_columns_and_match_rate_fixture(base_tol, compare_both_tol, spark):
+def show_all_columns_and_match_rate_fixture(base_tol, compare_both_tol, spark_session):
     return LegacySparkCompare(
-        spark,
+        spark_session,
         base_tol,
         compare_both_tol,
         join_columns=["account_identifier"],
@@ -904,9 +894,9 @@ def show_all_columns_and_match_rate_fixture(base_tol, compare_both_tol, spark):
 
 
 @pytest.fixture(scope="module", name="comparison_kd1")
-def comparison_known_diffs1(base_td, compare_source, spark):
+def comparison_known_diffs1(base_td, compare_source, spark_session):
     return LegacySparkCompare(
-        spark,
+        spark_session,
         base_td,
         compare_source,
         join_columns=[("acct", "ACCOUNT_IDENTIFIER"), ("acct_seq", "SEQ_NUMBER")],
@@ -936,9 +926,9 @@ def comparison_known_diffs1(base_td, compare_source, spark):
 
 
 @pytest.fixture(scope="module", name="comparison_kd2")
-def comparison_known_diffs2(base_td, compare_source, spark):
+def comparison_known_diffs2(base_td, compare_source, spark_session):
     return LegacySparkCompare(
-        spark,
+        spark_session,
         base_td,
         compare_source,
         join_columns=[("acct", "ACCOUNT_IDENTIFIER"), ("acct_seq", "SEQ_NUMBER")],
@@ -963,9 +953,9 @@ def comparison_known_diffs2(base_td, compare_source, spark):
 
 
 @pytest.fixture(scope="module", name="comparison1")
-def comparison1_fixture(base_df1, compare_df1, spark):
+def comparison1_fixture(base_df1, compare_df1, spark_session):
     return LegacySparkCompare(
-        spark,
+        spark_session,
         base_df1,
         compare_df1,
         join_columns=["acct"],
@@ -974,14 +964,16 @@ def comparison1_fixture(base_df1, compare_df1, spark):
 
 
 @pytest.fixture(scope="module", name="comparison2")
-def comparison2_fixture(base_df1, compare_df2, spark):
-    return LegacySparkCompare(spark, base_df1, compare_df2, join_columns=["acct"])
+def comparison2_fixture(base_df1, compare_df2, spark_session):
+    return LegacySparkCompare(
+        spark_session, base_df1, compare_df2, join_columns=["acct"]
+    )
 
 
 @pytest.fixture(scope="module", name="comparison3")
-def comparison3_fixture(base_df1, compare_df3, spark):
+def comparison3_fixture(base_df1, compare_df3, spark_session):
     return LegacySparkCompare(
-        spark,
+        spark_session,
         base_df1,
         compare_df3,
         join_columns=[("acct", "account_identifier")],
@@ -995,9 +987,9 @@ def comparison3_fixture(base_df1, compare_df3, spark):
 
 
 @pytest.fixture(scope="module", name="comparison4")
-def comparison4_fixture(base_df2, compare_df1, spark):
+def comparison4_fixture(base_df2, compare_df1, spark_session):
     return LegacySparkCompare(
-        spark,
+        spark_session,
         base_df2,
         compare_df1,
         join_columns=["acct"],
@@ -1006,9 +998,9 @@ def comparison4_fixture(base_df2, compare_df1, spark):
 
 
 @pytest.fixture(scope="module", name="comparison_decimal")
-def comparison_decimal_fixture(base_decimal, compare_decimal, spark):
+def comparison_decimal_fixture(base_decimal, compare_decimal, spark_session):
     return LegacySparkCompare(
-        spark, base_decimal, compare_decimal, join_columns=["acct"]
+        spark_session, base_decimal, compare_decimal, join_columns=["acct"]
     )
 
 
@@ -1048,10 +1040,10 @@ def test_both_tolerances(comparison_both_tol):
     assert "Number of columns compared with all values equal: 4" in stdout.getvalue()
 
 
-def test_negative_tolerances(spark, base_tol, compare_both_tol):
+def test_negative_tolerances(spark_session, base_tol, compare_both_tol):
     with pytest.raises(ValueError, match="Please enter positive valued tolerances"):
         comp = LegacySparkCompare(
-            spark,
+            spark_session,
             base_tol,
             compare_both_tol,
             join_columns=["account_identifier"],
@@ -1380,7 +1372,9 @@ def test_columns_with_different_names_with_unequal_values_show_mismatch_counts(
     )
 
 
-def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark, comparison1):
+def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(
+    spark_session, comparison1
+):
     # require schema if contains only 1 row and contain field value as None
     schema = StructType(
         [
@@ -1391,7 +1385,7 @@ def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark, compar
             StructField("name", StringType(), True),
         ]
     )
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001239,
@@ -1417,9 +1411,9 @@ def test_rows_only_base_returns_a_dataframe_with_rows_only_in_base(spark, compar
 
 
 def test_rows_only_compare_returns_a_dataframe_with_rows_only_in_compare(
-    spark, comparison1
+    spark_session, comparison1
 ):
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001238,
@@ -1436,9 +1430,9 @@ def test_rows_only_compare_returns_a_dataframe_with_rows_only_in_compare(
 
 
 def test_rows_both_mismatch_returns_a_dataframe_with_rows_where_variables_mismatched(
-    spark, comparison1
+    spark_session, comparison1
 ):
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 accnt_purge=False,
@@ -1490,9 +1484,9 @@ def test_rows_both_mismatch_returns_a_dataframe_with_rows_where_variables_mismat
 
 
 def test_rows_both_mismatch_only_includes_rows_with_true_mismatches_when_known_diffs_are_present(
-    spark, comparison_kd1
+    spark_session, comparison_kd1
 ):
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001237,
@@ -1517,9 +1511,9 @@ def test_rows_both_mismatch_only_includes_rows_with_true_mismatches_when_known_d
 
 
 def test_rows_both_all_returns_a_dataframe_with_all_rows_in_both_dataframes(
-    spark, comparison1
+    spark_session, comparison1
 ):
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 accnt_purge=False,
@@ -1585,9 +1579,9 @@ def test_rows_both_all_returns_a_dataframe_with_all_rows_in_both_dataframes(
 
 
 def test_rows_both_all_shows_known_diffs_flag_and_known_diffs_count_as_matches(
-    spark, comparison_kd1
+    spark_session, comparison_kd1
 ):
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001234,
@@ -1677,9 +1671,9 @@ def test_rows_both_all_shows_known_diffs_flag_and_known_diffs_count_as_matches(
 
 
 def test_rows_both_all_returns_a_dataframe_with_all_rows_in_identical_dataframes(
-    spark, comparison2
+    spark_session, comparison2
 ):
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 acct=10000001234,
@@ -1764,9 +1758,9 @@ def test_rows_both_all_returns_a_dataframe_with_all_rows_in_identical_dataframes
 
 
 def test_rows_both_all_returns_all_rows_in_both_dataframes_for_differently_named_columns(
-    spark, comparison3
+    spark_session, comparison3
 ):
-    expected_df = spark.createDataFrame(
+    expected_df = spark_session.createDataFrame(
         [
             Row(
                 accnt_purge=False,
