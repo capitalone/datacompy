@@ -24,7 +24,10 @@ two dataframes.
 import logging
 import os
 
+<<<<<<< HEAD
 import pandas as pd
+=======
+>>>>>>> 87f1f75 (conditional import)
 from ordered_set import OrderedSet
 
 from datacompy.base import BaseCompare
