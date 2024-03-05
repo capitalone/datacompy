@@ -38,16 +38,33 @@ pip install datacompy[ray]
 
 ```
 
-### In-scope Spark versions
-Different versions of Spark play nicely with only certain versions of Python below is a matrix of what we test with
+### Legacy Spark Deprecation
 
-|             | Spark 3.1.3  | Spark 3.2.3 | Spark 3.3.4 | Spark 3.4.2 | Spark 3.5.0 |
-|-------------|--------------|-------------|-------------|-------------|-------------|
-| Python 3.8  | ✅           | ✅           | ✅           | ✅          | ✅          |
-| Python 3.9  | ✅           | ✅           | ✅           | ✅          | ✅          |
-| Python 3.10 | ✅           | ✅           | ✅           | ✅          | ✅          |
-| Python 3.11 | ❌           | ❌           | ❌           | ✅          | ✅          |
-| Python 3.12 | ❌           | ❌           | ❌           | ❌          | ❌          |
+#### Starting with version 0.12.0
+
+The original ``SparkCompare`` implementation differs from all the other native implementations. To align the API better, and keep behaviour consistent we are deprecating ``SparkCompare`` into a new moduel ``LegacySparkCompare``
+
+If you wish to use the old SparkCompare moving forward you can
+
+```python
+import datacompy.legacy.LegacySparkCompare
+``` 
+
+#### Supported versions and dependncies
+
+Different versions of Spark play nicely with only certain versions of Python below is a matrix of what we test with. With the move to Pandas on Spark API and compatability issues with Pandas 2+ we are supporting Spark 3.5+ only moving forward.
+
+With version ``0.12.0`` DataComPy will support:
+- Pandas ``2.0.0`` and above only
+- Spark ``3.5.0`` and above only
+
+|             |  Spark 3.5.0  | Spark 3.5.1  |
+|-------------|---------------|--------------|
+| Python 3.8  |     ✅        |     ✅        |
+| Python 3.9  |     ✅        |     ✅        |
+| Python 3.10 |     ✅        |     ✅        |
+| Python 3.11 |     ✅        |     ✅        |
+| Python 3.12 |     ❌        |     ❌        |
 
 
 > [!NOTE]
