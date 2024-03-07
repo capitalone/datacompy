@@ -42,7 +42,7 @@ pip install datacompy[ray]
 
 #### Starting with version 0.12.0
 
-The original ``SparkCompare`` implementation differs from all the other native implementations. To align the API better, and keep behaviour consistent we are deprecating ``SparkCompare`` into a new moduel ``LegacySparkCompare``
+The original ``SparkCompare`` implementation differs from all the other native implementations. To align the API better, and keep behaviour consistent we are deprecating ``SparkCompare`` into a new module ``LegacySparkCompare``
 
 If you wish to use the old SparkCompare moving forward you can
 

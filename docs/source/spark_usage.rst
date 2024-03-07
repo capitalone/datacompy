@@ -22,8 +22,8 @@ is very similar port of the Pandas version
 
 - ``on_index`` is NOT supported like in ``PandasCompare``
 - Joining is done using ``<=>`` which is the equality test that is safe for null values.
-- In the backend we are using the Pandas on Spark API. This might be less optimal than native Spark code but allows
-  for better maintainability and readability.
+- In the backend we are using the Pandas on Spark API. This might be less optimal than 
+  native Spark code but allows for better maintainability and readability.
 
 
 SparkCompare Object Setup
