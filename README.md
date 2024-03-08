@@ -61,7 +61,7 @@ With version ``0.12.0``:
 - Spark ``3.1`` support will be dropped
 
 
-|             | Spark 3.2.3 | Spark 3.3.4 | Spark 3.4.2 | Spark 3.5.1 |
+|             | Spark 3.2.4 | Spark 3.3.4 | Spark 3.4.2 | Spark 3.5.1 |
 |-------------|-------------|-------------|-------------|-------------|
 | Python 3.8  | ✅           | ✅           | ✅           | ✅           |
 | Python 3.9  | ✅           | ✅           | ✅           | ✅           |
