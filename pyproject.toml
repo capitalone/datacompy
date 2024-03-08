@@ -15,7 +15,7 @@ license = {text = "Apache Software License"}
 dependencies = ["pandas<=2.2.1,>=0.25.0", "numpy<=1.26.4,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "fugue<=0.8.7,>=0.8.7"]
 =======
 dependencies = [
-    "pandas<=2.2.1,>=2.0.0",
+    "pandas<=2.2.1,>=0.25.0",
     "numpy<=1.26.4,>=1.22.0",
     "ordered-set<=4.1.0,>=4.0.2",
     "fugue<=0.8.7,>=0.8.7",
@@ -69,7 +69,8 @@ polars = ["polars"]
 spark = ["pyspark>=3.1.1; python_version < \"3.11\"", "pyspark>=3.4; python_version >= \"3.11\""]
 =======
 spark = [
-    "pyspark>=3.5",
+    "pyspark>=3.2.4; python_version < '3.11'",
+    "pyspark>=3.4; python_version >= '3.11'",
 ]
 >>>>>>> 8cdb17d (tweaking SparkCompare and adding back Legacy)
 dask = ["fugue[dask]"]

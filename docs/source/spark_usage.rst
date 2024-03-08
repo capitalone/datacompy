@@ -26,6 +26,19 @@ is very similar port of the Pandas version
   native Spark code but allows for better maintainability and readability.
 
 
+Supported Version
+------------------
+
+.. important::
+
+    Spark will not offically support Pandas 2 until Spark 4: https://issues.apache.org/jira/browse/SPARK-44101
+
+
+Until then we will not be supporting Pandas 2 for the Pandas on Spark API implementaion.
+For Fugue and the Native Pandas implementation Pandas 2 is support. 
+If you need to use Spark DataFrame with Pandas 2+ then consider using Fugue otherwise downgrade to Pandas 1.5.3
+
+
 SparkCompare Object Setup
 -------------------------
 
