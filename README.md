@@ -59,11 +59,11 @@ with the Pandas on Spark implementation. Spark plans to support Pandas 2 in [Spa
 With version ``0.12.0``:
 - Not support Pandas ``2.0.0`` For the native Spark implemention
 - Spark ``3.1`` support will be dropped
+- Python ``3.8`` support is dropped
 
 
 |             | Spark 3.2.4 | Spark 3.3.4 | Spark 3.4.2 | Spark 3.5.1 |
 |-------------|-------------|-------------|-------------|-------------|
-| Python 3.8  | ✅           | ✅           | ✅           | ✅           |
 | Python 3.9  | ✅           | ✅           | ✅           | ✅           |
 | Python 3.10 | ✅           | ✅           | ✅           | ✅           |
 | Python 3.11 | ❌           | ❌           | ✅           | ✅           |
