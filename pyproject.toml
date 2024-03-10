@@ -59,7 +59,6 @@ version = {attr = "datacompy.__version__"}
 python-tag = "py3"
 
 [project.optional-dependencies]
-duckdb = ["fugue[duckdb]==0.9.0.dev2"]
 polars = ["polars"]
 spark = [
     "fugue[spark]==0.9.0.dev2",
@@ -101,7 +100,6 @@ edgetest = [
     "edgetest-conda",
 ]
 dev = [
-    "datacompy[duckdb]",
     "datacompy[polars]",
     "datacompy[spark]",
     "datacompy[ray]",
