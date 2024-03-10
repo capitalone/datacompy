@@ -1,5 +1,5 @@
 #
-# Copyright 2023 Capital One Services, LLC
+# Copyright 2024 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ Compare two DataFrames that are supported by Fugue
 import logging
 import pickle
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, List, cast, Union, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import fugue.api as fa
 import pandas as pd

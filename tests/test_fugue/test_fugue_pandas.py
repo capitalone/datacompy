@@ -1,5 +1,5 @@
 #
-# Copyright 2023 Capital One Services, LLC
+# Copyright 2024 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,11 @@
 # limitations under the License.
 """Test the fugue functionality with pandas."""
 from io import StringIO
+
 import pandas as pd
 from ordered_set import OrderedSet
 from pytest import raises
+from test_fugue_helpers import _compare_report
 
 from datacompy import (
     Compare,
@@ -27,8 +29,6 @@ from datacompy import (
     report,
     unq_columns,
 )
-
-from test_fugue_helpers import _compare_report
 
 
 def test_is_match_native(

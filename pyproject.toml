@@ -12,8 +12,8 @@ maintainers = [
 ]
 license = {text = "Apache Software License"}
 dependencies = [
-    "pandas<=2.0.2,>=0.25.0",
-    "numpy<=1.26.0,>=1.22.0",
+    "pandas<=2.2.0,>=0.25.0",
+    "numpy<=1.26.4,>=1.22.0",
     "ordered-set<=4.1.0,>=4.0.2",
     "fugue[sql,duckdb]==0.9.0.dev2",
 ]
@@ -28,6 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 
 dynamic = ["version"]
@@ -58,10 +59,11 @@ version = {attr = "datacompy.__version__"}
 python-tag = "py3"
 
 [project.optional-dependencies]
-polars = ["fugue[polars]==0.9.0.dev2"]
-spark = ["fugue[spark]==0.9.0.dev2"]
-dask = ["fugue[dask]==0.9.0.dev2"]
-ray = ["fugue[ray]==0.9.0.dev2"]
+duckdb = ["fugue[duckdb]"]
+polars = ["fugue[polars]"]
+spark = ["fugue[spark]"]
+dask = ["fugue[dask]"]
+ray = ["fugue[ray]"]
 docs = [
     "sphinx",
     "furo",
@@ -76,7 +78,7 @@ tests-spark = [
     "pytest",
     "pytest-cov",
     "pytest-spark",
-    "fugue[spark]",
+    "spark",
 ]
 qa = [
     "pre-commit",
@@ -125,7 +127,7 @@ module = "pyarrow"
 ignore_missing_imports = true
 
 [edgetest.envs.core]
-python_version = "3.9"
+python_version = "3.10"
 conda_install = ["openjdk=8"]
 extras = ["dev"]
 command = "pytest tests -m 'not integration'"

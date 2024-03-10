@@ -1,5 +1,5 @@
 #
-# Copyright 2020 Capital One Services, LLC
+# Copyright 2024 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,10 @@
 # limitations under the License.
 """Test fugue and spark."""
 import pytest
+from ordered_set import OrderedSet
+from pytest import raises
+from test_fugue_helpers import _compare_report
+
 from datacompy import (
     Compare,
     all_columns_match,
@@ -23,10 +27,6 @@ from datacompy import (
     report,
     unq_columns,
 )
-from ordered_set import OrderedSet
-from pytest import raises
-
-from test_fugue_helpers import _compare_report
 
 pyspark = pytest.importorskip("pyspark")
 
