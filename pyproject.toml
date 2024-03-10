@@ -59,11 +59,15 @@ version = {attr = "datacompy.__version__"}
 python-tag = "py3"
 
 [project.optional-dependencies]
-duckdb = ["fugue[duckdb]"]
-polars = ["fugue[polars]"]
-spark = ["fugue[spark]"]
-dask = ["fugue[dask]"]
-ray = ["fugue[ray]"]
+duckdb = ["fugue[duckdb]==0.9.0.dev2"]
+polars = ["polars"]
+spark = [
+    "fugue[spark]==0.9.0.dev2",
+    "pyspark>=3.1.1; python_version < '3.11'",
+    "pyspark>=3.4; python_version >= '3.11'",
+]
+dask = ["fugue[dask]==0.9.0.dev2"]
+ray = ["fugue[ray]==0.9.0.dev2"]
 docs = [
     "sphinx",
     "furo",
