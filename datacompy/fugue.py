@@ -51,7 +51,9 @@ def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
     OrderedSet
         Set of columns that are unique to df1
     """
-    return _compare_columns(df1, df2)[0]
+    col1 = fa.get_column_names(df1)
+    col2 = fa.get_column_names(df2)
+    return cast(OrderedSet[str], OrderedSet(col1) - OrderedSet(col2))
 
 
 def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
@@ -70,7 +72,9 @@ def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
     OrderedSet
         Set of that are shared between the two dataframes
     """
-    return _compare_columns(df1, df2)[1]
+    col1 = fa.get_column_names(df1)
+    col2 = fa.get_column_names(df2)
+    return OrderedSet(col1) & OrderedSet(col2)
 
 
 def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame) -> bool:
@@ -89,8 +93,7 @@ def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame) -> bool:
     bool
         Boolean indicating whether the columns all match in the dataframes
     """
-    u1, u2, _ = _compare_columns(df1, df2)
-    return u1 == u2 == set()
+    return unq_columns(df1, df2) == unq_columns(df2, df1) == set()
 
 
 def is_match(
@@ -538,30 +541,6 @@ def report(
             f.write(html_report)
 
     return rpt
-
-
-def _compare_columns(
-    df1: AnyDataFrame, df2: AnyDataFrame
-) -> Tuple[OrderedSet[str], OrderedSet[str], OrderedSet[str]]:
-    """Compare the columns of two dataframes
-
-    Parameters
-    ----------
-    df1 : ``AnyDataFrame``
-        First dataframe to check
-
-    df2 : ``AnyDataFrame``
-        Second dataframe to check
-
-    Returns
-    -------
-    Tuple[OrderedSet[str], OrderedSet[str], OrderedSet[str]]
-        A tuple of the columns that are unique to df1, unique to df2,
-        and shared between the two
-    """
-    col1 = OrderedSet(fa.get_column_names(df1))
-    col2 = OrderedSet(fa.get_column_names(df2))
-    return col1 - col2, col2 - col1, col1 & col2  # type: ignore
 
 
 def _distributed_compare(
