@@ -51,7 +51,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pytest pytest-spark pypandoc
         python -m pip install pyspark==${{ matrix.spark-version }}
-        python -m pip install .[dev]
+        python -m pip install .[dev,ray]
     - name: Test with pytest
       run: |
         python -m pytest tests/
