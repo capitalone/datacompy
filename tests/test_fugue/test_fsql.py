@@ -220,6 +220,11 @@ class DuckDBCompareTests(CompareTests):
     pass
 
 
-@ft.fugue_test_suite("ray", mark_test=True)
-class RayCompareTests(CompareTests):
+try:
+    import ray
+
+    @ft.fugue_test_suite("ray", mark_test=True)
+    class RayCompareTests(CompareTests):
+        pass
+except ImportError:
     pass
