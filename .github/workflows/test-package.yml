@@ -48,7 +48,7 @@ jobs:
     - name: Install Spark and datacompy
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pytest pytest-spark pypandoc 'pandas<2.2'
+        python -m pip install pytest pytest-spark pypandoc
         python -m pip install pyspark==${{ matrix.spark-version }}
         python -m pip install pandas==${{ matrix.pandas-version }}
         python -m pip install .[dev]
@@ -104,6 +104,7 @@ jobs:
     - name: Install datacompy
       run: |
         python -m pip install --upgrade pip
+        python -m pip install "pandas<2.2"
         python -m pip install .[tests,duckdb,polars,dask,ray]
     - name: Test with pytest
       run: |
