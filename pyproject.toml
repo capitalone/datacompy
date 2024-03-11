@@ -102,7 +102,6 @@ edgetest = [
 dev = [
     "datacompy[polars]",
     "datacompy[spark]",
-    "datacompy[ray]",
     "datacompy[docs]",
     "datacompy[tests]",
     "datacompy[tests-spark]",
