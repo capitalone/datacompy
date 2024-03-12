@@ -1,49 +1,32 @@
-import pandas as pd
-import numpy as np
-import os
-from typing import Tuple
+from typing import Any
+
+import pytest
 
 
-def generate_dfs(size: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    np.random.seed(0)
-
-    base = pd.DataFrame(
-        dict(
-            id=np.arange(0, size),
-            a=np.random.randint(0, 10, size),
-            b=np.random.rand(size),
-            c=np.random.choice(["aaa", "bbb", "ccc"], size),
-            d=np.random.randint(0, 10, size),
-            e=np.random.rand(size),
-            f=np.random.choice(["aaa", "bbb", "ccc"], size),
-            g=np.random.randint(0, 10, size),
-            h=np.random.rand(size),
-            i=np.random.choice(["aaa", "bbb", "ccc"], size),
-        )
+class PerfTest:
+    benchmark_params = dict(
+        iterations=1,
+        rounds=10,
+        warmup_rounds=2,
     )
 
-    compare = pd.DataFrame(
-        dict(
-            id=np.arange(0, size),
-            d=np.random.randint(0, 10, size),
-            e=np.random.rand(size),
-            f=np.random.choice(["aaa", "bbb", "ccc"], size),
-            g=np.random.randint(0, 10, size),
-            h=np.random.rand(size),
-            i=np.random.choice(["aaa", "bbb", "ccc"], size),
-            j=np.random.randint(0, 10, size),
-            k=np.random.rand(size),
-            l=np.random.choice(["aaa", "bbb", "ccc"], size),
-        )
-    )
+    @pytest.fixture(autouse=True)
+    def _fixt(self, benchmark, paired_files) -> None:
+        self.base_path, self.compare_path, self.n = paired_files
+        self.benchmark = benchmark
+        self.benchmark.group = self.name()
+        self.benchmark.name = str(self.n)
 
-    return base, compare
+    def name(self) -> str:
+        raise NotImplementedError
 
+    def load(self, path: str) -> Any:
+        raise NotImplementedError
 
-def generate_files(size: int, folder: str) -> Tuple[str, str]:
-    base, compare = generate_dfs(size)
-    base_file = os.path.join(folder, "base.parquet")
-    compare_file = os.path.join(folder, "compare.parquet")
-    base.to_parquet(base_file, index=False)
-    compare.to_parquet(compare_file, index=False)
-    return base_file, compare_file
+    def run(self, base: Any, compare: Any) -> Any:
+        raise NotImplementedError
+
+    def test_perf(self) -> None:
+        base = self.load(self.base_path)
+        compare = self.load(self.compare_path)
+        self.benchmark.pedantic(self.run, args=(base, compare), **self.benchmark_params)
