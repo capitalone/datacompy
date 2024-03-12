@@ -722,18 +722,30 @@ class SparkCompare:
             for key in self.columns_match_dict
             if self.columns_match_dict[key][MatchType.MISMATCH.value]
         }
-        columns_fully_matching = {
-            key: self.columns_match_dict[key]
-            for key in self.columns_match_dict
-            if sum(self.columns_match_dict[key])
-            == self.columns_match_dict[key][MatchType.MATCH.value]
-        }
-        columns_with_any_diffs = {
-            key: self.columns_match_dict[key]
-            for key in self.columns_match_dict
-            if sum(self.columns_match_dict[key])
-            != self.columns_match_dict[key][MatchType.MATCH.value]
-        }
+
+        # corner case: when all columns match but no rows match
+        # issue: #276
+        try:
+            columns_fully_matching = {
+                key: self.columns_match_dict[key]
+                for key in self.columns_match_dict
+                if sum(self.columns_match_dict[key])
+                == self.columns_match_dict[key][MatchType.MATCH.value]
+            }
+        except TypeError:
+            columns_fully_matching = {}
+
+        try:
+            columns_with_any_diffs = {
+                key: self.columns_match_dict[key]
+                for key in self.columns_match_dict
+                if sum(self.columns_match_dict[key])
+                != self.columns_match_dict[key][MatchType.MATCH.value]
+            }
+        except TypeError:
+            columns_with_any_diffs = {}
+        #
+
         base_types = {x[0]: x[1] for x in self.base_df.dtypes}
         compare_types = {x[0]: x[1] for x in self.compare_df.dtypes}
 
