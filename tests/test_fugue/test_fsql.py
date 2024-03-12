@@ -71,6 +71,8 @@ def test_compare_schemas() -> None:
     s1 = Schema("a:int,b:str")
     s2 = Schema("b:str,a:int")
     comp = compare_schemas(s1, s2, "a")
+    assert not comp.are_equal()
+    assert comp.are_equal(check_column_order=False)
     assert comp.intersect_cols == ["a", "b"]
     assert comp.left_only == []
     assert comp.right_only == []
@@ -84,6 +86,8 @@ def test_compare_schemas() -> None:
     s1 = Schema("a:long,b:int,d:double")
     s2 = Schema("c:str,a:int16,b:double")
     comp = compare_schemas(s1, s2, "a")
+    assert not comp.are_equal()
+    assert not comp.are_equal(check_column_order=False)
     assert comp.intersect_cols == ["a", "b"]
     assert comp.left_only == ["d"]
     assert comp.right_only == ["c"]
@@ -152,6 +156,7 @@ class CompareTests(ft.FugueTestSuite):
         assert len(res.get_unique_samples(1)) == 0
         assert len(res.get_unique_samples(2)) == 0
         assert len(res.get_unequal_samples()[0]) == 0
+        assert res.are_equal()
 
     def test_overlap(self) -> None:
         df1 = self.to_df(
@@ -195,14 +200,20 @@ class CompareTests(ft.FugueTestSuite):
             ],
             "id:int,a:double",
         )
-        for abs_tol in [0, 0.01]:
-            res = compare(df1, df2, "id", abs_tol=abs_tol)
+        for rel_tol, abs_tol in [(0, 0), (0.005, 0.005)]:
+            res = compare(df1, df2, "id", abs_tol=abs_tol, rel_tol=rel_tol)
             assert res.get_row_counts() == {3: 2}
             assert len(res.get_unequal_samples()[0]) == 2
             assert len(res.get_unequal_samples()[1]) == 2
             diff = res.get_diff_summary().groupby("column")["max_diff"].sum().to_dict()
             assert abs(diff["a"] - 0.02) < 1e-5
         res = compare(df1, df2, "id", abs_tol=0.1)
+        assert res.get_row_counts() == {3: 2}
+        assert len(res.get_unequal_samples()[0]) == 0
+        assert len(res.get_unequal_samples()[1]) == 0
+        diff = res.get_diff_summary().groupby("column")["max_diff"].sum().to_dict()
+        assert abs(diff["a"] - 0.02) < 1e-5
+        res = compare(df1, df2, "id", rel_tol=0.03)
         assert res.get_row_counts() == {3: 2}
         assert len(res.get_unequal_samples()[0]) == 0
         assert len(res.get_unequal_samples()[1]) == 0
@@ -226,5 +237,6 @@ try:
     @ft.fugue_test_suite("ray", mark_test=True)
     class RayCompareTests(CompareTests):
         pass
+
 except ImportError:
     pass
