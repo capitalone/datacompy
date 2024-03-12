@@ -18,13 +18,17 @@ Fugue SQL utils
 """
 
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Iterator, List, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Tuple, Iterable
 
 import duckdb
 import fugue.api as fa
-from fugue import ExecutionEngine, NativeExecutionEngine, AnyDataFrame
+import pandas as pd
+from fsspec.implementations.local import LocalFileSystem
+from fugue import ExecutionEngine, NativeExecutionEngine
+from triad.utils.io import url_to_fs
 
 _CONF_GENERATORS: List[Tuple[Callable[[ExecutionEngine], bool], Any]] = []
+_DUMMY_DF = pd.DataFrame([[0]], columns=["a"])
 
 
 def _compare_conf_by_fugue_engine(
@@ -39,10 +43,9 @@ def _compare_conf_by_fugue_engine(
 
 
 @contextmanager
-def infer_fugue_engine(
-    df1: AnyDataFrame, df2: AnyDataFrame
-) -> Iterator[Dict[str, Any]]:
-    with fa.engine_context(infer_by=[df1, df2]) as engine:
+def infer_fugue_engine(df1: Any, df2: Any) -> Iterator[Dict[str, Any]]:
+    infer_by = list(_get_infer_dfs(df1, df2))
+    with fa.engine_context(infer_by=infer_by) as engine:
         for check, func in _CONF_GENERATORS:
             if check(engine):
                 with func(engine) as conf:
@@ -84,3 +87,20 @@ try:
 
 except (ImportError, ModuleNotFoundError):
     pass
+
+
+def _get_infer_dfs(*dfs: Any) -> Iterable[Any]:
+    for df in dfs:
+        if isinstance(df, str):
+            if _is_local_path(df):
+                yield _DUMMY_DF
+        else:
+            yield df
+
+
+def _is_local_path(path: Any) -> bool:
+    try:
+        fs, _ = url_to_fs(path)
+        return isinstance(fs, LocalFileSystem)
+    except Exception:
+        return False

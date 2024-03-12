@@ -1,19 +1,18 @@
 from typing import Any
 
-import pandas as pd
-
-from datacompy import Compare
+import polars as pl
+from datacompy import PolarsCompare
 
 from ._utils import PerfTest
 
 
-class TestPandasPerf(PerfTest):
+class TestPolarsPerf(PerfTest):
     def name(self) -> str:
-        return "Pandas"
+        return "Polars"
 
     def load(self, path: str) -> Any:
-        return pd.read_parquet(path)
+        return pl.read_parquet(path)
 
     def run(self, base: Any, compare: Any) -> Any:
-        compare = Compare(base, compare, ["id"])
+        compare = PolarsCompare(base, compare, ["id"])
         return compare.report()

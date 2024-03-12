@@ -20,7 +20,7 @@ import logging
 import pickle
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Union, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 import duckdb
 import fugue.api as fa
@@ -30,8 +30,8 @@ from fugue import AnyDataFrame, DataFrame
 from ordered_set import OrderedSet
 from triad import Schema
 from triad.utils.schema import quote_name
-from ._fsql_utils import infer_fugue_engine
 
+from ._fsql_utils import infer_fugue_engine
 
 LOG = logging.getLogger(__name__)
 
@@ -157,8 +157,8 @@ def compare_schemas(
 
 
 def compare(
-    df1: AnyDataFrame,
-    df2: AnyDataFrame,
+    df1: Union[AnyDataFrame, str],
+    df2: Union[AnyDataFrame, str],
     join_columns: Union[List[str], str],
     exact_type_match: bool = False,
     abs_tol: float = 0,
@@ -168,12 +168,17 @@ def compare(
     use_map: Optional[bool] = None,
     num_buckets: Optional[int] = None,
 ) -> "CompareResult":
-    _df1, _df2 = fa.as_fugue_df(df1), fa.as_fugue_df(df2)
-    schema_compare = compare_schemas(
-        _df1.schema, _df2.schema, join_columns, exact=exact_type_match
-    )
-    sql_builder = _FugueSQLBuilder(schema_compare, abs_tol, rel_tol)
     with infer_fugue_engine(df1, df2) as conf:
+        _df1 = (
+            fa.load(df1, as_fugue=True) if isinstance(df1, str) else fa.as_fugue_df(df1)
+        )
+        _df2 = (
+            fa.load(df2, as_fugue=True) if isinstance(df2, str) else fa.as_fugue_df(df2)
+        )
+        schema_compare = compare_schemas(
+            _df1.schema, _df2.schema, join_columns, exact=exact_type_match
+        )
+        sql_builder = _FugueSQLBuilder(schema_compare, abs_tol, rel_tol)
         _persist_diff = (
             persist_diff if persist_diff is not None else conf["persist_diff"]
         )
@@ -184,7 +189,7 @@ def compare(
             runner = _MapRunner(schema_compare, sql, _num_buckets)
             res = runner.run(_df1, _df2)
         else:
-            raw = fa.fugue_sql_flow(sql, df1=df1, df2=df2).run()
+            raw = fa.fugue_sql_flow(sql, df1=_df1, df2=_df2).run()
             res = {k: fa.as_pandas(v) for k, v in raw.items()}
     return CompareResult(
         schema_compare=schema_compare,
