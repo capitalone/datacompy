@@ -204,6 +204,25 @@ class SchemaCompareResult:
     left_only: List[str]
     right_only: List[str]
 
+    def are_equal(self, check_column_order: bool = True) -> bool:
+        if len(self.left_only) > 0 or len(self.right_only) > 0:
+            return False
+        if check_column_order:
+            return self.schema1.names == self.schema2.names
+        return True
+
+    def get_stats(self) -> Dict[str, Any]:
+        return {
+            "left_schema": str(self.schema1),
+            "right_schema": str(self.schema2),
+            "intersect_cols": ",".join(self.intersect_cols),
+            "join_cols": ",".join(self.join_cols),
+            "value_cols": ",".join(self.value_cols),
+            "common_col_count": len(self.value_cols),
+            "left_only_cols": ",".join(self.left_only),
+            "right_only_cols": ",".join(self.right_only),
+        }
+
     def is_floating(self, name: str) -> bool:
         tp = self.schema1[name].type
         tp2 = self.schema2[name].type
@@ -234,10 +253,37 @@ class CompareResult:
     df1_samples: Optional[pd.DataFrame]
     df2_samples: Optional[pd.DataFrame]
 
+    def are_equal(self, check_column_order: bool = True) -> bool:
+        if not self.schema_compare.are_equal(check_column_order=check_column_order):
+            return False
+        diff = self.get_diff_summary()
+        return diff["diff"].sum() == 0 and diff["null_diff"].sum() == 0
+
+    def get_stats(self) -> Dict[str, Any]:
+        schema_stats = self.schema_compare.get_stats()
+        counts = self.get_row_counts()
+        row_diff_count = self.get_common_rows_diff_count()
+        row_equal_count = counts.get(3, 0) - row_diff_count
+        rows_stats = {
+            "left_only_row_count": counts.get(1, 0),
+            "right_only_row_count": counts.get(2, 0),
+            "common_row_count": counts.get(3, 0),
+            "common_row_diff_count": row_diff_count,
+            "common_row_equal_count": row_equal_count,
+        }
+        rows_stats.update(schema_stats)
+        return rows_stats
+
     def get_row_counts(self) -> Dict[int, int]:
         return (
             self.raw_diff_summary.groupby(_SIDE_FLAG)[_TOTAL_COUNT_COL].sum().to_dict()
         )
+
+    def get_common_rows_diff_count(self) -> int:
+        sub = self.raw_diff_summary[self.raw_diff_summary[_SIDE_FLAG] == 3]
+        if len(sub) == 0:
+            return 0
+        return int(sub[_ROW_DIFF_FLAG].sum())
 
     def get_diff_summary(self) -> pd.DataFrame:
         res: List[Dict[str, Any]] = []
@@ -289,7 +335,7 @@ class _FugueSQLBuilder:
         abs_tol: float = 0,
         rel_tol: float = 0,
     ) -> None:
-        assert rel_tol == 0, "Relative tolerance is not supported"
+        assert rel_tol >= 0, "Relative tolerance must be non-negative"
         assert abs_tol >= 0, "Absolute tolerance must be non-negative"
         self.abs_tol = abs_tol
         self.rel_tol = rel_tol
@@ -429,8 +475,17 @@ diff_summary =
         _no_null = f"({_fa} IS NOT NULL AND {_fb} IS NOT NULL)"
         if pa.types.is_string(tp):
             c = f"{_fa} = {_fb}"
-        elif self.abs_tol > 0 and is_floating:
-            c = f"({_fa} - {_fb} <= {self.abs_tol} AND {_fa} - {_fb} >= -1 * {self.abs_tol})"
+        elif (self.abs_tol > 0 or self.rel_tol > 0) and is_floating:
+            # https://numpy.org/doc/stable/reference/generated/numpy.isclose.html
+            # absolute(a - b) <= (atol + rtol * absolute(b))
+            # c = f"ABS({_fa}-{_fb}) <= {self.abs_tol}+{_fb}*ABS({self.rel_tol})"
+            a_b_sq = f"({_fa}-{_fb})*({_fa}-{_fb})"
+            diff_pos = f"({self.abs_tol}+{_fb}*{self.rel_tol})"
+            diff_neg = f"({self.abs_tol}-{_fb}*{self.rel_tol})"
+            c = (
+                f"CASE WHEN {_fb}>0 THEN {a_b_sq} < {diff_pos}*{diff_pos} "
+                f"ELSE {a_b_sq} < {diff_neg}*{diff_neg} END"
+            )
         else:
             c = f"{_fa} = {_fb}"
         diff_col = _quote_name(_DIFF_PREFIX + name)
