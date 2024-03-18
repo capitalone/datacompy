@@ -23,7 +23,6 @@ import pytest
 
 pytest.importorskip("pyspark")
 
-import pyspark.pandas as ps  # noqa: E402
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import (
     DateType,
@@ -2102,7 +2101,7 @@ def test_unicode_columns(spark_session):
     df2 = spark_session.createDataFrame(
         [{"a": 1, "例": 2}, {"a": 1, "例": 3}]
     )
-    compare = LegacySparkCompare(
+    compare = SparkCompare(
         spark_session, df1, df2, join_columns=["例"]
     )
     # Just render the report to make sure it renders.
