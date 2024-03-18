@@ -23,6 +23,7 @@ import pytest
 
 pytest.importorskip("pyspark")
 
+import pyspark.pandas as ps  # noqa: E402
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import (
     DateType,
@@ -2093,3 +2094,12 @@ def text_alignment_validator(
 
         if not at_column_section and section_start in line:
             at_column_section = True
+
+def test_unicode_columns(spark_session):
+    df1 = ps.DataFrame([{"a": 1, "例": 2}, {"a": 1, "例": 3}])
+    df2 = ps.DataFrame([{"a": 1, "例": 2}, {"a": 1, "例": 3}])
+    compare = LegacySparkCompare(
+        spark_session, df1.to_spark(), df2.to_spark(), join_columns=["例"]
+    )
+    # Just render the report to make sure it renders.
+    compare.report()
