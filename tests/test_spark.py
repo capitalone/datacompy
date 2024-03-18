@@ -2096,10 +2096,14 @@ def text_alignment_validator(
             at_column_section = True
 
 def test_unicode_columns(spark_session):
-    df1 = ps.DataFrame([{"a": 1, "例": 2}, {"a": 1, "例": 3}])
-    df2 = ps.DataFrame([{"a": 1, "例": 2}, {"a": 1, "例": 3}])
+    df1 = spark_session.createDataFrame(
+        [{"a": 1, "例": 2}, {"a": 1, "例": 3}]
+    )
+    df2 = spark_session.createDataFrame(
+        [{"a": 1, "例": 2}, {"a": 1, "例": 3}]
+    )
     compare = LegacySparkCompare(
-        spark_session, df1.to_spark(), df2.to_spark(), join_columns=["例"]
+        spark_session, df1, df2, join_columns=["例"]
     )
     # Just render the report to make sure it renders.
     compare.report()
