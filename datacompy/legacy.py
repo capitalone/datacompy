@@ -531,7 +531,7 @@ class LegacySparkCompare:
 
         where_cond = " AND ".join(
             [
-                "A." + name + "=" + str(MatchType.MATCH.value)
+                "A.`" + name + "`=" + str(MatchType.MATCH.value)
                 for name in self.columns_compared
             ]
         )
