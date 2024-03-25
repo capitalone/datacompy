@@ -40,7 +40,7 @@ LOG = logging.getLogger(__name__)
 
 
 class SparkCompare(BaseCompare):
-    """Comparison class to be used to compare whether two Pandas on Spark dataframes as equal.
+    """Comparison class to be used to compare whether two Pandas on Spark dataframes are equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
     with unique column names. Differences between values are compared to

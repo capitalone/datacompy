@@ -27,7 +27,7 @@ except ImportError:
 
 
 warn(
-    f"The module {__name__} is deprecated. In future versions (0.12.0 and above) SparkCompare will be refactored and the legacy logic will move to LegacySparkCompare ",
+    f"The module {__name__} is deprecated. In future versions LegacySparkCompare will be completely removed.",
     DeprecationWarning,
     stacklevel=2,
 )

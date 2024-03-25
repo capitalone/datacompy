@@ -17,8 +17,8 @@ Spark (Pandas on Spark) Usage
     
 
 
-DataComPy's Panads on Spark implementation ``SparkCompare`` (new in ``v0.12.0``) 
-is very similar port of the Pandas version
+DataComPy's Pandas on Spark implementation ``SparkCompare`` (new in ``v0.12.0``) 
+is a very similar port of the Pandas version
 
 - ``on_index`` is NOT supported like in ``PandasCompare``
 - Joining is done using ``<=>`` which is the equality test that is safe for null values.
@@ -35,8 +35,8 @@ Supported Version
 
 
 Until then we will not be supporting Pandas 2 for the Pandas on Spark API implementaion.
-For Fugue and the Native Pandas implementation Pandas 2 is support. 
-If you need to use Spark DataFrame with Pandas 2+ then consider using Fugue otherwise downgrade to Pandas 1.5.3
+For Fugue and the Native Pandas implementation Pandas 2 is supported. If you need to use Spark DataFrame with 
+Pandas 2+ then consider using Fugue otherwise downgrade to Pandas 1.5.3
 
 
 SparkCompare Object Setup
