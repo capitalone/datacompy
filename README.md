@@ -52,7 +52,7 @@ import datacompy.legacy.LegacySparkCompare
 
 #### Supported versions and dependncies
 
-Different versions of Spark, Pnadas, and Python interact differently. Below is a matrix of what we test with. 
+Different versions of Spark, Pandas, and Python interact differently. Below is a matrix of what we test with. 
 With the move to Pandas on Spark API and compatability issues with Pandas 2+ we will for the mean time note support Pandas 2 
 with the Pandas on Spark implementation. Spark plans to support Pandas 2 in [Spark 4](https://issues.apache.org/jira/browse/SPARK-44101)
 
