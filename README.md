@@ -19,7 +19,7 @@ Then extended to carry that functionality over to Spark Dataframes.
 pip install datacompy
 ```
 
-or 
+or
 
 ```shell
 conda install datacompy
@@ -50,18 +50,17 @@ Different versions of Spark play nicely with only certain versions of Python bel
 | Python 3.12 | ❌           | ❌           | ❌           | ❌          | ❌          |
 
 
-:::{note}
-At the current time Python ``3.12`` is not supported by Spark and also Ray within Fugue.
-:::
+> [!NOTE]
+> At the current time Python `3.12` is not supported by Spark and also Ray within Fugue.
 
 ## Supported backends
 
 - Pandas: ([See documentation](https://capitalone.github.io/datacompy/pandas_usage.html))
 - Spark: ([See documentation](https://capitalone.github.io/datacompy/spark_usage.html))
 - Polars (Experimental): ([See documentation](https://capitalone.github.io/datacompy/polars_usage.html))
-- Fugue is a Python library that provides a unified interface for data processing on Pandas, DuckDB, Polars, Arrow, 
-  Spark, Dask, Ray, and many other backends. DataComPy integrates with Fugue to provide a simple way to compare data 
-  across these backends. Please note that Fugue will use the Pandas (Native) logic at its lowest level 
+- Fugue is a Python library that provides a unified interface for data processing on Pandas, DuckDB, Polars, Arrow,
+  Spark, Dask, Ray, and many other backends. DataComPy integrates with Fugue to provide a simple way to compare data
+  across these backends. Please note that Fugue will use the Pandas (Native) logic at its lowest level
   ([See documentation](https://capitalone.github.io/datacompy/fugue_usage.html))
 
 ## Contributors
