@@ -1311,8 +1311,12 @@ def test_pandas_version():
 
 @pandas_version
 def test_unicode_columns():
-    df1 = ps.DataFrame([{"a": 1, "例": 2}, {"a": 1, "例": 3}])
-    df2 = ps.DataFrame([{"a": 1, "例": 2}, {"a": 1, "例": 3}])
+    df1 = ps.DataFrame(
+        [{"a": 1, "例": 2, "予測対象日": "test"}, {"a": 1, "例": 3, "予測対象日": "test"}]
+    )
+    df2 = ps.DataFrame(
+        [{"a": 1, "例": 2, "予測対象日": "test"}, {"a": 1, "例": 3, "予測対象日": "test"}]
+    )
     compare = SparkCompare(df1, df2, join_columns=["例"])
     assert compare.matches()
     # Just render the report to make sure it renders.
