@@ -12,12 +12,12 @@ maintainers = [
 ]
 license = {text = "Apache Software License"}
 dependencies = [
-    "pandas<=2.2.0,>=0.25.0",
-    "numpy<=1.26.4,>=1.22.0",
-    "ordered-set<=4.1.0,>=4.0.2",
-    "fugue[sql,duckdb]==0.9.0.dev2",
+    "pandas<=2.2.1,>=0.25.0", 
+    "numpy<=1.26.4,>=1.22.0", 
+    "ordered-set<=4.1.0,>=4.0.2", 
+    "fugue<=0.9.0,>=0.9.0"
 ]
-requires-python = ">=3.8.0"
+requires-python = ">=3.9.0"
 classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
@@ -25,7 +25,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -61,12 +60,12 @@ python-tag = "py3"
 [project.optional-dependencies]
 polars = ["polars"]
 spark = [
-    "fugue[spark]==0.9.0.dev2",
+    "fugue[spark]==0.9.0",
     "pyspark>=3.1.1; python_version < '3.11'",
     "pyspark>=3.4; python_version >= '3.11'",
 ]
-dask = ["fugue[dask]==0.9.0.dev2"]
-ray = ["fugue[ray]==0.9.0.dev2"]
+dask = ["fugue[dask]==0.9.0"]
+ray = ["fugue[ray]==0.9.0"]
 docs = [
     "sphinx",
     "furo",
@@ -76,7 +75,7 @@ tests = [
     "pytest",
     "pytest-cov",
     "pytest-benchmark",
-    "fugue[cpp_sql_parser]==0.9.0.dev2",
+    "fugue[cpp_sql_parser]==0.9.0",
 ]
 
 tests-spark = [
