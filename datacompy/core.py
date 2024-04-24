@@ -517,8 +517,8 @@ class Compare(BaseCompare):
                 orig_col_name = col[:-6]
 
                 col_comparison = columns_equal(
-                    self.intersect_rows[orig_col_name + "_df1"],
-                    self.intersect_rows[orig_col_name + "_df2"],
+                    self.intersect_rows[orig_col_name + self.df1_name],
+                    self.intersect_rows[orig_col_name + self.df2_name],
                     self.rel_tol,
                     self.abs_tol,
                     self.ignore_spaces,
