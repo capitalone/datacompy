@@ -568,7 +568,7 @@ class SparkCompare(BaseCompare):
 
                 col_comparison = columns_equal(
                     self.intersect_rows[orig_col_name + "_" + self.df1_name],
-                    self.intersect_rows[orig_col_name + "_" + self.df1_name],
+                    self.intersect_rows[orig_col_name + "_" + self.df2_name],
                     self.rel_tol,
                     self.abs_tol,
                     self.ignore_spaces,
@@ -583,7 +583,7 @@ class SparkCompare(BaseCompare):
                     return_list.extend(
                         [
                             orig_col_name + "_" + self.df1_name,
-                            orig_col_name + "_" + self.df1_name,
+                            orig_col_name + "_" + self.df2_name,
                         ]
                     )
                 elif ignore_matching_cols:
@@ -596,7 +596,7 @@ class SparkCompare(BaseCompare):
         updated_join_columns = []
         for c in self.join_columns:
             updated_join_columns.append(c + "_" + self.df1_name)
-            updated_join_columns.append(c + "_" + self.df1_name)
+            updated_join_columns.append(c + "_" + self.df2_name)
 
         return self.intersect_rows[~mm_bool][updated_join_columns + return_list]
 
