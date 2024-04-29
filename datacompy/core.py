@@ -20,6 +20,7 @@ Originally this package was meant to provide similar functionality to
 PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
+
 import logging
 import os
 from typing import Any, Dict, List, Optional, Union, cast
@@ -283,7 +284,11 @@ class Compare(BaseCompare):
                     self.df2[column] = self.df2[column].str.strip()
 
         outer_join = self.df1.merge(
-            self.df2, how="outer", suffixes=("_df1", "_df2"), indicator=True, **params
+            self.df2,
+            how="outer",
+            suffixes=("_" + self.df1_name, "_" + self.df2_name),
+            indicator=True,
+            **params,
         )
         # Clean up temp columns for duplicate row matching
         if self._any_dupes:
@@ -295,8 +300,8 @@ class Compare(BaseCompare):
             self.df1.drop(order_column, axis=1, inplace=True)
             self.df2.drop(order_column, axis=1, inplace=True)
 
-        df1_cols = get_merged_columns(self.df1, outer_join, "_df1")
-        df2_cols = get_merged_columns(self.df2, outer_join, "_df2")
+        df1_cols = get_merged_columns(self.df1, outer_join, self.df1_name)
+        df2_cols = get_merged_columns(self.df2, outer_join, self.df2_name)
 
         LOG.debug("Selecting df1 unique rows")
         self.df1_unq_rows = outer_join[outer_join["_merge"] == "left_only"][
@@ -334,8 +339,8 @@ class Compare(BaseCompare):
                 max_diff = 0.0
                 null_diff = 0
             else:
-                col_1 = column + "_df1"
-                col_2 = column + "_df2"
+                col_1 = column + "_" + self.df1_name
+                col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
                 self.intersect_rows[col_match] = columns_equal(
                     self.intersect_rows[col_1],
@@ -484,7 +489,10 @@ class Compare(BaseCompare):
         match_cnt = col_match.sum()
         sample_count = min(sample_count, row_cnt - match_cnt)
         sample = self.intersect_rows[~col_match].sample(sample_count)
-        return_cols = self.join_columns + [column + "_df1", column + "_df2"]
+        return_cols = self.join_columns + [
+            column + "_" + self.df1_name,
+            column + "_" + self.df2_name,
+        ]
         to_return = sample[return_cols]
         if for_display:
             to_return.columns = pd.Index(
@@ -517,8 +525,8 @@ class Compare(BaseCompare):
                 orig_col_name = col[:-6]
 
                 col_comparison = columns_equal(
-                    self.intersect_rows[orig_col_name + "_df1"],
-                    self.intersect_rows[orig_col_name + "_df2"],
+                    self.intersect_rows[orig_col_name + "_" + self.df1_name],
+                    self.intersect_rows[orig_col_name + "_" + self.df2_name],
                     self.rel_tol,
                     self.abs_tol,
                     self.ignore_spaces,
@@ -530,7 +538,12 @@ class Compare(BaseCompare):
                 ):
                     LOG.debug(f"Adding column {orig_col_name} to the result.")
                     match_list.append(col)
-                    return_list.extend([orig_col_name + "_df1", orig_col_name + "_df2"])
+                    return_list.extend(
+                        [
+                            orig_col_name + "_" + self.df1_name,
+                            orig_col_name + "_" + self.df2_name,
+                        ]
+                    )
                 elif ignore_matching_cols:
                     LOG.debug(
                         f"Column {orig_col_name} is equal in df1 and df2. It will not be added to the result."
@@ -613,7 +626,6 @@ class Compare(BaseCompare):
         )
 
         # Column Matching
-        cnt_intersect = self.intersect_rows.shape[0]
         report += render(
             "column_comparison.txt",
             len([col for col in self.column_stats if col["unequal_cnt"] > 0]),
@@ -804,7 +816,7 @@ def columns_equal(
                     compare = pd.Series(
                         (col_1 == col_2) | (col_1.isnull() & col_2.isnull())
                     )
-            except:
+            except Exception:
                 # Blanket exception should just return all False
                 compare = pd.Series(False, index=col_1.index)
     compare.index = col_1.index
@@ -842,13 +854,13 @@ def compare_string_and_date_columns(
             (pd.to_datetime(obj_column) == date_column)
             | (obj_column.isnull() & date_column.isnull())
         )
-    except:
+    except Exception:
         try:
             return pd.Series(
                 (pd.to_datetime(obj_column, format="mixed") == date_column)
                 | (obj_column.isnull() & date_column.isnull())
             )
-        except:
+        except Exception:
             return pd.Series(False, index=col_1.index)
 
 
@@ -871,8 +883,8 @@ def get_merged_columns(
     for col in original_df.columns:
         if col in merged_df.columns:
             columns.append(col)
-        elif col + suffix in merged_df.columns:
-            columns.append(col + suffix)
+        elif col + "_" + suffix in merged_df.columns:
+            columns.append(col + "_" + suffix)
         else:
             raise ValueError("Column not found: %s", col)
     return columns
@@ -920,7 +932,7 @@ def calculate_max_diff(col_1: "pd.Series[Any]", col_2: "pd.Series[Any]") -> floa
     """
     try:
         return cast(float, (col_1.astype(float) - col_2.astype(float)).abs().max())
-    except:
+    except Exception:
         return 0.0
 
 

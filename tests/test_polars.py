@@ -1231,7 +1231,7 @@ def test_dupes_with_nulls():
         ),
         (
             pl.DataFrame(
-                {"a": [datetime(2018, 1, 1), np.nan, np.nan], "b": ["1", "2", "2"]}
+                {"a": [datetime(2018, 1, 1), None, None], "b": ["1", "2", "2"]}
             ),
             pl.Series([1, 1, 2]),
         ),
