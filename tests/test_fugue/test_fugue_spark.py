@@ -22,6 +22,7 @@ from datacompy import (
     Compare,
     all_columns_match,
     all_rows_overlap,
+    count_matching_rows,
     intersect_columns,
     is_match,
     report,
@@ -199,4 +200,45 @@ def test_all_rows_overlap_spark(
         spark_session.sql("SELECT 'a' AS a, 'b' AS b"),
         spark_session.sql("SELECT 'a' AS a, 'b' AS b"),
         join_columns="a",
+    )
+
+
+def test_count_matching_rows_spark(spark_session, count_matching_rows_df):
+    count_matching_rows_df[0].iteritems = count_matching_rows_df[
+        0
+    ].items  # pandas 2 compatibility
+    count_matching_rows_df[1].iteritems = count_matching_rows_df[
+        1
+    ].items  # pandas 2 compatibility
+    df1 = spark_session.createDataFrame(count_matching_rows_df[0])
+    df1_copy = spark_session.createDataFrame(count_matching_rows_df[0])
+    df2 = spark_session.createDataFrame(count_matching_rows_df[1])
+    assert (
+        count_matching_rows(
+            df1,
+            df1_copy,
+            join_columns="a",
+        )
+        == 100
+    )
+    assert count_matching_rows(df1, df2, join_columns="a") == 10
+    # Fugue
+
+    assert (
+        count_matching_rows(
+            df1,
+            df1_copy,
+            join_columns="a",
+            parallelism=2,
+        )
+        == 100
+    )
+    assert (
+        count_matching_rows(
+            df1,
+            df2,
+            join_columns="a",
+            parallelism=2,
+        )
+        == 10
     )

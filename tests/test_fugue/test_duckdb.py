@@ -20,6 +20,7 @@ from pytest import raises
 from datacompy import (
     all_columns_match,
     all_rows_overlap,
+    count_matching_rows,
     intersect_columns,
     is_match,
     unq_columns,
@@ -137,4 +138,41 @@ def test_all_rows_overlap_duckdb(
             duckdb.sql("SELECT 'a' AS a, 'b' AS b"),
             duckdb.sql("SELECT 'a' AS a, 'b' AS b"),
             join_columns="a",
+        )
+
+
+def test_count_matching_rows_duckdb(count_matching_rows_df):
+    with duckdb.connect():
+        df1 = duckdb.from_df(count_matching_rows_df[0])
+        df1_copy = duckdb.from_df(count_matching_rows_df[0])
+        df2 = duckdb.from_df(count_matching_rows_df[1])
+
+        assert (
+            count_matching_rows(
+                df1,
+                df1_copy,
+                join_columns="a",
+            )
+            == 100
+        )
+        assert count_matching_rows(df1, df2, join_columns="a") == 10
+        # Fugue
+
+        assert (
+            count_matching_rows(
+                df1,
+                df1_copy,
+                join_columns="a",
+                parallelism=2,
+            )
+            == 100
+        )
+        assert (
+            count_matching_rows(
+                df1,
+                df2,
+                join_columns="a",
+                parallelism=2,
+            )
+            == 10
         )
