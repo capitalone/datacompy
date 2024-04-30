@@ -21,7 +21,7 @@ jobs:
       matrix:
         python-version: [3.9, '3.10', '3.11']
         spark-version: [3.2.4, 3.3.4, 3.4.2, 3.5.1]
-        pandas-version: [2.2.1, 1.5.3]
+        pandas-version: [2.2.2, 1.5.3]
         exclude:
           - python-version: '3.11'
             spark-version: 3.2.4
