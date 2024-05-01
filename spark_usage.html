@@ -5,10 +5,10 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Polars Usage" href="polars_usage.html" /><link rel="prev" title="Pandas Usage" href="pandas_usage.html" />
 
-    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Spark Usage - datacompy 0.11.3 documentation</title>
+    <!-- Generated with Sphinx 7.3.7 and Furo 2024.04.27 -->
+        <title>Spark (Pandas on Spark) Usage - datacompy 0.12.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=437aa6ec" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
     
     
@@ -112,6 +112,8 @@
   <div class="visually-hidden">Hide table of contents sidebar</div>
 </label>
 
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
 
 
 <div class="page">
@@ -123,7 +125,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.11.3 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.12.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -146,7 +148,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.11.3 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.12.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -157,7 +159,7 @@
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Spark Usage</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Spark (Pandas on Spark) Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
@@ -202,267 +204,302 @@
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
-        <article role="main">
-          <section id="spark-usage">
-<h1>Spark Usage<a class="headerlink" href="#spark-usage" title="Link to this heading">#</a></h1>
+        <article role="main" id="furo-main-content">
+          <section id="spark-pandas-on-spark-usage">
+<h1>Spark (Pandas on Spark) Usage<a class="headerlink" href="#spark-pandas-on-spark-usage" title="Link to this heading">¶</a></h1>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>With version <code class="docutils literal notranslate"><span class="pre">v0.9.0</span></code> SparkCompare now uses Null Safe (<code class="docutils literal notranslate"><span class="pre">&lt;=&gt;</span></code>) comparisons</p>
-</div>
-<p>DataComPy’s <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> class will join two dataframes either on a list of join
-columns. It has the capability to map column names that may be different in each
-dataframe, including in the join columns. You are responsible for creating the
-dataframes from any source which Spark can handle and specifying a unique join
-key. If there are duplicates in either dataframe by join key, the match process
-will remove the duplicates before joining (and tell you how many duplicates were
-found).</p>
-<p>As with the Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code> class, comparisons will be attempted even
-if dtypes don’t match. Any schema differences will be reported in the output
-as well as in any mismatch reports, so that you can assess whether or not a
-type mismatch is a problem or not.</p>
-<p>The main reasons why you would choose to use <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> over <code class="docutils literal notranslate"><span class="pre">Compare</span></code>
-are that your data is too large to fit into memory, or you’re comparing data
-that works well in a Spark environment, like partitioned Parquet, CSV, or JSON
-files, or Cerebro tables.</p>
-<section id="basic-usage">
-<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">#</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">import</span> <span class="nn">datacompy</span>
-<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">Row</span>
-
-<span class="c1"># This example assumes you have a SparkSession named &quot;spark&quot; in your environment, as you</span>
-<span class="c1"># do when running `pyspark` from the terminal or in a Databricks notebook (Spark v2.0 and higher)</span>
-
-<span class="n">data1</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Maharis&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.1555</span><span class="p">,</span>
-        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Bob Loblaw&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">,</span>
-        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001239</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Lucille Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="p">]</span>
-
-<span class="n">data2</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.4</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.155</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Robert Loblaw&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001238</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Loose Seal Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">111.0</span><span class="p">)</span>
-<span class="p">]</span>
-
-<span class="n">base_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">data1</span><span class="p">)</span>
-<span class="n">compare_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">data2</span><span class="p">)</span>
-
-<span class="n">comparison</span> <span class="o">=</span> <span class="n">datacompy</span><span class="o">.</span><span class="n">SparkCompare</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">base_df</span><span class="p">,</span> <span class="n">compare_df</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;acct_id&#39;</span><span class="p">])</span>
-
-<span class="c1"># This prints out a human-readable report summarizing differences</span>
-<span class="n">comparison</span><span class="o">.</span><span class="n">report</span><span class="p">()</span>
+<p>With version <code class="docutils literal notranslate"><span class="pre">v0.12.0</span></code> the original <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> is now replaced with a
+Pandas on Spark implementation. The original <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> implementation
+differs from all the other native implementations. To align the API better,
+and keep behaviour consistent we are deprecating the original <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>
+into a new module <code class="docutils literal notranslate"><span class="pre">LegacySparkCompare</span></code></p>
+<p>If you wish to use the old SparkCompare moving forward you can</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datacompy.legacy.LegacySparkCompare</span>
 </pre></div>
 </div>
-</section>
-<section id="using-sparkcompare-on-emr-or-standalone-spark">
-<h2>Using SparkCompare on EMR or standalone Spark<a class="headerlink" href="#using-sparkcompare-on-emr-or-standalone-spark" title="Link to this heading">#</a></h2>
-<ol class="arabic simple">
-<li><p>Set proxy variables</p></li>
-<li><p>Create a virtual environment, if desired (<code class="docutils literal notranslate"><span class="pre">virtualenv</span> <span class="pre">venv;</span> <span class="pre">source</span> <span class="pre">venv/bin/activate</span></code>)</p></li>
-<li><p>Pip install datacompy and requirements</p></li>
-<li><p>Ensure your SPARK_HOME environment variable is set (this is probably <code class="docutils literal notranslate"><span class="pre">/usr/lib/spark</span></code> but may
-differ based on your installation)</p></li>
-<li><p>Augment your PYTHONPATH environment variable with
-<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$SPARK_HOME/python:$PYTHONPATH</span></code>
-(note that your version of py4j may differ depending on the version of Spark you’re using)</p></li>
-</ol>
-</section>
-<section id="using-sparkcompare-on-databricks">
-<h2>Using SparkCompare on Databricks<a class="headerlink" href="#using-sparkcompare-on-databricks" title="Link to this heading">#</a></h2>
-<ol class="arabic simple">
-<li><p>Clone this repository locally</p></li>
-<li><p>Create a datacompy egg by running <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">bdist_egg</span></code> from the repo root directory.</p></li>
-<li><p>From the Databricks front page, click the “Library” link under the “New” section.</p></li>
-<li><dl class="simple">
-<dt>On the New library page:</dt><dd><ol class="loweralpha simple">
-<li><p>Change source to “Upload Python Egg or PyPi”</p></li>
-<li><p>Under “Upload Egg”, Library Name should be “datacompy”</p></li>
-<li><p>Drag the egg file in datacompy/dist/ to the “Drop library egg here to upload” box</p></li>
-<li><p>Click the “Create Library” button</p></li>
-</ol>
-</dd>
-</dl>
-</li>
-<li><p>Once the library has been created, from the library page (which you can find in your /Users/{login} workspace),
-you can choose clusters to attach the library to.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">datacompy</span></code> in a notebook attached to the cluster that the library is attached to and enjoy!</p></li>
-</ol>
-</section>
-<section id="performance-implications">
-<h2>Performance Implications<a class="headerlink" href="#performance-implications" title="Link to this heading">#</a></h2>
-<p>Spark scales incredibly well, so you can use <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> to compare
-billions of rows of data, provided you spin up a big enough cluster. Still,
-joining billions of rows of data is an inherently large task, so there are a
-couple of things you may want to take into consideration when getting into the
-cliched realm of “big data”:</p>
+</div>
+<p>DataComPy’s Pandas on Spark implementation <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> (new in <code class="docutils literal notranslate"><span class="pre">v0.12.0</span></code>)
+is a very similar port of the Pandas version</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> will compare all columns in common in the dataframes and
-report on the rest. If there are columns in the data that you don’t care to
-compare, use a <code class="docutils literal notranslate"><span class="pre">select</span></code> statement/method on the dataframe(s) to filter
-those out. Particularly when reading from wide Parquet files, this can make
-a huge difference when the columns you don’t care about don’t have to be
-read into memory and included in the joined dataframe.</p></li>
-<li><p>For large datasets, adding <code class="docutils literal notranslate"><span class="pre">cache_intermediates=True</span></code> to the <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>
-call can help optimize performance by caching certain intermediate dataframes
-in memory, like the de-duped version of each input dataset, or the joined
-dataframe. Otherwise, Spark’s lazy evaluation will recompute those each time
-it needs the data in a report or as you access instance attributes. This may
-be fine for smaller dataframes, but will be costly for larger ones. You do
-need to ensure that you have enough free cache memory before you do this, so
-this parameter is set to False by default.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">on_index</span></code> is NOT supported like in <code class="docutils literal notranslate"><span class="pre">PandasCompare</span></code></p></li>
+<li><p>Joining is done using <code class="docutils literal notranslate"><span class="pre">&lt;=&gt;</span></code> which is the equality test that is safe for null values.</p></li>
+<li><p>In the backend we are using the Pandas on Spark API. This might be less optimal than
+native Spark code but allows for better maintainability and readability.</p></li>
 </ul>
+<section id="supported-version">
+<h2>Supported Version<a class="headerlink" href="#supported-version" title="Link to this heading">¶</a></h2>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Spark will not offically support Pandas 2 until Spark 4: <a class="reference external" href="https://issues.apache.org/jira/browse/SPARK-44101">https://issues.apache.org/jira/browse/SPARK-44101</a></p>
+</div>
+<p>Until then we will not be supporting Pandas 2 for the Pandas on Spark API implementaion.
+For Fugue and the Native Pandas implementation Pandas 2 is supported. If you need to use Spark DataFrame with
+Pandas 2+ then consider using Fugue otherwise downgrade to Pandas 1.5.3</p>
 </section>
-<section id="known-differences">
-<h2>Known Differences<a class="headerlink" href="#known-differences" title="Link to this heading">#</a></h2>
-<p>For cases when two dataframes are expected to differ, it can be helpful to cluster detected
-differences into three categories: matches, known differences, and true mismatches. Known
-differences can be specified through an optional parameter:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">SparkCompare</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">base_df</span><span class="p">,</span> <span class="n">compare_df</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="n">column_mapping</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span>
-    <span class="n">known_differences</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="p">{</span>
-         <span class="s1">&#39;name&#39;</span><span class="p">:</span>  <span class="s2">&quot;My Known Difference Name&quot;</span><span class="p">,</span>
-         <span class="s1">&#39;types&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="s1">&#39;bigint&#39;</span><span class="p">],</span>
-         <span class="s1">&#39;flags&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;nullcheck&#39;</span><span class="p">],</span>
-         <span class="s1">&#39;transformation&#39;</span><span class="p">:</span> <span class="s2">&quot;case when </span><span class="si">{input}</span><span class="s2">=0 then null else </span><span class="si">{input}</span><span class="s2"> end&quot;</span>
-        <span class="p">},</span>
-        <span class="o">...</span>
-    <span class="p">]</span>
+<section id="sparkcompare-object-setup">
+<h2>SparkCompare Object Setup<a class="headerlink" href="#sparkcompare-object-setup" title="Link to this heading">¶</a></h2>
+<p>There is currently only one supported method for joining your dataframes - by
+join column(s).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">pyspark.pandas</span> <span class="k">as</span> <span class="nn">ps</span>
+<span class="kn">from</span> <span class="nn">datacompy</span> <span class="kn">import</span> <span class="n">SparkCompare</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
+
+<span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+
+<span class="n">data1</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld,date_fld</span>
+<span class="s2">10000001234,123.45,George Maharis,14530.1555,2017-01-01</span>
+<span class="s2">10000001235,0.45,Michael Bluth,1,2017-01-01</span>
+<span class="s2">10000001236,1345,George Bluth,,2017-01-01</span>
+<span class="s2">10000001237,123456,Bob Loblaw,345.12,2017-01-01</span>
+<span class="s2">10000001239,1.05,Lucille Bluth,,2017-01-01</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">data2</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld</span>
+<span class="s2">10000001234,123.4,George Michael Bluth,14530.155</span>
+<span class="s2">10000001235,0.45,Michael Bluth,</span>
+<span class="s2">10000001236,1345,George Bluth,1</span>
+<span class="s2">10000001237,123456,Robert Loblaw,345.12</span>
+<span class="s2">10000001238,1.05,Loose Seal Bluth,111</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">df1</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">from_pandas</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data1</span><span class="p">)))</span>
+<span class="n">df2</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">from_pandas</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data2</span><span class="p">)))</span>
+
+<span class="n">compare</span> <span class="o">=</span> <span class="n">SparkCompare</span><span class="p">(</span>
+    <span class="n">df1</span><span class="p">,</span>
+    <span class="n">df2</span><span class="p">,</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1"># You can also specify a list of columns</span>
+    <span class="n">abs_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Optional, defaults to 0</span>
+    <span class="n">rel_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Optional, defaults to 0</span>
+    <span class="n">df1_name</span><span class="o">=</span><span class="s1">&#39;Original&#39;</span><span class="p">,</span>  <span class="c1"># Optional, defaults to &#39;df1&#39;</span>
+    <span class="n">df2_name</span><span class="o">=</span><span class="s1">&#39;New&#39;</span>  <span class="c1"># Optional, defaults to &#39;df2&#39;</span>
 <span class="p">)</span>
+<span class="n">compare</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">ignore_extra_columns</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1"># False</span>
+<span class="c1"># This method prints out a human-readable report summarizing and sampling differences</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">report</span><span class="p">())</span>
 </pre></div>
 </div>
-<p>The ‘known_differences’ parameter is a list of Python dicts with the following fields:</p>
+</section>
+<section id="reports">
+<h2>Reports<a class="headerlink" href="#reports" title="Link to this heading">¶</a></h2>
+<p>A report is generated by calling <code class="docutils literal notranslate"><span class="pre">SparkCompare.report()</span></code>, which returns a string.
+Here is a sample report generated by <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> for the two tables above,
+joined on <code class="docutils literal notranslate"><span class="pre">acct_id</span></code> (Note: if you don’t specify <code class="docutils literal notranslate"><span class="pre">df1_name</span></code> and/or <code class="docutils literal notranslate"><span class="pre">df2_name</span></code>,
+then any instance of “original” or “new” in the report is replaced with “df1”
+and/or “df2”.):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataComPy</span> <span class="n">Comparison</span>
+<span class="o">--------------------</span>
+
+<span class="n">DataFrame</span> <span class="n">Summary</span>
+<span class="o">-----------------</span>
+
+  <span class="n">DataFrame</span>  <span class="n">Columns</span>  <span class="n">Rows</span>
+<span class="mi">0</span>  <span class="n">Original</span>        <span class="mi">5</span>     <span class="mi">5</span>
+<span class="mi">1</span>       <span class="n">New</span>        <span class="mi">4</span>     <span class="mi">5</span>
+
+<span class="n">Column</span> <span class="n">Summary</span>
+<span class="o">--------------</span>
+
+<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">common</span><span class="p">:</span> <span class="mi">4</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">Original</span> <span class="n">but</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">New</span><span class="p">:</span> <span class="mi">1</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">New</span> <span class="n">but</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Original</span><span class="p">:</span> <span class="mi">0</span>
+
+<span class="n">Row</span> <span class="n">Summary</span>
+<span class="o">-----------</span>
+
+<span class="n">Matched</span> <span class="n">on</span><span class="p">:</span> <span class="n">acct_id</span>
+<span class="n">Any</span> <span class="n">duplicates</span> <span class="n">on</span> <span class="n">match</span> <span class="n">values</span><span class="p">:</span> <span class="n">No</span>
+<span class="n">Absolute</span> <span class="n">Tolerance</span><span class="p">:</span> <span class="mi">0</span>
+<span class="n">Relative</span> <span class="n">Tolerance</span><span class="p">:</span> <span class="mi">0</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="ow">in</span> <span class="n">common</span><span class="p">:</span> <span class="mi">4</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="ow">in</span> <span class="n">Original</span> <span class="n">but</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">New</span><span class="p">:</span> <span class="mi">1</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="ow">in</span> <span class="n">New</span> <span class="n">but</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Original</span><span class="p">:</span> <span class="mi">1</span>
+
+<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="k">with</span> <span class="n">some</span> <span class="n">compared</span> <span class="n">columns</span> <span class="n">unequal</span><span class="p">:</span> <span class="mi">4</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="k">with</span> <span class="nb">all</span> <span class="n">compared</span> <span class="n">columns</span> <span class="n">equal</span><span class="p">:</span> <span class="mi">0</span>
+
+<span class="n">Column</span> <span class="n">Comparison</span>
+<span class="o">-----------------</span>
+
+<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="n">compared</span> <span class="k">with</span> <span class="n">some</span> <span class="n">values</span> <span class="n">unequal</span><span class="p">:</span> <span class="mi">3</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="n">compared</span> <span class="k">with</span> <span class="nb">all</span> <span class="n">values</span> <span class="n">equal</span><span class="p">:</span> <span class="mi">1</span>
+<span class="n">Total</span> <span class="n">number</span> <span class="n">of</span> <span class="n">values</span> <span class="n">which</span> <span class="n">compare</span> <span class="n">unequal</span><span class="p">:</span> <span class="mi">6</span>
+
+<span class="n">Columns</span> <span class="k">with</span> <span class="n">Unequal</span> <span class="n">Values</span> <span class="ow">or</span> <span class="n">Types</span>
+<span class="o">------------------------------------</span>
+
+       <span class="n">Column</span> <span class="n">Original</span> <span class="n">dtype</span> <span class="n">New</span> <span class="n">dtype</span>  <span class="c1"># Unequal  Max Diff  # Null Diff</span>
+<span class="mi">0</span>  <span class="n">dollar_amt</span>        <span class="n">float64</span>   <span class="n">float64</span>          <span class="mi">1</span>    <span class="mf">0.0500</span>            <span class="mi">0</span>
+<span class="mi">2</span>   <span class="n">float_fld</span>        <span class="n">float64</span>   <span class="n">float64</span>          <span class="mi">3</span>    <span class="mf">0.0005</span>            <span class="mi">2</span>
+<span class="mi">1</span>        <span class="n">name</span>         <span class="nb">object</span>    <span class="nb">object</span>          <span class="mi">2</span>       <span class="n">NaN</span>            <span class="mi">0</span>
+
+<span class="n">Sample</span> <span class="n">Rows</span> <span class="k">with</span> <span class="n">Unequal</span> <span class="n">Values</span>
+<span class="o">-------------------------------</span>
+
+       <span class="n">acct_id</span>  <span class="n">dollar_amt</span> <span class="p">(</span><span class="n">Original</span><span class="p">)</span>  <span class="n">dollar_amt</span> <span class="p">(</span><span class="n">New</span><span class="p">)</span>
+<span class="mi">0</span>  <span class="mi">10000001234</span>                 <span class="mf">123.45</span>             <span class="mf">123.4</span>
+
+       <span class="n">acct_id</span> <span class="n">name</span> <span class="p">(</span><span class="n">Original</span><span class="p">)</span>            <span class="n">name</span> <span class="p">(</span><span class="n">New</span><span class="p">)</span>
+<span class="mi">0</span>  <span class="mi">10000001234</span>  <span class="n">George</span> <span class="n">Maharis</span>  <span class="n">George</span> <span class="n">Michael</span> <span class="n">Bluth</span>
+<span class="mi">3</span>  <span class="mi">10000001237</span>      <span class="n">Bob</span> <span class="n">Loblaw</span>         <span class="n">Robert</span> <span class="n">Loblaw</span>
+
+       <span class="n">acct_id</span>  <span class="n">float_fld</span> <span class="p">(</span><span class="n">Original</span><span class="p">)</span>  <span class="n">float_fld</span> <span class="p">(</span><span class="n">New</span><span class="p">)</span>
+<span class="mi">0</span>  <span class="mi">10000001234</span>            <span class="mf">14530.1555</span>        <span class="mf">14530.155</span>
+<span class="mi">1</span>  <span class="mi">10000001235</span>                <span class="mf">1.0000</span>              <span class="n">NaN</span>
+<span class="mi">2</span>  <span class="mi">10000001236</span>                   <span class="n">NaN</span>            <span class="mf">1.000</span>
+
+<span class="n">Sample</span> <span class="n">Rows</span> <span class="n">Only</span> <span class="ow">in</span> <span class="n">Original</span> <span class="p">(</span><span class="n">First</span> <span class="mi">10</span> <span class="n">Columns</span><span class="p">)</span>
+<span class="o">-----------------------------------------------</span>
+
+   <span class="n">acct_id_df1</span>  <span class="n">dollar_amt_df1</span>       <span class="n">name_df1</span>  <span class="n">float_fld_df1</span> <span class="n">date_fld_df1</span>  <span class="n">_merge_left</span>
+<span class="mi">5</span>  <span class="mi">10000001239</span>            <span class="mf">1.05</span>  <span class="n">Lucille</span> <span class="n">Bluth</span>            <span class="n">NaN</span>   <span class="mi">2017</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">01</span>         <span class="kc">True</span>
+
+<span class="n">Sample</span> <span class="n">Rows</span> <span class="n">Only</span> <span class="ow">in</span> <span class="n">New</span> <span class="p">(</span><span class="n">First</span> <span class="mi">10</span> <span class="n">Columns</span><span class="p">)</span>
+<span class="o">------------------------------------------</span>
+
+   <span class="n">acct_id_df2</span>  <span class="n">dollar_amt_df2</span>          <span class="n">name_df2</span>  <span class="n">float_fld_df2</span>  <span class="n">_merge_right</span>
+<span class="mi">4</span>  <span class="mi">10000001238</span>            <span class="mf">1.05</span>  <span class="n">Loose</span> <span class="n">Seal</span> <span class="n">Bluth</span>          <span class="mf">111.0</span>          <span class="kc">True</span>
+</pre></div>
+</div>
+</section>
+<section id="convenience-methods">
+<h2>Convenience Methods<a class="headerlink" href="#convenience-methods" title="Link to this heading">¶</a></h2>
+<p>There are a few convenience methods available after the comparison has been run:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_rows</span><span class="p">[[</span><span class="s1">&#39;name_df1&#39;</span><span class="p">,</span> <span class="s1">&#39;name_df2&#39;</span><span class="p">,</span> <span class="s1">&#39;name_match&#39;</span><span class="p">]])</span>
+<span class="c1">#          name_df1              name_df2  name_match</span>
+<span class="c1"># 0  George Maharis  George Michael Bluth       False</span>
+<span class="c1"># 1   Michael Bluth         Michael Bluth        True</span>
+<span class="c1"># 2    George Bluth          George Bluth        True</span>
+<span class="c1"># 3      Bob Loblaw         Robert Loblaw       False</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">df1_unq_rows</span><span class="p">)</span>
+<span class="c1">#    acct_id_df1  dollar_amt_df1       name_df1  float_fld_df1 date_fld_df1  _merge_left</span>
+<span class="c1"># 5  10000001239            1.05  Lucille Bluth            NaN   2017-01-01         True</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">df2_unq_rows</span><span class="p">)</span>
+<span class="c1">#    acct_id_df2  dollar_amt_df2          name_df2  float_fld_df2  _merge_right</span>
+<span class="c1"># 4  10000001238            1.05  Loose Seal Bluth          111.0          True</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_columns</span><span class="p">())</span>
+<span class="c1"># OrderedSet([&#39;acct_id&#39;, &#39;dollar_amt&#39;, &#39;name&#39;, &#39;float_fld&#39;])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">df1_unq_columns</span><span class="p">())</span>
+<span class="c1"># OrderedSet([&#39;date_fld&#39;])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">df2_unq_columns</span><span class="p">())</span>
+<span class="c1"># OrderedSet()</span>
+</pre></div>
+</div>
+</section>
+<section id="duplicate-rows">
+<h2>Duplicate rows<a class="headerlink" href="#duplicate-rows" title="Link to this heading">¶</a></h2>
+<p>Datacompy will try to handle rows that are duplicate in the join columns.  It does this behind the
+scenes by generating a unique ID within each unique group of the join columns.  For example, if you
+have two dataframes you’re trying to join on acct_id:</p>
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
 <thead>
-<tr class="row-odd"><th class="head"><p>Field</p></th>
-<th class="head"><p>Required?</p></th>
-<th class="head"><p>Description</p></th>
+<tr class="row-odd"><th class="head"><p>acct_id</p></th>
+<th class="head"><p>name</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>name</p></td>
-<td><p>yes</p></td>
-<td><p>A user-readable title for this known difference</p></td>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>George Maharis</p></td>
 </tr>
-<tr class="row-odd"><td><p>types</p></td>
-<td><p>yes</p></td>
-<td><p>A list of Spark data types on which this transformation can be applied</p></td>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>Michael Bluth</p></td>
 </tr>
-<tr class="row-even"><td><p>flags</p></td>
-<td><p>no</p></td>
-<td><p>Special flags used for computing known differences</p></td>
-</tr>
-<tr class="row-odd"><td><p>transformation</p></td>
-<td><p>yes</p></td>
-<td><p>Spark SQL function to apply, where {input} is a cell in the comparison</p></td>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>George Bluth</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>Valid flags are:</p>
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
 <thead>
-<tr class="row-odd"><th class="head"><p>Flag</p></th>
-<th class="head"><p>Description</p></th>
+<tr class="row-odd"><th class="head"><p>acct_id</p></th>
+<th class="head"><p>name</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>nullcheck</p></td>
-<td><p>Must be set when the output of the transformation can be null</p></td>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>George Maharis</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>Michael Bluth</p></td>
+</tr>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>Tony Wonder</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>George Bluth</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>Transformations are applied to the compare side only. A known difference is found when transformation(compare.cell) equals base.cell. An example comparison is shown below.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">import</span> <span class="nn">datacompy</span>
-<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">Row</span>
-
-<span class="n">base_data</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">acct_sfx_num</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">clsd_reas_cd</span><span class="o">=</span><span class="s1">&#39;*2&#39;</span><span class="p">,</span> <span class="n">open_dt</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">tbal_cd</span><span class="o">=</span><span class="s1">&#39;0001&#39;</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">acct_sfx_num</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">clsd_reas_cd</span><span class="o">=</span><span class="s1">&#39;V1&#39;</span><span class="p">,</span> <span class="n">open_dt</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">tbal_cd</span><span class="o">=</span><span class="s1">&#39;0002&#39;</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">acct_sfx_num</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">clsd_reas_cd</span><span class="o">=</span><span class="s1">&#39;V2&#39;</span><span class="p">,</span> <span class="n">open_dt</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">tbal_cd</span><span class="o">=</span><span class="s1">&#39;0003&#39;</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">acct_sfx_num</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">clsd_reas_cd</span><span class="o">=</span><span class="s1">&#39;*2&#39;</span><span class="p">,</span> <span class="n">open_dt</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">tbal_cd</span><span class="o">=</span><span class="s1">&#39;0004&#39;</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001238</span><span class="p">,</span> <span class="n">acct_sfx_num</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">clsd_reas_cd</span><span class="o">=</span><span class="s1">&#39;*2&#39;</span><span class="p">,</span> <span class="n">open_dt</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">tbal_cd</span><span class="o">=</span><span class="s1">&#39;0005&#39;</span><span class="p">)</span>
-<span class="p">]</span>
-<span class="n">base_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">base_data</span><span class="p">)</span>
-
-<span class="n">compare_data</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">ACCOUNT_IDENTIFIER</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">SUFFIX_NUMBER</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">AM00_STATC_CLOSED</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">AM00_DATE_ACCOUNT_OPEN</span><span class="o">=</span><span class="mi">2017121</span><span class="p">,</span> <span class="n">AM0B_FC_TBAL</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">ACCOUNT_IDENTIFIER</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">SUFFIX_NUMBER</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">AM00_STATC_CLOSED</span><span class="o">=</span><span class="s1">&#39;V1&#39;</span><span class="p">,</span> <span class="n">AM00_DATE_ACCOUNT_OPEN</span><span class="o">=</span><span class="mi">2017122</span><span class="p">,</span> <span class="n">AM0B_FC_TBAL</span><span class="o">=</span><span class="mf">2.0</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">ACCOUNT_IDENTIFIER</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">SUFFIX_NUMBER</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">AM00_STATC_CLOSED</span><span class="o">=</span><span class="s1">&#39;V2&#39;</span><span class="p">,</span> <span class="n">AM00_DATE_ACCOUNT_OPEN</span><span class="o">=</span><span class="mi">2017123</span><span class="p">,</span> <span class="n">AM0B_FC_TBAL</span><span class="o">=</span><span class="mf">3.0</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">ACCOUNT_IDENTIFIER</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">SUFFIX_NUMBER</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">AM00_STATC_CLOSED</span><span class="o">=</span><span class="s1">&#39;V3&#39;</span><span class="p">,</span> <span class="n">AM00_DATE_ACCOUNT_OPEN</span><span class="o">=</span><span class="mi">2017124</span><span class="p">,</span> <span class="n">AM0B_FC_TBAL</span><span class="o">=</span><span class="mf">4.0</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">ACCOUNT_IDENTIFIER</span><span class="o">=</span><span class="mi">10000001238</span><span class="p">,</span> <span class="n">SUFFIX_NUMBER</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">AM00_STATC_CLOSED</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">AM00_DATE_ACCOUNT_OPEN</span><span class="o">=</span><span class="mi">2017125</span><span class="p">,</span> <span class="n">AM0B_FC_TBAL</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
-<span class="p">]</span>
-<span class="n">compare_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">compare_data</span><span class="p">)</span>
-
-<span class="n">comparison</span> <span class="o">=</span> <span class="n">datacompy</span><span class="o">.</span><span class="n">SparkCompare</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">base_df</span><span class="p">,</span> <span class="n">compare_df</span><span class="p">,</span>
-                    <span class="n">join_columns</span> <span class="o">=</span>   <span class="p">[(</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span> <span class="s1">&#39;ACCOUNT_IDENTIFIER&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;acct_sfx_num&#39;</span><span class="p">,</span> <span class="s1">&#39;SUFFIX_NUMBER&#39;</span><span class="p">)],</span>
-                    <span class="n">column_mapping</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;clsd_reas_cd&#39;</span><span class="p">,</span> <span class="s1">&#39;AM00_STATC_CLOSED&#39;</span><span class="p">),</span>
-                                      <span class="p">(</span><span class="s1">&#39;open_dt&#39;</span><span class="p">,</span> <span class="s1">&#39;AM00_DATE_ACCOUNT_OPEN&#39;</span><span class="p">),</span>
-                                      <span class="p">(</span><span class="s1">&#39;tbal_cd&#39;</span><span class="p">,</span> <span class="s1">&#39;AM0B_FC_TBAL&#39;</span><span class="p">)],</span>
-                    <span class="n">known_differences</span><span class="o">=</span> <span class="p">[</span>
-                        <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Left-padded, four-digit numeric code&#39;</span><span class="p">,</span>
-                         <span class="s1">&#39;types&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;tinyint&#39;</span><span class="p">,</span> <span class="s1">&#39;smallint&#39;</span><span class="p">,</span> <span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="s1">&#39;bigint&#39;</span><span class="p">,</span> <span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="s1">&#39;double&#39;</span><span class="p">,</span> <span class="s1">&#39;decimal&#39;</span><span class="p">],</span>
-                         <span class="s1">&#39;transformation&#39;</span><span class="p">:</span> <span class="s2">&quot;lpad(cast(</span><span class="si">{input}</span><span class="s2"> AS bigint), 4, &#39;0&#39;)&quot;</span><span class="p">},</span>
-                        <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Null to *2&#39;</span><span class="p">,</span>
-                         <span class="s1">&#39;types&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;string&#39;</span><span class="p">],</span>
-                         <span class="s1">&#39;transformation&#39;</span><span class="p">:</span> <span class="s2">&quot;case when </span><span class="si">{input}</span><span class="s2"> is null then &#39;*2&#39; else </span><span class="si">{input}</span><span class="s2"> end&quot;</span><span class="p">},</span>
-                        <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Julian date -&gt; date&#39;</span><span class="p">,</span>
-                         <span class="s1">&#39;types&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;bigint&#39;</span><span class="p">],</span>
-                         <span class="s1">&#39;transformation&#39;</span><span class="p">:</span> <span class="s2">&quot;to_date(cast(unix_timestamp(cast(</span><span class="si">{input}</span><span class="s2"> AS string), &#39;yyyyDDD&#39;) AS timestamp))&quot;</span><span class="p">}</span>
-                    <span class="p">])</span>
-<span class="n">comparison</span><span class="o">.</span><span class="n">report</span><span class="p">()</span>
-</pre></div>
+<p>Datacompy will generate a unique temporary ID for joining:</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>acct_id</p></th>
+<th class="head"><p>name</p></th>
+<th class="head"><p>temp_id</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>George Maharis</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>Michael Bluth</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>George Bluth</p></td>
+<td><p>0</p></td>
+</tr>
+</tbody>
+</table>
 </div>
-<p>Corresponding output:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">******</span> <span class="n">Column</span> <span class="n">Summary</span> <span class="o">******</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">common</span> <span class="k">with</span> <span class="n">matching</span> <span class="n">schemas</span><span class="p">:</span> <span class="mi">3</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">common</span> <span class="k">with</span> <span class="n">schema</span> <span class="n">differences</span><span class="p">:</span> <span class="mi">2</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">base</span> <span class="n">but</span> <span class="ow">not</span> <span class="n">compare</span><span class="p">:</span> <span class="mi">0</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">compare</span> <span class="n">but</span> <span class="ow">not</span> <span class="n">base</span><span class="p">:</span> <span class="mi">0</span>
-
-<span class="o">******</span> <span class="n">Schema</span> <span class="n">Differences</span> <span class="o">******</span>
-<span class="n">Base</span> <span class="n">Column</span> <span class="n">Name</span>  <span class="n">Compare</span> <span class="n">Column</span> <span class="n">Name</span>     <span class="n">Base</span> <span class="n">Dtype</span>     <span class="n">Compare</span> <span class="n">Dtype</span>
-<span class="o">----------------</span>  <span class="o">----------------------</span>  <span class="o">-------------</span>  <span class="o">-------------</span>
-<span class="n">open_dt</span>           <span class="n">AM00_DATE_ACCOUNT_OPEN</span>  <span class="n">date</span>           <span class="n">bigint</span>
-<span class="n">tbal_cd</span>           <span class="n">AM0B_FC_TBAL</span>            <span class="n">string</span>         <span class="n">double</span>
-
-<span class="o">******</span> <span class="n">Row</span> <span class="n">Summary</span> <span class="o">******</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="ow">in</span> <span class="n">common</span><span class="p">:</span> <span class="mi">5</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="ow">in</span> <span class="n">base</span> <span class="n">but</span> <span class="ow">not</span> <span class="n">compare</span><span class="p">:</span> <span class="mi">0</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="ow">in</span> <span class="n">compare</span> <span class="n">but</span> <span class="ow">not</span> <span class="n">base</span><span class="p">:</span> <span class="mi">0</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">duplicate</span> <span class="n">rows</span> <span class="n">found</span> <span class="ow">in</span> <span class="n">base</span><span class="p">:</span> <span class="mi">0</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">duplicate</span> <span class="n">rows</span> <span class="n">found</span> <span class="ow">in</span> <span class="n">compare</span><span class="p">:</span> <span class="mi">0</span>
-
-<span class="o">******</span> <span class="n">Row</span> <span class="n">Comparison</span> <span class="o">******</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="k">with</span> <span class="n">some</span> <span class="n">columns</span> <span class="n">unequal</span><span class="p">:</span> <span class="mi">5</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="k">with</span> <span class="nb">all</span> <span class="n">columns</span> <span class="n">equal</span><span class="p">:</span> <span class="mi">0</span>
-
-<span class="o">******</span> <span class="n">Column</span> <span class="n">Comparison</span> <span class="o">******</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="n">compared</span> <span class="k">with</span> <span class="n">unexpected</span> <span class="n">differences</span> <span class="ow">in</span> <span class="n">some</span> <span class="n">values</span><span class="p">:</span> <span class="mi">1</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="n">compared</span> <span class="k">with</span> <span class="nb">all</span> <span class="n">values</span> <span class="n">equal</span> <span class="n">but</span> <span class="n">known</span> <span class="n">differences</span> <span class="n">found</span><span class="p">:</span> <span class="mi">2</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="n">compared</span> <span class="k">with</span> <span class="nb">all</span> <span class="n">values</span> <span class="n">completely</span> <span class="n">equal</span><span class="p">:</span> <span class="mi">0</span>
-
-<span class="o">******</span> <span class="n">Columns</span> <span class="k">with</span> <span class="n">Unequal</span> <span class="n">Values</span> <span class="o">******</span>
-<span class="n">Base</span> <span class="n">Column</span> <span class="n">Name</span>  <span class="n">Compare</span> <span class="n">Column</span> <span class="n">Name</span>     <span class="n">Base</span> <span class="n">Dtype</span>     <span class="n">Compare</span> <span class="n">Dtype</span>  <span class="c1"># Matches  # Known Diffs  # Mismatches</span>
-<span class="o">----------------</span>  <span class="o">-------------------</span>     <span class="o">-------------</span>  <span class="o">-------------</span>  <span class="o">---------</span>  <span class="o">-------------</span>  <span class="o">------------</span>
-<span class="n">clsd_reas_cd</span>      <span class="n">AM00_STATC_CLOSED</span>       <span class="n">string</span>         <span class="n">string</span>                 <span class="mi">2</span>              <span class="mi">2</span>             <span class="mi">1</span>
-<span class="n">open_dt</span>           <span class="n">AM00_DATE_ACCOUNT_OPEN</span>  <span class="n">date</span>           <span class="n">bigint</span>                 <span class="mi">0</span>              <span class="mi">5</span>             <span class="mi">0</span>
-<span class="n">tbal_cd</span>           <span class="n">AM0B_FC_TBAL</span>            <span class="n">string</span>         <span class="n">double</span>                 <span class="mi">0</span>              <span class="mi">5</span>             <span class="mi">0</span>
-</pre></div>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>acct_id</p></th>
+<th class="head"><p>name</p></th>
+<th class="head"><p>temp_id</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>George Maharis</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>Michael Bluth</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>Tony Wonder</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>George Bluth</p></td>
+<td><p>0</p></td>
+</tr>
+</tbody>
+</table>
 </div>
+<p>And then merge the two dataframes on a combination of the join_columns you specified and the temporary
+ID, before dropping the temp_id again.  So the first two rows in the first dataframe will match the
+first two rows in the second dataframe, and the third row in the second dataframe will be recognized
+as uniquely in the second.</p>
 </section>
 </section>
 
@@ -521,12 +558,12 @@ differences can be specified through an optional parameter:</p>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Spark Usage</a><ul>
-<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
-<li><a class="reference internal" href="#using-sparkcompare-on-emr-or-standalone-spark">Using SparkCompare on EMR or standalone Spark</a></li>
-<li><a class="reference internal" href="#using-sparkcompare-on-databricks">Using SparkCompare on Databricks</a></li>
-<li><a class="reference internal" href="#performance-implications">Performance Implications</a></li>
-<li><a class="reference internal" href="#known-differences">Known Differences</a></li>
+<li><a class="reference internal" href="#">Spark (Pandas on Spark) Usage</a><ul>
+<li><a class="reference internal" href="#supported-version">Supported Version</a></li>
+<li><a class="reference internal" href="#sparkcompare-object-setup">SparkCompare Object Setup</a></li>
+<li><a class="reference internal" href="#reports">Reports</a></li>
+<li><a class="reference internal" href="#convenience-methods">Convenience Methods</a></li>
+<li><a class="reference internal" href="#duplicate-rows">Duplicate rows</a></li>
 </ul>
 </li>
 </ul>
@@ -538,9 +575,9 @@ differences can be specified through an optional parameter:</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c44be570"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
+</div><script src="_static/documentation_options.js?v=61ccb1f1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="_static/scripts/furo.js?v=4e2eecee"></script>
     </body>
 </html>

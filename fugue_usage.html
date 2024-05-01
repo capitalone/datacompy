@@ -5,10 +5,10 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Developer Instructions" href="developer_instructions.html" /><link rel="prev" title="Polars Usage" href="polars_usage.html" />
 
-    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Fugue Detail - datacompy 0.11.3 documentation</title>
+    <!-- Generated with Sphinx 7.3.7 and Furo 2024.04.27 -->
+        <title>Fugue Detail - datacompy 0.12.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=437aa6ec" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
     
     
@@ -112,6 +112,8 @@
   <div class="visually-hidden">Hide table of contents sidebar</div>
 </label>
 
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
 
 
 <div class="page">
@@ -123,7 +125,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.11.3 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.12.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -146,7 +148,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.11.3 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.12.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -157,7 +159,7 @@
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark (Pandas on Spark) Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
@@ -202,14 +204,14 @@
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
-        <article role="main">
+        <article role="main" id="furo-main-content">
           <section id="fugue-detail">
-<h1>Fugue Detail<a class="headerlink" href="#fugue-detail" title="Link to this heading">#</a></h1>
+<h1>Fugue Detail<a class="headerlink" href="#fugue-detail" title="Link to this heading">¶</a></h1>
 <p><a class="reference external" href="https://github.com/fugue-project/fugue">Fugue</a> is a Python library that provides a unified interface
 for data processing on Pandas, DuckDB, Polars, Arrow, Spark, Dask, Ray, and many other backends.
 DataComPy integrates with Fugue to provide a simple way to compare data across these backends.</p>
 <section id="basic-usage">
-<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">#</a></h2>
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">¶</a></h2>
 <p>The Fugue implementation can be accessed via the:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">datacompy.unq_columns</span></code></p></li>
@@ -270,7 +272,7 @@ the Fugue implementation is using the <code class="docutils literal notranslate"
 </div>
 </section>
 <section id="cross-comparing">
-<h2>Cross Comparing<a class="headerlink" href="#cross-comparing" title="Link to this heading">#</a></h2>
+<h2>Cross Comparing<a class="headerlink" href="#cross-comparing" title="Link to this heading">¶</a></h2>
 <p>In order to compare dataframes of different backends, you just need to replace <code class="docutils literal notranslate"><span class="pre">df1</span></code> and <code class="docutils literal notranslate"><span class="pre">df2</span></code> with
 dataframes of different backends. Just pass in Dataframes such as Pandas dataframes, DuckDB relations,
 Polars dataframes, Arrow tables, Spark dataframes, Dask dataframes or Ray datasets. For example,
@@ -293,7 +295,7 @@ For example, if you want compare Ray datasets, you must do</p>
 </div>
 </section>
 <section id="how-it-works">
-<h2>How it works<a class="headerlink" href="#how-it-works" title="Link to this heading">#</a></h2>
+<h2>How it works<a class="headerlink" href="#how-it-works" title="Link to this heading">¶</a></h2>
 <p>DataComPy uses Fugue to partition the two dataframes into chunks, and then compare each chunk in parallel
 using the Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code>. The comparison results are then aggregated to produce the final result.
 Different from the join operation used in <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>, the Fugue version uses the <code class="docutils literal notranslate"><span class="pre">cogroup</span> <span class="pre">-&gt;</span> <span class="pre">map</span></code>
@@ -301,7 +303,7 @@ like semantic (not exactly the same, Fugue adopts a coarse version to achieve gr
 guarantees full data comparison with consistent result compared to Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code>.</p>
 </section>
 <section id="future-releases">
-<h2>Future releases<a class="headerlink" href="#future-releases" title="Link to this heading">#</a></h2>
+<h2>Future releases<a class="headerlink" href="#future-releases" title="Link to this heading">¶</a></h2>
 <p>We are hoping to pilot Fugue for the community in future releases (0.10+) and gather feedback. With Fugue we get the
 benefits of not having to maintain Framework specific code, and also having cross-framework compatibility. We may in
 future depending on feedback deprecate <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> in favour of just using Fugue to manage non-Pandas use cases.</p>
@@ -379,9 +381,9 @@ future depending on feedback deprecate <code class="docutils literal notranslate
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c44be570"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
+</div><script src="_static/documentation_options.js?v=61ccb1f1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="_static/scripts/furo.js?v=4e2eecee"></script>
     </body>
 </html>

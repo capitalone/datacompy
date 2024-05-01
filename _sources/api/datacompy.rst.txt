@@ -28,6 +28,14 @@ datacompy.fugue module
    :undoc-members:
    :show-inheritance:
 
+datacompy.legacy module
+-----------------------
+
+.. automodule:: datacompy.legacy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 datacompy.polars module
 -----------------------
 

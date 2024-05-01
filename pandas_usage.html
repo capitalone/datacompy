@@ -3,12 +3,12 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Spark Usage" href="spark_usage.html" /><link rel="prev" title="Installation" href="install.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Spark (Pandas on Spark) Usage" href="spark_usage.html" /><link rel="prev" title="Installation" href="install.html" />
 
-    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Pandas Usage - datacompy 0.11.3 documentation</title>
+    <!-- Generated with Sphinx 7.3.7 and Furo 2024.04.27 -->
+        <title>Pandas Usage - datacompy 0.12.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=437aa6ec" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
     
     
@@ -112,6 +112,8 @@
   <div class="visually-hidden">Hide table of contents sidebar</div>
 </label>
 
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
 
 
 <div class="page">
@@ -123,7 +125,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.11.3 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.12.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -146,7 +148,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.11.3 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.12.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -157,7 +159,7 @@
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Pandas Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark (Pandas on Spark) Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
@@ -202,11 +204,11 @@
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
-        <article role="main">
+        <article role="main" id="furo-main-content">
           <section id="pandas-usage">
-<h1>Pandas Usage<a class="headerlink" href="#pandas-usage" title="Link to this heading">#</a></h1>
+<h1>Pandas Usage<a class="headerlink" href="#pandas-usage" title="Link to this heading">¶</a></h1>
 <section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
 <p>The main goal of <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> is to provide a human-readable output describing
 differences between two dataframes.  For example, if you have two dataframes
 containing data like:</p>
@@ -328,7 +330,7 @@ containing data like:</p>
 </div>
 </section>
 <section id="compare-object-setup">
-<h2>Compare Object Setup<a class="headerlink" href="#compare-object-setup" title="Link to this heading">#</a></h2>
+<h2>Compare Object Setup<a class="headerlink" href="#compare-object-setup" title="Link to this heading">¶</a></h2>
 <p>There are currently two supported methods for joining your dataframes - by
 join column(s) or by index.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">compare</span> <span class="o">=</span> <span class="n">datacompy</span><span class="o">.</span><span class="n">Compare</span><span class="p">(</span>
@@ -351,7 +353,7 @@ join column(s) or by index.</p>
 </div>
 </section>
 <section id="reports">
-<h2>Reports<a class="headerlink" href="#reports" title="Link to this heading">#</a></h2>
+<h2>Reports<a class="headerlink" href="#reports" title="Link to this heading">¶</a></h2>
 <p>A report is generated by calling <code class="docutils literal notranslate"><span class="pre">Compare.report()</span></code>, which returns a string.
 Here is a sample report generated by <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> for the two tables above,
 joined on <code class="docutils literal notranslate"><span class="pre">acct_id</span></code> (Note: if you don’t specify <code class="docutils literal notranslate"><span class="pre">df1_name</span></code> and/or <code class="docutils literal notranslate"><span class="pre">df2_name</span></code>,
@@ -428,7 +430,7 @@ and/or “df2”.):</p>
 </div>
 </section>
 <section id="convenience-methods">
-<h2>Convenience Methods<a class="headerlink" href="#convenience-methods" title="Link to this heading">#</a></h2>
+<h2>Convenience Methods<a class="headerlink" href="#convenience-methods" title="Link to this heading">¶</a></h2>
 <p>There are a few convenience methods available after the comparison has been run:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_rows</span><span class="p">[[</span><span class="s1">&#39;name_df1&#39;</span><span class="p">,</span> <span class="s1">&#39;name_df2&#39;</span><span class="p">,</span> <span class="s1">&#39;name_match&#39;</span><span class="p">]])</span>
 <span class="c1">#            name_df1              name_df2  name_match</span>
@@ -459,7 +461,7 @@ and/or “df2”.):</p>
 </div>
 </section>
 <section id="duplicate-rows">
-<span id="pandas-dup-rows"></span><h2>Duplicate rows<a class="headerlink" href="#duplicate-rows" title="Link to this heading">#</a></h2>
+<span id="pandas-dup-rows"></span><h2>Duplicate rows<a class="headerlink" href="#duplicate-rows" title="Link to this heading">¶</a></h2>
 <p>Datacompy will try to handle rows that are duplicate in the join columns.  It does this behind the
 scenes by generating a unique ID within each unique group of the join columns.  For example, if you
 have two dataframes you’re trying to join on acct_id:</p>
@@ -564,7 +566,7 @@ ID, before dropping the temp_id again.  So the first two rows in the first dataf
 first two rows in the second dataframe, and the third row in the second dataframe will be recognized
 as uniquely in the second.</p>
 <section id="caveats">
-<span id="pandas-caveats"></span><h3>Caveats<a class="headerlink" href="#caveats" title="Link to this heading">#</a></h3>
+<span id="pandas-caveats"></span><h3>Caveats<a class="headerlink" href="#caveats" title="Link to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Duplicate matching is resilient to nulls in your join columns - it will convert the join
 columns to strings and fill null values with <code class="docutils literal notranslate"><span class="pre">'DATACOMPY_NULL'</span></code> before generating the temporary
@@ -579,7 +581,7 @@ handle them separately.</p></li>
 </section>
 </section>
 <section id="limitations">
-<span id="pandas-limitations"></span><h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading">#</a></h2>
+<span id="pandas-limitations"></span><h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading">¶</a></h2>
 <p>There’s a number of limitations with <code class="docutils literal notranslate"><span class="pre">datacompy</span></code>:</p>
 <ol class="arabic">
 <li><p>The dataframes that you’re comparing have to fit in memory.  In comparison
@@ -617,7 +619,7 @@ same, you should look at the testing capabilities within Pandas and Numpy:</p>
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Spark Usage</div>
+                <div class="title">Spark (Pandas on Spark) Usage</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -683,9 +685,9 @@ same, you should look at the testing capabilities within Pandas and Numpy:</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c44be570"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
+</div><script src="_static/documentation_options.js?v=61ccb1f1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="_static/scripts/furo.js?v=4e2eecee"></script>
     </body>
 </html>

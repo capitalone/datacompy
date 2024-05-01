@@ -5,10 +5,10 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Installation" href="install.html" />
 
-    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>datacompy 0.11.3 documentation</title>
+    <!-- Generated with Sphinx 7.3.7 and Furo 2024.04.27 -->
+        <title>datacompy 0.12.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=437aa6ec" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
     
     
@@ -112,6 +112,8 @@
   <div class="visually-hidden">Hide table of contents sidebar</div>
 </label>
 
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
 
 
 <div class="page">
@@ -123,7 +125,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="#"><div class="brand">datacompy 0.11.3 documentation</div></a>
+      <a href="#"><div class="brand">datacompy 0.12.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -146,7 +148,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
   
   
-  <span class="sidebar-brand-text">datacompy 0.11.3 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.12.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -157,7 +159,7 @@
   <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark (Pandas on Spark) Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
@@ -202,9 +204,9 @@
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
-        <article role="main">
+        <article role="main" id="furo-main-content">
           <section class="tex2jax_ignore mathjax_ignore" id="datacompy">
-<h1>DataComPy<a class="headerlink" href="#datacompy" title="Link to this heading">#</a></h1>
+<h1>DataComPy<a class="headerlink" href="#datacompy" title="Link to this heading">¶</a></h1>
 <p><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/datacompy" />
 <a class="reference external" href="https://github.com/ambv/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
 <a class="reference external" href="https://badge.fury.io/py/datacompy"><img alt="PyPI version" src="https://badge.fury.io/py/datacompy.svg" /></a>
@@ -216,7 +218,7 @@ with some more functionality than just <code class="docutils literal notranslate
 (in that it prints out some stats, and lets you tweak how accurate matches have to be).
 Then extended to carry that functionality over to Spark Dataframes.</p>
 <section id="quick-installation">
-<h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Link to this heading">#</a></h2>
+<h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Link to this heading">¶</a></h2>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>datacompy
 </pre></div>
 </div>
@@ -225,7 +227,7 @@ Then extended to carry that functionality over to Spark Dataframes.</p>
 </pre></div>
 </div>
 <section id="installing-extras">
-<h3>Installing extras<a class="headerlink" href="#installing-extras" title="Link to this heading">#</a></h3>
+<h3>Installing extras<a class="headerlink" href="#installing-extras" title="Link to this heading">¶</a></h3>
 <p>If you would like to use Spark or any other backends please make sure you install via extras:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>datacompy<span class="o">[</span>spark<span class="o">]</span>
 pip<span class="w"> </span>install<span class="w"> </span>datacompy<span class="o">[</span>dask<span class="o">]</span>
@@ -235,55 +237,85 @@ pip<span class="w"> </span>install<span class="w"> </span>datacompy<span class="
 </pre></div>
 </div>
 </section>
-<section id="in-scope-spark-versions">
-<h3>In-scope Spark versions<a class="headerlink" href="#in-scope-spark-versions" title="Link to this heading">#</a></h3>
-<p>Different versions of Spark play nicely with only certain versions of Python below is a matrix of what we test with</p>
+<section id="legacy-spark-deprecation">
+<h3>Legacy Spark Deprecation<a class="headerlink" href="#legacy-spark-deprecation" title="Link to this heading">¶</a></h3>
+<section id="starting-with-version-0-12-0">
+<h4>Starting with version 0.12.0<a class="headerlink" href="#starting-with-version-0-12-0" title="Link to this heading">¶</a></h4>
+<p>The original <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> implementation differs from all the other native implementations. To align the API better, and keep behaviour consistent we are deprecating <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> into a new module <code class="docutils literal notranslate"><span class="pre">LegacySparkCompare</span></code></p>
+<p>If you wish to use the old SparkCompare moving forward you can</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datacompy.legacy.LegacySparkCompare</span>
+</pre></div>
+</div>
+</section>
+<section id="supported-versions-and-dependncies">
+<h4>Supported versions and dependncies<a class="headerlink" href="#supported-versions-and-dependncies" title="Link to this heading">¶</a></h4>
+<p>Different versions of Spark, Pandas, and Python interact differently. Below is a matrix of what we test with.
+With the move to Pandas on Spark API and compatability issues with Pandas 2+ we will for the mean time note support Pandas 2
+with the Pandas on Spark implementation. Spark plans to support Pandas 2 in <a class="reference external" href="https://issues.apache.org/jira/browse/SPARK-44101">Spark 4</a></p>
+<p>With version <code class="docutils literal notranslate"><span class="pre">0.12.0</span></code>:</p>
+<ul class="simple">
+<li><p>Not support Pandas <code class="docutils literal notranslate"><span class="pre">2.0.0</span></code> For the native Spark implemention</p></li>
+<li><p>Spark <code class="docutils literal notranslate"><span class="pre">3.1</span></code> support will be dropped</p></li>
+<li><p>Python <code class="docutils literal notranslate"><span class="pre">3.8</span></code> support is dropped</p></li>
+</ul>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p></p></th>
-<th class="head"><p>Spark 3.1.3</p></th>
-<th class="head"><p>Spark 3.2.3</p></th>
+<th class="head"><p>Spark 3.2.4</p></th>
 <th class="head"><p>Spark 3.3.4</p></th>
 <th class="head"><p>Spark 3.4.2</p></th>
-<th class="head"><p>Spark 3.5.0</p></th>
+<th class="head"><p>Spark 3.5.1</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Python 3.8</p></td>
-<td><p>✅</p></td>
-<td><p>✅</p></td>
-<td><p>✅</p></td>
-<td><p>✅</p></td>
-<td><p>✅</p></td>
-</tr>
-<tr class="row-odd"><td><p>Python 3.9</p></td>
-<td><p>✅</p></td>
+<tr class="row-even"><td><p>Python 3.9</p></td>
 <td><p>✅</p></td>
 <td><p>✅</p></td>
 <td><p>✅</p></td>
 <td><p>✅</p></td>
 </tr>
-<tr class="row-even"><td><p>Python 3.10</p></td>
-<td><p>✅</p></td>
+<tr class="row-odd"><td><p>Python 3.10</p></td>
 <td><p>✅</p></td>
 <td><p>✅</p></td>
 <td><p>✅</p></td>
 <td><p>✅</p></td>
 </tr>
-<tr class="row-odd"><td><p>Python 3.11</p></td>
-<td><p>❌</p></td>
+<tr class="row-even"><td><p>Python 3.11</p></td>
 <td><p>❌</p></td>
 <td><p>❌</p></td>
 <td><p>✅</p></td>
 <td><p>✅</p></td>
 </tr>
-<tr class="row-even"><td><p>Python 3.12</p></td>
+<tr class="row-odd"><td><p>Python 3.12</p></td>
 <td><p>❌</p></td>
 <td><p>❌</p></td>
 <td><p>❌</p></td>
 <td><p>❌</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p></p></th>
+<th class="head"><p>Pandas &lt; 1.5.3</p></th>
+<th class="head"><p>Pandas &gt;=2.0.0</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Native Pandas</p></td>
+<td><p>✅</p></td>
+<td><p>✅</p></td>
+</tr>
+<tr class="row-odd"><td><p>Native Spark</p></td>
+<td><p>✅</p></td>
 <td><p>❌</p></td>
+</tr>
+<tr class="row-even"><td><p>Fugue</p></td>
+<td><p>✅</p></td>
+<td><p>✅</p></td>
 </tr>
 </tbody>
 </table>
@@ -294,11 +326,12 @@ At the current time Python <code class="docutils literal notranslate"><span clas
 </div></blockquote>
 </section>
 </section>
+</section>
 <section id="supported-backends">
-<h2>Supported backends<a class="headerlink" href="#supported-backends" title="Link to this heading">#</a></h2>
+<h2>Supported backends<a class="headerlink" href="#supported-backends" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Pandas: (<a class="reference external" href="https://capitalone.github.io/datacompy/pandas_usage.html">See documentation</a>)</p></li>
-<li><p>Spark: (<a class="reference external" href="https://capitalone.github.io/datacompy/spark_usage.html">See documentation</a>)</p></li>
+<li><p>Spark (Pandas on Spark API): (<a class="reference external" href="https://capitalone.github.io/datacompy/spark_usage.html">See documentation</a>)</p></li>
 <li><p>Polars (Experimental): (<a class="reference external" href="https://capitalone.github.io/datacompy/polars_usage.html">See documentation</a>)</p></li>
 <li><p>Fugue is a Python library that provides a unified interface for data processing on Pandas, DuckDB, Polars, Arrow,
 Spark, Dask, Ray, and many other backends. DataComPy integrates with Fugue to provide a simple way to compare data
@@ -307,19 +340,19 @@ across these backends. Please note that Fugue will use the Pandas (Native) logic
 </ul>
 </section>
 <section id="contributors">
-<h2>Contributors<a class="headerlink" href="#contributors" title="Link to this heading">#</a></h2>
+<h2>Contributors<a class="headerlink" href="#contributors" title="Link to this heading">¶</a></h2>
 <p>We welcome and appreciate your contributions! Before we can accept any contributions, we ask that you please be sure to
 sign the <a class="reference external" href="https://cla-assistant.io/capitalone/datacompy">Contributor License Agreement (CLA)</a>.</p>
 <p>This project adheres to the <a class="reference external" href="https://developer.capitalone.com/resources/code-of-conduct/">Open Source Code of Conduct</a>.
 By participating, you are expected to honor this code.</p>
 </section>
 <section id="roadmap">
-<h2>Roadmap<a class="headerlink" href="#roadmap" title="Link to this heading">#</a></h2>
+<h2>Roadmap<a class="headerlink" href="#roadmap" title="Link to this heading">¶</a></h2>
 <p>Roadmap details can be found <a class="reference external" href="https://github.com/capitalone/datacompy/blob/develop/ROADMAP.rst">here</a></p>
 </section>
 </section>
 <section id="contents">
-<h1>Contents<a class="headerlink" href="#contents" title="Link to this heading">#</a></h1>
+<h1>Contents<a class="headerlink" href="#contents" title="Link to this heading">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
@@ -337,12 +370,12 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l2"><a class="reference internal" href="pandas_usage.html#limitations">Limitations</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#basic-usage">Basic Usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#using-sparkcompare-on-emr-or-standalone-spark">Using SparkCompare on EMR or standalone Spark</a></li>
-<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#using-sparkcompare-on-databricks">Using SparkCompare on Databricks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#performance-implications">Performance Implications</a></li>
-<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#known-differences">Known Differences</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark (Pandas on Spark) Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#supported-version">Supported Version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#sparkcompare-object-setup">SparkCompare Object Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#reports">Reports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#convenience-methods">Convenience Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#duplicate-rows">Duplicate rows</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a><ul>
@@ -398,10 +431,17 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.fugue">datacompy.fugue module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.fugue.all_columns_match"><code class="docutils literal notranslate"><span class="pre">all_columns_match()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.fugue.all_rows_overlap"><code class="docutils literal notranslate"><span class="pre">all_rows_overlap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.fugue.count_matching_rows"><code class="docutils literal notranslate"><span class="pre">count_matching_rows()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.fugue.intersect_columns"><code class="docutils literal notranslate"><span class="pre">intersect_columns()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.fugue.is_match"><code class="docutils literal notranslate"><span class="pre">is_match()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.fugue.report"><code class="docutils literal notranslate"><span class="pre">report()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.fugue.unq_columns"><code class="docutils literal notranslate"><span class="pre">unq_columns()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.legacy">datacompy.legacy module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.legacy.LegacySparkCompare"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.legacy.MatchType"><code class="docutils literal notranslate"><span class="pre">MatchType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.legacy.decimal_comparator"><code class="docutils literal notranslate"><span class="pre">decimal_comparator()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.polars">datacompy.polars module</a><ul>
@@ -416,9 +456,14 @@ By participating, you are expected to honor this code.</p>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.spark">datacompy.spark module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.MatchType"><code class="docutils literal notranslate"><span class="pre">MatchType</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.SparkCompare"><code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.decimal_comparator"><code class="docutils literal notranslate"><span class="pre">decimal_comparator()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.calculate_max_diff"><code class="docutils literal notranslate"><span class="pre">calculate_max_diff()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.columns_equal"><code class="docutils literal notranslate"><span class="pre">columns_equal()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.compare_string_and_date_columns"><code class="docutils literal notranslate"><span class="pre">compare_string_and_date_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.spark.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy">Module contents</a></li>
@@ -431,7 +476,7 @@ By participating, you are expected to honor this code.</p>
 </div>
 </section>
 <section id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">#</a></h1>
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">¶</a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
@@ -487,7 +532,11 @@ By participating, you are expected to honor this code.</p>
 <li><a class="reference internal" href="#">DataComPy</a><ul>
 <li><a class="reference internal" href="#quick-installation">Quick Installation</a><ul>
 <li><a class="reference internal" href="#installing-extras">Installing extras</a></li>
-<li><a class="reference internal" href="#in-scope-spark-versions">In-scope Spark versions</a></li>
+<li><a class="reference internal" href="#legacy-spark-deprecation">Legacy Spark Deprecation</a><ul>
+<li><a class="reference internal" href="#starting-with-version-0-12-0">Starting with version 0.12.0</a></li>
+<li><a class="reference internal" href="#supported-versions-and-dependncies">Supported versions and dependncies</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#supported-backends">Supported backends</a></li>
@@ -508,9 +557,9 @@ By participating, you are expected to honor this code.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c44be570"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
+</div><script src="_static/documentation_options.js?v=61ccb1f1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="_static/scripts/furo.js?v=4e2eecee"></script>
     </body>
 </html>

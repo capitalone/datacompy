@@ -3,12 +3,12 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Fugue Detail" href="fugue_usage.html" /><link rel="prev" title="Spark Usage" href="spark_usage.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Fugue Detail" href="fugue_usage.html" /><link rel="prev" title="Spark (Pandas on Spark) Usage" href="spark_usage.html" />
 
-    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Polars Usage - datacompy 0.11.3 documentation</title>
+    <!-- Generated with Sphinx 7.3.7 and Furo 2024.04.27 -->
+        <title>Polars Usage - datacompy 0.12.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=437aa6ec" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
     
     
@@ -112,6 +112,8 @@
   <div class="visually-hidden">Hide table of contents sidebar</div>
 </label>
 
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
 
 
 <div class="page">
@@ -123,7 +125,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.11.3 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.12.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -146,7 +148,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.11.3 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.12.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -157,7 +159,7 @@
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark (Pandas on Spark) Usage</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
@@ -202,23 +204,23 @@
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
-        <article role="main">
+        <article role="main" id="furo-main-content">
           <section id="polars-usage">
-<h1>Polars Usage<a class="headerlink" href="#polars-usage" title="Link to this heading">#</a></h1>
+<h1>Polars Usage<a class="headerlink" href="#polars-usage" title="Link to this heading">¶</a></h1>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p>Please note that Polars support is experimental and new in <code class="docutils literal notranslate"><span class="pre">datacompy</span></code>
 as of v0.11.0</p>
 </div>
 <section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
 <p><a class="reference external" href="https://github.com/pola-rs/polars">Polars</a> is a DataFrame interface on top of an OLAP Query Engine implemented in
 Rust using Apache Arrow Columnar Format as the memory model. DataComPy’s implementation of Polars is very similar port
 of the Pandas version. There are some differences you should be aware of as they may yield slightly different
 results. For instance Polars does not have indexes like Pandas so that functionality is not supported.</p>
 </section>
 <section id="basic-usage">
-<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">#</a></h2>
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">¶</a></h2>
 <p>Usage is very similar to the Pandas implementation. Consider the following code:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
 <span class="kn">import</span> <span class="nn">polars</span> <span class="k">as</span> <span class="nn">pl</span>
@@ -247,7 +249,7 @@ results. For instance Polars does not have indexes like Pandas so that functiona
 </div>
 </section>
 <section id="compare-object-setup">
-<h2>Compare Object Setup<a class="headerlink" href="#compare-object-setup" title="Link to this heading">#</a></h2>
+<h2>Compare Object Setup<a class="headerlink" href="#compare-object-setup" title="Link to this heading">¶</a></h2>
 <p>Unlike the Pandas implementation there is only one supported method for joining your dataframes: join column(s).</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">compare</span> <span class="o">=</span> <span class="n">PolarsCompare</span><span class="p">(</span>
     <span class="n">df1</span><span class="p">,</span>
@@ -265,7 +267,7 @@ results. For instance Polars does not have indexes like Pandas so that functiona
 </div>
 </section>
 <section id="reports">
-<h2>Reports<a class="headerlink" href="#reports" title="Link to this heading">#</a></h2>
+<h2>Reports<a class="headerlink" href="#reports" title="Link to this heading">¶</a></h2>
 <p>A report is generated by calling <code class="docutils literal notranslate"><span class="pre">PolarsCompare.report()</span></code>, which returns a string.
 Here is a sample report generated by <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> for the two tables above,
 joined on <code class="docutils literal notranslate"><span class="pre">acct_id</span></code> (Note: if you don’t specify <code class="docutils literal notranslate"><span class="pre">df1_name</span></code> and/or <code class="docutils literal notranslate"><span class="pre">df2_name</span></code>,
@@ -343,7 +345,7 @@ and/or “df2”.):</p>
 </div>
 </section>
 <section id="convenience-methods">
-<h2>Convenience Methods<a class="headerlink" href="#convenience-methods" title="Link to this heading">#</a></h2>
+<h2>Convenience Methods<a class="headerlink" href="#convenience-methods" title="Link to this heading">¶</a></h2>
 <p>There are a few convenience methods available after the comparison has been run:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_rows</span><span class="p">[[</span><span class="s1">&#39;name_df1&#39;</span><span class="p">,</span> <span class="s1">&#39;name_df2&#39;</span><span class="p">,</span> <span class="s1">&#39;name_match&#39;</span><span class="p">]])</span>
 <span class="c1"># shape: (5, 3)</span>
@@ -390,11 +392,11 @@ and/or “df2”.):</p>
 </div>
 </section>
 <section id="duplicate-rows">
-<h2>Duplicate rows<a class="headerlink" href="#duplicate-rows" title="Link to this heading">#</a></h2>
+<h2>Duplicate rows<a class="headerlink" href="#duplicate-rows" title="Link to this heading">¶</a></h2>
 <p>The PolarsCompare will try and handle duplicate rows just like the Pandas version. See <a class="reference internal" href="pandas_usage.html#pandas-dup-rows"><span class="std std-ref">Duplicate rows</span></a>.</p>
 </section>
 <section id="caveats-and-limitations">
-<h2>Caveats and Limitations<a class="headerlink" href="#caveats-and-limitations" title="Link to this heading">#</a></h2>
+<h2>Caveats and Limitations<a class="headerlink" href="#caveats-and-limitations" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Similar to Pandas the Polars version will try and be resilient to duplicate matching. See Pandas: <a class="reference internal" href="pandas_usage.html#pandas-caveats"><span class="std std-ref">Caveats</span></a>.</p></li>
 <li><p>As mentioned above there is no indexing like in Pandas, so you must join on <code class="docutils literal notranslate"><span class="pre">join_columns</span></code></p></li>
@@ -427,7 +429,7 @@ See <a class="reference external" href="https://docs.pola.rs/user-guide/migratio
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Spark Usage</div>
+                <div class="title">Spark (Pandas on Spark) Usage</div>
                 
               </div>
             </a>
@@ -480,9 +482,9 @@ See <a class="reference external" href="https://docs.pola.rs/user-guide/migratio
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c44be570"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
+</div><script src="_static/documentation_options.js?v=61ccb1f1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="_static/scripts/furo.js?v=4e2eecee"></script>
     </body>
 </html>
