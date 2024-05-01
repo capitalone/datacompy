@@ -1,243 +1,252 @@
-Spark Usage
-===========
+Spark (Pandas on Spark) Usage
+=============================
 
 .. important::
 
-    With version ``v0.9.0`` SparkCompare now uses Null Safe (``<=>``) comparisons
+    With version ``v0.12.0`` the original ``SparkCompare`` is now replaced with a 
+    Pandas on Spark implementation. The original ``SparkCompare`` implementation 
+    differs from all the other native implementations. To align the API better, 
+    and keep behaviour consistent we are deprecating the original ``SparkCompare`` 
+    into a new module ``LegacySparkCompare``
+
+    If you wish to use the old SparkCompare moving forward you can
+
+    .. code-block:: python
+
+        import datacompy.legacy.LegacySparkCompare
+    
 
 
-DataComPy's ``SparkCompare`` class will join two dataframes either on a list of join
-columns. It has the capability to map column names that may be different in each
-dataframe, including in the join columns. You are responsible for creating the
-dataframes from any source which Spark can handle and specifying a unique join
-key. If there are duplicates in either dataframe by join key, the match process
-will remove the duplicates before joining (and tell you how many duplicates were
-found).
+DataComPy's Pandas on Spark implementation ``SparkCompare`` (new in ``v0.12.0``) 
+is a very similar port of the Pandas version
 
-As with the Pandas-based ``Compare`` class, comparisons will be attempted even
-if dtypes don't match. Any schema differences will be reported in the output
-as well as in any mismatch reports, so that you can assess whether or not a
-type mismatch is a problem or not.
-
-The main reasons why you would choose to use ``SparkCompare`` over ``Compare``
-are that your data is too large to fit into memory, or you're comparing data
-that works well in a Spark environment, like partitioned Parquet, CSV, or JSON
-files, or Cerebro tables.
+- ``on_index`` is NOT supported like in ``PandasCompare``
+- Joining is done using ``<=>`` which is the equality test that is safe for null values.
+- In the backend we are using the Pandas on Spark API. This might be less optimal than 
+  native Spark code but allows for better maintainability and readability.
 
 
-Basic Usage
------------
+Supported Version
+------------------
 
-.. code-block:: python
+.. important::
 
-    import datetime
-    import datacompy
-    from pyspark.sql import Row
-
-    # This example assumes you have a SparkSession named "spark" in your environment, as you
-    # do when running `pyspark` from the terminal or in a Databricks notebook (Spark v2.0 and higher)
-
-    data1 = [
-        Row(acct_id=10000001234, dollar_amt=123.45, name='George Maharis', float_fld=14530.1555,
-            date_fld=datetime.date(2017, 1, 1)),
-        Row(acct_id=10000001235, dollar_amt=0.45, name='Michael Bluth', float_fld=1.0,
-            date_fld=datetime.date(2017, 1, 1)),
-        Row(acct_id=10000001236, dollar_amt=1345.0, name='George Bluth', float_fld=None,
-            date_fld=datetime.date(2017, 1, 1)),
-        Row(acct_id=10000001237, dollar_amt=123456.0, name='Bob Loblaw', float_fld=345.12,
-            date_fld=datetime.date(2017, 1, 1)),
-        Row(acct_id=10000001239, dollar_amt=1.05, name='Lucille Bluth', float_fld=None,
-            date_fld=datetime.date(2017, 1, 1))
-    ]
-
-    data2 = [
-        Row(acct_id=10000001234, dollar_amt=123.4, name='George Michael Bluth', float_fld=14530.155),
-        Row(acct_id=10000001235, dollar_amt=0.45, name='Michael Bluth', float_fld=None),
-        Row(acct_id=10000001236, dollar_amt=1345.0, name='George Bluth', float_fld=1.0),
-        Row(acct_id=10000001237, dollar_amt=123456.0, name='Robert Loblaw', float_fld=345.12),
-        Row(acct_id=10000001238, dollar_amt=1.05, name='Loose Seal Bluth', float_fld=111.0)
-    ]
-
-    base_df = spark.createDataFrame(data1)
-    compare_df = spark.createDataFrame(data2)
-
-    comparison = datacompy.SparkCompare(spark, base_df, compare_df, join_columns=['acct_id'])
-
-    # This prints out a human-readable report summarizing differences
-    comparison.report()
+    Spark will not offically support Pandas 2 until Spark 4: https://issues.apache.org/jira/browse/SPARK-44101
 
 
-Using SparkCompare on EMR or standalone Spark
----------------------------------------------
-
-1. Set proxy variables
-2. Create a virtual environment, if desired (``virtualenv venv; source venv/bin/activate``)
-3. Pip install datacompy and requirements
-4. Ensure your SPARK_HOME environment variable is set (this is probably ``/usr/lib/spark`` but may
-   differ based on your installation)
-5. Augment your PYTHONPATH environment variable with
-   ``export PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.10.4-src.zip:$SPARK_HOME/python:$PYTHONPATH``
-   (note that your version of py4j may differ depending on the version of Spark you're using)
+Until then we will not be supporting Pandas 2 for the Pandas on Spark API implementaion.
+For Fugue and the Native Pandas implementation Pandas 2 is supported. If you need to use Spark DataFrame with 
+Pandas 2+ then consider using Fugue otherwise downgrade to Pandas 1.5.3
 
 
-Using SparkCompare on Databricks
---------------------------------
+SparkCompare Object Setup
+-------------------------
 
-1. Clone this repository locally
-2. Create a datacompy egg by running ``python setup.py bdist_egg`` from the repo root directory.
-3. From the Databricks front page, click the "Library" link under the "New" section.
-4. On the New library page:
-    a. Change source to "Upload Python Egg or PyPi"
-    b. Under "Upload Egg", Library Name should be "datacompy"
-    c. Drag the egg file in datacompy/dist/ to the "Drop library egg here to upload" box
-    d. Click the "Create Library" button
-5. Once the library has been created, from the library page (which you can find in your /Users/{login} workspace),
-   you can choose clusters to attach the library to.
-6. ``import datacompy`` in a notebook attached to the cluster that the library is attached to and enjoy!
-
-
-Performance Implications
-------------------------
-
-Spark scales incredibly well, so you can use ``SparkCompare`` to compare
-billions of rows of data, provided you spin up a big enough cluster. Still,
-joining billions of rows of data is an inherently large task, so there are a
-couple of things you may want to take into consideration when getting into the
-cliched realm of "big data":
-
-* ``SparkCompare`` will compare all columns in common in the dataframes and
-  report on the rest. If there are columns in the data that you don't care to
-  compare, use a ``select`` statement/method on the dataframe(s) to filter
-  those out. Particularly when reading from wide Parquet files, this can make
-  a huge difference when the columns you don't care about don't have to be
-  read into memory and included in the joined dataframe.
-* For large datasets, adding ``cache_intermediates=True`` to the ``SparkCompare``
-  call can help optimize performance by caching certain intermediate dataframes
-  in memory, like the de-duped version of each input dataset, or the joined
-  dataframe. Otherwise, Spark's lazy evaluation will recompute those each time
-  it needs the data in a report or as you access instance attributes. This may
-  be fine for smaller dataframes, but will be costly for larger ones. You do
-  need to ensure that you have enough free cache memory before you do this, so
-  this parameter is set to False by default.
-
-
-Known Differences
------------------
-
-For cases when two dataframes are expected to differ, it can be helpful to cluster detected
-differences into three categories: matches, known differences, and true mismatches. Known
-differences can be specified through an optional parameter:
+There is currently only one supported method for joining your dataframes - by
+join column(s).
 
 .. code-block:: python
 
-    SparkCompare(spark, base_df, compare_df, join_columns=[...], column_mapping=[...],
-        known_differences = [
-            {
-             'name':  "My Known Difference Name",
-             'types': ['int', 'bigint'],
-             'flags': ['nullcheck'],
-             'transformation': "case when {input}=0 then null else {input} end"
-            },
-            ...    
-        ]
+    from io import StringIO
+    import pandas as pd
+    import pyspark.pandas as ps
+    from datacompy import SparkCompare
+    from pyspark.sql import SparkSession
+
+    spark = SparkSession.builder.getOrCreate()
+
+    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
+    10000001234,123.45,George Maharis,14530.1555,2017-01-01
+    10000001235,0.45,Michael Bluth,1,2017-01-01
+    10000001236,1345,George Bluth,,2017-01-01
+    10000001237,123456,Bob Loblaw,345.12,2017-01-01
+    10000001239,1.05,Lucille Bluth,,2017-01-01
+    """
+
+    data2 = """acct_id,dollar_amt,name,float_fld
+    10000001234,123.4,George Michael Bluth,14530.155
+    10000001235,0.45,Michael Bluth,
+    10000001236,1345,George Bluth,1
+    10000001237,123456,Robert Loblaw,345.12
+    10000001238,1.05,Loose Seal Bluth,111
+    """
+
+    df1 = ps.from_pandas(pd.read_csv(StringIO(data1)))
+    df2 = ps.from_pandas(pd.read_csv(StringIO(data2)))
+
+    compare = SparkCompare(
+        df1,
+        df2,
+        join_columns='acct_id',  # You can also specify a list of columns
+        abs_tol=0,  # Optional, defaults to 0
+        rel_tol=0,  # Optional, defaults to 0
+        df1_name='Original',  # Optional, defaults to 'df1'
+        df2_name='New'  # Optional, defaults to 'df2'
     )
+    compare.matches(ignore_extra_columns=False)
+    # False
+    # This method prints out a human-readable report summarizing and sampling differences
+    print(compare.report())
 
-The 'known_differences' parameter is a list of Python dicts with the following fields:
 
-============== ========= ======================================================================
-Field          Required? Description
-============== ========= ======================================================================
-name           yes       A user-readable title for this known difference
-types          yes       A list of Spark data types on which this transformation can be applied
-flags          no        Special flags used for computing known differences
-transformation yes       Spark SQL function to apply, where {input} is a cell in the comparison
-============== ========= ======================================================================
+Reports
+-------
 
-Valid flags are:
+A report is generated by calling ``SparkCompare.report()``, which returns a string.
+Here is a sample report generated by ``datacompy`` for the two tables above,
+joined on ``acct_id`` (Note: if you don't specify ``df1_name`` and/or ``df2_name``,
+then any instance of "original" or "new" in the report is replaced with "df1"
+and/or "df2".)::
 
-========= =============================================================
-Flag      Description
-========= =============================================================
-nullcheck Must be set when the output of the transformation can be null
-========= =============================================================
+    DataComPy Comparison
+    --------------------
 
-Transformations are applied to the compare side only. A known difference is found when transformation(compare.cell) equals base.cell. An example comparison is shown below.
+    DataFrame Summary
+    -----------------
+
+      DataFrame  Columns  Rows
+    0  Original        5     5
+    1       New        4     5
+
+    Column Summary
+    --------------
+
+    Number of columns in common: 4
+    Number of columns in Original but not in New: 1
+    Number of columns in New but not in Original: 0
+
+    Row Summary
+    -----------
+
+    Matched on: acct_id
+    Any duplicates on match values: No
+    Absolute Tolerance: 0
+    Relative Tolerance: 0
+    Number of rows in common: 4
+    Number of rows in Original but not in New: 1
+    Number of rows in New but not in Original: 1
+
+    Number of rows with some compared columns unequal: 4
+    Number of rows with all compared columns equal: 0
+
+    Column Comparison
+    -----------------
+
+    Number of columns compared with some values unequal: 3
+    Number of columns compared with all values equal: 1
+    Total number of values which compare unequal: 6
+
+    Columns with Unequal Values or Types
+    ------------------------------------
+
+           Column Original dtype New dtype  # Unequal  Max Diff  # Null Diff
+    0  dollar_amt        float64   float64          1    0.0500            0
+    2   float_fld        float64   float64          3    0.0005            2
+    1        name         object    object          2       NaN            0
+
+    Sample Rows with Unequal Values
+    -------------------------------
+
+           acct_id  dollar_amt (Original)  dollar_amt (New)
+    0  10000001234                 123.45             123.4
+
+           acct_id name (Original)            name (New)
+    0  10000001234  George Maharis  George Michael Bluth
+    3  10000001237      Bob Loblaw         Robert Loblaw
+
+           acct_id  float_fld (Original)  float_fld (New)
+    0  10000001234            14530.1555        14530.155
+    1  10000001235                1.0000              NaN
+    2  10000001236                   NaN            1.000
+
+    Sample Rows Only in Original (First 10 Columns)
+    -----------------------------------------------
+
+       acct_id_df1  dollar_amt_df1       name_df1  float_fld_df1 date_fld_df1  _merge_left
+    5  10000001239            1.05  Lucille Bluth            NaN   2017-01-01         True
+
+    Sample Rows Only in New (First 10 Columns)
+    ------------------------------------------
+
+       acct_id_df2  dollar_amt_df2          name_df2  float_fld_df2  _merge_right
+    4  10000001238            1.05  Loose Seal Bluth          111.0          True
+
+
+Convenience Methods
+-------------------
+
+There are a few convenience methods available after the comparison has been run:
 
 .. code-block:: python
 
-    import datetime
-    import datacompy
-    from pyspark.sql import Row
-    
-    base_data = [
-        Row(acct_id=10000001234, acct_sfx_num=0, clsd_reas_cd='*2', open_dt=datetime.date(2017, 5, 1), tbal_cd='0001'),
-        Row(acct_id=10000001235, acct_sfx_num=0, clsd_reas_cd='V1', open_dt=datetime.date(2017, 5, 2), tbal_cd='0002'),
-        Row(acct_id=10000001236, acct_sfx_num=0, clsd_reas_cd='V2', open_dt=datetime.date(2017, 5, 3), tbal_cd='0003'),
-        Row(acct_id=10000001237, acct_sfx_num=0, clsd_reas_cd='*2', open_dt=datetime.date(2017, 5, 4), tbal_cd='0004'),
-        Row(acct_id=10000001238, acct_sfx_num=0, clsd_reas_cd='*2', open_dt=datetime.date(2017, 5, 5), tbal_cd='0005')
-    ]
-    base_df = spark.createDataFrame(base_data) 
+    print(compare.intersect_rows[['name_df1', 'name_df2', 'name_match']])
+    #          name_df1              name_df2  name_match
+    # 0  George Maharis  George Michael Bluth       False
+    # 1   Michael Bluth         Michael Bluth        True
+    # 2    George Bluth          George Bluth        True
+    # 3      Bob Loblaw         Robert Loblaw       False
 
-    compare_data = [
-        Row(ACCOUNT_IDENTIFIER=10000001234, SUFFIX_NUMBER=0, AM00_STATC_CLOSED=None, AM00_DATE_ACCOUNT_OPEN=2017121, AM0B_FC_TBAL=1.0),
-        Row(ACCOUNT_IDENTIFIER=10000001235, SUFFIX_NUMBER=0, AM00_STATC_CLOSED='V1', AM00_DATE_ACCOUNT_OPEN=2017122, AM0B_FC_TBAL=2.0),
-        Row(ACCOUNT_IDENTIFIER=10000001236, SUFFIX_NUMBER=0, AM00_STATC_CLOSED='V2', AM00_DATE_ACCOUNT_OPEN=2017123, AM0B_FC_TBAL=3.0),
-        Row(ACCOUNT_IDENTIFIER=10000001237, SUFFIX_NUMBER=0, AM00_STATC_CLOSED='V3', AM00_DATE_ACCOUNT_OPEN=2017124, AM0B_FC_TBAL=4.0),
-        Row(ACCOUNT_IDENTIFIER=10000001238, SUFFIX_NUMBER=0, AM00_STATC_CLOSED=None, AM00_DATE_ACCOUNT_OPEN=2017125, AM0B_FC_TBAL=5.0)
-    ]
-    compare_df = spark.createDataFrame(compare_data)
+    print(compare.df1_unq_rows)
+    #    acct_id_df1  dollar_amt_df1       name_df1  float_fld_df1 date_fld_df1  _merge_left
+    # 5  10000001239            1.05  Lucille Bluth            NaN   2017-01-01         True
 
-    comparison = datacompy.SparkCompare(spark, base_df, compare_df,
-                        join_columns =   [('acct_id', 'ACCOUNT_IDENTIFIER'), ('acct_sfx_num', 'SUFFIX_NUMBER')],
-                        column_mapping = [('clsd_reas_cd', 'AM00_STATC_CLOSED'),
-                                          ('open_dt', 'AM00_DATE_ACCOUNT_OPEN'),
-                                          ('tbal_cd', 'AM0B_FC_TBAL')],
-                        known_differences= [
-                            {'name': 'Left-padded, four-digit numeric code',
-                             'types': ['tinyint', 'smallint', 'int', 'bigint', 'float', 'double', 'decimal'],
-                             'transformation': "lpad(cast({input} AS bigint), 4, '0')"},
-                            {'name': 'Null to *2',
-                             'types': ['string'],
-                             'transformation': "case when {input} is null then '*2' else {input} end"},
-                            {'name': 'Julian date -> date',
-                             'types': ['bigint'],
-                             'transformation': "to_date(cast(unix_timestamp(cast({input} AS string), 'yyyyDDD') AS timestamp))"}
-                        ])
-    comparison.report()
+    print(compare.df2_unq_rows)
+    #    acct_id_df2  dollar_amt_df2          name_df2  float_fld_df2  _merge_right
+    # 4  10000001238            1.05  Loose Seal Bluth          111.0          True
 
-Corresponding output::
+    print(compare.intersect_columns())
+    # OrderedSet(['acct_id', 'dollar_amt', 'name', 'float_fld'])
 
-    ****** Column Summary ******
-    Number of columns in common with matching schemas: 3
-    Number of columns in common with schema differences: 2
-    Number of columns in base but not compare: 0
-    Number of columns in compare but not base: 0
-    
-    ****** Schema Differences ******
-    Base Column Name  Compare Column Name     Base Dtype     Compare Dtype
-    ----------------  ----------------------  -------------  -------------
-    open_dt           AM00_DATE_ACCOUNT_OPEN  date           bigint       
-    tbal_cd           AM0B_FC_TBAL            string         double       
-    
-    ****** Row Summary ******
-    Number of rows in common: 5
-    Number of rows in base but not compare: 0
-    Number of rows in compare but not base: 0
-    Number of duplicate rows found in base: 0
-    Number of duplicate rows found in compare: 0
-    
-    ****** Row Comparison ******
-    Number of rows with some columns unequal: 5
-    Number of rows with all columns equal: 0
-    
-    ****** Column Comparison ******
-    Number of columns compared with unexpected differences in some values: 1
-    Number of columns compared with all values equal but known differences found: 2
-    Number of columns compared with all values completely equal: 0
-    
-    ****** Columns with Unequal Values ******
-    Base Column Name  Compare Column Name     Base Dtype     Compare Dtype  # Matches  # Known Diffs  # Mismatches
-    ----------------  -------------------     -------------  -------------  ---------  -------------  ------------
-    clsd_reas_cd      AM00_STATC_CLOSED       string         string                 2              2             1
-    open_dt           AM00_DATE_ACCOUNT_OPEN  date           bigint                 0              5             0
-    tbal_cd           AM0B_FC_TBAL            string         double                 0              5             0
+    print(compare.df1_unq_columns())
+    # OrderedSet(['date_fld'])
+
+    print(compare.df2_unq_columns())
+    # OrderedSet()
+
+Duplicate rows
+--------------
+
+Datacompy will try to handle rows that are duplicate in the join columns.  It does this behind the
+scenes by generating a unique ID within each unique group of the join columns.  For example, if you
+have two dataframes you're trying to join on acct_id:
+
+=========== ================
+acct_id     name
+=========== ================
+1           George Maharis
+1           Michael Bluth
+2           George Bluth
+=========== ================
+
+=========== ================
+acct_id     name
+=========== ================
+1           George Maharis
+1           Michael Bluth
+1           Tony Wonder
+2           George Bluth
+=========== ================
+
+Datacompy will generate a unique temporary ID for joining:
+
+=========== ================ ========
+acct_id     name             temp_id
+=========== ================ ========
+1           George Maharis   0
+1           Michael Bluth    1
+2           George Bluth     0
+=========== ================ ========
+
+=========== ================ ========
+acct_id     name             temp_id
+=========== ================ ========
+1           George Maharis   0
+1           Michael Bluth    1
+1           Tony Wonder      2
+2           George Bluth     0
+=========== ================ ========
+
+And then merge the two dataframes on a combination of the join_columns you specified and the temporary
+ID, before dropping the temp_id again.  So the first two rows in the first dataframe will match the
+first two rows in the second dataframe, and the third row in the second dataframe will be recognized
+as uniquely in the second.
