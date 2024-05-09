@@ -264,23 +264,28 @@ class SparkCompare(BaseCompare):
         ) - OrderedSet(self.join_columns)
 
         for c in non_join_columns:
-            df1.rename(columns={c: c + "_df1"}, inplace=True)
-            df2.rename(columns={c: c + "_df2"}, inplace=True)
+            df1.rename(columns={c: c + "_" + self.df1_name}, inplace=True)
+            df2.rename(columns={c: c + "_" + self.df2_name}, inplace=True)
 
         # generate merge indicator
         df1["_merge_left"] = True
         df2["_merge_right"] = True
 
         for c in self.join_columns:
-            df1.rename(columns={c: c + "_df1"}, inplace=True)
-            df2.rename(columns={c: c + "_df2"}, inplace=True)
+            df1.rename(columns={c: c + "_" + self.df1_name}, inplace=True)
+            df2.rename(columns={c: c + "_" + self.df2_name}, inplace=True)
 
         # cache
         df1.spark.cache()
         df2.spark.cache()
 
         # NULL SAFE Outer join using ON
-        on = " and ".join([f"df1.`{c}_df1` <=> df2.`{c}_df2`" for c in params["on"]])
+        on = " and ".join(
+            [
+                f"df1.`{c}_{self.df1_name}` <=> df2.`{c}_{self.df2_name}`"
+                for c in params["on"]
+            ]
+        )
         outer_join = ps.sql(
             """
         SELECT * FROM
@@ -311,13 +316,29 @@ class SparkCompare(BaseCompare):
         # Clean up temp columns for duplicate row matching
         if self._any_dupes:
             outer_join = outer_join.drop(
-                [order_column + "_df1", order_column + "_df2"], axis=1
+                [
+                    order_column + "_" + self.df1_name,
+                    order_column + "_" + self.df2_name,
+                ],
+                axis=1,
             )
-            df1 = df1.drop([order_column + "_df1", order_column + "_df2"], axis=1)
-            df2 = df2.drop([order_column + "_df1", order_column + "_df2"], axis=1)
+            df1 = df1.drop(
+                [
+                    order_column + "_" + self.df1_name,
+                    order_column + "_" + self.df2_name,
+                ],
+                axis=1,
+            )
+            df2 = df2.drop(
+                [
+                    order_column + "_" + self.df1_name,
+                    order_column + "_" + self.df2_name,
+                ],
+                axis=1,
+            )
 
-        df1_cols = get_merged_columns(df1, outer_join, "_df1")
-        df2_cols = get_merged_columns(df2, outer_join, "_df2")
+        df1_cols = get_merged_columns(df1, outer_join, self.df1_name)
+        df2_cols = get_merged_columns(df2, outer_join, self.df2_name)
 
         LOG.debug("Selecting df1 unique rows")
         self.df1_unq_rows = outer_join[outer_join["_merge"] == "left_only"][
@@ -356,8 +377,8 @@ class SparkCompare(BaseCompare):
                 max_diff = 0
                 null_diff = 0
             else:
-                col_1 = column + "_df1"
-                col_2 = column + "_df2"
+                col_1 = column + "_" + self.df1_name
+                col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
                 self.intersect_rows[col_match] = columns_equal(
                     self.intersect_rows[col_1],
@@ -511,9 +532,12 @@ class SparkCompare(BaseCompare):
         sample = self.intersect_rows[~col_match].head(sample_count)
 
         for c in self.join_columns:
-            sample[c] = sample[c + "_df1"]
+            sample[c] = sample[c + "_" + self.df1_name]
 
-        return_cols = self.join_columns + [column + "_df1", column + "_df2"]
+        return_cols = self.join_columns + [
+            column + "_" + self.df1_name,
+            column + "_" + self.df2_name,
+        ]
         to_return = sample[return_cols]
         if for_display:
             to_return.columns = self.join_columns + [
@@ -543,8 +567,8 @@ class SparkCompare(BaseCompare):
                 orig_col_name = col[:-6]
 
                 col_comparison = columns_equal(
-                    self.intersect_rows[orig_col_name + "_df1"],
-                    self.intersect_rows[orig_col_name + "_df2"],
+                    self.intersect_rows[orig_col_name + "_" + self.df1_name],
+                    self.intersect_rows[orig_col_name + "_" + self.df2_name],
                     self.rel_tol,
                     self.abs_tol,
                     self.ignore_spaces,
@@ -556,7 +580,12 @@ class SparkCompare(BaseCompare):
                 ):
                     LOG.debug(f"Adding column {orig_col_name} to the result.")
                     match_list.append(col)
-                    return_list.extend([orig_col_name + "_df1", orig_col_name + "_df2"])
+                    return_list.extend(
+                        [
+                            orig_col_name + "_" + self.df1_name,
+                            orig_col_name + "_" + self.df2_name,
+                        ]
+                    )
                 elif ignore_matching_cols:
                     LOG.debug(
                         f"Column {orig_col_name} is equal in df1 and df2. It will not be added to the result."
@@ -566,8 +595,8 @@ class SparkCompare(BaseCompare):
 
         updated_join_columns = []
         for c in self.join_columns:
-            updated_join_columns.append(c + "_df1")
-            updated_join_columns.append(c + "_df2")
+            updated_join_columns.append(c + "_" + self.df1_name)
+            updated_join_columns.append(c + "_" + self.df2_name)
 
         return self.intersect_rows[~mm_bool][updated_join_columns + return_list]
 
@@ -818,7 +847,7 @@ def columns_equal(
                         col_1_temp.isnull() & col_2_temp.isnull()
                     )
 
-            except:
+            except Exception:
                 # Blanket exception should just return all False
                 compare = ps.Series(False, index=col_1.index.to_numpy())
     return compare
@@ -855,7 +884,7 @@ def compare_string_and_date_columns(col_1, col_2):
                 | (obj_column.isnull() & date_column.isnull())
             ).to_numpy()
         )  # force compute
-    except:
+    except Exception:
         compare = ps.Series(False, index=col_1.index.to_numpy())
     return compare
 
@@ -877,8 +906,8 @@ def get_merged_columns(original_df, merged_df, suffix):
     for col in original_df.columns:
         if col in merged_df.columns:
             columns.append(col)
-        elif col + suffix in merged_df.columns:
-            columns.append(col + suffix)
+        elif col + "_" + suffix in merged_df.columns:
+            columns.append(col + "_" + suffix)
         else:
             raise ValueError("Column not found: %s", col)
     return columns
@@ -926,7 +955,7 @@ def calculate_max_diff(col_1, col_2):
     """
     try:
         return (col_1.astype(float) - col_2.astype(float)).abs().max()
-    except:
+    except Exception:
         return 0
 
 

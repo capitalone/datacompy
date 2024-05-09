@@ -19,6 +19,7 @@ from datacompy.core import *
 from datacompy.fugue import (
     all_columns_match,
     all_rows_overlap,
+    count_matching_rows,
     intersect_columns,
     is_match,
     report,

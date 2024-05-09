@@ -20,6 +20,7 @@ from pytest import raises
 from datacompy import (
     all_columns_match,
     all_rows_overlap,
+    count_matching_rows,
     intersect_columns,
     is_match,
     unq_columns,
@@ -122,3 +123,37 @@ def test_all_rows_overlap_polars(
     assert all_rows_overlap(rdf, rdf_copy, join_columns="a")
     assert all_rows_overlap(rdf, sdf, join_columns="a")
     assert not all_rows_overlap(rdf, rdf4, join_columns="a")
+
+
+def test_count_matching_rows_polars(count_matching_rows_df):
+    df1 = pl.from_pandas(count_matching_rows_df[0])
+    df2 = pl.from_pandas(count_matching_rows_df[1])
+    assert (
+        count_matching_rows(
+            df1,
+            df1.clone(),
+            join_columns="a",
+        )
+        == 100
+    )
+    assert count_matching_rows(df1, df2, join_columns="a") == 10
+    # Fugue
+
+    assert (
+        count_matching_rows(
+            df1,
+            df1.clone(),
+            join_columns="a",
+            parallelism=2,
+        )
+        == 100
+    )
+    assert (
+        count_matching_rows(
+            df1,
+            df2,
+            join_columns="a",
+            parallelism=2,
+        )
+        == 10
+    )
