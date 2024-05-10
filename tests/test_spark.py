@@ -46,6 +46,7 @@ from datacompy.spark import (  # noqa: E402
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
+ps.set_option("compute.ops_on_diff_frames", True)
 pandas_version = pytest.mark.skipif(
     pd.__version__ >= "2.0.0", reason="Pandas 2 is currently not supported"
 )
