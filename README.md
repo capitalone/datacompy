@@ -46,7 +46,7 @@ The original ``SparkCompare`` implementation differs from all the other native i
 If you wish to use the old SparkCompare moving forward you can
 
 ```python
-import datacompy.legacy.LegacySparkCompare
+from datacompy.legacy import LegacySparkCompare
 ``` 
 
 #### Supported versions and dependncies
