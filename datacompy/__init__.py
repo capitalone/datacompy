@@ -15,6 +15,9 @@
 
 __version__ = "0.12.0"
 
+import platform
+from warnings import warn
+
 from datacompy.core import *
 from datacompy.fugue import (
     all_columns_match,
@@ -27,3 +30,14 @@ from datacompy.fugue import (
 )
 from datacompy.polars import PolarsCompare
 from datacompy.spark import SparkCompare
+
+major = platform.python_version_tuple()[0]
+minor = platform.python_version_tuple()[1]
+
+if major == "3" and minor >= "12":
+    warn(
+        "Python 3.12 and above currently is not supported by Spark and Ray. "
+        "Please note that some functionality will not work and currently is not supported.",
+        UserWarning,
+        stacklevel=2,
+    )

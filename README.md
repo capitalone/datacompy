@@ -33,7 +33,6 @@ If you would like to use Spark or any other backends please make sure you instal
 pip install datacompy[spark]
 pip install datacompy[dask]
 pip install datacompy[duckdb]
-pip install datacompy[polars]
 pip install datacompy[ray]
 
 ```
@@ -79,7 +78,9 @@ With version ``0.12.0``:
 
 
 > [!NOTE]
-> At the current time Python `3.12` is not supported by Spark and also Ray within Fugue.
+> At the current time Python `3.12` is not supported by Spark and also Ray within Fugue. 
+> If you are using Python `3.12` and above, please note that not all functioanlity will be supported.
+> Pandas and Polars support should work fine and are tested.
 
 ## Supported backends
 
