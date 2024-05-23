@@ -2,9 +2,10 @@
 Installation
 ============
 
-.. note::
+.. important::
 
-    Moving forward ``datacompy`` will not support Python 2. Please make sure you are using Python 3.8+
+    If you are using Python 3.12 and above, please note that not all functioanlity will be supported.
+    Pandas and Polars support should work fine and are tested.
 
 
 PyPI (basic)
