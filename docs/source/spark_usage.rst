@@ -13,7 +13,7 @@ Spark (Pandas on Spark) Usage
 
     .. code-block:: python
 
-        import datacompy.legacy.LegacySparkCompare
+        from datacompy.legacy import LegacySparkCompare
     
 
 
