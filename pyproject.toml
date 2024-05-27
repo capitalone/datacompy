@@ -11,13 +11,7 @@ maintainers = [
   { name="Faisal Dosani", email="faisal.dosani@capitalone.com" }
 ]
 license = {text = "Apache Software License"}
-dependencies = [
-  "pandas<=2.2.2,>=0.25.0", 
-  "numpy<=1.26.4,>=1.22.0", 
-  "ordered-set<=4.1.0,>=4.0.2", 
-  "fugue<=0.8.7,>=0.8.7",
-  "polars<=0.20.27,>=0.20.4",
-]
+dependencies = ["pandas<=2.2.2,>=0.25.0", "numpy<=1.26.4,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "fugue<=0.9.0,>=0.8.7", "polars<=0.20.29,>=0.20.4"]
 requires-python = ">=3.9.0"
 classifiers = [
     "Intended Audience :: Developers",
