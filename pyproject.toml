@@ -61,7 +61,7 @@ ray = ["fugue[ray]"]
 docs = ["sphinx", "furo", "myst-parser"]
 tests = ["pytest", "pytest-cov"]
 
-tests-spark = ["pytest", "pytest-cov", "pytest-spark", "spark"]
+tests-spark = ["pytest", "pytest-cov", "pytest-spark"]
 qa = ["pre-commit", "black", "isort", "mypy", "pandas-stubs"]
 build = ["build", "twine", "wheel"]
 edgetest = ["edgetest", "edgetest-conda"]

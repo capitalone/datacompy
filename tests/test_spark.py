@@ -46,6 +46,7 @@ from datacompy.spark import (  # noqa: E402
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
+ps.set_option("compute.ops_on_diff_frames", True)
 pandas_version = pytest.mark.skipif(
     pd.__version__ >= "2.0.0", reason="Pandas 2 is currently not supported"
 )
@@ -1206,9 +1207,8 @@ def test_dupes_with_nulls_ints():
 
 
 @pandas_version
-@pytest.mark.parametrize(
-    "dataframe,expected",
-    [
+def test_generate_id_within_group():
+    matrix = [
         (ps.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}), ps.Series([0, 0, 0])),
         (
             ps.DataFrame({"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}),
@@ -1229,10 +1229,11 @@ def test_dupes_with_nulls_ints():
             ),
             ps.Series([0, 0, 1]),
         ),
-    ],
-)
-def test_generate_id_within_group(dataframe, expected):
-    assert (generate_id_within_group(dataframe, ["a", "b"]) == expected).all()
+    ]
+    for i in matrix:
+        dataframe = i[0]
+        expected = i[1]
+        assert (generate_id_within_group(dataframe, ["a", "b"]) == expected).all()
 
 
 @pandas_version
