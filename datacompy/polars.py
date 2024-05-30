@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 import numpy as np
 from ordered_set import OrderedSet
 
-from datacompy.base import BaseCompare
+from datacompy.base import BaseCompare, temp_column_name
 
 try:
     import polars as pl
@@ -278,11 +278,17 @@ class PolarsCompare(BaseCompare):
 
         # process merge indicator
         outer_join = outer_join.with_columns(
-            pl.when((pl.col("_merge_left") == True) & (pl.col("_merge_right") == True))
+            pl.when(
+                (pl.col("_merge_left") == True) & (pl.col("_merge_right") == True)
+            )  # noqa: E712
             .then(pl.lit("both"))
-            .when((pl.col("_merge_left") == True) & (pl.col("_merge_right").is_null()))
+            .when(
+                (pl.col("_merge_left") == True) & (pl.col("_merge_right").is_null())
+            )  # noqa: E712
             .then(pl.lit("left_only"))
-            .when((pl.col("_merge_left").is_null()) & (pl.col("_merge_right") == True))
+            .when(
+                (pl.col("_merge_left").is_null()) & (pl.col("_merge_right") == True)
+            )  # noqa: E712
             .then(pl.lit("right_only"))
             .alias("_merge")
         )
@@ -497,7 +503,9 @@ class PolarsCompare(BaseCompare):
         col_match = self.intersect_rows[column + "_match"]
         match_cnt = col_match.sum()
         sample_count = min(sample_count, row_cnt - match_cnt)  # type: ignore
-        sample = self.intersect_rows.filter(pl.col(column + "_match") != True).sample(
+        sample = self.intersect_rows.filter(
+            pl.col(column + "_match") != True
+        ).sample(  # noqa: E712
             sample_count
         )
         return_cols = self.join_columns + [
@@ -558,7 +566,7 @@ class PolarsCompare(BaseCompare):
                     )
         return (
             self.intersect_rows.with_columns(__all=pl.all_horizontal(match_list))
-            .filter(pl.col("__all") != True)
+            .filter(pl.col("__all") != True)  # noqa: E712
             .select(self.join_columns + return_list)
         )
 
@@ -897,31 +905,6 @@ def get_merged_columns(
         else:
             raise ValueError("Column not found: %s", col)
     return columns
-
-
-def temp_column_name(*dataframes: "pl.DataFrame") -> str:
-    """Gets a temp column name that isn't included in columns of any dataframes
-
-    Parameters
-    ----------
-    dataframes : list of Polars.DataFrame
-        The DataFrames to create a temporary column name for
-
-    Returns
-    -------
-    str
-        String column name that looks like '_temp_x' for some integer x
-    """
-    i = 0
-    while True:
-        temp_column = f"_temp_{i}"
-        unique = True
-        for dataframe in dataframes:
-            if temp_column in dataframe.columns:
-                i += 1
-                unique = False
-        if unique:
-            return temp_column
 
 
 def calculate_max_diff(col_1: "pl.Series", col_2: "pl.Series") -> float:

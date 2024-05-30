@@ -428,9 +428,9 @@ def test_infinity_and_beyond():
 def test_compare_df_setter_bad():
     df = ps.DataFrame([{"a": 1, "c": 2}, {"a": 2, "c": 2}])
     with raises(TypeError, match="df1 must be a pyspark.pandas.frame.DataFrame"):
-        compare = SparkCompare("a", "a", ["a"])
+        SparkCompare("a", "a", ["a"])
     with raises(ValueError, match="df1 must have all columns from join_columns"):
-        compare = SparkCompare(df, df.copy(), ["b"])
+        SparkCompare(df, df.copy(), ["b"])
     df_dupe = ps.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
     assert (
         SparkCompare(df_dupe, df_dupe.copy(), ["a", "b"])
@@ -624,7 +624,7 @@ def test_temp_column_name_one_has():
 
 
 @pandas_version
-def test_temp_column_name_both_have():
+def test_temp_column_name_both_have_temp_1():
     df1 = ps.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
     df2 = ps.DataFrame(
         [
@@ -638,7 +638,7 @@ def test_temp_column_name_both_have():
 
 
 @pandas_version
-def test_temp_column_name_both_have():
+def test_temp_column_name_both_have_temp_2():
     df1 = ps.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
     df2 = ps.DataFrame(
         [
@@ -673,7 +673,7 @@ def test_simple_dupes_one_field():
     compare = SparkCompare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
 @pandas_version
@@ -683,7 +683,7 @@ def test_simple_dupes_two_fields():
     compare = SparkCompare(df1, df2, join_columns=["a", "b"])
     assert compare.matches()
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
 @pandas_version
@@ -693,7 +693,7 @@ def test_simple_dupes_one_field_two_vals_1():
     compare = SparkCompare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
 @pandas_version
@@ -706,7 +706,7 @@ def test_simple_dupes_one_field_two_vals_2():
     assert len(compare.df2_unq_rows) == 1
     assert len(compare.intersect_rows) == 1
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
 @pandas_version
@@ -719,7 +719,7 @@ def test_simple_dupes_one_field_three_to_two_vals():
     assert len(compare.df2_unq_rows) == 0
     assert len(compare.intersect_rows) == 2
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
     assert "(First 1 Columns)" in compare.report(column_count=1)
     assert "(First 2 Columns)" in compare.report(column_count=2)
@@ -759,8 +759,8 @@ def test_dupes_from_real_data():
     )
     assert compare_unq.matches()
     # Just render the report to make sure it renders.
-    t = compare_acct.report()
-    r = compare_unq.report()
+    compare_acct.report()
+    compare_unq.report()
 
 
 @pandas_version
@@ -1321,4 +1321,4 @@ def test_unicode_columns():
     compare = SparkCompare(df1, df2, join_columns=["例"])
     assert compare.matches()
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
