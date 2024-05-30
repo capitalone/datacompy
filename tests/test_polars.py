@@ -16,6 +16,7 @@
 """
 Testing out the datacompy functionality
 """
+
 import io
 import logging
 import sys
@@ -29,12 +30,12 @@ from pytest import raises
 
 pytest.importorskip("polars")
 
-import polars as pl
-from polars.exceptions import ComputeError, DuplicateError
-from polars.testing import assert_series_equal
+import polars as pl  # noqa: E402
+from polars.exceptions import ComputeError, DuplicateError  # noqa: E402
+from polars.testing import assert_series_equal  # noqa: E402
 
-from datacompy import PolarsCompare
-from datacompy.polars import (
+from datacompy import PolarsCompare  # noqa: E402
+from datacompy.polars import (  # noqa: E402
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
@@ -383,11 +384,11 @@ def test_compare_df_setter_bad():
     df_same_col_names = pl.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
     df_dupe = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
     with raises(TypeError, match="df1 must be a Polars DataFrame"):
-        compare = PolarsCompare("a", "a", ["a"])
+        PolarsCompare("a", "a", ["a"])
     with raises(ValueError, match="df1 must have all columns from join_columns"):
-        compare = PolarsCompare(df, df.clone(), ["b"])
+        PolarsCompare(df, df.clone(), ["b"])
     with raises(DuplicateError, match="duplicate column names found"):
-        compare = PolarsCompare(df_same_col_names, df_same_col_names.clone(), ["a"])
+        PolarsCompare(df_same_col_names, df_same_col_names.clone(), ["a"])
     assert (
         PolarsCompare(df_dupe, df_dupe.clone(), ["a", "b"])
         .df1.drop("_merge_left")
@@ -419,9 +420,9 @@ def test_compare_df_setter_different_cases():
 def test_compare_df_setter_bad_index():
     df = pl.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
     with raises(TypeError, match="df1 must be a Polars DataFrame"):
-        compare = PolarsCompare("a", "a", join_columns="a")
+        PolarsCompare("a", "a", join_columns="a")
     with raises(DuplicateError, match="duplicate column names found"):
-        compare = PolarsCompare(df, df.clone(), join_columns="a")
+        PolarsCompare(df, df.clone(), join_columns="a")
 
 
 def test_compare_df_setter_good_index():
@@ -535,7 +536,7 @@ def test_float_and_string_with_joins():
     df1 = pl.DataFrame([{"a": float("1"), "b": 2}, {"a": float("2"), "b": 2}])
     df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     with raises(ComputeError):
-        compare = PolarsCompare(df1, df2, "a")
+        PolarsCompare(df1, df2, "a")
 
 
 def test_decimal_with_nulls():
@@ -576,7 +577,7 @@ def test_temp_column_name_one_has():
     assert actual == "_temp_1"
 
 
-def test_temp_column_name_both_have():
+def test_temp_column_name_both_have_temp_1():
     df1 = pl.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
     df2 = pl.DataFrame(
         [
@@ -589,7 +590,7 @@ def test_temp_column_name_both_have():
     assert actual == "_temp_1"
 
 
-def test_temp_column_name_both_have():
+def test_temp_column_name_both_have_temp_2():
     df1 = pl.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
     df2 = pl.DataFrame(
         [
@@ -622,7 +623,7 @@ def test_simple_dupes_one_field():
     compare = PolarsCompare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
 def test_simple_dupes_two_fields():
@@ -631,19 +632,19 @@ def test_simple_dupes_two_fields():
     compare = PolarsCompare(df1, df2, join_columns=["a", "b"])
     assert compare.matches()
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
-def test_simple_dupes_one_field_two_vals():
+def test_simple_dupes_one_field_two_vals_1():
     df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     compare = PolarsCompare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
-def test_simple_dupes_one_field_two_vals():
+def test_simple_dupes_one_field_two_vals_2():
     df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
     compare = PolarsCompare(df1, df2, join_columns=["a"])
@@ -652,7 +653,7 @@ def test_simple_dupes_one_field_two_vals():
     assert len(compare.df2_unq_rows) == 1
     assert len(compare.intersect_rows) == 1
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
 def test_simple_dupes_one_field_three_to_two_vals():
@@ -664,7 +665,7 @@ def test_simple_dupes_one_field_three_to_two_vals():
     assert len(compare.df2_unq_rows) == 0
     assert len(compare.intersect_rows) == 2
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
     assert "(First 1 Columns)" in compare.report(column_count=1)
     assert "(First 2 Columns)" in compare.report(column_count=2)
@@ -703,8 +704,8 @@ def test_dupes_from_real_data():
     )
     assert compare_unq.matches()
     # Just render the report to make sure it renders.
-    t = compare_acct.report()
-    r = compare_unq.report()
+    compare_acct.report()
+    compare_unq.report()
 
 
 def test_strings_with_joins_with_ignore_spaces():

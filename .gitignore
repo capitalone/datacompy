@@ -22,4 +22,5 @@ docs/source/api/
 
 #edgetest
 .edgetest/
-tmp/
+
+.tmp/

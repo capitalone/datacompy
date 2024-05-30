@@ -139,3 +139,33 @@ class BaseCompare(ABC):
         html_file: Optional[str] = None,
     ) -> str:
         pass
+
+
+def temp_column_name(*dataframes) -> str:
+    """Gets a temp column name that isn't included in columns of any dataframes
+
+    Parameters
+    ----------
+    dataframes : list of DataFrames
+        The DataFrames to create a temporary column name for
+
+    Returns
+    -------
+    str
+        String column name that looks like '_temp_x' for some integer x
+    """
+    i = 0
+    columns = []
+    for dataframe in dataframes:
+        columns = columns + list(dataframe.columns)
+    columns = set(columns)
+
+    while True:
+        temp_column = f"_temp_{i}"
+        unique = True
+
+        if temp_column in columns:
+            i += 1
+            unique = False
+        if unique:
+            return temp_column
