@@ -27,7 +27,7 @@ import os
 import pandas as pd
 from ordered_set import OrderedSet
 
-from datacompy.base import BaseCompare
+from datacompy.base import BaseCompare, temp_column_name
 
 try:
     import pyspark.pandas as ps
@@ -301,15 +301,18 @@ class SparkCompare(BaseCompare):
 
         # process merge indicator
         outer_join["_merge"] = outer_join._merge.mask(
-            (outer_join["_merge_left"] == True) & (outer_join["_merge_right"] == True),
+            (outer_join["_merge_left"] == True)
+            & (outer_join["_merge_right"] == True),  # noqa: E712
             "both",
         )
         outer_join["_merge"] = outer_join._merge.mask(
-            (outer_join["_merge_left"] == True) & (outer_join["_merge_right"] != True),
+            (outer_join["_merge_left"] == True)
+            & (outer_join["_merge_right"] != True),  # noqa: E712
             "left_only",
         )
         outer_join["_merge"] = outer_join._merge.mask(
-            (outer_join["_merge_left"] != True) & (outer_join["_merge_right"] == True),
+            (outer_join["_merge_left"] != True)
+            & (outer_join["_merge_right"] == True),  # noqa: E712
             "right_only",
         )
 
@@ -911,31 +914,6 @@ def get_merged_columns(original_df, merged_df, suffix):
         else:
             raise ValueError("Column not found: %s", col)
     return columns
-
-
-def temp_column_name(*dataframes):
-    """Gets a temp column name that isn't included in columns of any dataframes
-
-    Parameters
-    ----------
-    dataframes : list of pyspark.pandas.frame.DataFrame
-        The DataFrames to create a temporary column name for
-
-    Returns
-    -------
-    str
-        String column name that looks like '_temp_x' for some integer x
-    """
-    i = 0
-    while True:
-        temp_column = f"_temp_{i}"
-        unique = True
-        for dataframe in dataframes:
-            if temp_column in dataframe.columns:
-                i += 1
-                unique = False
-        if unique:
-            return temp_column
 
 
 def calculate_max_diff(col_1, col_2):

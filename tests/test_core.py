@@ -417,11 +417,11 @@ def test_mixed_column_with_ignore_spaces_and_case():
 def test_compare_df_setter_bad():
     df = pd.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
     with raises(TypeError, match="df1 must be a pandas DataFrame"):
-        compare = datacompy.Compare("a", "a", ["a"])
+        datacompy.Compare("a", "a", ["a"])
     with raises(ValueError, match="df1 must have all columns from join_columns"):
-        compare = datacompy.Compare(df, df.copy(), ["b"])
+        datacompy.Compare(df, df.copy(), ["b"])
     with raises(ValueError, match="df1 must have unique column names"):
-        compare = datacompy.Compare(df, df.copy(), ["a"])
+        datacompy.Compare(df, df.copy(), ["a"])
     df_dupe = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
     assert datacompy.Compare(df_dupe, df_dupe.copy(), ["a", "b"]).df1.equals(df_dupe)
 
@@ -450,15 +450,15 @@ def test_compare_df_setter_different_cases():
 def test_compare_df_setter_bad_index():
     df = pd.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
     with raises(TypeError, match="df1 must be a pandas DataFrame"):
-        compare = datacompy.Compare("a", "a", on_index=True)
+        datacompy.Compare("a", "a", on_index=True)
     with raises(ValueError, match="df1 must have unique column names"):
-        compare = datacompy.Compare(df, df.copy(), on_index=True)
+        datacompy.Compare(df, df.copy(), on_index=True)
 
 
 def test_compare_on_index_and_join_columns():
     df = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     with raises(Exception, match="Only provide on_index or join_columns"):
-        compare = datacompy.Compare(df, df.copy(), on_index=True, join_columns=["a"])
+        datacompy.Compare(df, df.copy(), on_index=True, join_columns=["a"])
 
 
 def test_compare_df_setter_good_index():
@@ -647,7 +647,7 @@ def test_temp_column_name_one_has():
     assert actual == "_temp_1"
 
 
-def test_temp_column_name_both_have():
+def test_temp_column_name_both_have_temp_1():
     df1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
     df2 = pd.DataFrame(
         [
@@ -660,7 +660,7 @@ def test_temp_column_name_both_have():
     assert actual == "_temp_1"
 
 
-def test_temp_column_name_both_have():
+def test_temp_column_name_both_have_temp_2():
     df1 = pd.DataFrame([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
     df2 = pd.DataFrame(
         [
@@ -693,7 +693,7 @@ def test_simple_dupes_one_field():
     compare = datacompy.Compare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
 def test_simple_dupes_two_fields():
@@ -702,7 +702,7 @@ def test_simple_dupes_two_fields():
     compare = datacompy.Compare(df1, df2, join_columns=["a", "b"])
     assert compare.matches()
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
 def test_simple_dupes_index():
@@ -714,19 +714,19 @@ def test_simple_dupes_index():
     compare = datacompy.Compare(df1, df2, on_index=True)
     assert compare.matches()
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
-def test_simple_dupes_one_field_two_vals():
+def test_simple_dupes_one_field_two_vals_1():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     compare = datacompy.Compare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
-def test_simple_dupes_one_field_two_vals():
+def test_simple_dupes_one_field_two_vals_2():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
     compare = datacompy.Compare(df1, df2, join_columns=["a"])
@@ -735,7 +735,7 @@ def test_simple_dupes_one_field_two_vals():
     assert len(compare.df2_unq_rows) == 1
     assert len(compare.intersect_rows) == 1
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
 
 def test_simple_dupes_one_field_three_to_two_vals():
@@ -747,7 +747,7 @@ def test_simple_dupes_one_field_three_to_two_vals():
     assert len(compare.df2_unq_rows) == 0
     assert len(compare.intersect_rows) == 2
     # Just render the report to make sure it renders.
-    t = compare.report()
+    compare.report()
 
     assert "(First 1 Columns)" in compare.report(column_count=1)
     assert "(First 2 Columns)" in compare.report(column_count=2)
@@ -786,8 +786,8 @@ def test_dupes_from_real_data():
     )
     assert compare_unq.matches()
     # Just render the report to make sure it renders.
-    t = compare_acct.report()
-    r = compare_unq.report()
+    compare_acct.report()
+    compare_unq.report()
 
 
 def test_strings_with_joins_with_ignore_spaces():
