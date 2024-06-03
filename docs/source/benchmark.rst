@@ -9,7 +9,7 @@ Benchmarks
 
     
 We've tried to create some benchmarks to help users understand which DataFrames to use when.
-PLease take the results with a grain of salt! If you have ideas on how we can further improve
+Please take the results with a grain of salt! If you have ideas on how we can further improve
 preformance please make an issue, we always welcome contributions.
 
 
