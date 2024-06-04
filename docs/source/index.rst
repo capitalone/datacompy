@@ -13,6 +13,7 @@ Contents
     Spark (Pandas on Spark) Usage <spark_usage>
     Polars Usage <polars_usage>
     Fugue Usage <fugue_usage>
+    Benchmarks <benchmark>
     Developer Instructions <developer_instructions>
 
 .. toctree::
