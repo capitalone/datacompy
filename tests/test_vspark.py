@@ -513,17 +513,17 @@ def test_columns_maintain_order_through_set_operations(spark_session):
 
 @pandas_version
 def test_10k_rows(spark_session):
-    df1 = spark_session.createDataFrame(
-        np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"]
-    )
-    df1.reset_index(inplace=True)
-    df1.columns = ["a", "b", "c"]
-    df2 = df1.copy()
-    df2["b"] = df2["b"] + 0.1
+    pdf = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["a", "b", "c"]
+    pdf2 = pdf.copy()
+    pdf2["b"] = pdf2["b"] + 0.1
+    df1 = spark_session.createDataFrame(pdf)
+    df2 = spark_session.createDataFrame(pdf2)
     compare_tol = VSparkCompare(spark_session, df1, df2, ["a"], abs_tol=0.2)
     assert compare_tol.matches()
-    assert len(compare_tol.df1_unq_rows) == 0
-    assert len(compare_tol.df2_unq_rows) == 0
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
     assert compare_tol.intersect_columns() == {"a", "b", "c"}
     assert compare_tol.all_columns_match()
     assert compare_tol.all_rows_overlap()
@@ -531,8 +531,8 @@ def test_10k_rows(spark_session):
 
     compare_no_tol = VSparkCompare(spark_session, df1, df2, ["a"])
     assert not compare_no_tol.matches()
-    assert len(compare_no_tol.df1_unq_rows) == 0
-    assert len(compare_no_tol.df2_unq_rows) == 0
+    assert compare_no_tol.df1_unq_rows.count() == 0
+    assert compare_no_tol.df2_unq_rows.count() == 0
     assert compare_no_tol.intersect_columns() == {"a", "b", "c"}
     assert compare_no_tol.all_columns_match()
     assert compare_no_tol.all_rows_overlap()

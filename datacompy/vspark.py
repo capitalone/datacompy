@@ -232,11 +232,6 @@ class VSparkCompare(BaseCompare):
         This method will log out information about what is different between
         the two dataframes, and will also return a boolean.
         """
-        LOG.debug("Checking equality")
-        if self.df1.pandas_api().equals(self.df2.pandas_api()).all().all():
-            LOG.info("df1 pyspark.pandas.frame.DataFrame.equals df2")
-        else:
-            LOG.info("df1 does not pyspark.pandas.frame.DataFrame.equals df2")
         LOG.info(f"Number of columns in common: {len(self.intersect_columns())}")
         LOG.debug("Checking column overlap")
         for col in self.df1_unq_columns():
@@ -264,6 +259,10 @@ class VSparkCompare(BaseCompare):
         LOG.debug("Merging dataframes")
         self._dataframe_merge(ignore_spaces)
         self._intersect_compare(ignore_spaces, ignore_case)
+        # drop index
+        self.df1 = self.df1.drop("__index")
+        self.df2 = self.df2.drop("__index")
+
         if self.matches():
             LOG.info("df1 matches df2")
         else:
@@ -301,12 +300,12 @@ class VSparkCompare(BaseCompare):
                 _generate_id_within_group(df1, temp_join_columns, order_column),
                 on="__index",
                 how="inner",
-            )
+            ).drop("__index")
             df2 = df2.join(
                 _generate_id_within_group(df2, temp_join_columns, order_column),
                 on="__index",
                 how="inner",
-            )
+            ).drop("__index")
             temp_join_columns.append(order_column)
 
         params = {"on": temp_join_columns}
@@ -938,40 +937,40 @@ def columns_equal(
     return dataframe
 
 
-def compare_string_and_date_columns(col_1, col_2):
-    """Compare a string column and date column, value-wise.  This tries to
-    convert a string column to a date column and compare that way.
+# def compare_string_and_date_columns(col_1, col_2):
+#     """Compare a string column and date column, value-wise.  This tries to
+#     convert a string column to a date column and compare that way.
 
-    Parameters
-    ----------
-    col_1 : pyspark.pandas.series.Series
-        The first column to look at
-    col_2 : pyspark.pandas.series.Series
-        The second column
+#     Parameters
+#     ----------
+#     col_1 : pyspark.pandas.series.Series
+#         The first column to look at
+#     col_2 : pyspark.pandas.series.Series
+#         The second column
 
-    Returns
-    -------
-    pyspark.pandas.series.Series
-        A series of Boolean values.  True == the values match, False == the
-        values don't match.
-    """
-    if col_1.dtype.kind == "O":
-        obj_column = col_1
-        date_column = col_2
-    else:
-        obj_column = col_2
-        date_column = col_1
+#     Returns
+#     -------
+#     pyspark.pandas.series.Series
+#         A series of Boolean values.  True == the values match, False == the
+#         values don't match.
+#     """
+#     if col_1.dtype.kind == "O":
+#         obj_column = col_1
+#         date_column = col_2
+#     else:
+#         obj_column = col_2
+#         date_column = col_1
 
-    try:
-        compare = ps.Series(
-            (
-                (ps.to_datetime(obj_column) == date_column)
-                | (obj_column.isnull() & date_column.isnull())
-            ).to_numpy()
-        )  # force compute
-    except Exception:
-        compare = ps.Series(False, index=col_1.index.to_numpy())
-    return compare
+#     try:
+#         compare = ps.Series(
+#             (
+#                 (ps.to_datetime(obj_column) == date_column)
+#                 | (obj_column.isnull() & date_column.isnull())
+#             ).to_numpy()
+#         )  # force compute
+#     except Exception:
+#         compare = ps.Series(False, index=col_1.index.to_numpy())
+#     return compare
 
 
 def get_merged_columns(original_df, merged_df, suffix):
