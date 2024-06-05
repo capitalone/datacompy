@@ -367,9 +367,7 @@ class SparkSQLCompare(BaseCompare):
         df1 FULL OUTER JOIN df2
         ON     
         """
-            + on,
-            df1=df1,
-            df2=df2,
+            + on
         )
 
         outer_join = outer_join.withColumn("_merge", lit(None))  # initialize col
