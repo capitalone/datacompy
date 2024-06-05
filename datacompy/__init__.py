@@ -19,13 +19,15 @@ import platform
 from warnings import warn
 
 from datacompy.core import *  # noqa: F403
-from datacompy.fugue import all_columns_match  # noqa: F401
-from datacompy.fugue import all_rows_overlap  # noqa: F401
-from datacompy.fugue import count_matching_rows  # noqa: F401
-from datacompy.fugue import intersect_columns  # noqa: F401
-from datacompy.fugue import is_match  # noqa: F401
-from datacompy.fugue import report  # noqa: F401
-from datacompy.fugue import unq_columns  # noqa: F401
+from datacompy.fugue import (  # noqa: F401
+    all_columns_match,
+    all_rows_overlap,
+    count_matching_rows,
+    intersect_columns,
+    is_match,
+    report,
+    unq_columns,
+)
 from datacompy.polars import PolarsCompare  # noqa: F401
 from datacompy.spark import SparkCompare  # noqa: F401
 from datacompy.vspark import VSparkCompare  # noqa: F401

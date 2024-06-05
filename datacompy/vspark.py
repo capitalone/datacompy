@@ -136,7 +136,7 @@ class VSparkCompare(BaseCompare):
     ):
         if pd.__version__ >= "2.0.0":
             raise Exception(
-                "It seems like you are running Pandas 2+. Please note that Pandas 2+ will only be supported in Spark 4+."
+                "It seems like you are running Pandas 2+. Please note that Pandas 2+ will only be supported in Spark 4+. "
                 "See: https://issues.apache.org/jira/browse/SPARK-44101. "
                 "If you need to use Spark DataFrame with Pandas 2+ then consider using Fugue otherwise downgrade to Pandas 1.5.3"
             )
@@ -209,10 +209,17 @@ class VSparkCompare(BaseCompare):
             raise TypeError(f"{index} must be a pyspark.sql.DataFrame")
 
         if cast_column_names_lower:
-            dataframe.toDF(*[str(col).lower() for col in dataframe.columns])
-        else:
-            dataframe.toDF(*[str(col) for col in dataframe.columns])
+            if index == "df1":
+                self._df1 = dataframe.toDF(
+                    *[str(col).lower() for col in dataframe.columns]
+                )
+            if index == "df2":
+                self._df2 = dataframe.toDF(
+                    *[str(col).lower() for col in dataframe.columns]
+                )
+
         # Check if join_columns are present in the dataframe
+        dataframe = getattr(self, index)  # refresh
         if not set(self.join_columns).issubset(set(dataframe.columns)):
             raise ValueError(f"{index} must have all columns from join_columns")
 
@@ -245,23 +252,9 @@ class VSparkCompare(BaseCompare):
             f"Number of columns in df2 and not in df1: {len(self.df2_unq_columns())}"
         )
 
-        # setting internal index
-        LOG.info("Adding internal index to dataframes")
-        self.df1 = self.df1.withColumn(
-            "__index",
-            row_number().over(Window.orderBy(monotonically_increasing_id())) - 1,
-        )
-        self.df2 = self.df2.withColumn(
-            "__index",
-            row_number().over(Window.orderBy(monotonically_increasing_id())) - 1,
-        )
-
         LOG.debug("Merging dataframes")
         self._dataframe_merge(ignore_spaces)
         self._intersect_compare(ignore_spaces, ignore_case)
-        # drop index
-        self.df1 = self.df1.drop("__index")
-        self.df2 = self.df2.drop("__index")
 
         if self.matches():
             LOG.info("df1 matches df2")
@@ -284,7 +277,6 @@ class VSparkCompare(BaseCompare):
         """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
         and df1 & df2
         """
-
         LOG.debug("Outer joining")
 
         df1 = self.df1
@@ -293,6 +285,16 @@ class VSparkCompare(BaseCompare):
 
         if self._any_dupes:
             LOG.debug("Duplicate rows found, deduping by order of remaining fields")
+            # setting internal index
+            LOG.info("Adding internal index to dataframes")
+            df1 = df1.withColumn(
+                "__index",
+                row_number().over(Window.orderBy(monotonically_increasing_id())) - 1,
+            )
+            df2 = df2.withColumn(
+                "__index",
+                row_number().over(Window.orderBy(monotonically_increasing_id())) - 1,
+            )
 
             # Create order column for uniqueness of match
             order_column = temp_column_name(df1, df2)
@@ -308,6 +310,11 @@ class VSparkCompare(BaseCompare):
             ).drop("__index")
             temp_join_columns.append(order_column)
 
+            # drop index
+            LOG.info("Dropping internal index")
+            df1 = df1.drop("__index")
+            df2 = df2.drop("__index")
+
         params = {"on": temp_join_columns}
 
         if ignore_spaces:
@@ -315,13 +322,12 @@ class VSparkCompare(BaseCompare):
                 if [dtype for name, dtype in df1.dtypes if name == column][
                     0
                 ] == "string":
-                    df1 = df1.withColumnRenamed(column, column.lower())
+                    df1 = df1.withColumn(column, trim(col(column)))
                 if [dtype for name, dtype in df2.dtypes if name == column][
                     0
                 ] == "string":
-                    df2 = df2.withColumnRenamed(column, column.lower())
+                    df2 = df2.withColumn(column, trim(col(column)))
 
-        ############ HERE #################
         df1_non_join_columns = OrderedSet(df1.columns) - OrderedSet(temp_join_columns)
         df2_non_join_columns = OrderedSet(df2.columns) - OrderedSet(temp_join_columns)
 
@@ -334,7 +340,7 @@ class VSparkCompare(BaseCompare):
         df1 = df1.withColumn("_merge_left", lit(True))
         df2 = df2.withColumn("_merge_right", lit(True))
 
-        for c in self.join_columns:
+        for c in temp_join_columns:
             df1 = df1.withColumnRenamed(c, c + "_" + self.df1_name)
             df2 = df2.withColumnRenamed(c, c + "_" + self.df2_name)
 
@@ -368,14 +374,14 @@ class VSparkCompare(BaseCompare):
         outer_join = outer_join.withColumn(
             "_merge",
             when(
-                (outer_join["_merge_left"] == True)
+                (outer_join["_merge_left"] == True)  # noqa: E712
                 & (isnull(outer_join["_merge_right"])),
-                "left_only",  # noqa: E712
+                "left_only",
             )
             .when(
                 (isnull(outer_join["_merge_left"]))
-                & (outer_join["_merge_right"] == True),
-                "right_only",  # noqa: E712
+                & (outer_join["_merge_right"] == True),  # noqa: E712
+                "right_only",
             )
             .otherwise("both"),
         )
@@ -383,25 +389,22 @@ class VSparkCompare(BaseCompare):
         # Clean up temp columns for duplicate row matching
         if self._any_dupes:
             outer_join = outer_join.drop(
-                [
+                *[
                     order_column + "_" + self.df1_name,
                     order_column + "_" + self.df2_name,
                 ],
-                axis=1,
             )
             df1 = df1.drop(
-                [
+                *[
                     order_column + "_" + self.df1_name,
                     order_column + "_" + self.df2_name,
                 ],
-                axis=1,
             )
             df2 = df2.drop(
-                [
+                *[
                     order_column + "_" + self.df1_name,
                     order_column + "_" + self.df2_name,
                 ],
-                axis=1,
             )
 
         df1_cols = get_merged_columns(df1, outer_join, self.df1_name)
@@ -588,8 +591,8 @@ class VSparkCompare(BaseCompare):
         row_cnt = self.intersect_rows.count()
         col_match = self.intersect_rows.select(column + "_match")
         match_cnt = col_match.where(
-            col(column + "_match") == True
-        ).count()  # noqa: E712
+            col(column + "_match") == True  # noqa: E712
+        ).count()
         sample_count = min(sample_count, row_cnt - match_cnt)
         sample = (
             self.intersect_rows.where(col(column + "_match") == False)  # noqa: E712
@@ -632,15 +635,15 @@ class VSparkCompare(BaseCompare):
         """
         match_list = []
         return_list = []
-        for col in self.intersect_rows.columns:
-            if col.endswith("_match"):
-                orig_col_name = col[:-6]
+        for c in self.intersect_rows.columns:
+            if c.endswith("_match"):
+                orig_col_name = c[:-6]
 
                 col_comparison = columns_equal(
                     self.intersect_rows,
                     orig_col_name + "_" + self.df1_name,
                     orig_col_name + "_" + self.df2_name,
-                    col,
+                    c,
                     self.rel_tol,
                     self.abs_tol,
                     self.ignore_spaces,
@@ -649,11 +652,13 @@ class VSparkCompare(BaseCompare):
 
                 if not ignore_matching_cols or (
                     ignore_matching_cols
-                    and col_comparison.select(col).where(col(col) == True).count()
-                    > 0  # noqa: E712
+                    and col_comparison.select(c)
+                    .where(col(c) == False)  # noqa: E712
+                    .count()
+                    > 0
                 ):
                     LOG.debug(f"Adding column {orig_col_name} to the result.")
-                    match_list.append(col)
+                    match_list.append(c)
                     return_list.extend(
                         [
                             orig_col_name + "_" + self.df1_name,
@@ -668,6 +673,10 @@ class VSparkCompare(BaseCompare):
         mm_rows = self.intersect_rows.withColumn(
             "match_array", array(match_list)
         ).where(array_contains("match_array", False))
+
+        for c in self.join_columns:
+            mm_rows = mm_rows.withColumnRenamed(c + "_" + self.df1_name, c)
+
         return mm_rows.select(self.join_columns + return_list)
 
     def report(self, sample_count=10, column_count=10, html_file=None):
@@ -797,7 +806,12 @@ class VSparkCompare(BaseCompare):
             report += "\n"
             columns = self.df1_unq_rows.columns[:column_count]
             unq_count = min(sample_count, self.df1_unq_rows.count())
-            report += self.df1_unq_rows.head(unq_count)[columns].to_string()
+            report += (
+                self.df1_unq_rows.limit(unq_count)
+                .select(columns)
+                .toPandas()
+                .to_string()
+            )
             report += "\n\n"
 
         if min(sample_count, self.df2_unq_rows.count()) > 0:
@@ -810,7 +824,12 @@ class VSparkCompare(BaseCompare):
             report += "\n"
             columns = self.df2_unq_rows.columns[:column_count]
             unq_count = min(sample_count, self.df2_unq_rows.count())
-            report += self.df2_unq_rows.head(unq_count)[columns].to_string()
+            report += (
+                self.df2_unq_rows.limit(unq_count)
+                .select(columns)
+                .toPandas()
+                .to_string()
+            )
             report += "\n\n"
 
         if html_file:
@@ -905,7 +924,7 @@ def columns_equal(
                     ),
                     # corner case of col1 != NaN and col2 == Nan returns True incorrectly
                     when(
-                        (isnan(col(col_1)) == False)
+                        (isnan(col(col_1)) == False)  # noqa: E712
                         & (isnan(col(col_2)) == True),  # noqa: E712
                         lit(False),
                     ).otherwise(lit(True)),
@@ -935,42 +954,6 @@ def columns_equal(
         )
         dataframe = dataframe.withColumn(col_match, lit(False))
     return dataframe
-
-
-# def compare_string_and_date_columns(col_1, col_2):
-#     """Compare a string column and date column, value-wise.  This tries to
-#     convert a string column to a date column and compare that way.
-
-#     Parameters
-#     ----------
-#     col_1 : pyspark.pandas.series.Series
-#         The first column to look at
-#     col_2 : pyspark.pandas.series.Series
-#         The second column
-
-#     Returns
-#     -------
-#     pyspark.pandas.series.Series
-#         A series of Boolean values.  True == the values match, False == the
-#         values don't match.
-#     """
-#     if col_1.dtype.kind == "O":
-#         obj_column = col_1
-#         date_column = col_2
-#     else:
-#         obj_column = col_2
-#         date_column = col_1
-
-#     try:
-#         compare = ps.Series(
-#             (
-#                 (ps.to_datetime(obj_column) == date_column)
-#                 | (obj_column.isnull() & date_column.isnull())
-#             ).to_numpy()
-#         )  # force compute
-#     except Exception:
-#         compare = ps.Series(False, index=col_1.index.to_numpy())
-#     return compare
 
 
 def get_merged_columns(original_df, merged_df, suffix):
@@ -1049,15 +1032,15 @@ def calculate_null_diff(dataframe, col_1, col_2):
     """
     nulls_df = dataframe.withColumn(
         "col_1_null",
-        when(col(col_1).isNull() == True, lit(True)).otherwise(
+        when(col(col_1).isNull() == True, lit(True)).otherwise(  # noqa: E712
             lit(False)
-        ),  # noqa: E712
+        ),
     )
     nulls_df = nulls_df.withColumn(
         "col_2_null",
-        when(col(col_2).isNull() == True, lit(True)).otherwise(
+        when(col(col_2).isNull() == True, lit(True)).otherwise(  # noqa: E712
             lit(False)
-        ),  # noqa: E712
+        ),
     ).select(["col_1_null", "col_2_null"])
 
     # (not a and b) or (a and not b)
@@ -1092,15 +1075,24 @@ def _generate_id_within_group(dataframe, join_columns, order_column_name):
     """
     default_value = "DATACOMPY_NULL"
 
-    isnull_check = dataframe.select(
-        greatest(*[isnull(c) for c in join_columns]).alias("isnull")
-    ).filter("isnull == True")
+    if len(join_columns) > 1:
+        isnull_check = dataframe.select(
+            greatest(*[isnull(c) for c in join_columns]).alias("isnull")
+        ).filter("isnull == True")
+        isdefault_check = dataframe.select(
+            greatest(*[col(c) == default_value for c in join_columns]).alias(
+                "isdefault"
+            )
+        ).filter("isdefault == True")
+    else:  # greatest doesn't work for single joincolumns
+        isnull_check = dataframe.select(isnull(*join_columns).alias("isnull")).filter(
+            "isnull == True"
+        )
+        isdefault_check = dataframe.select(
+            (col(*join_columns) == default_value).alias("isdefault")
+        ).filter("isdefault == True")
 
     if isnull_check.count() > 0:
-        isdefault_check = dataframe.select(
-            greatest(*[col(c) == default_value for c in join_columns]).alias("isnull")
-        ).filter("isnull == True")
-
         if isdefault_check.count() > 0:
             raise ValueError(f"{default_value} was found in your join columns")
 
