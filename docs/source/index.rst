@@ -10,7 +10,7 @@ Contents
 
     Installation <install>
     Pandas Usage <pandas_usage>
-    Spark (Pandas on Spark) Usage <spark_usage>
+    Spark Usage <spark_usage>
     Polars Usage <polars_usage>
     Fugue Usage <fugue_usage>
     Benchmarks <benchmark>
