@@ -45,16 +45,10 @@ from datacompy.spark.sql import (  # noqa: E402
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-
-pandas_version = pytest.mark.skipif(
-    pd.__version__ >= "2.0.0", reason="Pandas 2 is currently not supported"
-)
-
 pd.DataFrame.iteritems = pd.DataFrame.items  # Pandas 2+ compatability
 np.bool = np.bool_  # Numpy 1.24.3+ comptability
 
 
-@pandas_version
 def test_numeric_columns_equal_abs(spark_session):
     data = """a|b|expected
 1|1|True
@@ -70,7 +64,6 @@ NULL|NULL|True"""
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
-@pandas_version
 def test_numeric_columns_equal_rel(spark_session):
     data = """a|b|expected
 1|1|True
@@ -85,7 +78,6 @@ NULL|NULL|True"""
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
-@pandas_version
 def test_string_columns_equal(spark_session):
     data = """a|b|expected
 Hi|Hi|True
@@ -107,7 +99,6 @@ something||False
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
-@pandas_version
 def test_string_columns_equal_with_ignore_spaces(spark_session):
     data = """a|b|expected
 Hi|Hi|True
@@ -131,7 +122,6 @@ something||False
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
-@pandas_version
 def test_string_columns_equal_with_ignore_spaces_and_case(spark_session):
     data = """a|b|expected
 Hi|Hi|True
@@ -155,7 +145,6 @@ something||False
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
-@pandas_version
 def test_date_columns_equal(spark_session):
     data = """a|b|expected
 2017-01-01|2017-01-01|True
@@ -185,7 +174,6 @@ def test_date_columns_equal(spark_session):
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
-@pandas_version
 def test_date_columns_equal_with_ignore_spaces(spark_session):
     data = """a|b|expected
 2017-01-01|2017-01-01   |True
@@ -204,8 +192,12 @@ def test_date_columns_equal_with_ignore_spaces(spark_session):
     assert_series_equal(expect_out, actual_out, check_names=False)
 
     # Then compare converted to datetime objects
-    pdf["a"] = pd.to_datetime(pdf["a"])
-    pdf["b"] = pd.to_datetime(pdf["b"])
+    try:  # pandas 2
+        pdf["a"] = pd.to_datetime(pdf["a"], format="mixed")
+        pdf["b"] = pd.to_datetime(pdf["b"], format="mixed")
+    except ValueError:  # pandas 1.5
+        pdf["a"] = pd.to_datetime(pdf["a"])
+        pdf["b"] = pd.to_datetime(pdf["b"])
     df = spark_session.createDataFrame(pdf)
     actual_out = columns_equal(
         df, "a", "b", "actual", rel_tol=0.2, ignore_spaces=True
@@ -219,7 +211,6 @@ def test_date_columns_equal_with_ignore_spaces(spark_session):
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
-@pandas_version
 def test_date_columns_equal_with_ignore_spaces_and_case(spark_session):
     data = """a|b|expected
 2017-01-01|2017-01-01   |True
@@ -238,8 +229,12 @@ def test_date_columns_equal_with_ignore_spaces_and_case(spark_session):
     assert_series_equal(expect_out, actual_out, check_names=False)
 
     # Then compare converted to datetime objects
-    pdf["a"] = pd.to_datetime(pdf["a"])
-    pdf["b"] = pd.to_datetime(pdf["b"])
+    try:  # pandas 2
+        pdf["a"] = pd.to_datetime(pdf["a"], format="mixed")
+        pdf["b"] = pd.to_datetime(pdf["b"], format="mixed")
+    except ValueError:  # pandas 1.5
+        pdf["a"] = pd.to_datetime(pdf["a"])
+        pdf["b"] = pd.to_datetime(pdf["b"])
     df = spark_session.createDataFrame(pdf)
     actual_out = columns_equal(
         df, "a", "b", "actual", rel_tol=0.2, ignore_spaces=True, ignore_case=True
@@ -253,7 +248,6 @@ def test_date_columns_equal_with_ignore_spaces_and_case(spark_session):
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
-@pandas_version
 def test_date_columns_unequal(spark_session):
     """I want datetime fields to match with dates stored as strings"""
     data = [{"a": "2017-01-01", "b": "2017-01-02"}, {"a": "2017-01-01"}]
@@ -271,7 +265,6 @@ def test_date_columns_unequal(spark_session):
     assert not columns_equal(df, "b", "a_dt", "actual").toPandas()["actual"].any()
 
 
-@pandas_version
 def test_bad_date_columns(spark_session):
     """If strings can't be coerced into dates then it should be false for the
     whole column.
@@ -287,7 +280,6 @@ def test_bad_date_columns(spark_session):
     assert columns_equal(df, "a_dt", "b", "actual").toPandas()["actual"].any()
 
 
-@pandas_version
 def test_rounded_date_columns(spark_session):
     """If strings can't be coerced into dates then it should be false for the
     whole column.
@@ -306,7 +298,6 @@ def test_rounded_date_columns(spark_session):
     assert_series_equal(actual, expected, check_names=False)
 
 
-@pandas_version
 def test_decimal_float_columns_equal(spark_session):
     data = [
         {"a": Decimal("1"), "b": 1, "expected": True},
@@ -325,7 +316,6 @@ def test_decimal_float_columns_equal(spark_session):
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
-@pandas_version
 def test_decimal_float_columns_equal_rel(spark_session):
     data = [
         {"a": Decimal("1"), "b": 1, "expected": True},
@@ -346,7 +336,6 @@ def test_decimal_float_columns_equal_rel(spark_session):
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
-@pandas_version
 def test_decimal_columns_equal(spark_session):
     data = [
         {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
@@ -369,7 +358,6 @@ def test_decimal_columns_equal(spark_session):
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
-@pandas_version
 def test_decimal_columns_equal_rel(spark_session):
     data = [
         {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
@@ -394,7 +382,6 @@ def test_decimal_columns_equal_rel(spark_session):
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
-@pandas_version
 def test_infinity_and_beyond(spark_session):
     # https://spark.apache.org/docs/latest/sql-ref-datatypes.html#positivenegative-infinity-semantics
     # Positive/negative infinity multiplied by 0 returns NaN.
@@ -415,7 +402,6 @@ def test_infinity_and_beyond(spark_session):
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
-@pandas_version
 def test_compare_df_setter_bad(spark_session):
     pdf = pd.DataFrame([{"a": 1, "c": 2}, {"a": 2, "c": 2}])
     df = spark_session.createDataFrame(pdf)
@@ -432,7 +418,6 @@ def test_compare_df_setter_bad(spark_session):
     )
 
 
-@pandas_version
 def test_compare_df_setter_good(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = spark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
@@ -446,7 +431,6 @@ def test_compare_df_setter_good(spark_session):
     assert compare.join_columns == ["a", "b"]
 
 
-@pandas_version
 def test_compare_df_setter_different_cases(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = spark_session.createDataFrame([{"A": 1, "b": 2}, {"A": 2, "b": 3}])
@@ -455,7 +439,6 @@ def test_compare_df_setter_different_cases(spark_session):
     assert not compare.df2.toPandas().equals(df2.toPandas())
 
 
-@pandas_version
 def test_columns_overlap(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
@@ -465,7 +448,6 @@ def test_columns_overlap(spark_session):
     assert compare.intersect_columns() == {"a", "b"}
 
 
-@pandas_version
 def test_columns_no_overlap(spark_session):
     df1 = spark_session.createDataFrame(
         [{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}]
@@ -479,7 +461,6 @@ def test_columns_no_overlap(spark_session):
     assert compare.intersect_columns() == {"a", "b"}
 
 
-@pandas_version
 def test_columns_maintain_order_through_set_operations(spark_session):
     pdf1 = pd.DataFrame(
         {
@@ -511,7 +492,6 @@ def test_columns_maintain_order_through_set_operations(spark_session):
     assert list(compare.intersect_columns()) == ["join", "g", "b", "h", "a"]
 
 
-@pandas_version
 def test_10k_rows(spark_session):
     pdf = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
     pdf.reset_index(inplace=True)
@@ -539,7 +519,6 @@ def test_10k_rows(spark_session):
     assert not compare_no_tol.intersect_rows_match()
 
 
-@pandas_version
 def test_subset(spark_session, caplog):
     caplog.set_level(logging.DEBUG)
     df1 = spark_session.createDataFrame(
@@ -550,7 +529,6 @@ def test_subset(spark_session, caplog):
     assert comp.subset()
 
 
-@pandas_version
 def test_not_subset(spark_session, caplog):
     caplog.set_level(logging.INFO)
     df1 = spark_session.createDataFrame(
@@ -564,7 +542,6 @@ def test_not_subset(spark_session, caplog):
     assert "c: 1 / 2 (50.00%) match" in caplog.text
 
 
-@pandas_version
 def test_large_subset(spark_session):
     pdf = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
     pdf.reset_index(inplace=True)
@@ -577,7 +554,6 @@ def test_large_subset(spark_session):
     assert comp.subset()
 
 
-@pandas_version
 def test_string_joiner(spark_session):
     df1 = spark_session.createDataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
     df2 = spark_session.createDataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
@@ -585,7 +561,6 @@ def test_string_joiner(spark_session):
     assert compare.matches()
 
 
-@pandas_version
 def test_decimal_with_joins(spark_session):
     df1 = spark_session.createDataFrame(
         [{"a": Decimal("1"), "b": 2}, {"a": Decimal("2"), "b": 2}]
@@ -598,7 +573,6 @@ def test_decimal_with_joins(spark_session):
     assert compare.intersect_rows_match()
 
 
-@pandas_version
 def test_decimal_with_nulls(spark_session):
     df1 = spark_session.createDataFrame(
         [{"a": 1, "b": Decimal("2")}, {"a": 2, "b": Decimal("2")}]
@@ -613,7 +587,6 @@ def test_decimal_with_nulls(spark_session):
     assert compare.intersect_rows_match()
 
 
-@pandas_version
 def test_strings_with_joins(spark_session):
     df1 = spark_session.createDataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
     df2 = spark_session.createDataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
@@ -624,7 +597,6 @@ def test_strings_with_joins(spark_session):
     assert compare.intersect_rows_match()
 
 
-@pandas_version
 def test_temp_column_name(spark_session):
     df1 = spark_session.createDataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
     df2 = spark_session.createDataFrame(
@@ -634,7 +606,6 @@ def test_temp_column_name(spark_session):
     assert actual == "_temp_0"
 
 
-@pandas_version
 def test_temp_column_name_one_has(spark_session):
     df1 = spark_session.createDataFrame(
         [{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}]
@@ -646,7 +617,6 @@ def test_temp_column_name_one_has(spark_session):
     assert actual == "_temp_1"
 
 
-@pandas_version
 def test_temp_column_name_both_have_temp_1(spark_session):
     df1 = spark_session.createDataFrame(
         [{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}]
@@ -662,7 +632,6 @@ def test_temp_column_name_both_have_temp_1(spark_session):
     assert actual == "_temp_1"
 
 
-@pandas_version
 def test_temp_column_name_both_have_temp_2(spark_session):
     df1 = spark_session.createDataFrame(
         [{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}]
@@ -678,7 +647,6 @@ def test_temp_column_name_both_have_temp_2(spark_session):
     assert actual == "_temp_2"
 
 
-@pandas_version
 def test_temp_column_name_one_already(spark_session):
     df1 = spark_session.createDataFrame(
         [{"_temp_1": "hi", "b": 2}, {"_temp_1": "bye", "b": 2}]
@@ -695,7 +663,8 @@ def test_temp_column_name_one_already(spark_session):
 
 
 ### Duplicate testing!
-@pandas_version
+
+
 def test_simple_dupes_one_field(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
@@ -705,7 +674,6 @@ def test_simple_dupes_one_field(spark_session):
     compare.report()
 
 
-@pandas_version
 def test_simple_dupes_two_fields(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 2}])
@@ -715,7 +683,6 @@ def test_simple_dupes_two_fields(spark_session):
     compare.report()
 
 
-@pandas_version
 def test_simple_dupes_one_field_two_vals_1(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
@@ -725,7 +692,6 @@ def test_simple_dupes_one_field_two_vals_1(spark_session):
     compare.report()
 
 
-@pandas_version
 def test_simple_dupes_one_field_two_vals_2(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
@@ -738,7 +704,6 @@ def test_simple_dupes_one_field_two_vals_2(spark_session):
     compare.report()
 
 
-@pandas_version
 def test_simple_dupes_one_field_three_to_two_vals(spark_session):
     df1 = spark_session.createDataFrame(
         [{"a": 1, "b": 2}, {"a": 1, "b": 0}, {"a": 1, "b": 0}]
@@ -755,7 +720,6 @@ def test_simple_dupes_one_field_three_to_two_vals(spark_session):
     assert "(First 2 Columns)" in compare.report(column_count=2)
 
 
-@pandas_version
 def test_dupes_from_real_data(spark_session):
     data = """acct_id,acct_sfx_num,trxn_post_dt,trxn_post_seq_num,trxn_amt,trxn_dt,debit_cr_cd,cash_adv_trxn_comn_cntry_cd,mrch_catg_cd,mrch_pstl_cd,visa_mail_phn_cd,visa_rqstd_pmt_svc_cd,mc_pmt_facilitator_idn_num
 100,0,2017-06-17,1537019,30.64,2017-06-15,D,CAN,5812,M2N5P5,,,0.0
@@ -794,7 +758,6 @@ def test_dupes_from_real_data(spark_session):
     compare_unq.report()
 
 
-@pandas_version
 def test_strings_with_joins_with_ignore_spaces(spark_session):
     df1 = spark_session.createDataFrame(
         [{"a": "hi", "b": " A"}, {"a": "bye", "b": "A"}]
@@ -815,7 +778,6 @@ def test_strings_with_joins_with_ignore_spaces(spark_session):
     assert compare.intersect_rows_match()
 
 
-@pandas_version
 def test_strings_with_joins_with_ignore_case(spark_session):
     df1 = spark_session.createDataFrame([{"a": "hi", "b": "a"}, {"a": "bye", "b": "A"}])
     df2 = spark_session.createDataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "a"}])
@@ -832,7 +794,6 @@ def test_strings_with_joins_with_ignore_case(spark_session):
     assert compare.intersect_rows_match()
 
 
-@pandas_version
 def test_decimal_with_joins_with_ignore_spaces(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
@@ -849,7 +810,6 @@ def test_decimal_with_joins_with_ignore_spaces(spark_session):
     assert compare.intersect_rows_match()
 
 
-@pandas_version
 def test_decimal_with_joins_with_ignore_case(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
@@ -866,7 +826,6 @@ def test_decimal_with_joins_with_ignore_case(spark_session):
     assert compare.intersect_rows_match()
 
 
-@pandas_version
 def test_joins_with_ignore_spaces(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
@@ -878,7 +837,6 @@ def test_joins_with_ignore_spaces(spark_session):
     assert compare.intersect_rows_match()
 
 
-@pandas_version
 def test_joins_with_ignore_case(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
@@ -890,7 +848,6 @@ def test_joins_with_ignore_case(spark_session):
     assert compare.intersect_rows_match()
 
 
-@pandas_version
 def test_strings_with_ignore_spaces_and_join_columns(spark_session):
     df1 = spark_session.createDataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A"}])
     df2 = spark_session.createDataFrame(
@@ -910,7 +867,6 @@ def test_strings_with_ignore_spaces_and_join_columns(spark_session):
     assert compare.count_matching_rows() == 2
 
 
-@pandas_version
 def test_integers_with_ignore_spaces_and_join_columns(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
@@ -929,7 +885,6 @@ def test_integers_with_ignore_spaces_and_join_columns(spark_session):
     assert compare.count_matching_rows() == 2
 
 
-@pandas_version
 def test_sample_mismatch(spark_session):
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -967,7 +922,6 @@ def test_sample_mismatch(spark_session):
     assert (output.name_df1 != output.name_df2).all()
 
 
-@pandas_version
 def test_all_mismatch_not_ignore_matching_cols_no_cols_matching(spark_session):
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -1007,7 +961,6 @@ def test_all_mismatch_not_ignore_matching_cols_no_cols_matching(spark_session):
     assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
 
 
-@pandas_version
 def test_all_mismatch_not_ignore_matching_cols_some_cols_matching(spark_session):
     # Columns dollar_amt and name are matching
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
@@ -1048,7 +1001,6 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching(spark_session)
     assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
 
 
-@pandas_version
 def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows(spark_session):
     # Case where there are rows on either dataset which don't match up.
     # Columns dollar_amt and name are matching
@@ -1088,7 +1040,6 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows(spark_se
     assert not ("dollar_amt_df1" in output and "dollar_amt_df1" in output)
 
 
-@pandas_version
 def test_all_mismatch_ignore_matching_cols_some_cols_matching(spark_session):
     # Columns dollar_amt and name are matching
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
@@ -1127,7 +1078,6 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching(spark_session):
     assert not ("dollar_amt_df1" in output and "dollar_amt_df1" in output)
 
 
-@pandas_version
 def test_all_mismatch_ignore_matching_cols_no_cols_matching(spark_session):
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
         10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -1167,7 +1117,6 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching(spark_session):
     assert (~(output.date_fld_df1 != output.date_fld_df2)).values.sum() == 0
 
 
-@pandas_version
 @pytest.mark.parametrize(
     "column,expected",
     [
@@ -1202,7 +1151,6 @@ def test_calculate_max_diff(spark_session, column, expected):
     assert np.isclose(calculate_max_diff(MAX_DIFF_DF, "base", column), expected)
 
 
-@pandas_version
 def test_dupes_with_nulls_strings(spark_session):
     pdf1 = pd.DataFrame(
         {
@@ -1224,7 +1172,6 @@ def test_dupes_with_nulls_strings(spark_session):
     assert comp.subset()
 
 
-@pandas_version
 def test_dupes_with_nulls_ints(spark_session):
     pdf1 = pd.DataFrame(
         {
@@ -1246,7 +1193,6 @@ def test_dupes_with_nulls_ints(spark_session):
     assert comp.subset()
 
 
-@pandas_version
 def test_generate_id_within_group(spark_session):
     matrix = [
         (
@@ -1304,7 +1250,6 @@ def test_generate_id_within_group(spark_session):
         assert (actual["_temp_0"] == expected).all()
 
 
-@pandas_version
 def test_generate_id_within_group_single_join(spark_session):
     dataframe = spark_session.createDataFrame(
         [{"a": 1, "b": 2, "__index": 1}, {"a": 1, "b": 2, "__index": 2}]
@@ -1318,7 +1263,6 @@ def test_generate_id_within_group_single_join(spark_session):
     assert (actual["_temp_0"] == expected).all()
 
 
-@pandas_version
 def test_lower(spark_session):
     """This function tests the toggle to use lower case for column names or not"""
     # should match
@@ -1350,7 +1294,6 @@ def test_lower(spark_session):
         )
 
 
-@pandas_version
 def test_integer_column_names(spark_session):
     """This function tests that integer column names would also work"""
     df1 = spark_session.createDataFrame(pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]}))
@@ -1359,7 +1302,6 @@ def test_integer_column_names(spark_session):
     assert compare.matches()
 
 
-@pandas_version
 @mock.patch("datacompy.spark.sql.render")
 def test_save_html(mock_render, spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
@@ -1382,19 +1324,6 @@ def test_save_html(mock_render, spark_session):
         m.assert_called_with("test.html", "w")
 
 
-def test_pandas_version(spark_session):
-    expected_message = "It seems like you are running Pandas 2+. Please note that Pandas 2+ will only be supported in Spark 4+. See: https://issues.apache.org/jira/browse/SPARK-44101. If you need to use Spark DataFrame with Pandas 2+ then consider using Fugue otherwise downgrade to Pandas 1.5.3"
-    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    with mock.patch("pandas.__version__", "2.0.0"):
-        with raises(Exception, match=re.escape(expected_message)):
-            SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
-
-    with mock.patch("pandas.__version__", "1.5.3"):
-        SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
-
-
-@pandas_version
 def test_unicode_columns(spark_session):
     df1 = spark_session.createDataFrame(
         [

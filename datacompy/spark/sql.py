@@ -137,13 +137,6 @@ class SparkSQLCompare(BaseCompare):
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
     ) -> None:
-        if pd.__version__ >= "2.0.0":
-            raise Exception(
-                "It seems like you are running Pandas 2+. Please note that Pandas 2+ will only be supported in Spark 4+. "
-                "See: https://issues.apache.org/jira/browse/SPARK-44101. "
-                "If you need to use Spark DataFrame with Pandas 2+ then consider using Fugue otherwise downgrade to Pandas 1.5.3"
-            )
-
         self.cast_column_names_lower = cast_column_names_lower
         if isinstance(join_columns, (str, int, float)):
             self.join_columns = [
