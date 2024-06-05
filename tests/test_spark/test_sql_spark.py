@@ -33,17 +33,10 @@ from pytest import raises
 
 pytest.importorskip("pyspark")
 
-import pyspark.pandas as ps  # noqa: E402
 from pandas.testing import assert_series_equal  # noqa: E402
-from pyspark.sql.types import (  # noqa: E402
-    BooleanType,
-    StringType,
-    StructField,
-    StructType,
-)
 
-from datacompy.vspark import (  # noqa: E402
-    VSparkCompare,
+from datacompy.spark.sql import (  # noqa: E402
+    SparkSQLCompare,
     _generate_id_within_group,
     calculate_max_diff,
     columns_equal,
@@ -427,13 +420,13 @@ def test_compare_df_setter_bad(spark_session):
     pdf = pd.DataFrame([{"a": 1, "c": 2}, {"a": 2, "c": 2}])
     df = spark_session.createDataFrame(pdf)
     with raises(TypeError, match="df1 must be a pyspark.sql.DataFrame"):
-        VSparkCompare(spark_session, "a", "a", ["a"])
+        SparkSQLCompare(spark_session, "a", "a", ["a"])
     with raises(ValueError, match="df1 must have all columns from join_columns"):
-        VSparkCompare(spark_session, df, df.select("*"), ["b"])
+        SparkSQLCompare(spark_session, df, df.select("*"), ["b"])
     pdf = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
     df_dupe = spark_session.createDataFrame(pdf)
     assert (
-        VSparkCompare(spark_session, df_dupe, df_dupe.select("*"), ["a", "b"])
+        SparkSQLCompare(spark_session, df_dupe, df_dupe.select("*"), ["a", "b"])
         .df1.toPandas()
         .equals(pdf)
     )
@@ -443,11 +436,11 @@ def test_compare_df_setter_bad(spark_session):
 def test_compare_df_setter_good(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = spark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
-    compare = VSparkCompare(spark_session, df1, df2, ["a"])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["a"])
     assert compare.df1.toPandas().equals(df1.toPandas())
     assert not compare.df2.toPandas().equals(df2.toPandas())
     assert compare.join_columns == ["a"]
-    compare = VSparkCompare(spark_session, df1, df2, ["A", "b"])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["A", "b"])
     assert compare.df1.toPandas().equals(df1.toPandas())
     assert not compare.df2.toPandas().equals(df2.toPandas())
     assert compare.join_columns == ["a", "b"]
@@ -457,7 +450,7 @@ def test_compare_df_setter_good(spark_session):
 def test_compare_df_setter_different_cases(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = spark_session.createDataFrame([{"A": 1, "b": 2}, {"A": 2, "b": 3}])
-    compare = VSparkCompare(spark_session, df1, df2, ["a"])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["a"])
     assert compare.df1.toPandas().equals(df1.toPandas())
     assert not compare.df2.toPandas().equals(df2.toPandas())
 
@@ -466,7 +459,7 @@ def test_compare_df_setter_different_cases(spark_session):
 def test_columns_overlap(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
-    compare = VSparkCompare(spark_session, df1, df2, ["a"])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["a"])
     assert compare.df1_unq_columns() == set()
     assert compare.df2_unq_columns() == set()
     assert compare.intersect_columns() == {"a", "b"}
@@ -480,7 +473,7 @@ def test_columns_no_overlap(spark_session):
     df2 = spark_session.createDataFrame(
         [{"a": 1, "b": 2, "d": "oh"}, {"a": 2, "b": 3, "d": "ya"}]
     )
-    compare = VSparkCompare(spark_session, df1, df2, ["a"])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["a"])
     assert compare.df1_unq_columns() == {"c"}
     assert compare.df2_unq_columns() == {"d"}
     assert compare.intersect_columns() == {"a", "b"}
@@ -512,7 +505,7 @@ def test_columns_maintain_order_through_set_operations(spark_session):
     )
     df1 = spark_session.createDataFrame(pdf1)
     df2 = spark_session.createDataFrame(pdf2)
-    compare = VSparkCompare(spark_session, df1, df2, ["join"])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["join"])
     assert list(compare.df1_unq_columns()) == ["f", "c"]
     assert list(compare.df2_unq_columns()) == ["e", "d"]
     assert list(compare.intersect_columns()) == ["join", "g", "b", "h", "a"]
@@ -527,7 +520,7 @@ def test_10k_rows(spark_session):
     pdf2["b"] = pdf2["b"] + 0.1
     df1 = spark_session.createDataFrame(pdf)
     df2 = spark_session.createDataFrame(pdf2)
-    compare_tol = VSparkCompare(spark_session, df1, df2, ["a"], abs_tol=0.2)
+    compare_tol = SparkSQLCompare(spark_session, df1, df2, ["a"], abs_tol=0.2)
     assert compare_tol.matches()
     assert compare_tol.df1_unq_rows.count() == 0
     assert compare_tol.df2_unq_rows.count() == 0
@@ -536,7 +529,7 @@ def test_10k_rows(spark_session):
     assert compare_tol.all_rows_overlap()
     assert compare_tol.intersect_rows_match()
 
-    compare_no_tol = VSparkCompare(spark_session, df1, df2, ["a"])
+    compare_no_tol = SparkSQLCompare(spark_session, df1, df2, ["a"])
     assert not compare_no_tol.matches()
     assert compare_no_tol.df1_unq_rows.count() == 0
     assert compare_no_tol.df2_unq_rows.count() == 0
@@ -553,7 +546,7 @@ def test_subset(spark_session, caplog):
         [{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}]
     )
     df2 = spark_session.createDataFrame([{"a": 1, "c": "hi"}])
-    comp = VSparkCompare(spark_session, df1, df2, ["a"])
+    comp = SparkSQLCompare(spark_session, df1, df2, ["a"])
     assert comp.subset()
 
 
@@ -566,7 +559,7 @@ def test_not_subset(spark_session, caplog):
     df2 = spark_session.createDataFrame(
         [{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "great"}]
     )
-    comp = VSparkCompare(spark_session, df1, df2, ["a"])
+    comp = SparkSQLCompare(spark_session, df1, df2, ["a"])
     assert not comp.subset()
     assert "c: 1 / 2 (50.00%) match" in caplog.text
 
@@ -579,7 +572,7 @@ def test_large_subset(spark_session):
     pdf2 = pdf[["a", "b"]].head(50).copy()
     df1 = spark_session.createDataFrame(pdf)
     df2 = spark_session.createDataFrame(pdf2)
-    comp = VSparkCompare(spark_session, df1, df2, ["a"])
+    comp = SparkSQLCompare(spark_session, df1, df2, ["a"])
     assert not comp.matches()
     assert comp.subset()
 
@@ -588,7 +581,7 @@ def test_large_subset(spark_session):
 def test_string_joiner(spark_session):
     df1 = spark_session.createDataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
     df2 = spark_session.createDataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
-    compare = VSparkCompare(spark_session, df1, df2, "ab")
+    compare = SparkSQLCompare(spark_session, df1, df2, "ab")
     assert compare.matches()
 
 
@@ -598,7 +591,7 @@ def test_decimal_with_joins(spark_session):
         [{"a": Decimal("1"), "b": 2}, {"a": Decimal("2"), "b": 2}]
     )
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    compare = VSparkCompare(spark_session, df1, df2, "a")
+    compare = SparkSQLCompare(spark_session, df1, df2, "a")
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -613,7 +606,7 @@ def test_decimal_with_nulls(spark_session):
     df2 = spark_session.createDataFrame(
         [{"a": 1, "b": 2}, {"a": 2, "b": 2}, {"a": 3, "b": 2}]
     )
-    compare = VSparkCompare(spark_session, df1, df2, "a")
+    compare = SparkSQLCompare(spark_session, df1, df2, "a")
     assert not compare.matches()
     assert compare.all_columns_match()
     assert not compare.all_rows_overlap()
@@ -624,7 +617,7 @@ def test_decimal_with_nulls(spark_session):
 def test_strings_with_joins(spark_session):
     df1 = spark_session.createDataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
     df2 = spark_session.createDataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    compare = VSparkCompare(spark_session, df1, df2, "a")
+    compare = SparkSQLCompare(spark_session, df1, df2, "a")
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -706,7 +699,7 @@ def test_temp_column_name_one_already(spark_session):
 def test_simple_dupes_one_field(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    compare = VSparkCompare(spark_session, df1, df2, join_columns=["a"])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     compare.report()
@@ -716,7 +709,7 @@ def test_simple_dupes_one_field(spark_session):
 def test_simple_dupes_two_fields(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 2}])
-    compare = VSparkCompare(spark_session, df1, df2, join_columns=["a", "b"])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a", "b"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     compare.report()
@@ -726,7 +719,7 @@ def test_simple_dupes_two_fields(spark_session):
 def test_simple_dupes_one_field_two_vals_1(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
-    compare = VSparkCompare(spark_session, df1, df2, join_columns=["a"])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     compare.report()
@@ -736,7 +729,7 @@ def test_simple_dupes_one_field_two_vals_1(spark_session):
 def test_simple_dupes_one_field_two_vals_2(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
-    compare = VSparkCompare(spark_session, df1, df2, join_columns=["a"])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
     assert not compare.matches()
     assert compare.df1_unq_rows.count() == 1
     assert compare.df2_unq_rows.count() == 1
@@ -751,7 +744,7 @@ def test_simple_dupes_one_field_three_to_two_vals(spark_session):
         [{"a": 1, "b": 2}, {"a": 1, "b": 0}, {"a": 1, "b": 0}]
     )
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
-    compare = VSparkCompare(spark_session, df1, df2, join_columns=["a"])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
     assert not compare.matches()
     assert compare.df1_unq_rows.count() == 1
     assert compare.df2_unq_rows.count() == 0
@@ -787,9 +780,9 @@ def test_dupes_from_real_data(spark_session):
 200,0,2017-07-01,1009393,2.01,2017-06-29,D,USA,5814,22102,,F,"""
     df1 = spark_session.createDataFrame(pd.read_csv(StringIO(data), sep=","))
     df2 = df1.select("*")
-    compare_acct = VSparkCompare(spark_session, df1, df2, join_columns=["acct_id"])
+    compare_acct = SparkSQLCompare(spark_session, df1, df2, join_columns=["acct_id"])
     assert compare_acct.matches()
-    compare_unq = VSparkCompare(
+    compare_unq = SparkSQLCompare(
         spark_session,
         df1,
         df2,
@@ -809,13 +802,13 @@ def test_strings_with_joins_with_ignore_spaces(spark_session):
     df2 = spark_session.createDataFrame(
         [{"a": "hi", "b": "A"}, {"a": "bye", "b": "A "}]
     )
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_spaces=False)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_spaces=True)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -826,13 +819,13 @@ def test_strings_with_joins_with_ignore_spaces(spark_session):
 def test_strings_with_joins_with_ignore_case(spark_session):
     df1 = spark_session.createDataFrame([{"a": "hi", "b": "a"}, {"a": "bye", "b": "A"}])
     df2 = spark_session.createDataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "a"}])
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_case=False)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_case=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_case=True)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_case=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -843,13 +836,13 @@ def test_strings_with_joins_with_ignore_case(spark_session):
 def test_decimal_with_joins_with_ignore_spaces(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_spaces=False)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_spaces=True)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -860,13 +853,13 @@ def test_decimal_with_joins_with_ignore_spaces(spark_session):
 def test_decimal_with_joins_with_ignore_case(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_case=False)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_case=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_case=True)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_case=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -878,7 +871,7 @@ def test_joins_with_ignore_spaces(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
 
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_spaces=True)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -890,7 +883,7 @@ def test_joins_with_ignore_case(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
 
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_case=True)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_case=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -903,13 +896,13 @@ def test_strings_with_ignore_spaces_and_join_columns(spark_session):
     df2 = spark_session.createDataFrame(
         [{"a": " hi ", "b": "A"}, {"a": " bye ", "b": "A"}]
     )
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_spaces=False)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert not compare.all_rows_overlap()
     assert compare.count_matching_rows() == 0
 
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_spaces=True)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -921,14 +914,14 @@ def test_strings_with_ignore_spaces_and_join_columns(spark_session):
 def test_integers_with_ignore_spaces_and_join_columns(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_spaces=False)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_spaces=False)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert compare.intersect_rows_match()
     assert compare.count_matching_rows() == 2
 
-    compare = VSparkCompare(spark_session, df1, df2, "a", ignore_spaces=True)
+    compare = SparkSQLCompare(spark_session, df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -959,7 +952,7 @@ def test_sample_mismatch(spark_session):
     df1 = spark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = spark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
 
-    compare = VSparkCompare(spark_session, df1, df2, "acct_id")
+    compare = SparkSQLCompare(spark_session, df1, df2, "acct_id")
 
     output = compare.sample_mismatch(column="name", sample_count=1).toPandas()
     assert output.shape[0] == 1
@@ -995,7 +988,7 @@ def test_all_mismatch_not_ignore_matching_cols_no_cols_matching(spark_session):
     """
     df1 = spark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = spark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
-    compare = VSparkCompare(spark_session, df1, df2, "acct_id")
+    compare = SparkSQLCompare(spark_session, df1, df2, "acct_id")
 
     output = compare.all_mismatch().toPandas()
     assert output.shape[0] == 4
@@ -1036,7 +1029,7 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching(spark_session)
         """
     df1 = spark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = spark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
-    compare = VSparkCompare(spark_session, df1, df2, "acct_id")
+    compare = SparkSQLCompare(spark_session, df1, df2, "acct_id")
 
     output = compare.all_mismatch().toPandas()
     assert output.shape[0] == 4
@@ -1078,7 +1071,7 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows(spark_se
         """
     df1 = spark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = spark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
-    compare = VSparkCompare(spark_session, df1, df2, "acct_id")
+    compare = SparkSQLCompare(spark_session, df1, df2, "acct_id")
 
     output = compare.all_mismatch(ignore_matching_cols=True).toPandas()
 
@@ -1117,7 +1110,7 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching(spark_session):
         """
     df1 = spark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = spark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
-    compare = VSparkCompare(spark_session, df1, df2, "acct_id")
+    compare = SparkSQLCompare(spark_session, df1, df2, "acct_id")
 
     output = compare.all_mismatch(ignore_matching_cols=True).toPandas()
 
@@ -1155,7 +1148,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching(spark_session):
         """
     df1 = spark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = spark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
-    compare = VSparkCompare(spark_session, df1, df2, "acct_id")
+    compare = SparkSQLCompare(spark_session, df1, df2, "acct_id")
 
     output = compare.all_mismatch().toPandas()
     assert output.shape[0] == 4
@@ -1227,7 +1220,7 @@ def test_dupes_with_nulls_strings(spark_session):
     )
     df1 = spark_session.createDataFrame(pdf1)
     df2 = spark_session.createDataFrame(pdf2)
-    comp = VSparkCompare(spark_session, df1, df2, join_columns=["fld_1", "fld_2"])
+    comp = SparkSQLCompare(spark_session, df1, df2, join_columns=["fld_1", "fld_2"])
     assert comp.subset()
 
 
@@ -1249,7 +1242,7 @@ def test_dupes_with_nulls_ints(spark_session):
     )
     df1 = spark_session.createDataFrame(pdf1)
     df2 = spark_session.createDataFrame(pdf2)
-    comp = VSparkCompare(spark_session, df1, df2, join_columns=["fld_1", "fld_2"])
+    comp = SparkSQLCompare(spark_session, df1, df2, join_columns=["fld_1", "fld_2"])
     assert comp.subset()
 
 
@@ -1331,12 +1324,12 @@ def test_lower(spark_session):
     # should match
     df1 = spark_session.createDataFrame(pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]}))
     df2 = spark_session.createDataFrame(pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]}))
-    compare = VSparkCompare(spark_session, df1, df2, join_columns=["a"])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
     assert compare.matches()
     # should not match
     df1 = spark_session.createDataFrame(pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]}))
     df2 = spark_session.createDataFrame(pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]}))
-    compare = VSparkCompare(
+    compare = SparkSQLCompare(
         spark_session, df1, df2, join_columns=["a"], cast_column_names_lower=False
     )
     assert not compare.matches()
@@ -1345,14 +1338,14 @@ def test_lower(spark_session):
     # should match
     df1 = spark_session.createDataFrame(pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]}))
     df2 = spark_session.createDataFrame(pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]}))
-    compare = VSparkCompare(spark_session, df1, df2, join_columns=["a"])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
     assert compare.matches()
     # should fail because "a" is not found in df2
     df1 = spark_session.createDataFrame(pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]}))
     df2 = spark_session.createDataFrame(pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]}))
     expected_message = "df2 must have all columns from join_columns"
     with raises(ValueError, match=expected_message):
-        compare = VSparkCompare(
+        compare = SparkSQLCompare(
             spark_session, df1, df2, join_columns=["a"], cast_column_names_lower=False
         )
 
@@ -1362,19 +1355,19 @@ def test_integer_column_names(spark_session):
     """This function tests that integer column names would also work"""
     df1 = spark_session.createDataFrame(pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]}))
     df2 = spark_session.createDataFrame(pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]}))
-    compare = VSparkCompare(spark_session, df1, df2, join_columns=[1])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=[1])
     assert compare.matches()
 
 
 @pandas_version
-@mock.patch("datacompy.vspark.render")
+@mock.patch("datacompy.spark.sql.render")
 def test_save_html(mock_render, spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    compare = VSparkCompare(spark_session, df1, df2, join_columns=["a"])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
 
     m = mock.mock_open()
-    with mock.patch("datacompy.vspark.open", m, create=True):
+    with mock.patch("datacompy.spark.sql.open", m, create=True):
         # assert without HTML call
         compare.report()
         assert mock_render.call_count == 4
@@ -1382,7 +1375,7 @@ def test_save_html(mock_render, spark_session):
 
     mock_render.reset_mock()
     m = mock.mock_open()
-    with mock.patch("datacompy.vspark.open", m, create=True):
+    with mock.patch("datacompy.spark.sql.open", m, create=True):
         # assert with HTML call
         compare.report(html_file="test.html")
         assert mock_render.call_count == 4
@@ -1395,10 +1388,10 @@ def test_pandas_version(spark_session):
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     with mock.patch("pandas.__version__", "2.0.0"):
         with raises(Exception, match=re.escape(expected_message)):
-            VSparkCompare(spark_session, df1, df2, join_columns=["a"])
+            SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
 
     with mock.patch("pandas.__version__", "1.5.3"):
-        VSparkCompare(spark_session, df1, df2, join_columns=["a"])
+        SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
 
 
 @pandas_version
@@ -1415,7 +1408,7 @@ def test_unicode_columns(spark_session):
             {"a": 1, "例": 3, "予測対象日": "test"},
         ]
     )
-    compare = VSparkCompare(spark_session, df1, df2, join_columns=["例"])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["例"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     compare.report()

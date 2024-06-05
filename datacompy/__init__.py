@@ -29,8 +29,8 @@ from datacompy.fugue import (  # noqa: F401
     unq_columns,
 )
 from datacompy.polars import PolarsCompare  # noqa: F401
-from datacompy.spark import SparkCompare  # noqa: F401
-from datacompy.vspark import VSparkCompare  # noqa: F401
+from datacompy.spark.pandas import SparkPandasCompare  # noqa: F401
+from datacompy.spark.sql import SparkSQLCompare  # noqa: F401
 
 major = platform.python_version_tuple()[0]
 minor = platform.python_version_tuple()[1]

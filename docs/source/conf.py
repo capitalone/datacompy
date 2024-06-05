@@ -24,8 +24,7 @@ copyright = "2024, Capital One"
 author = "Ian Robertson, Dan Coates, Faisal Dosani"
 
 # The full version, including alpha/beta/rc tags
-version = datacompy.__version__
-release = datacompy.__version__
+release = version = datacompy.__version__
 
 
 # -- General configuration ---------------------------------------------------
