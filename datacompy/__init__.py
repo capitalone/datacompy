@@ -18,8 +18,12 @@ __version__ = "0.13.0"
 import platform
 from warnings import warn
 
-from datacompy.core import *  # noqa: F403
-from datacompy.fugue import (  # noqa: F401
+from datacompy.polars import PolarsCompare  # noqa: F401
+from datacompy.spark.pandas import SparkPandasCompare  # noqa: F401
+from datacompy.spark.sql import SparkSQLCompare  # noqa: F401
+
+from .core import *  # noqa: F403
+from .fugue import (  # noqa: F401
     all_columns_match,
     all_rows_overlap,
     count_matching_rows,
@@ -28,9 +32,6 @@ from datacompy.fugue import (  # noqa: F401
     report,
     unq_columns,
 )
-from datacompy.polars import PolarsCompare  # noqa: F401
-from datacompy.spark.pandas import SparkPandasCompare  # noqa: F401
-from datacompy.spark.sql import SparkSQLCompare  # noqa: F401
 
 major = platform.python_version_tuple()[0]
 minor = platform.python_version_tuple()[1]

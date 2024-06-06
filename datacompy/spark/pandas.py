@@ -28,7 +28,7 @@ from typing import List, Optional, Union
 import pandas as pd
 from ordered_set import OrderedSet
 
-from datacompy.base import BaseCompare, temp_column_name
+from ..base import BaseCompare, temp_column_name
 
 try:
     import pyspark.pandas as ps
@@ -308,17 +308,17 @@ class SparkPandasCompare(BaseCompare):
 
         # process merge indicator
         outer_join["_merge"] = outer_join._merge.mask(
-            (outer_join["_merge_left"] == True)
+            (outer_join["_merge_left"] == True)  # noqa: E712
             & (outer_join["_merge_right"] == True),  # noqa: E712
             "both",
         )
         outer_join["_merge"] = outer_join._merge.mask(
-            (outer_join["_merge_left"] == True)
+            (outer_join["_merge_left"] == True)  # noqa: E712
             & (outer_join["_merge_right"] != True),  # noqa: E712
             "left_only",
         )
         outer_join["_merge"] = outer_join._merge.mask(
-            (outer_join["_merge_left"] != True)
+            (outer_join["_merge_left"] != True)  # noqa: E712
             & (outer_join["_merge_right"] == True),  # noqa: E712
             "right_only",
         )

@@ -29,7 +29,7 @@ import numpy as np
 import pandas as pd
 from ordered_set import OrderedSet
 
-from datacompy.base import BaseCompare, temp_column_name
+from .base import BaseCompare, temp_column_name
 
 LOG = logging.getLogger(__name__)
 

@@ -29,7 +29,7 @@ from typing import List, Optional, Tuple, Union
 import pandas as pd
 from ordered_set import OrderedSet
 
-from datacompy.base import BaseCompare, temp_column_name
+from ..base import BaseCompare, temp_column_name
 
 try:
     import pyspark.sql

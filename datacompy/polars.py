@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 import numpy as np
 from ordered_set import OrderedSet
 
-from datacompy.base import BaseCompare, temp_column_name
+from .base import BaseCompare, temp_column_name
 
 try:
     import polars as pl
@@ -279,16 +279,19 @@ class PolarsCompare(BaseCompare):
         # process merge indicator
         outer_join = outer_join.with_columns(
             pl.when(
-                (pl.col("_merge_left") == True) & (pl.col("_merge_right") == True)
-            )  # noqa: E712
+                (pl.col("_merge_left") == True)
+                & (pl.col("_merge_right") == True)  # noqa: E712
+            )
             .then(pl.lit("both"))
             .when(
-                (pl.col("_merge_left") == True) & (pl.col("_merge_right").is_null())
-            )  # noqa: E712
+                (pl.col("_merge_left") == True)
+                & (pl.col("_merge_right").is_null())  # noqa: E712
+            )
             .then(pl.lit("left_only"))
             .when(
-                (pl.col("_merge_left").is_null()) & (pl.col("_merge_right") == True)
-            )  # noqa: E712
+                (pl.col("_merge_left").is_null())
+                & (pl.col("_merge_right") == True)  # noqa: E712
+            )
             .then(pl.lit("right_only"))
             .alias("_merge")
         )
@@ -504,10 +507,8 @@ class PolarsCompare(BaseCompare):
         match_cnt = col_match.sum()
         sample_count = min(sample_count, row_cnt - match_cnt)  # type: ignore
         sample = self.intersect_rows.filter(
-            pl.col(column + "_match") != True
-        ).sample(  # noqa: E712
-            sample_count
-        )
+            pl.col(column + "_match") != True  # noqa: E712
+        ).sample(sample_count)
         return_cols = self.join_columns + [
             column + "_" + self.df1_name,
             column + "_" + self.df2_name,
