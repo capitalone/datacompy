@@ -25,7 +25,8 @@ For both ``SparkSQLCompare`` and ``SparkPandasCompare``
 
 - ``on_index`` is not supported.
 - Joining is done using ``<=>`` which is the equality test that is safe for null values.
-
+- ``SparkPandasCompare`` compares ``pyspark.pandas.DataFrame``'s
+- ``SparkSQLCompare`` compares ``pyspark.sql.DataFrame``'s
 
 Supported Version
 ------------------

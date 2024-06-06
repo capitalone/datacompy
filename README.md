@@ -40,7 +40,7 @@ pip install datacompy[ray]
 ### Legacy Spark Deprecation
 
 With version ``v0.12.0`` the original ``SparkCompare`` was replaced with a 
-Pandas on Spark implementation The original ``SparkCompare`` implementation differs 
+Pandas on Spark implementation. The original ``SparkCompare`` implementation differs 
 from all the other native implementations. To align the API better,  and keep behaviour 
 consistent we are deprecating the original ``SparkCompare`` into a new module ``LegacySparkCompare``
 
@@ -87,8 +87,8 @@ with the Pandas on Spark implementation. Spark plans to support Pandas 2 in [Spa
 ## Supported backends
 
 - Pandas: ([See documentation](https://capitalone.github.io/datacompy/pandas_usage.html))
-- Spark (Pandas on Spark API): ([See documentation](https://capitalone.github.io/datacompy/spark_usage.html))
-- Polars (Experimental): ([See documentation](https://capitalone.github.io/datacompy/polars_usage.html))
+- Spark: ([See documentation](https://capitalone.github.io/datacompy/spark_usage.html))
+- Polars: ([See documentation](https://capitalone.github.io/datacompy/polars_usage.html))
 - Fugue is a Python library that provides a unified interface for data processing on Pandas, DuckDB, Polars, Arrow,
   Spark, Dask, Ray, and many other backends. DataComPy integrates with Fugue to provide a simple way to compare data
   across these backends. Please note that Fugue will use the Pandas (Native) logic at its lowest level
