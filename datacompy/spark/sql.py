@@ -209,8 +209,12 @@ class SparkSQLCompare(BaseCompare):
         None
         """
         dataframe = getattr(self, index)
-        if not isinstance(dataframe, pyspark.sql.DataFrame):
-            raise TypeError(f"{index} must be a pyspark.sql.DataFrame")
+        if not isinstance(
+            dataframe, (pyspark.sql.DataFrame, pyspark.sql.connect.dataframe.DataFrame)
+        ):
+            raise TypeError(
+                f"{index} must be a pyspark.sql.DataFrame or pyspark.sql.connect.dataframe.DataFrame"
+            )
 
         if cast_column_names_lower:
             if index == "df1":
