@@ -217,7 +217,7 @@ class SparkSQLCompare(BaseCompare):
 
         if not isinstance(dataframe, instances):
             raise TypeError(
-                f"{index} must be a pyspark.sql2.DataFrame or pyspark.sql.connect.dataframe.DataFrame (Spark 3.4.0 and above)"
+                f"{index} must be a pyspark.sql.DataFrame or pyspark.sql.connect.dataframe.DataFrame (Spark 3.4.0 and above)"
             )
 
         if cast_column_names_lower:
