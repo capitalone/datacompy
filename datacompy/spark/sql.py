@@ -211,6 +211,8 @@ class SparkSQLCompare(BaseCompare):
         dataframe = getattr(self, index)
 
         if __version__ >= "3.4.0":
+            import pyspark.sql.connect.dataframe
+
             instances = (pyspark.sql.DataFrame, pyspark.sql.connect.dataframe.DataFrame)
         else:
             instances = pyspark.sql.DataFrame
