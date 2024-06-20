@@ -39,17 +39,17 @@ The data (base, and compare) we generated was purely synthetic consisting of 10 
 
 Table of mean benchmark times in seconds:
 
-===========   =======   =======    ===============   ===============   ===============        
-Number of     pandas    polars     pandas on spark   spark (fugue)     spark (fugue) 
-rows                               (distributed)     (single)          (distributed)        
-===========   =======   =======    ===============   ===============   ===============       
-1000          0.025     0.025      15.2838           2.041             1.109              
-100,000       0.196     0.120      11.1113           1.743             3.175                 
-10,000,000    18.804    11.330     20.6274           17.560            16.455                           
-50,000,000    96.494    62.827     57.5735           90.578            94.304                          
-100,000,000   DNR       127.194    96.3204           DNR               193.234          
-500,000,000   DNR       DNR        262.6094          DNR               DNR            
-===========   =======   =======    ===============   ===============   ===============        
+===========   =======   =======    ===============   ===============   ===============   =============== 
+Number of     pandas    polars     spark sql         pandas on spark   spark (fugue)     spark (fugue)   
+rows                               (distributed)     (distributed)     (single)          (distributed)   
+===========   =======   =======    ===============   ===============   ===============   =============== 
+1000          0.025     0.025      15.3112           15.2838           2.041             1.109           
+100,000       0.196     0.120      15.0701           11.1113           1.743             3.175           
+10,000,000    18.804    11.330     18.2763           20.6274           17.560            16.455          
+50,000,000    96.494    62.827     31.1257           57.5735           90.578            94.304          
+100,000,000   DNR       127.194    47.2185           96.3204           DNR               193.234         
+500,000,000   DNR       DNR        130.9814          262.6094          DNR               DNR             
+===========   =======   =======    ===============   ===============   ===============   =============== 
 
 .. note:: DNR = Did not run
 
@@ -66,5 +66,9 @@ TLDR
 
   * in the 100 Million + range is starts to shine, and due to its distributed 
     nature it can process vast amounts of data
+
+* The Spark SQL implementaion seems to be the most performant on very large datasets
+  
+  * It makes the Pandas on Spark implementation obsolete moving forward.
 
 * The native Pandas version is best for small and medium data

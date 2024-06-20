@@ -23,11 +23,12 @@ two dataframes.
 
 import logging
 import os
+from typing import List, Optional, Union
 
 import pandas as pd
 from ordered_set import OrderedSet
 
-from datacompy.base import BaseCompare, temp_column_name
+from ..base import BaseCompare, temp_column_name
 
 try:
     import pyspark.pandas as ps
@@ -39,7 +40,7 @@ except ImportError:
 LOG = logging.getLogger(__name__)
 
 
-class SparkCompare(BaseCompare):
+class SparkPandasCompare(BaseCompare):
     """Comparison class to be used to compare whether two Pandas on Spark dataframes are equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
@@ -83,17 +84,17 @@ class SparkCompare(BaseCompare):
 
     def __init__(
         self,
-        df1,
-        df2,
-        join_columns,
-        abs_tol=0,
-        rel_tol=0,
-        df1_name="df1",
-        df2_name="df2",
-        ignore_spaces=False,
-        ignore_case=False,
-        cast_column_names_lower=True,
-    ):
+        df1: "ps.DataFrame",
+        df2: "ps.DataFrame",
+        join_columns: Union[List[str], str],
+        abs_tol: float = 0,
+        rel_tol: float = 0,
+        df1_name: str = "df1",
+        df2_name: str = "df2",
+        ignore_spaces: bool = False,
+        ignore_case: bool = False,
+        cast_column_names_lower: bool = True,
+    ) -> None:
         if pd.__version__ >= "2.0.0":
             raise Exception(
                 "It seems like you are running Pandas 2+. Please note that Pandas 2+ will only be supported in Spark 4+. See: https://issues.apache.org/jira/browse/SPARK-44101. If you need to use Spark DataFrame with Pandas 2+ then consider using Fugue otherwise downgrade to Pandas 1.5.3"
@@ -115,7 +116,7 @@ class SparkCompare(BaseCompare):
                 for col in join_columns
             ]
 
-        self._any_dupes = False
+        self._any_dupes: bool = False
         self.df1 = df1
         self.df2 = df2
         self.df1_name = df1_name
@@ -125,15 +126,15 @@ class SparkCompare(BaseCompare):
         self.ignore_spaces = ignore_spaces
         self.ignore_case = ignore_case
         self.df1_unq_rows = self.df2_unq_rows = self.intersect_rows = None
-        self.column_stats = []
+        self.column_stats: List = []
         self._compare(ignore_spaces, ignore_case)
 
     @property
-    def df1(self):
+    def df1(self) -> "ps.DataFrame":
         return self._df1
 
     @df1.setter
-    def df1(self, df1):
+    def df1(self, df1: "ps.DataFrame") -> None:
         """Check that it is a dataframe and has the join columns"""
         self._df1 = df1
         self._validate_dataframe(
@@ -141,18 +142,20 @@ class SparkCompare(BaseCompare):
         )
 
     @property
-    def df2(self):
+    def df2(self) -> "ps.DataFrame":
         return self._df2
 
     @df2.setter
-    def df2(self, df2):
+    def df2(self, df2: "ps.DataFrame") -> None:
         """Check that it is a dataframe and has the join columns"""
         self._df2 = df2
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
         )
 
-    def _validate_dataframe(self, index, cast_column_names_lower=True):
+    def _validate_dataframe(
+        self, index: str, cast_column_names_lower: bool = True
+    ) -> None:
         """Check that it is a dataframe and has the join columns
 
         Parameters
@@ -161,6 +164,10 @@ class SparkCompare(BaseCompare):
             The "index" of the dataframe - df1 or df2.
         cast_column_names_lower: bool, optional
             Boolean indicator that controls of column names will be cast into lower case
+
+        Return
+        ------
+        None
         """
         dataframe = getattr(self, index)
         if not isinstance(dataframe, (ps.DataFrame)):
@@ -180,7 +187,7 @@ class SparkCompare(BaseCompare):
         if len(dataframe.drop_duplicates(subset=self.join_columns)) < len(dataframe):
             self._any_dupes = True
 
-    def _compare(self, ignore_spaces, ignore_case):
+    def _compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
         """Actually run the comparison.  This tries to run df1.equals(df2)
         first so that if they're truly equal we can tell.
 
@@ -216,19 +223,19 @@ class SparkCompare(BaseCompare):
         else:
             LOG.info("df1 does not match df2")
 
-    def df1_unq_columns(self):
+    def df1_unq_columns(self) -> OrderedSet[str]:
         """Get columns that are unique to df1"""
         return OrderedSet(self.df1.columns) - OrderedSet(self.df2.columns)
 
-    def df2_unq_columns(self):
+    def df2_unq_columns(self) -> OrderedSet[str]:
         """Get columns that are unique to df2"""
         return OrderedSet(self.df2.columns) - OrderedSet(self.df1.columns)
 
-    def intersect_columns(self):
+    def intersect_columns(self) -> OrderedSet[str]:
         """Get columns that are shared between the two dataframes"""
         return OrderedSet(self.df1.columns) & OrderedSet(self.df2.columns)
 
-    def _dataframe_merge(self, ignore_spaces):
+    def _dataframe_merge(self, ignore_spaces: bool) -> None:
         """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
         and df1 & df2
         """
@@ -301,17 +308,17 @@ class SparkCompare(BaseCompare):
 
         # process merge indicator
         outer_join["_merge"] = outer_join._merge.mask(
-            (outer_join["_merge_left"] == True)
+            (outer_join["_merge_left"] == True)  # noqa: E712
             & (outer_join["_merge_right"] == True),  # noqa: E712
             "both",
         )
         outer_join["_merge"] = outer_join._merge.mask(
-            (outer_join["_merge_left"] == True)
+            (outer_join["_merge_left"] == True)  # noqa: E712
             & (outer_join["_merge_right"] != True),  # noqa: E712
             "left_only",
         )
         outer_join["_merge"] = outer_join._merge.mask(
-            (outer_join["_merge_left"] != True)
+            (outer_join["_merge_left"] != True)  # noqa: E712
             & (outer_join["_merge_right"] == True),  # noqa: E712
             "right_only",
         )
@@ -364,7 +371,7 @@ class SparkCompare(BaseCompare):
         # cache
         self.intersect_rows.spark.cache()
 
-    def _intersect_compare(self, ignore_spaces, ignore_case):
+    def _intersect_compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
         """Run the comparison on the intersect dataframe
 
         This loops through all columns that are shared between df1 and df2, and
@@ -372,6 +379,8 @@ class SparkCompare(BaseCompare):
         otherwise.
         """
         LOG.debug("Comparing intersection")
+        max_diff: float
+        null_diff: int
         row_cnt = len(self.intersect_rows)
         for column in self.intersect_columns():
             if column in self.join_columns:
@@ -430,11 +439,11 @@ class SparkCompare(BaseCompare):
                 }
             )
 
-    def all_columns_match(self):
+    def all_columns_match(self) -> bool:
         """Whether the columns all match in the dataframes"""
         return self.df1_unq_columns() == self.df2_unq_columns() == set()
 
-    def all_rows_overlap(self):
+    def all_rows_overlap(self) -> bool:
         """Whether the rows are all present in both dataframes
 
         Returns
@@ -445,7 +454,7 @@ class SparkCompare(BaseCompare):
         """
         return len(self.df1_unq_rows) == len(self.df2_unq_rows) == 0
 
-    def count_matching_rows(self):
+    def count_matching_rows(self) -> bool:
         """Count the number of rows match (on overlapping fields)
 
         Returns
@@ -469,12 +478,12 @@ class SparkCompare(BaseCompare):
             match_columns_count = 0
         return match_columns_count
 
-    def intersect_rows_match(self):
+    def intersect_rows_match(self) -> bool:
         """Check whether the intersect rows all match"""
         actual_length = self.intersect_rows.shape[0]
         return self.count_matching_rows() == actual_length
 
-    def matches(self, ignore_extra_columns=False):
+    def matches(self, ignore_extra_columns: bool = False) -> bool:
         """Return True or False if the dataframes match.
 
         Parameters
@@ -491,12 +500,17 @@ class SparkCompare(BaseCompare):
         else:
             return True
 
-    def subset(self):
+    def subset(self) -> bool:
         """Return True if dataframe 2 is a subset of dataframe 1.
 
         Dataframe 2 is considered a subset if all of its columns are in
         dataframe 1, and all of its rows match rows in dataframe 1 for the
         shared columns.
+
+        Returns
+        -------
+        bool
+            True if dataframe 2 is a subset of dataframe 1.
         """
         if not self.df2_unq_columns() == set():
             return False
@@ -507,7 +521,9 @@ class SparkCompare(BaseCompare):
         else:
             return True
 
-    def sample_mismatch(self, column, sample_count=10, for_display=False):
+    def sample_mismatch(
+        self, column: str, sample_count: int = 10, for_display: bool = False
+    ) -> "ps.DataFrame":
         """Returns a sample sub-dataframe which contains the identifying
         columns, and df1 and df2 versions of the column.
 
@@ -549,7 +565,7 @@ class SparkCompare(BaseCompare):
             ]
         return to_return
 
-    def all_mismatch(self, ignore_matching_cols=False):
+    def all_mismatch(self, ignore_matching_cols: bool = False) -> "ps.DataFrame":
         """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
         columns.
 
@@ -603,7 +619,12 @@ class SparkCompare(BaseCompare):
 
         return self.intersect_rows[~mm_bool][updated_join_columns + return_list]
 
-    def report(self, sample_count=10, column_count=10, html_file=None):
+    def report(
+        self,
+        sample_count: int = 10,
+        column_count: int = 10,
+        html_file: Optional[str] = None,
+    ) -> str:
         """Returns a string representation of a report.  The representation can
         then be printed or saved to a file.
 
@@ -755,7 +776,7 @@ class SparkCompare(BaseCompare):
         return report
 
 
-def render(filename, *fields):
+def render(filename: str, *fields: Union[int, float, str]) -> str:
     """Renders out an individual template.  This basically just reads in a
     template file, and applies ``.format()`` on the fields.
 
@@ -773,13 +794,18 @@ def render(filename, *fields):
         The fully rendered out file.
     """
     this_dir = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(this_dir, "templates", filename)) as file_open:
+    with open(os.path.join(this_dir, "..", "templates", filename)) as file_open:
         return file_open.read().format(*fields)
 
 
 def columns_equal(
-    col_1, col_2, rel_tol=0, abs_tol=0, ignore_spaces=False, ignore_case=False
-):
+    col_1: "ps.Series",
+    col_2: "ps.Series",
+    rel_tol: float = 0,
+    abs_tol: float = 0,
+    ignore_spaces: bool = False,
+    ignore_case: bool = False,
+) -> "ps.Series":
     """Compares two columns from a dataframe, returning a True/False series,
     with the same index as column 1.
 
@@ -856,7 +882,9 @@ def columns_equal(
     return compare
 
 
-def compare_string_and_date_columns(col_1, col_2):
+def compare_string_and_date_columns(
+    col_1: "ps.Series", col_2: "ps.Series"
+) -> "ps.Series":
     """Compare a string column and date column, value-wise.  This tries to
     convert a string column to a date column and compare that way.
 
@@ -892,7 +920,11 @@ def compare_string_and_date_columns(col_1, col_2):
     return compare
 
 
-def get_merged_columns(original_df, merged_df, suffix):
+def get_merged_columns(
+    original_df: "ps.DataFrame",
+    merged_df: "ps.DataFrame",
+    suffix: str,
+) -> List[str]:
     """Gets the columns from an original dataframe, in the new merged dataframe
 
     Parameters
@@ -904,6 +936,11 @@ def get_merged_columns(original_df, merged_df, suffix):
     suffix : str
         What suffix was used to distinguish when the original dataframe was
         overlapping with the other merged dataframe.
+
+    Returns
+    -------
+    List[str]
+        Column list of the original dataframe pre suffix
     """
     columns = []
     for col in original_df.columns:
@@ -916,7 +953,7 @@ def get_merged_columns(original_df, merged_df, suffix):
     return columns
 
 
-def calculate_max_diff(col_1, col_2):
+def calculate_max_diff(col_1: "ps.DataFrame", col_2: "ps.DataFrame") -> float:
     """Get a maximum difference between two columns
 
     Parameters
@@ -928,8 +965,8 @@ def calculate_max_diff(col_1, col_2):
 
     Returns
     -------
-    Numeric
-        Numeric field, or zero.
+    float
+        max diff
     """
     try:
         return (col_1.astype(float) - col_2.astype(float)).abs().max()
@@ -937,7 +974,9 @@ def calculate_max_diff(col_1, col_2):
         return 0
 
 
-def generate_id_within_group(dataframe, join_columns):
+def generate_id_within_group(
+    dataframe: "ps.DataFrame", join_columns: List[str]
+) -> "ps.Series":
     """Generate an ID column that can be used to deduplicate identical rows.  The series generated
     is the order within a unique group, and it handles nulls.
 

@@ -55,7 +55,7 @@ python-tag = "py3"
 
 [project.optional-dependencies]
 duckdb = ["fugue[duckdb]"]
-spark = ["pyspark>=3.1.1; python_version < \"3.11\"", "pyspark>=3.4; python_version >= \"3.11\""]
+spark = ["pyspark[connect]>=3.1.1; python_version < \"3.11\"", "pyspark[connect]>=3.4; python_version >= \"3.11\""]
 dask = ["fugue[dask]"]
 ray = ["fugue[ray]"]
 docs = ["sphinx", "furo", "myst-parser"]
