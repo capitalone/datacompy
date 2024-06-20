@@ -215,6 +215,8 @@ class SparkSQLCompare(BaseCompare):
 
             instances = (pyspark.sql.DataFrame, pyspark.sql.connect.dataframe.DataFrame)
         else:
+            import pyspark.sql
+
             instances = pyspark.sql.DataFrame
 
         if not isinstance(dataframe, instances):
