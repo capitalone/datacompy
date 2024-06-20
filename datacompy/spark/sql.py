@@ -39,7 +39,6 @@ try:
         array,
         array_contains,
         col,
-        greatest,
         isnan,
         isnull,
         lit,
@@ -49,6 +48,7 @@ try:
         upper,
         when,
     )
+    from pyspark.version import __version__
 
 except ImportError:
     pass  # Let non-Spark people at least enjoy the loveliness of the spark sql datacompy functionality
@@ -209,11 +209,15 @@ class SparkSQLCompare(BaseCompare):
         None
         """
         dataframe = getattr(self, index)
-        if not isinstance(
-            dataframe, (pyspark.sql.DataFrame, pyspark.sql.connect.dataframe.DataFrame)
-        ):
+
+        if __version__ >= "3.4.0":
+            instances = (pyspark.sql.DataFrame, pyspark.sql.connect.dataframe.DataFrame)
+        else:
+            instances = pyspark.sql.DataFrame
+
+        if not isinstance(dataframe, instances):
             raise TypeError(
-                f"{index} must be a pyspark.sql.DataFrame or pyspark.sql.connect.dataframe.DataFrame"
+                f"{index} must be a pyspark.sql2.DataFrame or pyspark.sql.connect.dataframe.DataFrame (Spark 3.4.0 and above)"
             )
 
         if cast_column_names_lower:
