@@ -1,6 +1,14 @@
 datacompy package
 =================
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   datacompy.spark
+
 Submodules
 ----------
 
@@ -28,26 +36,10 @@ datacompy.fugue module
    :undoc-members:
    :show-inheritance:
 
-datacompy.legacy module
------------------------
-
-.. automodule:: datacompy.legacy
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 datacompy.polars module
 -----------------------
 
 .. automodule:: datacompy.polars
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-datacompy.spark module
-----------------------
-
-.. automodule:: datacompy.spark
    :members:
    :undoc-members:
    :show-inheritance:

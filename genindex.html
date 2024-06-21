@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="#" /><link rel="search" title="Search" href="search.html" />
 
-    <!-- Generated with Sphinx 7.3.7 and Furo 2024.05.06 --><title>Index - datacompy 0.12.1 documentation</title>
+    <!-- Generated with Sphinx 7.3.7 and Furo 2024.05.06 --><title>Index - datacompy 0.13.0 documentation</title>
 <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=387cc868" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
@@ -177,7 +177,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.12.1 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.13.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -201,7 +201,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.12.1 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.13.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -212,15 +212,19 @@
   <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark (Pandas on Spark) Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmarks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api/modules.html">datacompy</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of datacompy</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="api/datacompy.html">datacompy package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="api/datacompy.html">datacompy package</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of datacompy package</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.spark.html">datacompy.spark package</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/capitalone/datacompy">Github Repo</a></li>
@@ -274,7 +278,9 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.all_columns_match">(datacompy.polars.PolarsCompare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.all_columns_match">(datacompy.spark.SparkCompare method)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.all_columns_match">(datacompy.spark.pandas.SparkPandasCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.all_columns_match">(datacompy.spark.sql.SparkSQLCompare method)</a>
 </li>
           <li><a href="api/datacompy.html#datacompy.fugue.all_columns_match">(in module datacompy.fugue)</a>
 </li>
@@ -286,7 +292,9 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.all_mismatch">(datacompy.polars.PolarsCompare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.all_mismatch">(datacompy.spark.SparkCompare method)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.all_mismatch">(datacompy.spark.pandas.SparkPandasCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.all_mismatch">(datacompy.spark.sql.SparkSQLCompare method)</a>
 </li>
         </ul></li>
     </ul></td>
@@ -298,7 +306,9 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.all_rows_overlap">(datacompy.polars.PolarsCompare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.all_rows_overlap">(datacompy.spark.SparkCompare method)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.all_rows_overlap">(datacompy.spark.pandas.SparkPandasCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.all_rows_overlap">(datacompy.spark.sql.SparkSQLCompare method)</a>
 </li>
           <li><a href="api/datacompy.html#datacompy.fugue.all_rows_overlap">(in module datacompy.fugue)</a>
 </li>
@@ -311,7 +321,7 @@
   <h2>B</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare.base_row_count">base_row_count (datacompy.legacy.LegacySparkCompare property)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare.base_row_count">base_row_count (datacompy.spark.legacy.LegacySparkCompare property)</a>
 </li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
@@ -330,39 +340,45 @@
         <ul>
           <li><a href="api/datacompy.html#datacompy.polars.calculate_max_diff">(in module datacompy.polars)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.calculate_max_diff">(in module datacompy.spark)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.calculate_max_diff">(in module datacompy.spark.pandas)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.calculate_max_diff">(in module datacompy.spark.sql)</a>
 </li>
         </ul></li>
-        <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare.columns_compared">columns_compared (datacompy.legacy.LegacySparkCompare property)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.sql.calculate_null_diff">calculate_null_diff() (in module datacompy.spark.sql)</a>
+</li>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare.columns_compared">columns_compared (datacompy.spark.legacy.LegacySparkCompare property)</a>
 </li>
         <li><a href="api/datacompy.html#datacompy.core.columns_equal">columns_equal() (in module datacompy.core)</a>
 
         <ul>
           <li><a href="api/datacompy.html#datacompy.polars.columns_equal">(in module datacompy.polars)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.columns_equal">(in module datacompy.spark)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.columns_equal">(in module datacompy.spark.pandas)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.columns_equal">(in module datacompy.spark.sql)</a>
 </li>
         </ul></li>
-        <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare.columns_in_both">columns_in_both (datacompy.legacy.LegacySparkCompare property)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare.columns_in_both">columns_in_both (datacompy.spark.legacy.LegacySparkCompare property)</a>
 </li>
-        <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare.columns_only_base">columns_only_base (datacompy.legacy.LegacySparkCompare property)</a>
-</li>
-        <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare.columns_only_compare">columns_only_compare (datacompy.legacy.LegacySparkCompare property)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare.columns_only_base">columns_only_base (datacompy.spark.legacy.LegacySparkCompare property)</a>
 </li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare.common_row_count">common_row_count (datacompy.legacy.LegacySparkCompare property)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare.columns_only_compare">columns_only_compare (datacompy.spark.legacy.LegacySparkCompare property)</a>
+</li>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare.common_row_count">common_row_count (datacompy.spark.legacy.LegacySparkCompare property)</a>
 </li>
         <li><a href="api/datacompy.html#datacompy.core.Compare">Compare (class in datacompy.core)</a>
 </li>
-        <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare.compare_row_count">compare_row_count (datacompy.legacy.LegacySparkCompare property)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare.compare_row_count">compare_row_count (datacompy.spark.legacy.LegacySparkCompare property)</a>
 </li>
         <li><a href="api/datacompy.html#datacompy.core.compare_string_and_date_columns">compare_string_and_date_columns() (in module datacompy.core)</a>
 
         <ul>
           <li><a href="api/datacompy.html#datacompy.polars.compare_string_and_date_columns">(in module datacompy.polars)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.compare_string_and_date_columns">(in module datacompy.spark)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.compare_string_and_date_columns">(in module datacompy.spark.pandas)</a>
 </li>
         </ul></li>
         <li><a href="api/datacompy.html#datacompy.base.BaseCompare.count_matching_rows">count_matching_rows() (datacompy.base.BaseCompare method)</a>
@@ -372,7 +388,9 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.count_matching_rows">(datacompy.polars.PolarsCompare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.count_matching_rows">(datacompy.spark.SparkCompare method)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.count_matching_rows">(datacompy.spark.pandas.SparkPandasCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.count_matching_rows">(datacompy.spark.sql.SparkSQLCompare method)</a>
 </li>
           <li><a href="api/datacompy.html#datacompy.fugue.count_matching_rows">(in module datacompy.fugue)</a>
 </li>
@@ -414,13 +432,6 @@
 </li>
         </ul></li>
         <li>
-    datacompy.legacy
-
-        <ul>
-          <li><a href="api/datacompy.html#module-datacompy.legacy">module</a>
-</li>
-        </ul></li>
-        <li>
     datacompy.polars
 
         <ul>
@@ -431,11 +442,36 @@
     datacompy.spark
 
         <ul>
-          <li><a href="api/datacompy.html#module-datacompy.spark">module</a>
+          <li><a href="api/datacompy.spark.html#module-datacompy.spark">module</a>
 </li>
         </ul></li>
-        <li><a href="api/datacompy.html#datacompy.legacy.decimal_comparator">decimal_comparator() (in module datacompy.legacy)</a>
+        <li>
+    datacompy.spark.legacy
+
+        <ul>
+          <li><a href="api/datacompy.spark.html#module-datacompy.spark.legacy">module</a>
 </li>
+        </ul></li>
+        <li>
+    datacompy.spark.pandas
+
+        <ul>
+          <li><a href="api/datacompy.spark.html#module-datacompy.spark.pandas">module</a>
+</li>
+        </ul></li>
+        <li>
+    datacompy.spark.sql
+
+        <ul>
+          <li><a href="api/datacompy.spark.html#module-datacompy.spark.sql">module</a>
+</li>
+        </ul></li>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.decimal_comparator">decimal_comparator() (in module datacompy.spark.legacy)</a>
+
+        <ul>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.decimal_comparator">(in module datacompy.spark.sql)</a>
+</li>
+        </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="api/datacompy.html#datacompy.base.BaseCompare.df1">df1 (datacompy.base.BaseCompare property)</a>
@@ -445,7 +481,9 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.df1">(datacompy.polars.PolarsCompare property)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.df1">(datacompy.spark.SparkCompare property)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.df1">(datacompy.spark.pandas.SparkPandasCompare property)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.df1">(datacompy.spark.sql.SparkSQLCompare property)</a>
 </li>
         </ul></li>
         <li><a href="api/datacompy.html#datacompy.base.BaseCompare.df1_unq_columns">df1_unq_columns() (datacompy.base.BaseCompare method)</a>
@@ -455,7 +493,9 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.df1_unq_columns">(datacompy.polars.PolarsCompare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.df1_unq_columns">(datacompy.spark.SparkCompare method)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.df1_unq_columns">(datacompy.spark.pandas.SparkPandasCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.df1_unq_columns">(datacompy.spark.sql.SparkSQLCompare method)</a>
 </li>
         </ul></li>
         <li><a href="api/datacompy.html#datacompy.base.BaseCompare.df2">df2 (datacompy.base.BaseCompare property)</a>
@@ -465,7 +505,9 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.df2">(datacompy.polars.PolarsCompare property)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.df2">(datacompy.spark.SparkCompare property)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.df2">(datacompy.spark.pandas.SparkPandasCompare property)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.df2">(datacompy.spark.sql.SparkSQLCompare property)</a>
 </li>
         </ul></li>
         <li><a href="api/datacompy.html#datacompy.base.BaseCompare.df2_unq_columns">df2_unq_columns() (datacompy.base.BaseCompare method)</a>
@@ -475,7 +517,9 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.df2_unq_columns">(datacompy.polars.PolarsCompare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.df2_unq_columns">(datacompy.spark.SparkCompare method)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.df2_unq_columns">(datacompy.spark.pandas.SparkPandasCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.df2_unq_columns">(datacompy.spark.sql.SparkSQLCompare method)</a>
 </li>
         </ul></li>
     </ul></td>
@@ -491,7 +535,7 @@
         <ul>
           <li><a href="api/datacompy.html#datacompy.polars.generate_id_within_group">(in module datacompy.polars)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.generate_id_within_group">(in module datacompy.spark)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.generate_id_within_group">(in module datacompy.spark.pandas)</a>
 </li>
         </ul></li>
     </ul></td>
@@ -501,7 +545,9 @@
         <ul>
           <li><a href="api/datacompy.html#datacompy.polars.get_merged_columns">(in module datacompy.polars)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.get_merged_columns">(in module datacompy.spark)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.get_merged_columns">(in module datacompy.spark.pandas)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.get_merged_columns">(in module datacompy.spark.sql)</a>
 </li>
         </ul></li>
     </ul></td>
@@ -519,7 +565,9 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.intersect_columns">(datacompy.polars.PolarsCompare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.intersect_columns">(datacompy.spark.SparkCompare method)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.intersect_columns">(datacompy.spark.pandas.SparkPandasCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.intersect_columns">(datacompy.spark.sql.SparkSQLCompare method)</a>
 </li>
           <li><a href="api/datacompy.html#datacompy.fugue.intersect_columns">(in module datacompy.fugue)</a>
 </li>
@@ -533,7 +581,9 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.intersect_rows_match">(datacompy.polars.PolarsCompare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.intersect_rows_match">(datacompy.spark.SparkCompare method)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.intersect_rows_match">(datacompy.spark.pandas.SparkPandasCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.intersect_rows_match">(datacompy.spark.sql.SparkSQLCompare method)</a>
 </li>
         </ul></li>
         <li><a href="api/datacompy.html#datacompy.fugue.is_match">is_match() (in module datacompy.fugue)</a>
@@ -546,7 +596,7 @@
   <h2>K</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/datacompy.html#datacompy.legacy.MatchType.KNOWN_DIFFERENCE">KNOWN_DIFFERENCE (datacompy.legacy.MatchType attribute)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.MatchType.KNOWN_DIFFERENCE">KNOWN_DIFFERENCE (datacompy.spark.legacy.MatchType attribute)</a>
 </li>
     </ul></td>
   </tr></table>
@@ -556,7 +606,7 @@
   <h2>L</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare">LegacySparkCompare (class in datacompy.legacy)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare">LegacySparkCompare (class in datacompy.spark.legacy)</a>
 </li>
     </ul></td>
   </tr></table>
@@ -566,7 +616,7 @@
   <h2>M</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/datacompy.html#datacompy.legacy.MatchType.MATCH">MATCH (datacompy.legacy.MatchType attribute)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.MatchType.MATCH">MATCH (datacompy.spark.legacy.MatchType attribute)</a>
 </li>
         <li><a href="api/datacompy.html#datacompy.base.BaseCompare.matches">matches() (datacompy.base.BaseCompare method)</a>
 
@@ -575,15 +625,15 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.matches">(datacompy.polars.PolarsCompare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.matches">(datacompy.spark.SparkCompare method)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.matches">(datacompy.spark.pandas.SparkPandasCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.matches">(datacompy.spark.sql.SparkSQLCompare method)</a>
 </li>
         </ul></li>
-        <li><a href="api/datacompy.html#datacompy.legacy.MatchType">MatchType (class in datacompy.legacy)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.MatchType">MatchType (class in datacompy.spark.legacy)</a>
 </li>
-        <li><a href="api/datacompy.html#datacompy.legacy.MatchType.MISMATCH">MISMATCH (datacompy.legacy.MatchType attribute)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.MatchType.MISMATCH">MISMATCH (datacompy.spark.legacy.MatchType attribute)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     module
 
@@ -596,11 +646,15 @@
 </li>
           <li><a href="api/datacompy.html#module-datacompy.fugue">datacompy.fugue</a>
 </li>
-          <li><a href="api/datacompy.html#module-datacompy.legacy">datacompy.legacy</a>
-</li>
           <li><a href="api/datacompy.html#module-datacompy.polars">datacompy.polars</a>
 </li>
-          <li><a href="api/datacompy.html#module-datacompy.spark">datacompy.spark</a>
+          <li><a href="api/datacompy.spark.html#module-datacompy.spark">datacompy.spark</a>
+</li>
+          <li><a href="api/datacompy.spark.html#module-datacompy.spark.legacy">datacompy.spark.legacy</a>
+</li>
+          <li><a href="api/datacompy.spark.html#module-datacompy.spark.pandas">datacompy.spark.pandas</a>
+</li>
+          <li><a href="api/datacompy.spark.html#module-datacompy.spark.sql">datacompy.spark.sql</a>
 </li>
         </ul></li>
     </ul></td>
@@ -626,7 +680,9 @@
         <ul>
           <li><a href="api/datacompy.html#datacompy.polars.render">(in module datacompy.polars)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.render">(in module datacompy.spark)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.render">(in module datacompy.spark.pandas)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.render">(in module datacompy.spark.sql)</a>
 </li>
         </ul></li>
         <li><a href="api/datacompy.html#datacompy.base.BaseCompare.report">report() (datacompy.base.BaseCompare method)</a>
@@ -634,24 +690,26 @@
         <ul>
           <li><a href="api/datacompy.html#datacompy.core.Compare.report">(datacompy.core.Compare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare.report">(datacompy.legacy.LegacySparkCompare method)</a>
-</li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.report">(datacompy.polars.PolarsCompare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.report">(datacompy.spark.SparkCompare method)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare.report">(datacompy.spark.legacy.LegacySparkCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.report">(datacompy.spark.pandas.SparkPandasCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.report">(datacompy.spark.sql.SparkSQLCompare method)</a>
 </li>
           <li><a href="api/datacompy.html#datacompy.fugue.report">(in module datacompy.fugue)</a>
 </li>
         </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare.rows_both_all">rows_both_all (datacompy.legacy.LegacySparkCompare property)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare.rows_both_all">rows_both_all (datacompy.spark.legacy.LegacySparkCompare property)</a>
 </li>
-        <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare.rows_both_mismatch">rows_both_mismatch (datacompy.legacy.LegacySparkCompare property)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare.rows_both_mismatch">rows_both_mismatch (datacompy.spark.legacy.LegacySparkCompare property)</a>
 </li>
-        <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare.rows_only_base">rows_only_base (datacompy.legacy.LegacySparkCompare property)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare.rows_only_base">rows_only_base (datacompy.spark.legacy.LegacySparkCompare property)</a>
 </li>
-        <li><a href="api/datacompy.html#datacompy.legacy.LegacySparkCompare.rows_only_compare">rows_only_compare (datacompy.legacy.LegacySparkCompare property)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.legacy.LegacySparkCompare.rows_only_compare">rows_only_compare (datacompy.spark.legacy.LegacySparkCompare property)</a>
 </li>
     </ul></td>
   </tr></table>
@@ -668,12 +726,16 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.sample_mismatch">(datacompy.polars.PolarsCompare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.sample_mismatch">(datacompy.spark.SparkCompare method)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.sample_mismatch">(datacompy.spark.pandas.SparkPandasCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.sample_mismatch">(datacompy.spark.sql.SparkSQLCompare method)</a>
 </li>
         </ul></li>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare">SparkPandasCompare (class in datacompy.spark.pandas)</a>
+</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/datacompy.html#datacompy.spark.SparkCompare">SparkCompare (class in datacompy.spark)</a>
+        <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare">SparkSQLCompare (class in datacompy.spark.sql)</a>
 </li>
         <li><a href="api/datacompy.html#datacompy.base.BaseCompare.subset">subset() (datacompy.base.BaseCompare method)</a>
 
@@ -682,7 +744,9 @@
 </li>
           <li><a href="api/datacompy.html#datacompy.polars.PolarsCompare.subset">(datacompy.polars.PolarsCompare method)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.SparkCompare.subset">(datacompy.spark.SparkCompare method)</a>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.pandas.SparkPandasCompare.subset">(datacompy.spark.pandas.SparkPandasCompare method)</a>
+</li>
+          <li><a href="api/datacompy.spark.html#datacompy.spark.sql.SparkSQLCompare.subset">(datacompy.spark.sql.SparkSQLCompare method)</a>
 </li>
         </ul></li>
     </ul></td>
@@ -693,14 +757,8 @@
   <h2>T</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="api/datacompy.html#datacompy.core.temp_column_name">temp_column_name() (in module datacompy.core)</a>
-
-        <ul>
-          <li><a href="api/datacompy.html#datacompy.polars.temp_column_name">(in module datacompy.polars)</a>
+        <li><a href="api/datacompy.html#datacompy.base.temp_column_name">temp_column_name() (in module datacompy.base)</a>
 </li>
-          <li><a href="api/datacompy.html#datacompy.spark.temp_column_name">(in module datacompy.spark)</a>
-</li>
-        </ul></li>
     </ul></td>
   </tr></table>
 </section>
@@ -747,7 +805,7 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c5b435e8"></script>
+</div><script src="_static/documentation_options.js?v=1019fba8"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=4e2eecee"></script>
