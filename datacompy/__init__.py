@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "0.12.1"
+__version__ = "0.13.0"
 
 import platform
 from warnings import warn
 
-from datacompy.core import *
-from datacompy.fugue import (
+from .core import *  # noqa: F403
+from .fugue import (  # noqa: F401
     all_columns_match,
     all_rows_overlap,
     count_matching_rows,
@@ -28,8 +28,9 @@ from datacompy.fugue import (
     report,
     unq_columns,
 )
-from datacompy.polars import PolarsCompare
-from datacompy.spark import SparkCompare
+from .polars import PolarsCompare  # noqa: F401
+from .spark.pandas import SparkPandasCompare  # noqa: F401
+from .spark.sql import SparkSQLCompare  # noqa: F401
 
 major = platform.python_version_tuple()[0]
 minor = platform.python_version_tuple()[1]

@@ -39,14 +39,20 @@ pip install datacompy[ray]
 
 ### Legacy Spark Deprecation
 
-#### Starting with version 0.12.0
+With version ``v0.12.0`` the original ``SparkCompare`` was replaced with a 
+Pandas on Spark implementation. The original ``SparkCompare`` implementation differs 
+from all the other native implementations. To align the API better,  and keep behaviour 
+consistent we are deprecating the original ``SparkCompare`` into a new module ``LegacySparkCompare``
 
-The original ``SparkCompare`` implementation differs from all the other native implementations. To align the API better, and keep behaviour consistent we are deprecating ``SparkCompare`` into a new module ``LegacySparkCompare``
+Subsequently in ``v0.13.0`` a PySaprk DataFrame class has been introduced (``SparkSQLCompare``)
+which accepts ``pyspark.sql.DataFrame`` and should provide better performance. With this version 
+the Pandas on Spark implementation has been renamed to ``SparkPandasCompare`` and all the spark 
+logic is now under the ``spark`` submodule.
 
-If you wish to use the old SparkCompare moving forward you can
+If you wish to use the old SparkCompare moving forward you can import it like so:
 
 ```python
-from datacompy.legacy import LegacySparkCompare
+from datacompy.spark.legacy import LegacySparkCompare
 ``` 
 
 #### Supported versions and dependncies
@@ -54,11 +60,6 @@ from datacompy.legacy import LegacySparkCompare
 Different versions of Spark, Pandas, and Python interact differently. Below is a matrix of what we test with. 
 With the move to Pandas on Spark API and compatability issues with Pandas 2+ we will for the mean time note support Pandas 2 
 with the Pandas on Spark implementation. Spark plans to support Pandas 2 in [Spark 4](https://issues.apache.org/jira/browse/SPARK-44101)
-
-With version ``0.12.0``:
-- Not support Pandas ``2.0.0`` For the native Spark implemention
-- Spark ``3.1`` support will be dropped
-- Python ``3.8`` support is dropped
 
 
 |             | Spark 3.2.4 | Spark 3.3.4 | Spark 3.4.2 | Spark 3.5.1 |
@@ -69,11 +70,12 @@ With version ``0.12.0``:
 | Python 3.12 | ❌           | ❌           | ❌           | ❌           |
 
 
-|               | Pandas < 1.5.3 | Pandas >=2.0.0 |
-|---------------|----------------|----------------|
-| Native Pandas | ✅              | ✅              |
-| Native Spark  | ✅              | ❌              |
-| Fugue         | ✅              | ✅              |
+|                        | Pandas < 1.5.3 | Pandas >=2.0.0 |
+|------------------------|----------------|----------------|
+| ``Compare``            | ✅              | ✅              |
+| ``SparkPandasCompare`` | ✅              | ❌              |
+| ``SparkSQLCompare``    | ✅              | ✅              |
+| Fugue                  | ✅              | ✅              |
 
 
 
@@ -85,8 +87,8 @@ With version ``0.12.0``:
 ## Supported backends
 
 - Pandas: ([See documentation](https://capitalone.github.io/datacompy/pandas_usage.html))
-- Spark (Pandas on Spark API): ([See documentation](https://capitalone.github.io/datacompy/spark_usage.html))
-- Polars (Experimental): ([See documentation](https://capitalone.github.io/datacompy/polars_usage.html))
+- Spark: ([See documentation](https://capitalone.github.io/datacompy/spark_usage.html))
+- Polars: ([See documentation](https://capitalone.github.io/datacompy/polars_usage.html))
 - Fugue is a Python library that provides a unified interface for data processing on Pandas, DuckDB, Polars, Arrow,
   Spark, Dask, Ray, and many other backends. DataComPy integrates with Fugue to provide a simple way to compare data
   across these backends. Please note that Fugue will use the Pandas (Native) logic at its lowest level

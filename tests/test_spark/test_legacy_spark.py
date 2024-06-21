@@ -34,7 +34,7 @@ from pyspark.sql.types import (  # noqa: E402
     StructType,
 )
 
-from datacompy.legacy import (  # noqa: E402
+from datacompy.spark.legacy import (  # noqa: E402
     NUMERIC_SPARK_TYPES,
     LegacySparkCompare,
     _is_comparable,

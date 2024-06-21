@@ -11,13 +11,7 @@ maintainers = [
   { name="Faisal Dosani", email="faisal.dosani@capitalone.com" }
 ]
 license = {text = "Apache Software License"}
-dependencies = [
-  "pandas<=2.2.2,>=0.25.0", 
-  "numpy<=1.26.4,>=1.22.0", 
-  "ordered-set<=4.1.0,>=4.0.2", 
-  "fugue<=0.8.7,>=0.8.7",
-  "polars<=0.20.27,>=0.20.4",
-]
+dependencies = ["pandas<=2.2.2,>=0.25.0", "numpy<=1.26.4,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "fugue<=0.9.1,>=0.8.7", "polars<=0.20.31,>=0.20.4"]
 requires-python = ">=3.9.0"
 classifiers = [
     "Intended Audience :: Developers",
@@ -61,13 +55,13 @@ python-tag = "py3"
 
 [project.optional-dependencies]
 duckdb = ["fugue[duckdb]"]
-spark = ["pyspark>=3.1.1; python_version < \"3.11\"", "pyspark>=3.4; python_version >= \"3.11\""]
+spark = ["pyspark[connect]>=3.1.1; python_version < \"3.11\"", "pyspark[connect]>=3.4; python_version >= \"3.11\""]
 dask = ["fugue[dask]"]
 ray = ["fugue[ray]"]
 docs = ["sphinx", "furo", "myst-parser"]
 tests = ["pytest", "pytest-cov"]
 
-tests-spark = ["pytest", "pytest-cov", "pytest-spark", "spark"]
+tests-spark = ["pytest", "pytest-cov", "pytest-spark"]
 qa = ["pre-commit", "black", "isort", "mypy", "pandas-stubs"]
 build = ["build", "twine", "wheel"]
 edgetest = ["edgetest", "edgetest-conda"]

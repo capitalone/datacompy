@@ -29,7 +29,7 @@ import numpy as np
 import pandas as pd
 from ordered_set import OrderedSet
 
-from datacompy.base import BaseCompare
+from .base import BaseCompare, temp_column_name
 
 LOG = logging.getLogger(__name__)
 
@@ -888,31 +888,6 @@ def get_merged_columns(
         else:
             raise ValueError("Column not found: %s", col)
     return columns
-
-
-def temp_column_name(*dataframes: pd.DataFrame) -> str:
-    """Gets a temp column name that isn't included in columns of any dataframes
-
-    Parameters
-    ----------
-    dataframes : list of Pandas.DataFrame
-        The DataFrames to create a temporary column name for
-
-    Returns
-    -------
-    str
-        String column name that looks like '_temp_x' for some integer x
-    """
-    i = 0
-    while True:
-        temp_column = f"_temp_{i}"
-        unique = True
-        for dataframe in dataframes:
-            if temp_column in dataframe.columns:
-                i += 1
-                unique = False
-        if unique:
-            return temp_column
 
 
 def calculate_max_diff(col_1: "pd.Series[Any]", col_2: "pd.Series[Any]") -> float:
