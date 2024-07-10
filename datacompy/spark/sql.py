@@ -48,8 +48,6 @@ try:
         upper,
         when,
     )
-    from pyspark.version import __version__
-
 except ImportError:
     pass  # Let non-Spark people at least enjoy the loveliness of the spark sql datacompy functionality
 
@@ -210,7 +208,7 @@ class SparkSQLCompare(BaseCompare):
         """
         dataframe = getattr(self, index)
 
-        if __version__ >= "3.4.0":
+        if self.spark_session.version >= "3.4.0":
             import pyspark.sql.connect.dataframe
 
             instances = (pyspark.sql.DataFrame, pyspark.sql.connect.dataframe.DataFrame)
