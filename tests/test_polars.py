@@ -389,18 +389,14 @@ def test_compare_df_setter_bad():
         PolarsCompare(df, df.clone(), ["b"])
     with raises(DuplicateError, match="duplicate column names found"):
         PolarsCompare(df_same_col_names, df_same_col_names.clone(), ["a"])
-    assert (
-        PolarsCompare(df_dupe, df_dupe.clone(), ["a", "b"])
-        .df1.drop("_merge_left")
-        .equals(df_dupe)
-    )
+    assert PolarsCompare(df_dupe, df_dupe.clone(), ["a", "b"]).df1.equals(df_dupe)
 
 
 def test_compare_df_setter_good():
     df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = pl.DataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
     compare = PolarsCompare(df1, df2, ["a"])
-    assert compare.df1.drop("_merge_left").equals(df1)
+    assert compare.df1.equals(df1)
     assert compare.df2.equals(df2)
     assert compare.join_columns == ["a"]
     compare = PolarsCompare(df1, df2, ["A", "b"])
@@ -1177,10 +1173,12 @@ MAX_DIFF_DF = pl.DataFrame(
         "strings": ["1", "1", "1", "1.1", "1"],
         "mixed_strings": ["1", "1", "1", "2", "some string"],
         "infinity": [1, 1, 1, 1, np.inf],
-    }
+    },
+    strict=False,
 )
 
 
+@pytest.mark.skipif(pl.__version__ < "1.0.0", reason="polars breaking changes")
 @pytest.mark.parametrize(
     "column,expected",
     [
@@ -1204,10 +1202,12 @@ def test_dupes_with_nulls():
         {
             "fld_1": [1, 2, 2, 3, 3, 4, 5, 5],
             "fld_2": ["A", np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-        }
+        },
+        strict=False,
     )
     df2 = pl.DataFrame(
-        {"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", np.nan, np.nan, np.nan, np.nan]}
+        {"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", np.nan, np.nan, np.nan, np.nan]},
+        strict=False,
     )
     comp = PolarsCompare(df1, df2, join_columns=["fld_1", "fld_2"])
     assert comp.subset()
@@ -1216,25 +1216,36 @@ def test_dupes_with_nulls():
 @pytest.mark.parametrize(
     "dataframe,expected",
     [
-        (pl.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}), pl.Series([1, 1, 1])),
         (
-            pl.DataFrame({"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}),
-            pl.Series([1, 2, 1]),
-        ),
-        (pl.DataFrame({"a": [-999, 2, 3], "b": [1, 2, 3]}), pl.Series([1, 1, 1])),
-        (
-            pl.DataFrame({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}),
-            pl.Series([1, 1, 2]),
-        ),
-        (
-            pl.DataFrame({"a": ["1", np.nan, np.nan], "b": ["1", "2", "2"]}),
-            pl.Series([1, 1, 2]),
+            pl.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}),
+            pl.Series([1, 1, 1], strict=False),
         ),
         (
             pl.DataFrame(
-                {"a": [datetime(2018, 1, 1), None, None], "b": ["1", "2", "2"]}
+                {"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}, strict=False
             ),
-            pl.Series([1, 1, 2]),
+            pl.Series([1, 2, 1], strict=False),
+        ),
+        (
+            pl.DataFrame({"a": [-999, 2, 3], "b": [1, 2, 3]}, strict=False),
+            pl.Series([1, 1, 1], strict=False),
+        ),
+        (
+            pl.DataFrame({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}, strict=False),
+            pl.Series([1, 1, 2], strict=False),
+        ),
+        (
+            pl.DataFrame(
+                {"a": ["1", np.nan, np.nan], "b": ["1", "2", "2"]}, strict=False
+            ),
+            pl.Series([1, 1, 2], strict=False),
+        ),
+        (
+            pl.DataFrame(
+                {"a": [datetime(2018, 1, 1), None, None], "b": ["1", "2", "2"]},
+                strict=False,
+            ),
+            pl.Series([1, 1, 2], strict=False),
         ),
     ],
 )
@@ -1242,11 +1253,14 @@ def test_generate_id_within_group(dataframe, expected):
     assert (generate_id_within_group(dataframe, ["a", "b"]) == expected).all()
 
 
+@pytest.mark.skipif(pl.__version__ < "1.0.0", reason="polars breaking changes")
 @pytest.mark.parametrize(
     "dataframe, message",
     [
         (
-            pl.DataFrame({"a": [1, np.nan, "DATACOMPY_NULL"], "b": [1, 2, 3]}),
+            pl.DataFrame(
+                {"a": [1, None, "DATACOMPY_NULL"], "b": [1, 2, 3]}, strict=False
+            ),
             "DATACOMPY_NULL was found in your join columns",
         )
     ],
