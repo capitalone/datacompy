@@ -274,7 +274,7 @@ class PolarsCompare(BaseCompare):
         df1 = df1.with_columns(_merge_left=pl.lit(True))
         df2 = df2.with_columns(_merge_right=pl.lit(True))
 
-        outer_join = df1.join(df2, how="outer_coalesce", join_nulls=True, **params)
+        outer_join = df1.join(df2, how="full", coalesce=True, join_nulls=True, **params)
 
         # process merge indicator
         outer_join = outer_join.with_columns(
