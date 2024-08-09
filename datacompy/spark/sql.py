@@ -585,10 +585,10 @@ class SparkSQLCompare(BaseCompare):
         bool
             True if dataframe 2 is a subset of dataframe 1.
         """
-        return not (
-            self.df2_unq_columns() != set()
-            or self.df2_unq_rows.count() != 0
-            or not self.intersect_rows_match()
+        return (
+            self.df2_unq_columns() == set()
+            and self.df2_unq_rows.count() == 0
+            and self.intersect_rows_match()
         )
 
     def sample_mismatch(
