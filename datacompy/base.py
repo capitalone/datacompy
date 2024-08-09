@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Compare two Pandas DataFrames
+Compare two Pandas DataFrames.
 
 Originally this package was meant to provide similar functionality to
 PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
@@ -38,7 +38,7 @@ class BaseCompare(ABC):
     @df1.setter
     @abstractmethod
     def df1(self, df1: Any) -> None:
-        """Check that it is a dataframe and has the join columns"""
+        """Check that it is a dataframe and has the join columns."""
         pass
 
     @property
@@ -48,14 +48,14 @@ class BaseCompare(ABC):
     @df2.setter
     @abstractmethod
     def df2(self, df2: Any) -> None:
-        """Check that it is a dataframe and has the join columns"""
+        """Check that it is a dataframe and has the join columns."""
         pass
 
     @abstractmethod
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
     ) -> None:
-        """Check that it is a dataframe and has the join columns"""
+        """Check that it is a dataframe and has the join columns."""
         pass
 
     @abstractmethod
@@ -70,23 +70,23 @@ class BaseCompare(ABC):
 
     @abstractmethod
     def df1_unq_columns(self) -> OrderedSet[str]:
-        """Get columns that are unique to df1"""
+        """Get columns that are unique to df1."""
         pass
 
     @abstractmethod
     def df2_unq_columns(self) -> OrderedSet[str]:
-        """Get columns that are unique to df2"""
+        """Get columns that are unique to df2."""
         pass
 
     @abstractmethod
     def intersect_columns(self) -> OrderedSet[str]:
-        """Get columns that are shared between the two dataframes"""
+        """Get columns that are shared between the two dataframes."""
         pass
 
     @abstractmethod
     def _dataframe_merge(self, ignore_spaces: bool) -> None:
         """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
-        and df1 & df2
+        and df1 & df2.
 
         If ``on_index`` is True, this will join on index values, otherwise it
         will join on the ``join_columns``.
@@ -142,7 +142,7 @@ class BaseCompare(ABC):
 
 
 def temp_column_name(*dataframes) -> str:
-    """Gets a temp column name that isn't included in columns of any dataframes
+    """Gets a temp column name that isn't included in columns of any dataframes.
 
     Parameters
     ----------

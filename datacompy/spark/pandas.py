@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Compare two Pandas on Spark DataFrames
+Compare two Pandas on Spark DataFrames.
 
 Originally this package was meant to provide similar functionality to
 PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
@@ -28,7 +28,7 @@ from typing import List, Optional, Union
 import pandas as pd
 from ordered_set import OrderedSet
 
-from ..base import BaseCompare, temp_column_name
+from datacompy.base import BaseCompare, temp_column_name
 
 try:
     import pyspark.pandas as ps
@@ -135,7 +135,7 @@ class SparkPandasCompare(BaseCompare):
 
     @df1.setter
     def df1(self, df1: "ps.DataFrame") -> None:
-        """Check that it is a dataframe and has the join columns"""
+        """Check that it is a dataframe and has the join columns."""
         self._df1 = df1
         self._validate_dataframe(
             "df1", cast_column_names_lower=self.cast_column_names_lower
@@ -147,7 +147,7 @@ class SparkPandasCompare(BaseCompare):
 
     @df2.setter
     def df2(self, df2: "ps.DataFrame") -> None:
-        """Check that it is a dataframe and has the join columns"""
+        """Check that it is a dataframe and has the join columns."""
         self._df2 = df2
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
@@ -156,7 +156,7 @@ class SparkPandasCompare(BaseCompare):
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
     ) -> None:
-        """Check that it is a dataframe and has the join columns
+        """Check that it is a dataframe and has the join columns.
 
         Parameters
         ----------
@@ -224,20 +224,20 @@ class SparkPandasCompare(BaseCompare):
             LOG.info("df1 does not match df2")
 
     def df1_unq_columns(self) -> OrderedSet[str]:
-        """Get columns that are unique to df1"""
+        """Get columns that are unique to df1."""
         return OrderedSet(self.df1.columns) - OrderedSet(self.df2.columns)
 
     def df2_unq_columns(self) -> OrderedSet[str]:
-        """Get columns that are unique to df2"""
+        """Get columns that are unique to df2."""
         return OrderedSet(self.df2.columns) - OrderedSet(self.df1.columns)
 
     def intersect_columns(self) -> OrderedSet[str]:
-        """Get columns that are shared between the two dataframes"""
+        """Get columns that are shared between the two dataframes."""
         return OrderedSet(self.df1.columns) & OrderedSet(self.df2.columns)
 
     def _dataframe_merge(self, ignore_spaces: bool) -> None:
         """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
-        and df1 & df2
+        and df1 & df2.
         """
         LOG.debug("Outer joining")
 
@@ -371,7 +371,7 @@ class SparkPandasCompare(BaseCompare):
         self.intersect_rows.spark.cache()
 
     def _intersect_compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
-        """Run the comparison on the intersect dataframe
+        """Run the comparison on the intersect dataframe.
 
         This loops through all columns that are shared between df1 and df2, and
         creates a column column_match which is True for matches, False
@@ -439,11 +439,11 @@ class SparkPandasCompare(BaseCompare):
             )
 
     def all_columns_match(self) -> bool:
-        """Whether the columns all match in the dataframes"""
+        """Whether the columns all match in the dataframes."""
         return self.df1_unq_columns() == self.df2_unq_columns() == set()
 
     def all_rows_overlap(self) -> bool:
-        """Whether the rows are all present in both dataframes
+        """Whether the rows are all present in both dataframes.
 
         Returns
         -------
@@ -454,7 +454,7 @@ class SparkPandasCompare(BaseCompare):
         return len(self.df1_unq_rows) == len(self.df2_unq_rows) == 0
 
     def count_matching_rows(self) -> bool:
-        """Count the number of rows match (on overlapping fields)
+        """Count the number of rows match (on overlapping fields).
 
         Returns
         -------
@@ -478,7 +478,7 @@ class SparkPandasCompare(BaseCompare):
         return match_columns_count
 
     def intersect_rows_match(self) -> bool:
-        """Check whether the intersect rows all match"""
+        """Check whether the intersect rows all match."""
         actual_length = self.intersect_rows.shape[0]
         return self.count_matching_rows() == actual_length
 
@@ -490,14 +490,11 @@ class SparkPandasCompare(BaseCompare):
         ignore_extra_columns : bool
             Ignores any columns in one dataframe and not in the other.
         """
-        if (
+        return not (
             (not ignore_extra_columns and not self.all_columns_match())
             or not self.all_rows_overlap()
             or not self.intersect_rows_match()
-        ):
-            return False
-        else:
-            return True
+        )
 
     def subset(self) -> bool:
         """Return True if dataframe 2 is a subset of dataframe 1.
@@ -511,14 +508,11 @@ class SparkPandasCompare(BaseCompare):
         bool
             True if dataframe 2 is a subset of dataframe 1.
         """
-        if (
+        return not (
             self.df2_unq_columns() != set()
             or len(self.df2_unq_rows) != 0
             or not self.intersect_rows_match()
-        ):
-            return False
-        else:
-            return True
+        )
 
     def sample_mismatch(
         self, column: str, sample_count: int = 10, for_display: bool = False
@@ -552,13 +546,15 @@ class SparkPandasCompare(BaseCompare):
         for c in self.join_columns:
             sample[c] = sample[c + "_" + self.df1_name]
 
-        return_cols = self.join_columns + [
+        return_cols = [
+            *self.join_columns,
             column + "_" + self.df1_name,
             column + "_" + self.df2_name,
         ]
         to_return = sample[return_cols]
         if for_display:
-            to_return.columns = self.join_columns + [
+            to_return.columns = [
+                *self.join_columns,
                 column + " (" + self.df1_name + ")",
                 column + " (" + self.df2_name + ")",
             ]
@@ -687,7 +683,7 @@ class SparkPandasCompare(BaseCompare):
             "column_comparison.txt",
             len([col for col in self.column_stats if col["unequal_cnt"] > 0]),
             len([col for col in self.column_stats if col["unequal_cnt"] == 0]),
-            sum([col["unequal_cnt"] for col in self.column_stats]),
+            sum(col["unequal_cnt"] for col in self.column_stats),
         )
 
         match_stats = []
@@ -924,7 +920,7 @@ def get_merged_columns(
     merged_df: "ps.DataFrame",
     suffix: str,
 ) -> List[str]:
-    """Gets the columns from an original dataframe, in the new merged dataframe
+    """Gets the columns from an original dataframe, in the new merged dataframe.
 
     Parameters
     ----------
@@ -953,7 +949,7 @@ def get_merged_columns(
 
 
 def calculate_max_diff(col_1: "ps.DataFrame", col_2: "ps.DataFrame") -> float:
-    """Get a maximum difference between two columns
+    """Get a maximum difference between two columns.
 
     Parameters
     ----------

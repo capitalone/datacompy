@@ -18,8 +18,16 @@ __version__ = "0.13.2"
 import platform
 from warnings import warn
 
-from .core import *  # noqa: F403
-from .fugue import (  # noqa: F401
+from datacompy.core import (
+    Compare,
+    calculate_max_diff,
+    columns_equal,
+    compare_string_and_date_columns,
+    generate_id_within_group,
+    get_merged_columns,
+    render,
+)
+from datacompy.fugue import (
     all_columns_match,
     all_rows_overlap,
     count_matching_rows,
@@ -28,9 +36,29 @@ from .fugue import (  # noqa: F401
     report,
     unq_columns,
 )
-from .polars import PolarsCompare  # noqa: F401
-from .spark.pandas import SparkPandasCompare  # noqa: F401
-from .spark.sql import SparkSQLCompare  # noqa: F401
+from datacompy.polars import PolarsCompare
+from datacompy.spark.pandas import SparkPandasCompare
+from datacompy.spark.sql import SparkSQLCompare
+
+__all__ = [
+    "Compare",
+    "PolarsCompare",
+    "SparkPandasCompare",
+    "SparkSQLCompare",
+    "all_columns_match",
+    "all_rows_overlap",
+    "calculate_max_diff",
+    "columns_equal",
+    "compare_string_and_date_columns",
+    "count_matching_rows",
+    "generate_id_within_group",
+    "get_merged_columns",
+    "intersect_columns",
+    "is_match",
+    "render",
+    "report",
+    "unq_columns",
+]
 
 major = platform.python_version_tuple()[0]
 minor = platform.python_version_tuple()[1]

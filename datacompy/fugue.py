@@ -13,9 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Compare two DataFrames that are supported by Fugue
-"""
+"""Compare two DataFrames that are supported by Fugue."""
 
 import logging
 import pickle
@@ -29,14 +27,14 @@ from fugue import AnyDataFrame
 from ordered_set import OrderedSet
 from triad import Schema
 
-from .core import Compare, render
+from datacompy.core import Compare, render
 
 LOG = logging.getLogger(__name__)
 HASH_COL = "__datacompy__hash__"
 
 
 def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
-    """Get columns that are unique to df1
+    """Get columns that are unique to df1.
 
     Parameters
     ----------
@@ -57,7 +55,7 @@ def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
 
 
 def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
-    """Get columns that are shared between the two dataframes
+    """Get columns that are shared between the two dataframes.
 
     Parameters
     ----------
@@ -78,7 +76,7 @@ def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
 
 
 def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame) -> bool:
-    """Whether the columns all match in the dataframes
+    """Whether the columns all match in the dataframes.
 
     Parameters
     ----------
@@ -209,7 +207,7 @@ def all_rows_overlap(
     parallelism: Optional[int] = None,
     strict_schema: bool = False,
 ) -> bool:
-    """Check if the rows are all present in both dataframes
+    """Check if the rows are all present in both dataframes.
 
     Parameters
     ----------
@@ -305,7 +303,7 @@ def count_matching_rows(
     parallelism: Optional[int] = None,
     strict_schema: bool = False,
 ) -> int:
-    """Count the number of rows match (on overlapping fields)
+    """Count the number of rows match (on overlapping fields).
 
     Parameters
     ----------
@@ -559,7 +557,7 @@ def report(
         "column_comparison.txt",
         len([col for col in column_stats if col["unequal_cnt"] > 0]),
         len([col for col in column_stats if col["unequal_cnt"] == 0]),
-        sum([col["unequal_cnt"] for col in column_stats]),
+        sum(col["unequal_cnt"] for col in column_stats),
     )
 
     match_stats = []
@@ -652,7 +650,7 @@ def _distributed_compare(
     parallelism: Optional[int] = None,
     strict_schema: bool = False,
 ) -> List[Any]:
-    """Compare the data distributively using the core Compare class
+    """Compare the data distributively using the core Compare class.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
     with unique column names. Differences between values are compared to
@@ -715,9 +713,8 @@ def _distributed_compare(
         )
         hash_cols = [col.lower() for col in hash_cols]
 
-    if strict_schema:
-        if tdf1.schema != tdf2.schema:
-            raise _StrictSchemaError()
+    if strict_schema and tdf1.schema != tdf2.schema:
+        raise _StrictSchemaError()
 
     # check that hash columns exist
     assert hash_cols in tdf1.schema, f"{hash_cols} not found in {tdf1.schema}"
@@ -725,7 +722,7 @@ def _distributed_compare(
 
     df1_schema = tdf1.schema
     df2_schema = tdf2.schema
-    str_cols = set(f.name for f in tdf1.schema.fields if pa.types.is_string(f.type))
+    str_cols = {f.name for f in tdf1.schema.fields if pa.types.is_string(f.type)}
     bucket = (
         parallelism if parallelism is not None else fa.get_current_parallelism() * 2
     )
@@ -752,13 +749,13 @@ def _distributed_compare(
             tdf1,
             _serialize,
             schema="key:int,left:bool,data:binary",
-            params=dict(left=True),
+            params={"left": True},
         ),
         fa.transform(
             tdf2,
             _serialize,
             schema="key:int,left:bool,data:binary",
-            params=dict(left=False),
+            params={"left": False},
         ),
         distinct=False,
     )
@@ -813,7 +810,7 @@ def _distributed_compare(
 
     objs = fa.as_array(
         fa.transform(
-            ser, _comp, schema="obj:binary", partition=dict(by="key", num=bucket)
+            ser, _comp, schema="obj:binary", partition={"by": "key", "num": bucket}
         )
     )
     return [pickle.loads(row[0]) for row in objs]
@@ -824,11 +821,10 @@ def _get_compare_result(
 ) -> Dict[str, Any]:
     mismatch_samples: Dict[str, pd.DataFrame] = {}
     for column in compare.column_stats:
-        if not column["all_match"]:
-            if column["unequal_cnt"] > 0:
-                mismatch_samples[column["column"]] = compare.sample_mismatch(
-                    column["column"], sample_count, for_display=True
-                )
+        if not column["all_match"] and column["unequal_cnt"] > 0:
+            mismatch_samples[column["column"]] = compare.sample_mismatch(
+                column["column"], sample_count, for_display=True
+            )
 
     df1_unq_rows_sample: Any = None
     if min(sample_count, compare.df1_unq_rows.shape[0]) > 0:
@@ -915,6 +911,6 @@ def _sample(df: pd.DataFrame, sample_count: int) -> pd.DataFrame:
 
 
 class _StrictSchemaError(Exception):
-    """Exception raised when strict schema is enabled and the schemas do not match"""
+    """Exception raised when strict schema is enabled and the schemas do not match."""
 
     pass
