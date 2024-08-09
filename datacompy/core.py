@@ -437,10 +437,10 @@ class Compare(BaseCompare):
         bool
             True or False if the dataframes match.
         """
-        return not (
-            (not ignore_extra_columns and not self.all_columns_match())
-            or not self.all_rows_overlap()
-            or not self.intersect_rows_match()
+        return (
+            (ignore_extra_columns or self.all_columns_match())
+            and self.all_rows_overlap()
+            and self.intersect_rows_match()
         )
 
     def subset(self) -> bool:

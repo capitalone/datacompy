@@ -495,10 +495,10 @@ class SparkPandasCompare(BaseCompare):
         ignore_extra_columns : bool
             Ignores any columns in one dataframe and not in the other.
         """
-        return not (
-            (not ignore_extra_columns and not self.all_columns_match())
-            or not self.all_rows_overlap()
-            or not self.intersect_rows_match()
+        return (
+            (ignore_extra_columns or self.all_columns_match())
+            and self.all_rows_overlap()
+            and self.intersect_rows_match()
         )
 
     def subset(self) -> bool:
