@@ -160,9 +160,9 @@ class SparkSQLCompare(BaseCompare):
         self.rel_tol = rel_tol
         self.ignore_spaces = ignore_spaces
         self.ignore_case = ignore_case
-        self.df1_unq_rows: "pyspark.sql.DataFrame"
-        self.df2_unq_rows: "pyspark.sql.DataFrame"
-        self.intersect_rows: "pyspark.sql.DataFrame"
+        self.df1_unq_rows: pyspark.sql.DataFrame
+        self.df2_unq_rows: pyspark.sql.DataFrame
+        self.intersect_rows: pyspark.sql.DataFrame
         self.column_stats: List = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
@@ -369,7 +369,7 @@ class SparkSQLCompare(BaseCompare):
             """
         SELECT * FROM
         df1 FULL OUTER JOIN df2
-        ON     
+        ON
         """
             + on
         )
@@ -556,11 +556,11 @@ class SparkSQLCompare(BaseCompare):
         ignore_extra_columns : bool
             Ignores any columns in one dataframe and not in the other.
         """
-        if not ignore_extra_columns and not self.all_columns_match():
-            return False
-        elif not self.all_rows_overlap():
-            return False
-        elif not self.intersect_rows_match():
+        if (
+            (not ignore_extra_columns and not self.all_columns_match())
+            or not self.all_rows_overlap()
+            or not self.intersect_rows_match()
+        ):
             return False
         else:
             return True
@@ -577,11 +577,11 @@ class SparkSQLCompare(BaseCompare):
         bool
             True if dataframe 2 is a subset of dataframe 1.
         """
-        if not self.df2_unq_columns() == set():
-            return False
-        elif not self.df2_unq_rows.count() == 0:
-            return False
-        elif not self.intersect_rows_match():
+        if (
+            self.df2_unq_columns() != set()
+            or self.df2_unq_rows.count() != 0
+            or not self.intersect_rows_match()
+        ):
             return False
         else:
             return True
@@ -976,9 +976,7 @@ def columns_equal(
             )
     else:
         LOG.debug(
-            "Skipping {}({}) and {}({}), columns are not comparable".format(
-                col_1, base_dtype, col_2, compare_dtype
-            )
+            f"Skipping {col_1}({base_dtype}) and {col_2}({compare_dtype}), columns are not comparable"
         )
         dataframe = dataframe.withColumn(col_match, lit(False))
     return dataframe

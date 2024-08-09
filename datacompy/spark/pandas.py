@@ -239,7 +239,6 @@ class SparkPandasCompare(BaseCompare):
         """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
         and df1 & df2
         """
-
         LOG.debug("Outer joining")
 
         df1 = self.df1.copy()
@@ -297,7 +296,7 @@ class SparkPandasCompare(BaseCompare):
             """
         SELECT * FROM
         {df1} df1 FULL OUTER JOIN {df2} df2
-        ON     
+        ON
         """
             + on,
             df1=df1,
@@ -491,11 +490,11 @@ class SparkPandasCompare(BaseCompare):
         ignore_extra_columns : bool
             Ignores any columns in one dataframe and not in the other.
         """
-        if not ignore_extra_columns and not self.all_columns_match():
-            return False
-        elif not self.all_rows_overlap():
-            return False
-        elif not self.intersect_rows_match():
+        if (
+            (not ignore_extra_columns and not self.all_columns_match())
+            or not self.all_rows_overlap()
+            or not self.intersect_rows_match()
+        ):
             return False
         else:
             return True
@@ -512,11 +511,11 @@ class SparkPandasCompare(BaseCompare):
         bool
             True if dataframe 2 is a subset of dataframe 1.
         """
-        if not self.df2_unq_columns() == set():
-            return False
-        elif not len(self.df2_unq_rows) == 0:
-            return False
-        elif not self.intersect_rows_match():
+        if (
+            self.df2_unq_columns() != set()
+            or len(self.df2_unq_rows) != 0
+            or not self.intersect_rows_match()
+        ):
             return False
         else:
             return True

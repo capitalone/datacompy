@@ -16,6 +16,7 @@
 """
 Testing out the datacompy functionality
 """
+
 import io
 import logging
 import sys
@@ -23,13 +24,12 @@ from datetime import datetime
 from decimal import Decimal
 from unittest import mock
 
+import datacompy
 import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_series_equal
 from pytest import raises
-
-import datacompy
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -686,7 +686,7 @@ def test_temp_column_name_one_already():
     assert actual == "_temp_0"
 
 
-### Duplicate testing!
+# Duplicate testing!
 def test_simple_dupes_one_field():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])

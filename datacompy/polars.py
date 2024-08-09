@@ -123,9 +123,9 @@ class PolarsCompare(BaseCompare):
         self.rel_tol = rel_tol
         self.ignore_spaces = ignore_spaces
         self.ignore_case = ignore_case
-        self.df1_unq_rows: "pl.DataFrame"
-        self.df2_unq_rows: "pl.DataFrame"
-        self.intersect_rows: "pl.DataFrame"
+        self.df1_unq_rows: pl.DataFrame
+        self.df2_unq_rows: pl.DataFrame
+        self.intersect_rows: pl.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
@@ -279,18 +279,13 @@ class PolarsCompare(BaseCompare):
         # process merge indicator
         outer_join = outer_join.with_columns(
             pl.when(
-                (pl.col("_merge_left") == True)
-                & (pl.col("_merge_right") == True)  # noqa: E712
+                (pl.col("_merge_left") == True) & (pl.col("_merge_right") == True)  # noqa: E712
             )
             .then(pl.lit("both"))
-            .when(
-                (pl.col("_merge_left") == True)
-                & (pl.col("_merge_right").is_null())  # noqa: E712
-            )
+            .when((pl.col("_merge_left") == True) & (pl.col("_merge_right").is_null()))
             .then(pl.lit("left_only"))
             .when(
-                (pl.col("_merge_left").is_null())
-                & (pl.col("_merge_right") == True)  # noqa: E712
+                (pl.col("_merge_left").is_null()) & (pl.col("_merge_right") == True)  # noqa: E712
             )
             .then(pl.lit("right_only"))
             .alias("_merge")
@@ -449,11 +444,11 @@ class PolarsCompare(BaseCompare):
         bool
             True or False if the dataframes match.
         """
-        if not ignore_extra_columns and not self.all_columns_match():
-            return False
-        elif not self.all_rows_overlap():
-            return False
-        elif not self.intersect_rows_match():
+        if (
+            (not ignore_extra_columns and not self.all_columns_match())
+            or not self.all_rows_overlap()
+            or not self.intersect_rows_match()
+        ):
             return False
         else:
             return True
@@ -470,11 +465,11 @@ class PolarsCompare(BaseCompare):
         bool
             True if dataframe 2 is a subset of dataframe 1.
         """
-        if not self.df2_unq_columns() == set():
-            return False
-        elif not len(self.df2_unq_rows) == 0:
-            return False
-        elif not self.intersect_rows_match():
+        if (
+            self.df2_unq_columns() != set()
+            or len(self.df2_unq_rows) != 0
+            or not self.intersect_rows_match()
+        ):
             return False
         else:
             return True

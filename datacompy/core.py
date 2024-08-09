@@ -431,11 +431,11 @@ class Compare(BaseCompare):
         bool
             True or False if the dataframes match.
         """
-        if not ignore_extra_columns and not self.all_columns_match():
-            return False
-        elif not self.all_rows_overlap():
-            return False
-        elif not self.intersect_rows_match():
+        if (
+            (not ignore_extra_columns and not self.all_columns_match())
+            or not self.all_rows_overlap()
+            or not self.intersect_rows_match()
+        ):
             return False
         else:
             return True
@@ -452,11 +452,11 @@ class Compare(BaseCompare):
         bool
             True if dataframe 2 is a subset of dataframe 1.
         """
-        if not self.df2_unq_columns() == set():
-            return False
-        elif not len(self.df2_unq_rows) == 0:
-            return False
-        elif not self.intersect_rows_match():
+        if (
+            self.df2_unq_columns() != set()
+            or len(self.df2_unq_rows) != 0
+            or not self.intersect_rows_match()
+        ):
             return False
         else:
             return True

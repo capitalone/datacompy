@@ -698,7 +698,6 @@ def _distributed_compare(
     List[Any]
         Returns the list of objects returned from the return_obj_func
     """
-
     tdf1 = fa.as_fugue_df(df1)
     tdf2 = fa.as_fugue_df(df2)
 

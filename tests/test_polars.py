@@ -30,17 +30,16 @@ from pytest import raises
 
 pytest.importorskip("polars")
 
-import polars as pl  # noqa: E402
-from polars.exceptions import ComputeError, DuplicateError  # noqa: E402
-from polars.testing import assert_series_equal  # noqa: E402
-
-from datacompy import PolarsCompare  # noqa: E402
-from datacompy.polars import (  # noqa: E402
+import polars as pl
+from datacompy import PolarsCompare
+from datacompy.polars import (
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
     temp_column_name,
 )
+from polars.exceptions import ComputeError, DuplicateError
+from polars.testing import assert_series_equal
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -612,7 +611,7 @@ def test_temp_column_name_one_already():
     assert actual == "_temp_0"
 
 
-### Duplicate testing!
+# Duplicate testing!
 def test_simple_dupes_one_field():
     df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
@@ -855,7 +854,7 @@ def test_sample_mismatch():
 
     output = compare.sample_mismatch(column="name", sample_count=3)
     assert output.shape[0] == 2
-    assert (["name_df1"] != output["name_df2"]).all()
+    assert (output["name_df2"] != ["name_df1"]).all()
 
 
 def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():

@@ -32,16 +32,15 @@ from pytest import raises
 
 pytest.importorskip("pyspark")
 
-import pyspark.pandas as ps  # noqa: E402
-from pandas.testing import assert_series_equal  # noqa: E402
-
-from datacompy.spark.pandas import (  # noqa: E402
+import pyspark.pandas as ps
+from datacompy.spark.pandas import (
     SparkPandasCompare,
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
     temp_column_name,
 )
+from pandas.testing import assert_series_equal
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -665,7 +664,7 @@ def test_temp_column_name_one_already():
     assert actual == "_temp_0"
 
 
-### Duplicate testing!
+# Duplicate testing!
 @pandas_version
 def test_simple_dupes_one_field():
     df1 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
@@ -1315,10 +1314,16 @@ def test_pandas_version():
 @pandas_version
 def test_unicode_columns():
     df1 = ps.DataFrame(
-        [{"a": 1, "例": 2, "予測対象日": "test"}, {"a": 1, "例": 3, "予測対象日": "test"}]
+        [
+            {"a": 1, "例": 2, "予測対象日": "test"},
+            {"a": 1, "例": 3, "予測対象日": "test"},
+        ]
     )
     df2 = ps.DataFrame(
-        [{"a": 1, "例": 2, "予測対象日": "test"}, {"a": 1, "例": 3, "予測対象日": "test"}]
+        [
+            {"a": 1, "例": 2, "予測対象日": "test"},
+            {"a": 1, "例": 3, "予測対象日": "test"},
+        ]
     )
     compare = SparkPandasCompare(df1, df2, join_columns=["例"])
     assert compare.matches()
