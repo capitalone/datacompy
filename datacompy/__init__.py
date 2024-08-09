@@ -23,6 +23,7 @@ __version__ = "0.13.2"
 import platform
 from warnings import warn
 
+from datacompy.base import BaseCompare, temp_column_name
 from datacompy.core import (
     Compare,
     calculate_max_diff,
@@ -46,6 +47,7 @@ from datacompy.spark.pandas import SparkPandasCompare
 from datacompy.spark.sql import SparkSQLCompare
 
 __all__ = [
+    "BaseCompare",
     "Compare",
     "PolarsCompare",
     "SparkPandasCompare",
@@ -62,6 +64,7 @@ __all__ = [
     "is_match",
     "render",
     "report",
+    "temp_column_name",
     "unq_columns",
 ]
 
