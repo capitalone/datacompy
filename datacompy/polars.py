@@ -284,15 +284,11 @@ class PolarsCompare(BaseCompare):
 
         # process merge indicator
         outer_join = outer_join.with_columns(
-            pl.when(
-                (pl.col("_merge_left") == True) & (pl.col("_merge_right") == True)  # noqa: E712
-            )
+            pl.when(pl.col("_merge_left") & pl.col("_merge_right"))
             .then(pl.lit("both"))
-            .when((pl.col("_merge_left") is True) & (pl.col("_merge_right").is_null()))
+            .when(pl.col("_merge_left") & pl.col("_merge_right").is_null())
             .then(pl.lit("left_only"))
-            .when(
-                (pl.col("_merge_left").is_null()) & (pl.col("_merge_right") == True)  # noqa: E712
-            )
+            .when(pl.col("_merge_left").is_null() & pl.col("_merge_right"))
             .then(pl.lit("right_only"))
             .alias("_merge")
         )
