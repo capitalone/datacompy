@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Legacy spark comparison."""
 
 import sys
 from enum import Enum
@@ -34,11 +35,17 @@ warn(
 
 
 class MatchType(Enum):
+    """Types of matches."""
+
     MISMATCH, MATCH, KNOWN_DIFFERENCE = range(3)
 
 
-# Used for checking equality with decimal(X, Y) types. Otherwise treated as the string "decimal".
 def decimal_comparator() -> str:
+    """Check equality with decimal(X, Y) types.
+
+    Otherwise treated as the string "decimal".
+    """
+
     class DecimalComparator(str):
         def __eq__(self, other: str) -> bool:  # type: ignore[override]
             return len(other) >= 7 and other[0:7] == "decimal"
@@ -58,7 +65,8 @@ NUMERIC_SPARK_TYPES = [
 
 
 def _is_comparable(type1: str, type2: str) -> bool:
-    """Checks if two Spark data types can be safely compared.
+    """Check if two Spark data types can be safely compared.
+
     Two data types are considered comparable if any of the following apply:
         1. Both data types are the same
         2. Both data types are numeric.
@@ -229,8 +237,9 @@ class LegacySparkCompare:
 
     @property
     def columns_compared(self) -> List[str]:
-        """list[str]: Get columns to be compared in both dataframes (all
-        columns in both excluding the join key(s).
+        """Get columns to be compared in both dataframes.
+
+        All columns in both excluding the join key(s).
         """
         return [
             column
@@ -286,7 +295,7 @@ class LegacySparkCompare:
         )
 
     def _print_columns_summary(self, myfile: TextIO) -> None:
-        """Prints the column summary details."""
+        """Print the column summary details."""
         print("\n****** Column Summary ******", file=myfile)
         print(
             f"Number of columns in common with matching schemas: {len(self._columns_with_matching_schema())}",
@@ -306,7 +315,7 @@ class LegacySparkCompare:
         )
 
     def _print_only_columns(self, base_or_compare: str, myfile: TextIO) -> None:
-        """Prints the columns and data types only in either the base or compare datasets."""
+        """Print the columns and data types only in either the base or compare datasets."""
         if base_or_compare.upper() == "BASE":
             columns = self.columns_only_base
             df = self.base_df
@@ -334,7 +343,7 @@ class LegacySparkCompare:
             print((format_pattern + "  {:13s}").format(column, col_type), file=myfile)
 
     def _columns_with_matching_schema(self) -> Dict[str, str]:
-        """This function will identify the columns which has matching schema."""
+        """Identify the columns which has matching schema."""
         col_schema_match = {}
         base_columns_dict = dict(self.base_df.dtypes)
         compare_columns_dict = dict(self.compare_df.dtypes)
@@ -348,7 +357,7 @@ class LegacySparkCompare:
         return col_schema_match
 
     def _columns_with_schemadiff(self) -> Dict[str, Dict[str, str]]:
-        """This function will identify the columns which has different schema."""
+        """Identify the columns which has different schema."""
         col_schema_diff = {}
         base_columns_dict = dict(self.base_df.dtypes)
         compare_columns_dict = dict(self.compare_df.dtypes)
@@ -427,7 +436,7 @@ class LegacySparkCompare:
         return self._rows_only_compare
 
     def _generate_select_statement(self, match_data: bool = True) -> str:
-        """This function is to generate the select statement to be used later in the query."""
+        """Generate the select statement to be used later in the query."""
         base_only = list(set(self.base_df.columns) - set(self.compare_df.columns))
         compare_only = list(set(self.compare_df.columns) - set(self.base_df.columns))
         sorted_list = sorted(chain(base_only, compare_only, self.columns_in_both))
@@ -468,7 +477,7 @@ class LegacySparkCompare:
         return select_statement
 
     def _merge_dataframes(self) -> None:
-        """Merges the two dataframes and creates self._all_matched_rows and self._all_rows_mismatched."""
+        """Merge the two dataframes and creates self._all_matched_rows and self._all_rows_mismatched."""
         full_joined_dataframe = self._get_or_create_joined_dataframe()
         full_joined_dataframe.createOrReplaceTempView("full_matched_table")
 
@@ -543,7 +552,8 @@ class LegacySparkCompare:
         print(f"Number of rows with all columns equal: {matched_rows}", file=myfile)
 
     def _populate_columns_match_dict(self) -> None:
-        """
+        """Populate the dictionary of matches in a dataframe.
+
         side effects:
             columns_match_dict assigned to { column -> match_type_counts }
                 where:
@@ -707,8 +717,10 @@ class LegacySparkCompare:
             )
 
     def _base_to_compare_name(self, base_name: str) -> str:
-        """Translates a column name in the base dataframe to its counterpart in the
-        compare dataframe, if they are different.
+        """Translate a column name.
+
+        Translates a column in the base dataframe to its counterpart in the
+        compare dataframe if they are different.
         """
         if base_name in self.column_mapping:
             return self.column_mapping[base_name]
@@ -880,8 +892,9 @@ class LegacySparkCompare:
 
     # noinspection PyUnresolvedReferences
     def report(self, file: TextIO = sys.stdout) -> None:
-        """Creates a comparison report and prints it to the file specified
-        (stdout by default).
+        """Create a comparison report and print it to the file specified.
+
+        Prints to stdout by default.
 
         Parameters
         ----------

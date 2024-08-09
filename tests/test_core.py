@@ -509,7 +509,8 @@ def test_columns_maintain_order_through_set_operations():
 
 
 def test_10k_rows():
-    df1 = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    rng = np.random.default_rng()
+    df1 = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["b", "c"])
     df1.reset_index(inplace=True)
     df1.columns = ["a", "b", "c"]
     df2 = df1.copy()
@@ -552,7 +553,8 @@ def test_not_subset(caplog):
 
 
 def test_large_subset():
-    df1 = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    rng = np.random.default_rng()
+    df1 = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["b", "c"])
     df1.reset_index(inplace=True)
     df1.columns = ["a", "b", "c"]
     df2 = df1[["a", "b"]].sample(50).copy()

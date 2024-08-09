@@ -400,7 +400,9 @@ def report(
     html_file: Optional[str] = None,
     parallelism: Optional[int] = None,
 ) -> str:
-    """Returns a string representation of a report.  The representation can
+    """Return a string representation of a report.
+
+    The representation can
     then be printed or saved to a file.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,

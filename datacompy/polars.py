@@ -131,6 +131,7 @@ class PolarsCompare(BaseCompare):
 
     @property
     def df1(self) -> "pl.DataFrame":
+        """Get the first dataframe."""
         return self._df1
 
     @df1.setter
@@ -143,6 +144,7 @@ class PolarsCompare(BaseCompare):
 
     @property
     def df2(self) -> "pl.DataFrame":
+        """Get the second dataframe."""
         return self._df2
 
     @df2.setter
@@ -183,7 +185,9 @@ class PolarsCompare(BaseCompare):
             self._any_dupes = True
 
     def _compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
-        """Actually run the comparison.  This tries to run df1.equals(df2)
+        """Run the comparison.
+
+        This tries to run df1.equals(df2)
         first so that if they're truly equal we can tell.
 
         This method will log out information about what is different between
@@ -231,7 +235,9 @@ class PolarsCompare(BaseCompare):
         return OrderedSet(self.df1.columns) & OrderedSet(self.df2.columns)
 
     def _dataframe_merge(self, ignore_spaces: bool) -> None:
-        """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
+        """Merge df1 to df2 on the join columns.
+
+        To get df1 - df2, df2 - df1
         and df1 & df2.
         """
         params: Dict[str, Any]
@@ -471,7 +477,9 @@ class PolarsCompare(BaseCompare):
     def sample_mismatch(
         self, column: str, sample_count: int = 10, for_display: bool = False
     ) -> "pl.DataFrame":
-        """Returns a sample sub-dataframe which contains the identifying
+        """Return sample mismatches.
+
+        Get a sub-dataframe which contains the identifying
         columns, and df1 and df2 versions of the column.
 
         Parameters
@@ -513,7 +521,9 @@ class PolarsCompare(BaseCompare):
         return to_return
 
     def all_mismatch(self, ignore_matching_cols: bool = False) -> "pl.DataFrame":
-        """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
+        """Get all rows with any columns that have a mismatch.
+
+        Returns all df1 and df2 versions of the columns and join
         columns.
 
         Parameters
@@ -568,7 +578,9 @@ class PolarsCompare(BaseCompare):
         column_count: int = 10,
         html_file: Optional[str] = None,
     ) -> str:
-        """Returns a string representation of a report.  The representation can
+        """Return a string representation of a report.
+
+        The representation can
         then be printed or saved to a file.
 
         Parameters
@@ -728,7 +740,9 @@ class PolarsCompare(BaseCompare):
 
 
 def render(filename: str, *fields: Union[int, float, str]) -> str:
-    """Renders out an individual template.  This basically just reads in a
+    """Render out an individual template.
+
+    This basically just reads in a
     template file, and applies ``.format()`` on the fields.
 
     Parameters
@@ -757,7 +771,9 @@ def columns_equal(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
 ) -> "pl.Series":
-    """Compares two columns from a dataframe, returning a True/False series,
+    """Compare two columns from a dataframe.
+
+    Returns a True/False series,
     with the same index as column 1.
 
     - Two nulls (np.nan) will evaluate to True.
@@ -841,7 +857,9 @@ def columns_equal(
 def compare_string_and_date_columns(
     col_1: "pl.Series", col_2: "pl.Series"
 ) -> "pl.Series":
-    """Compare a string column and date column, value-wise.  This tries to
+    """Compare a string column and date column, value-wise.
+
+    This tries to
     convert a string column to a date column and compare that way.
 
     Parameters
@@ -876,7 +894,7 @@ def compare_string_and_date_columns(
 def get_merged_columns(
     original_df: "pl.DataFrame", merged_df: "pl.DataFrame", suffix: str
 ) -> List[str]:
-    """Gets the columns from an original dataframe, in the new merged dataframe.
+    """Get the columns from an original dataframe, in the new merged dataframe.
 
     Parameters
     ----------
@@ -925,7 +943,9 @@ def calculate_max_diff(col_1: "pl.Series", col_2: "pl.Series") -> float:
 def generate_id_within_group(
     dataframe: "pl.DataFrame", join_columns: List[str]
 ) -> "pl.Series":
-    """Generate an ID column that can be used to deduplicate identical rows.  The series generated
+    """Generate an ID column that can be used to deduplicate identical rows.
+
+    The series generated
     is the order within a unique group, and it handles nulls.
 
     Parameters

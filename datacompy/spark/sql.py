@@ -55,8 +55,12 @@ except ImportError:
 LOG = logging.getLogger(__name__)
 
 
-# Used for checking equality with decimal(X, Y) types. Otherwise treated as the string "decimal".
 def decimal_comparator():
+    """Check equality with decimal(X, Y) types.
+
+    Otherwise treated as the string "decimal".
+    """
+
     class DecimalComparator(str):
         def __eq__(self, other):
             return len(other) >= 7 and other[0:7] == "decimal"
@@ -168,6 +172,7 @@ class SparkSQLCompare(BaseCompare):
 
     @property
     def df1(self) -> "pyspark.sql.DataFrame":
+        """Get the first dataframe."""
         return self._df1
 
     @df1.setter
@@ -180,6 +185,7 @@ class SparkSQLCompare(BaseCompare):
 
     @property
     def df2(self) -> "pyspark.sql.DataFrame":
+        """Get the second dataframe."""
         return self._df2
 
     @df2.setter
@@ -247,7 +253,9 @@ class SparkSQLCompare(BaseCompare):
             self._any_dupes = True
 
     def _compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
-        """Actually run the comparison.  This tries to run df1.equals(df2)
+        """Actually run the comparison.
+
+        This tries to run df1.equals(df2)
         first so that if they're truly equal we can tell.
 
         This method will log out information about what is different between
@@ -288,8 +296,9 @@ class SparkSQLCompare(BaseCompare):
         return OrderedSet(self.df1.columns) & OrderedSet(self.df2.columns)
 
     def _dataframe_merge(self, ignore_spaces: bool) -> None:
-        """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
-        and df1 & df2.
+        """Merge df1 to df2 on the join columns.
+
+        To get df1 - df2, df2 - df1 and df1 & df2.
         """
         LOG.debug("Outer joining")
 
@@ -585,7 +594,9 @@ class SparkSQLCompare(BaseCompare):
     def sample_mismatch(
         self, column: str, sample_count: int = 10, for_display: bool = False
     ) -> "pyspark.sql.DataFrame":
-        """Returns a sample sub-dataframe which contains the identifying
+        """Return sample mismatches.
+
+        Gets a sub-dataframe which contains the identifying
         columns, and df1 and df2 versions of the column.
 
         Parameters
@@ -640,7 +651,9 @@ class SparkSQLCompare(BaseCompare):
     def all_mismatch(
         self, ignore_matching_cols: bool = False
     ) -> "pyspark.sql.DataFrame":
-        """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
+        """Get all rows with any columns that have a mismatch.
+
+        Returns all df1 and df2 versions of the columns and join
         columns.
 
         Parameters
@@ -705,7 +718,9 @@ class SparkSQLCompare(BaseCompare):
         column_count: int = 10,
         html_file: Optional[str] = None,
     ) -> str:
-        """Returns a string representation of a report.  The representation can
+        """Return a string representation of a report.
+
+        The representation can
         then be printed or saved to a file.
 
         Parameters
@@ -867,7 +882,9 @@ class SparkSQLCompare(BaseCompare):
 
 
 def render(filename: str, *fields: Union[int, float, str]) -> str:
-    """Renders out an individual template.  This basically just reads in a
+    """Render out an individual template.
+
+    This basically just reads in a
     template file, and applies ``.format()`` on the fields.
 
     Parameters
@@ -898,8 +915,9 @@ def columns_equal(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
 ) -> "pyspark.sql.DataFrame":
-    """Compares two columns from a dataframe, returning a True/False series,
-    with the same index as column 1.
+    """Compare two columns from a dataframe.
+
+    Returns a True/False series with the same index as column 1.
 
     - Two nulls (np.nan) will evaluate to True.
     - A null and a non-null value will evaluate to False.
@@ -984,7 +1002,7 @@ def get_merged_columns(
     merged_df: "pyspark.sql.DataFrame",
     suffix: str,
 ) -> List[str]:
-    """Gets the columns from an original dataframe, in the new merged dataframe.
+    """Get the columns from an original dataframe, in the new merged dataframe.
 
     Parameters
     ----------
@@ -1094,7 +1112,9 @@ def calculate_null_diff(
 def _generate_id_within_group(
     dataframe: "pyspark.sql.DataFrame", join_columns: List[str], order_column_name: str
 ) -> "pyspark.sql.DataFrame":
-    """Generate an ID column that can be used to deduplicate identical rows.  The series generated
+    """Generate an ID column that can be used to deduplicate identical rows.
+
+    The series generated
     is the order within a unique group, and it handles nulls. Requires a ``__index`` column.
 
     Parameters
@@ -1171,7 +1191,7 @@ def _get_column_dtypes(
 
 
 def _is_comparable(type1: str, type2: str) -> bool:
-    """Checks if two Spark data types can be safely compared.
+    """Check if two Spark data types can be safely compared.
 
     Two data types are considered comparable if any of the following apply:
         1. Both data types are the same

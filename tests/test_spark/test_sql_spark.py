@@ -491,7 +491,8 @@ def test_columns_maintain_order_through_set_operations(spark_session):
 
 
 def test_10k_rows(spark_session):
-    pdf = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["b", "c"])
     pdf.reset_index(inplace=True)
     pdf.columns = ["a", "b", "c"]
     pdf2 = pdf.copy()
@@ -541,7 +542,8 @@ def test_not_subset(spark_session, caplog):
 
 
 def test_large_subset(spark_session):
-    pdf = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["b", "c"])
     pdf.reset_index(inplace=True)
     pdf.columns = ["a", "b", "c"]
     pdf2 = pdf[["a", "b"]].head(50).copy()

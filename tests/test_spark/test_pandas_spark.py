@@ -506,7 +506,8 @@ def test_columns_maintain_order_through_set_operations():
 
 @pandas_version
 def test_10k_rows():
-    df1 = ps.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    rng = np.random.default_rng()
+    df1 = ps.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["b", "c"])
     df1.reset_index(inplace=True)
     df1.columns = ["a", "b", "c"]
     df2 = df1.copy()
@@ -552,7 +553,8 @@ def test_not_subset(caplog):
 
 @pandas_version
 def test_large_subset():
-    df1 = ps.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    rng = np.random.default_rng()
+    df1 = ps.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["b", "c"])
     df1.reset_index(inplace=True)
     df1.columns = ["a", "b", "c"]
     df2 = df1[["a", "b"]].head(50).copy()
@@ -1303,9 +1305,11 @@ def test_pandas_version():
     expected_message = "It seems like you are running Pandas 2+. Please note that Pandas 2+ will only be supported in Spark 4+. See: https://issues.apache.org/jira/browse/SPARK-44101. If you need to use Spark DataFrame with Pandas 2+ then consider using Fugue otherwise downgrade to Pandas 1.5.3"
     df1 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    with mock.patch("pandas.__version__", "2.0.0"):
-        with raises(Exception, match=re.escape(expected_message)):
-            SparkPandasCompare(df1, df2, join_columns=["a"])
+    with (
+        mock.patch("pandas.__version__", "2.0.0"),
+        raises(Exception, match=re.escape(expected_message)),
+    ):
+        SparkPandasCompare(df1, df2, join_columns=["a"])
 
     with mock.patch("pandas.__version__", "1.5.3"):
         SparkPandasCompare(df1, df2, join_columns=["a"])
