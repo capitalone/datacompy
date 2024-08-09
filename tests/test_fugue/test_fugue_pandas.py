@@ -13,13 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Test the fugue functionality with pandas."""
+
 from io import StringIO
 
 import pandas as pd
-from ordered_set import OrderedSet
-from pytest import raises
-from test_fugue_helpers import _compare_report
-
 from datacompy import (
     Compare,
     all_columns_match,
@@ -30,6 +27,9 @@ from datacompy import (
     report,
     unq_columns,
 )
+from ordered_set import OrderedSet
+from pytest import raises
+from test_fugue_helpers import _compare_report
 
 
 def test_is_match_native(

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Compare two Pandas DataFrames
+Compare two Pandas DataFrames.
 
 Originally this package was meant to provide similar functionality to
 PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
@@ -31,36 +31,42 @@ LOG = logging.getLogger(__name__)
 
 
 class BaseCompare(ABC):
+    """Base comparison class."""
+
     @property
     def df1(self) -> Any:
+        """Get the first dataframe."""
         return self._df1  # type: ignore
 
     @df1.setter
     @abstractmethod
     def df1(self, df1: Any) -> None:
-        """Check that it is a dataframe and has the join columns"""
+        """Check that it is a dataframe and has the join columns."""
         pass
 
     @property
     def df2(self) -> Any:
+        """Get the second dataframe."""
         return self._df2  # type: ignore
 
     @df2.setter
     @abstractmethod
     def df2(self, df2: Any) -> None:
-        """Check that it is a dataframe and has the join columns"""
+        """Check that it is a dataframe and has the join columns."""
         pass
 
     @abstractmethod
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
     ) -> None:
-        """Check that it is a dataframe and has the join columns"""
+        """Check that it is a dataframe and has the join columns."""
         pass
 
     @abstractmethod
     def _compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
-        """Actually run the comparison.  This tries to run df1.equals(df2)
+        """Run the comparison.
+
+        This tries to run df1.equals(df2)
         first so that if they're truly equal we can tell.
 
         This method will log out information about what is different between
@@ -70,23 +76,25 @@ class BaseCompare(ABC):
 
     @abstractmethod
     def df1_unq_columns(self) -> OrderedSet[str]:
-        """Get columns that are unique to df1"""
+        """Get columns that are unique to df1."""
         pass
 
     @abstractmethod
     def df2_unq_columns(self) -> OrderedSet[str]:
-        """Get columns that are unique to df2"""
+        """Get columns that are unique to df2."""
         pass
 
     @abstractmethod
     def intersect_columns(self) -> OrderedSet[str]:
-        """Get columns that are shared between the two dataframes"""
+        """Get columns that are shared between the two dataframes."""
         pass
 
     @abstractmethod
     def _dataframe_merge(self, ignore_spaces: bool) -> None:
-        """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
-        and df1 & df2
+        """Merge df1 to df2 on the join columns.
+
+        To get df1 - df2, df2 - df1
+        and df1 & df2.
 
         If ``on_index`` is True, this will join on index values, otherwise it
         will join on the ``join_columns``.
@@ -95,40 +103,49 @@ class BaseCompare(ABC):
 
     @abstractmethod
     def _intersect_compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
+        """Compare the intersection of the two dataframes."""
         pass
 
     @abstractmethod
     def all_columns_match(self) -> bool:
+        """Check if all columns match."""
         pass
 
     @abstractmethod
     def all_rows_overlap(self) -> bool:
+        """Check if all rows overlap."""
         pass
 
     @abstractmethod
     def count_matching_rows(self) -> int:
+        """Count the number of matchin grows."""
         pass
 
     @abstractmethod
     def intersect_rows_match(self) -> bool:
+        """Check if the intersection of rows match."""
         pass
 
     @abstractmethod
     def matches(self, ignore_extra_columns: bool = False) -> bool:
+        """Check if the dataframes match."""
         pass
 
     @abstractmethod
     def subset(self) -> bool:
+        """Check if one dataframe is a subset of the other."""
         pass
 
     @abstractmethod
     def sample_mismatch(
         self, column: str, sample_count: int = 10, for_display: bool = False
     ) -> Any:
+        """Get a sample of rows that mismatch."""
         pass
 
     @abstractmethod
     def all_mismatch(self, ignore_matching_cols: bool = False) -> Any:
+        """Get all rows that mismatch."""
         pass
 
     @abstractmethod
@@ -138,11 +155,12 @@ class BaseCompare(ABC):
         column_count: int = 10,
         html_file: Optional[str] = None,
     ) -> str:
+        """Return a string representation of a report."""
         pass
 
 
 def temp_column_name(*dataframes) -> str:
-    """Gets a temp column name that isn't included in columns of any dataframes
+    """Get a temp column name that isn't included in columns of any dataframes.
 
     Parameters
     ----------

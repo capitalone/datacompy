@@ -62,18 +62,63 @@ docs = ["sphinx", "furo", "myst-parser"]
 tests = ["pytest", "pytest-cov"]
 
 tests-spark = ["pytest", "pytest-cov", "pytest-spark"]
-qa = ["pre-commit", "black", "isort", "mypy", "pandas-stubs"]
+qa = ["pre-commit", "ruff==0.5.7", "mypy", "pandas-stubs"]
 build = ["build", "twine", "wheel"]
 edgetest = ["edgetest", "edgetest-conda"]
 dev = ["datacompy[duckdb]", "datacompy[spark]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[qa]", "datacompy[build]"]
 
-[tool.isort]
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-line_length = 88
-profile = "black"
+# Linters, formatters and type checkers
+[tool.ruff]
+extend-include = ["*.ipynb"]
+target-version = "py39"
+src = ["src"]
+
+[tool.ruff.lint]
+preview = true
+select = [
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "D", # pydocstyle
+    "I", # isort
+    "UP", # pyupgrade
+    "B", # flake8-bugbear
+    # "A", # flake8-builtins
+    "C4", # flake8-comprehensions
+    #"C901", # mccabe complexity
+    # "G", # flake8-logging-format
+    "T20", # flake8-print
+    "TID252", # flake8-tidy-imports ban relative imports
+    # "ARG", # flake8-unused-arguments
+    "SIM", # flake8-simplify
+    "NPY", # numpy rules
+    "LOG", # flake8-logging
+    "RUF", # Ruff errors
+]
+
+ignore = [
+    "E111",  # Check indentation level. Using formatter instead.
+    "E114",  # Check indentation level. Using formatter instead.
+    "E117",  # Check indentation level. Using formatter instead.
+    "E203",  # Check whitespace. Using formatter instead.
+    "E501",  # Line too long. Using formatter instead.
+    "D206",  # Docstring indentation. Using formatter instead.
+    "D300",  # Use triple single quotes. Using formatter instead.
+    "SIM108",  # Use ternary operator instead of if-else blocks.
+    "SIM105", # Use `contextlib.suppress(FileNotFoundError)` instead of `try`-`except`-`pass`
+    "UP035", # `typing.x` is deprecated, use `x` instead
+    "UP006", # `typing.x` is deprecated, use `x` instead
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
+"**/{tests,docs}/*" = ["E402", "D", "F841", "ARG"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 
 [tool.mypy]
 strict = true

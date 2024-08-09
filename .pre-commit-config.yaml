@@ -1,12 +1,25 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 23.3.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.7
     hooks:
-      - id: black
-        types: [file, python]
-        language_version: python3.10
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+      # Run the linter.
+      - id: ruff
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format
+        types_or: [ python, jupyter ]
+  # # Mypy: Optional static type checking
+  # # https://github.com/pre-commit/mirrors-mypy
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.11.1
+  #   hooks:
+  #     - id: mypy
+  #       exclude: ^(docs|tests)\/
+  #       language_version: python3.9
+  #       args: [--namespace-packages, --explicit-package-bases, --ignore-missing-imports, --non-interactive, --install-types]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
     hooks:
-      - id: isort
-        name: isort (python)
+      - id: trailing-whitespace
+      - id: debug-statements
+      - id: end-of-file-fixer
