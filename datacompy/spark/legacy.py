@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Legacy spark comparison."""
 
 import sys
 from enum import Enum
@@ -34,11 +35,17 @@ warn(
 
 
 class MatchType(Enum):
+    """Types of matches."""
+
     MISMATCH, MATCH, KNOWN_DIFFERENCE = range(3)
 
 
-# Used for checking equality with decimal(X, Y) types. Otherwise treated as the string "decimal".
 def decimal_comparator() -> str:
+    """Check equality with decimal(X, Y) types.
+
+    Otherwise treated as the string "decimal".
+    """
+
     class DecimalComparator(str):
         def __eq__(self, other: str) -> bool:  # type: ignore[override]
             return len(other) >= 7 and other[0:7] == "decimal"
@@ -58,10 +65,11 @@ NUMERIC_SPARK_TYPES = [
 
 
 def _is_comparable(type1: str, type2: str) -> bool:
-    """Checks if two Spark data types can be safely compared.
+    """Check if two Spark data types can be safely compared.
+
     Two data types are considered comparable if any of the following apply:
         1. Both data types are the same
-        2. Both data types are numeric
+        2. Both data types are numeric.
 
     Parameters
     ----------
@@ -75,7 +83,6 @@ def _is_comparable(type1: str, type2: str) -> bool:
     bool
         True if both data types are comparable
     """
-
     return type1 == type2 or (
         type1 in NUMERIC_SPARK_TYPES and type2 in NUMERIC_SPARK_TYPES
     )
@@ -194,11 +201,11 @@ class LegacySparkCompare:
         self._base_row_count: Optional[int] = None
         self._compare_row_count: Optional[int] = None
         self._common_row_count: Optional[int] = None
-        self._joined_dataframe: Optional["pyspark.sql.DataFrame"] = None
-        self._rows_only_base: Optional["pyspark.sql.DataFrame"] = None
-        self._rows_only_compare: Optional["pyspark.sql.DataFrame"] = None
-        self._all_matched_rows: Optional["pyspark.sql.DataFrame"] = None
-        self._all_rows_mismatched: Optional["pyspark.sql.DataFrame"] = None
+        self._joined_dataframe: Optional[pyspark.sql.DataFrame] = None
+        self._rows_only_base: Optional[pyspark.sql.DataFrame] = None
+        self._rows_only_compare: Optional[pyspark.sql.DataFrame] = None
+        self._all_matched_rows: Optional[pyspark.sql.DataFrame] = None
+        self._all_rows_mismatched: Optional[pyspark.sql.DataFrame] = None
         self.columns_match_dict: Dict[str, Any] = {}
 
         # drop the duplicates before actual comparison made.
@@ -225,13 +232,15 @@ class LegacySparkCompare:
 
     @property
     def columns_in_both(self) -> Set[str]:
-        """set[str]: Get columns in both dataframes"""
+        """set[str]: Get columns in both dataframes."""
         return set(self.base_df.columns) & set(self.compare_df.columns)
 
     @property
     def columns_compared(self) -> List[str]:
-        """list[str]: Get columns to be compared in both dataframes (all
-        columns in both excluding the join key(s)"""
+        """Get columns to be compared in both dataframes.
+
+        All columns in both excluding the join key(s).
+        """
         return [
             column
             for column in list(self.columns_in_both)
@@ -240,17 +249,17 @@ class LegacySparkCompare:
 
     @property
     def columns_only_base(self) -> Set[str]:
-        """set[str]: Get columns that are unique to the base dataframe"""
+        """set[str]: Get columns that are unique to the base dataframe."""
         return set(self.base_df.columns) - set(self.compare_df.columns)
 
     @property
     def columns_only_compare(self) -> Set[str]:
-        """set[str]: Get columns that are unique to the compare dataframe"""
+        """set[str]: Get columns that are unique to the compare dataframe."""
         return set(self.compare_df.columns) - set(self.base_df.columns)
 
     @property
     def base_row_count(self) -> int:
-        """int: Get the count of rows in the de-duped base dataframe"""
+        """int: Get the count of rows in the de-duped base dataframe."""
         if self._base_row_count is None:
             self._base_row_count = self.base_df.count()
 
@@ -258,7 +267,7 @@ class LegacySparkCompare:
 
     @property
     def compare_row_count(self) -> int:
-        """int: Get the count of rows in the de-duped compare dataframe"""
+        """int: Get the count of rows in the de-duped compare dataframe."""
         if self._compare_row_count is None:
             self._compare_row_count = self.compare_df.count()
 
@@ -266,7 +275,7 @@ class LegacySparkCompare:
 
     @property
     def common_row_count(self) -> int:
-        """int: Get the count of rows in common between base and compare dataframes"""
+        """int: Get the count of rows in common between base and compare dataframes."""
         if self._common_row_count is None:
             common_rows = self._get_or_create_joined_dataframe()
             self._common_row_count = common_rows.count()
@@ -274,19 +283,19 @@ class LegacySparkCompare:
         return self._common_row_count
 
     def _get_unq_base_rows(self) -> "pyspark.sql.DataFrame":
-        """Get the rows only from base data frame"""
+        """Get the rows only from base data frame."""
         return self.base_df.select(self._join_column_names).subtract(
             self.compare_df.select(self._join_column_names)
         )
 
     def _get_compare_rows(self) -> "pyspark.sql.DataFrame":
-        """Get the rows only from compare data frame"""
+        """Get the rows only from compare data frame."""
         return self.compare_df.select(self._join_column_names).subtract(
             self.base_df.select(self._join_column_names)
         )
 
     def _print_columns_summary(self, myfile: TextIO) -> None:
-        """Prints the column summary details"""
+        """Print the column summary details."""
         print("\n****** Column Summary ******", file=myfile)
         print(
             f"Number of columns in common with matching schemas: {len(self._columns_with_matching_schema())}",
@@ -306,8 +315,7 @@ class LegacySparkCompare:
         )
 
     def _print_only_columns(self, base_or_compare: str, myfile: TextIO) -> None:
-        """Prints the columns and data types only in either the base or compare datasets"""
-
+        """Print the columns and data types only in either the base or compare datasets."""
         if base_or_compare.upper() == "BASE":
             columns = self.columns_only_base
             df = self.base_df
@@ -335,7 +343,7 @@ class LegacySparkCompare:
             print((format_pattern + "  {:13s}").format(column, col_type), file=myfile)
 
     def _columns_with_matching_schema(self) -> Dict[str, str]:
-        """This function will identify the columns which has matching schema"""
+        """Identify the columns which has matching schema."""
         col_schema_match = {}
         base_columns_dict = dict(self.base_df.dtypes)
         compare_columns_dict = dict(self.compare_df.dtypes)
@@ -349,7 +357,7 @@ class LegacySparkCompare:
         return col_schema_match
 
     def _columns_with_schemadiff(self) -> Dict[str, Dict[str, str]]:
-        """This function will identify the columns which has different schema"""
+        """Identify the columns which has different schema."""
         col_schema_diff = {}
         base_columns_dict = dict(self.base_df.dtypes)
         compare_columns_dict = dict(self.compare_df.dtypes)
@@ -361,15 +369,15 @@ class LegacySparkCompare:
                     compare_column_type is not None
                     and base_type not in compare_column_type
                 ):
-                    col_schema_diff[base_row] = dict(
-                        base_type=base_type,
-                        compare_type=compare_column_type,
-                    )
+                    col_schema_diff[base_row] = {
+                        "base_type": base_type,
+                        "compare_type": compare_column_type,
+                    }
         return col_schema_diff
 
     @property
     def rows_both_mismatch(self) -> Optional["pyspark.sql.DataFrame"]:
-        """pyspark.sql.DataFrame: Returns all rows in both dataframes that have mismatches"""
+        """pyspark.sql.DataFrame: Returns all rows in both dataframes that have mismatches."""
         if self._all_rows_mismatched is None:
             self._merge_dataframes()
 
@@ -377,7 +385,7 @@ class LegacySparkCompare:
 
     @property
     def rows_both_all(self) -> Optional["pyspark.sql.DataFrame"]:
-        """pyspark.sql.DataFrame: Returns all rows in both dataframes"""
+        """pyspark.sql.DataFrame: Returns all rows in both dataframes."""
         if self._all_matched_rows is None:
             self._merge_dataframes()
 
@@ -385,7 +393,7 @@ class LegacySparkCompare:
 
     @property
     def rows_only_base(self) -> "pyspark.sql.DataFrame":
-        """pyspark.sql.DataFrame: Returns rows only in the base dataframe"""
+        """pyspark.sql.DataFrame: Returns rows only in the base dataframe."""
         if not self._rows_only_base:
             base_rows = self._get_unq_base_rows()
             base_rows.createOrReplaceTempView("baseRows")
@@ -396,8 +404,8 @@ class LegacySparkCompare:
                     for name in self._join_column_names
                 ]
             )
-            sql_query = "select A.* from baseTable as A, baseRows as B where {}".format(
-                join_condition
+            sql_query = (
+                f"select A.* from baseTable as A, baseRows as B where {join_condition}"
             )
             self._rows_only_base = self.spark.sql(sql_query)
 
@@ -408,7 +416,7 @@ class LegacySparkCompare:
 
     @property
     def rows_only_compare(self) -> Optional["pyspark.sql.DataFrame"]:
-        """pyspark.sql.DataFrame: Returns rows only in the compare dataframe"""
+        """pyspark.sql.DataFrame: Returns rows only in the compare dataframe."""
         if not self._rows_only_compare:
             compare_rows = self._get_compare_rows()
             compare_rows.createOrReplaceTempView("compareRows")
@@ -419,11 +427,7 @@ class LegacySparkCompare:
                     for name in self._join_column_names
                 ]
             )
-            sql_query = (
-                "select A.* from compareTable as A, compareRows as B where {}".format(
-                    where_condition
-                )
-            )
+            sql_query = f"select A.* from compareTable as A, compareRows as B where {where_condition}"
             self._rows_only_compare = self.spark.sql(sql_query)
 
             if self.cache_intermediates:
@@ -432,10 +436,10 @@ class LegacySparkCompare:
         return self._rows_only_compare
 
     def _generate_select_statement(self, match_data: bool = True) -> str:
-        """This function is to generate the select statement to be used later in the query."""
+        """Generate the select statement to be used later in the query."""
         base_only = list(set(self.base_df.columns) - set(self.compare_df.columns))
         compare_only = list(set(self.compare_df.columns) - set(self.base_df.columns))
-        sorted_list = sorted(list(chain(base_only, compare_only, self.columns_in_both)))
+        sorted_list = sorted(chain(base_only, compare_only, self.columns_in_both))
         select_statement = ""
 
         for column_name in sorted_list:
@@ -473,14 +477,12 @@ class LegacySparkCompare:
         return select_statement
 
     def _merge_dataframes(self) -> None:
-        """Merges the two dataframes and creates self._all_matched_rows and self._all_rows_mismatched."""
+        """Merge the two dataframes and creates self._all_matched_rows and self._all_rows_mismatched."""
         full_joined_dataframe = self._get_or_create_joined_dataframe()
         full_joined_dataframe.createOrReplaceTempView("full_matched_table")
 
         select_statement = self._generate_select_statement(False)
-        select_query = """SELECT {} FROM full_matched_table A""".format(
-            select_statement
-        )
+        select_query = f"""SELECT {select_statement} FROM full_matched_table A"""
         self._all_matched_rows = self.spark.sql(select_query).orderBy(
             self._join_column_names  # type: ignore[arg-type]
         )
@@ -489,7 +491,7 @@ class LegacySparkCompare:
         where_cond = " OR ".join(
             ["A.`" + name + "_match`= False" for name in self.columns_compared]
         )
-        mismatch_query = """SELECT * FROM matched_table A WHERE {}""".format(where_cond)
+        mismatch_query = f"""SELECT * FROM matched_table A WHERE {where_cond}"""
         self._all_rows_mismatched = self.spark.sql(mismatch_query).orderBy(
             self._join_column_names  # type: ignore[arg-type]
         )
@@ -507,13 +509,11 @@ class LegacySparkCompare:
             self.base_df.createOrReplaceTempView("base_table")
             self.compare_df.createOrReplaceTempView("compare_table")
 
-            join_query = r"""
-                   SELECT {}
+            join_query = rf"""
+                   SELECT {select_statement}
                    FROM base_table A
                    JOIN compare_table B
-                   ON {}""".format(
-                select_statement, join_condition
-            )
+                   ON {join_condition}"""
 
             self._joined_dataframe = self.spark.sql(join_query)
             if self.cache_intermediates:
@@ -536,9 +536,7 @@ class LegacySparkCompare:
             ]
         )
         match_query = (
-            r"""SELECT count(*) AS row_count FROM matched_df A WHERE {}""".format(
-                where_cond
-            )
+            rf"""SELECT count(*) AS row_count FROM matched_df A WHERE {where_cond}"""
         )
         all_rows_matched = self.spark.sql(match_query)
         all_rows_matched_head = all_rows_matched.head()
@@ -554,16 +552,16 @@ class LegacySparkCompare:
         print(f"Number of rows with all columns equal: {matched_rows}", file=myfile)
 
     def _populate_columns_match_dict(self) -> None:
-        """
+        """Populate the dictionary of matches in a dataframe.
+
         side effects:
             columns_match_dict assigned to { column -> match_type_counts }
                 where:
                     column (string): Name of a column that exists in both the base and comparison columns
-                    match_type_counts (list of int with size = len(MatchType)): The number of each match type seen for this column (in order of the MatchType enum values)
+                    match_type_counts (list of int with size = len(MatchType)): The number of each match type seen for this column (in order of the MatchType enum values).
 
         returns: None
         """
-
         match_dataframe = self._get_or_create_joined_dataframe().select(
             *self.columns_compared
         )
@@ -591,56 +589,48 @@ class LegacySparkCompare:
             match_type_comparison = ""
             for k in MatchType:
                 match_type_comparison += (
-                    " WHEN (A.`{name}`={match_value}) THEN '{match_name}'".format(
-                        name=name, match_value=str(k.value), match_name=k.name
-                    )
+                    f" WHEN (A.`{name}`={k.value!s}) THEN '{k.name}'"
                 )
-            return "A.`{name}_base`, A.`{name}_compare`, (CASE WHEN (A.`{name}`={match_failure}) THEN False ELSE True END) AS `{name}_match`, (CASE {match_type_comparison} ELSE 'UNDEFINED' END) AS `{name}_match_type` ".format(
-                name=name,
-                match_failure=MatchType.MISMATCH.value,
-                match_type_comparison=match_type_comparison,
-            )
+            return f"A.`{name}_base`, A.`{name}_compare`, (CASE WHEN (A.`{name}`={MatchType.MISMATCH.value}) THEN False ELSE True END) AS `{name}_match`, (CASE {match_type_comparison} ELSE 'UNDEFINED' END) AS `{name}_match_type` "
         else:
-            return "A.`{name}_base`, A.`{name}_compare`, CASE WHEN (A.`{name}`={match_failure})  THEN False ELSE True END AS `{name}_match` ".format(
-                name=name, match_failure=MatchType.MISMATCH.value
-            )
+            return f"A.`{name}_base`, A.`{name}_compare`, CASE WHEN (A.`{name}`={MatchType.MISMATCH.value})  THEN False ELSE True END AS `{name}_match` "
 
     def _create_case_statement(self, name: str) -> str:
-        equal_comparisons = ["(A.`{name}` IS NULL AND B.`{name}` IS NULL)"]
+        equal_comparisons = [f"(A.`{name}` IS NULL AND B.`{name}` IS NULL)"]
         known_diff_comparisons = ["(FALSE)"]
 
-        base_dtype = [d[1] for d in self.base_df.dtypes if d[0] == name][0]
-        compare_dtype = [d[1] for d in self.compare_df.dtypes if d[0] == name][0]
+        base_dtype = next(d[1] for d in self.base_df.dtypes if d[0] == name)
+        compare_dtype = next(d[1] for d in self.compare_df.dtypes if d[0] == name)
 
         if _is_comparable(base_dtype, compare_dtype):
             if (base_dtype in NUMERIC_SPARK_TYPES) and (
                 compare_dtype in NUMERIC_SPARK_TYPES
             ):  # numeric tolerance comparison
                 equal_comparisons.append(
-                    "((A.`{name}`=B.`{name}`) OR ((abs(A.`{name}`-B.`{name}`))<=("
+                    f"((A.`{name}`=B.`{name}`) OR ((abs(A.`{name}`-B.`{name}`))<=("
                     + str(self.abs_tol)
                     + "+("
                     + str(self.rel_tol)
-                    + "*abs(A.`{name}`)))))"
+                    + f"*abs(A.`{name}`)))))"
                 )
             else:  # non-numeric comparison
-                equal_comparisons.append("((A.`{name}`=B.`{name}`))")
+                equal_comparisons.append(f"((A.`{name}`=B.`{name}`))")
 
         if self._known_differences:
-            new_input = "B.`{name}`"
+            new_input = f"B.`{name}`"
             for kd in self._known_differences:
                 if compare_dtype in kd["types"]:
                     if "flags" in kd and "nullcheck" in kd["flags"]:
                         known_diff_comparisons.append(
                             "(("
                             + kd["transformation"].format(new_input, input=new_input)
-                            + ") is null AND A.`{name}` is null)"
+                            + f") is null AND A.`{name}` is null)"
                         )
                     else:
                         known_diff_comparisons.append(
                             "(("
                             + kd["transformation"].format(new_input, input=new_input)
-                            + ") = A.`{name}`)"
+                            + f") = A.`{name}`)"
                         )
 
         case_string = (
@@ -649,7 +639,7 @@ class LegacySparkCompare:
             + ") THEN {match_success} WHEN ("
             + " OR ".join(known_diff_comparisons)
             + ") THEN {match_known_difference} ELSE {match_failure} END) "
-            + "AS `{name}`, A.`{name}` AS `{name}_base`, B.`{name}` AS `{name}_compare`"
+            + f"AS `{name}`, A.`{name}` AS `{name}_base`, B.`{name}` AS `{name}_compare`"
         )
 
         return case_string.format(
@@ -696,9 +686,7 @@ class LegacySparkCompare:
             [len(self._base_to_compare_name(key)) for key in schema_diff_dict] + [19]
         )
 
-        format_pattern = "{{:{base}s}}  {{:{compare}s}}".format(
-            base=base_name_max, compare=compare_name_max
-        )
+        format_pattern = f"{{:{base_name_max}s}}  {{:{compare_name_max}s}}"
 
         print("\n****** Schema Differences ******", file=myfile)
         print(
@@ -729,9 +717,11 @@ class LegacySparkCompare:
             )
 
     def _base_to_compare_name(self, base_name: str) -> str:
-        """Translates a column name in the base dataframe to its counterpart in the
-        compare dataframe, if they are different."""
+        """Translate a column name.
 
+        Translates a column in the base dataframe to its counterpart in the
+        compare dataframe if they are different.
+        """
         if base_name in self.column_mapping:
             return self.column_mapping[base_name]
         else:
@@ -895,15 +885,16 @@ class LegacySparkCompare:
                         / self.common_row_count
                         + 0.0
                     )
-                    output_row.append("{:02.5f}".format(match_rate))
+                    output_row.append(f"{match_rate:02.5f}")
                 if num_known_diffs is not None:
                     output_row.insert(len(output_row) - 1, str(num_known_diffs))
                 print(format_pattern.format(*output_row), file=myfile)
 
     # noinspection PyUnresolvedReferences
     def report(self, file: TextIO = sys.stdout) -> None:
-        """Creates a comparison report and prints it to the file specified
-        (stdout by default).
+        """Create a comparison report and print it to the file specified.
+
+        Prints to stdout by default.
 
         Parameters
         ----------
@@ -917,7 +908,6 @@ class LegacySparkCompare:
         >>> with open('my_report.txt', 'w') as report_file:
         ...     comparison.report(file=report_file)
         """
-
         self._print_columns_summary(file)
         self._print_schema_diff_details(file)
         self._print_only_columns("BASE", file)

@@ -16,6 +16,7 @@
 """
 Testing out the datacompy functionality
 """
+
 import io
 import logging
 import sys
@@ -23,13 +24,12 @@ from datetime import datetime
 from decimal import Decimal
 from unittest import mock
 
+import datacompy
 import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_series_equal
 from pytest import raises
-
-import datacompy
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -509,7 +509,8 @@ def test_columns_maintain_order_through_set_operations():
 
 
 def test_10k_rows():
-    df1 = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    rng = np.random.default_rng()
+    df1 = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["b", "c"])
     df1.reset_index(inplace=True)
     df1.columns = ["a", "b", "c"]
     df2 = df1.copy()
@@ -552,7 +553,8 @@ def test_not_subset(caplog):
 
 
 def test_large_subset():
-    df1 = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    rng = np.random.default_rng()
+    df1 = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["b", "c"])
     df1.reset_index(inplace=True)
     df1.columns = ["a", "b", "c"]
     df2 = df1[["a", "b"]].sample(50).copy()
@@ -686,7 +688,7 @@ def test_temp_column_name_one_already():
     assert actual == "_temp_0"
 
 
-### Duplicate testing!
+# Duplicate testing!
 def test_simple_dupes_one_field():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])

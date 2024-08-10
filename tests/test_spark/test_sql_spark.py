@@ -19,7 +19,6 @@ Testing out the datacompy functionality
 
 import io
 import logging
-import re
 import sys
 from datetime import datetime
 from decimal import Decimal
@@ -33,15 +32,14 @@ from pytest import raises
 
 pytest.importorskip("pyspark")
 
-from pandas.testing import assert_series_equal  # noqa: E402
-
-from datacompy.spark.sql import (  # noqa: E402
+from datacompy.spark.sql import (
     SparkSQLCompare,
     _generate_id_within_group,
     calculate_max_diff,
     columns_equal,
     temp_column_name,
 )
+from pandas.testing import assert_series_equal
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -493,7 +491,8 @@ def test_columns_maintain_order_through_set_operations(spark_session):
 
 
 def test_10k_rows(spark_session):
-    pdf = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["b", "c"])
     pdf.reset_index(inplace=True)
     pdf.columns = ["a", "b", "c"]
     pdf2 = pdf.copy()
@@ -543,7 +542,8 @@ def test_not_subset(spark_session, caplog):
 
 
 def test_large_subset(spark_session):
-    pdf = pd.DataFrame(np.random.randint(0, 100, size=(10000, 2)), columns=["b", "c"])
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["b", "c"])
     pdf.reset_index(inplace=True)
     pdf.columns = ["a", "b", "c"]
     pdf2 = pdf[["a", "b"]].head(50).copy()
@@ -662,7 +662,7 @@ def test_temp_column_name_one_already(spark_session):
     assert actual == "_temp_0"
 
 
-### Duplicate testing!
+# Duplicate testing!
 
 
 def test_simple_dupes_one_field(spark_session):
