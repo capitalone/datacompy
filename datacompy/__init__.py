@@ -43,14 +43,12 @@ from datacompy.fugue import (
     unq_columns,
 )
 from datacompy.polars import PolarsCompare
-from datacompy.spark.pandas import SparkPandasCompare
 from datacompy.spark.sql import SparkSQLCompare
 
 __all__ = [
     "BaseCompare",
     "Compare",
     "PolarsCompare",
-    "SparkPandasCompare",
     "SparkSQLCompare",
     "all_columns_match",
     "all_rows_overlap",
@@ -78,3 +76,18 @@ if major == "3" and minor >= "12":
         UserWarning,
         stacklevel=2,
     )
+
+# numpy 2.0 check
+from numpy import __version__ as np_version
+
+if np_version.split(".")[0] >= "2":
+    warn(
+        "SparkPandasCompare currently only supports Numpy < 2."
+        "Please note that the SparkPandasCompare functionality will not work and currently is not supported.",
+        UserWarning,
+        stacklevel=2,
+    )
+else:
+    from datacompy.spark.pandas import SparkPandasCompare  # noqa: F401
+
+    __all__.append("SparkPandasCompare")
