@@ -749,6 +749,9 @@ def render(filename: str, *fields: Union[int, float, str]) -> str:
         return file_open.read().format(*fields)
 
 
+import pandas as pd
+import numpy as np
+
 def columns_equal(
     col_1: "pd.Series[Any]",
     col_2: "pd.Series[Any]",
@@ -816,9 +819,9 @@ def columns_equal(
                         col_2 = col_2.str.strip()
 
                 if ignore_case:
-                    if col_1.dtype.kind == "O":
+                    if col_1.dtype == 'object' and col_1.apply(lambda x: isinstance(x, str)).all():
                         col_1 = col_1.str.upper()
-                    if col_2.dtype.kind == "O":
+                    if col_2.dtype == 'object' and col_2.apply(lambda x: isinstance(x, str)).all():
                         col_2 = col_2.str.upper()
 
                 if {col_1.dtype.kind, col_2.dtype.kind} == {"M", "O"}:
