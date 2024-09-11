@@ -386,7 +386,9 @@ def test_compare_df_setter_bad():
         PolarsCompare("a", "a", ["a"])
     with raises(ValueError, match="df1 must have all columns from join_columns"):
         PolarsCompare(df, df.clone(), ["b"])
-    with raises(DuplicateError, match="duplicate column names found"):
+    with raises(
+        DuplicateError, match="column with name 'a' has more than one occurrences"
+    ):
         PolarsCompare(df_same_col_names, df_same_col_names.clone(), ["a"])
     assert PolarsCompare(df_dupe, df_dupe.clone(), ["a", "b"]).df1.equals(df_dupe)
 
@@ -416,7 +418,9 @@ def test_compare_df_setter_bad_index():
     df = pl.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
     with raises(TypeError, match="df1 must be a Polars DataFrame"):
         PolarsCompare("a", "a", join_columns="a")
-    with raises(DuplicateError, match="duplicate column names found"):
+    with raises(
+        DuplicateError, match="column with name 'a' has more than one occurrences"
+    ):
         PolarsCompare(df, df.clone(), join_columns="a")
 
 
