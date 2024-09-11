@@ -30,17 +30,16 @@ from pytest import raises
 
 pytest.importorskip("polars")
 
-import polars as pl  # noqa: E402
-from polars.exceptions import ComputeError, DuplicateError  # noqa: E402
-from polars.testing import assert_series_equal  # noqa: E402
-
-from datacompy import PolarsCompare  # noqa: E402
-from datacompy.polars import (  # noqa: E402
+import polars as pl
+from datacompy import PolarsCompare
+from datacompy.polars import (
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
     temp_column_name,
 )
+from polars.exceptions import ComputeError, DuplicateError
+from polars.testing import assert_series_equal
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -387,20 +386,18 @@ def test_compare_df_setter_bad():
         PolarsCompare("a", "a", ["a"])
     with raises(ValueError, match="df1 must have all columns from join_columns"):
         PolarsCompare(df, df.clone(), ["b"])
-    with raises(DuplicateError, match="duplicate column names found"):
+    with raises(
+        DuplicateError, match="column with name 'a' has more than one occurrences"
+    ):
         PolarsCompare(df_same_col_names, df_same_col_names.clone(), ["a"])
-    assert (
-        PolarsCompare(df_dupe, df_dupe.clone(), ["a", "b"])
-        .df1.drop("_merge_left")
-        .equals(df_dupe)
-    )
+    assert PolarsCompare(df_dupe, df_dupe.clone(), ["a", "b"]).df1.equals(df_dupe)
 
 
 def test_compare_df_setter_good():
     df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = pl.DataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
     compare = PolarsCompare(df1, df2, ["a"])
-    assert compare.df1.drop("_merge_left").equals(df1)
+    assert compare.df1.equals(df1)
     assert compare.df2.equals(df2)
     assert compare.join_columns == ["a"]
     compare = PolarsCompare(df1, df2, ["A", "b"])
@@ -421,7 +418,9 @@ def test_compare_df_setter_bad_index():
     df = pl.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
     with raises(TypeError, match="df1 must be a Polars DataFrame"):
         PolarsCompare("a", "a", join_columns="a")
-    with raises(DuplicateError, match="duplicate column names found"):
+    with raises(
+        DuplicateError, match="column with name 'a' has more than one occurrences"
+    ):
         PolarsCompare(df, df.clone(), join_columns="a")
 
 
@@ -473,7 +472,8 @@ def test_columns_maintain_order_through_set_operations():
 
 
 def test_10k_rows():
-    df1 = pl.DataFrame(np.random.randint(0, 100, size=(10000, 2)), schema=["b", "c"])
+    rng = np.random.default_rng()
+    df1 = pl.DataFrame(rng.integers(0, 100, size=(10000, 2)), schema=["b", "c"])
     df1 = df1.with_row_index()
     df1.columns = ["a", "b", "c"]
     df2 = df1.clone()
@@ -516,7 +516,8 @@ def test_not_subset(caplog):
 
 
 def test_large_subset():
-    df1 = pl.DataFrame(np.random.randint(0, 100, size=(10000, 2)), schema=["b", "c"])
+    rng = np.random.default_rng()
+    df1 = pl.DataFrame(rng.integers(0, 100, size=(10000, 2)), schema=["b", "c"])
     df1 = df1.with_row_index()
     df1.columns = ["a", "b", "c"]
     df2 = df1[["a", "b"]].sample(50).clone()
@@ -616,7 +617,7 @@ def test_temp_column_name_one_already():
     assert actual == "_temp_0"
 
 
-### Duplicate testing!
+# Duplicate testing!
 def test_simple_dupes_one_field():
     df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
@@ -859,7 +860,7 @@ def test_sample_mismatch():
 
     output = compare.sample_mismatch(column="name", sample_count=3)
     assert output.shape[0] == 2
-    assert (["name_df1"] != output["name_df2"]).all()
+    assert (output["name_df2"] != ["name_df1"]).all()
 
 
 def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():
@@ -1177,10 +1178,12 @@ MAX_DIFF_DF = pl.DataFrame(
         "strings": ["1", "1", "1", "1.1", "1"],
         "mixed_strings": ["1", "1", "1", "2", "some string"],
         "infinity": [1, 1, 1, 1, np.inf],
-    }
+    },
+    strict=False,
 )
 
 
+@pytest.mark.skipif(pl.__version__ < "1.0.0", reason="polars breaking changes")
 @pytest.mark.parametrize(
     "column,expected",
     [
@@ -1204,10 +1207,12 @@ def test_dupes_with_nulls():
         {
             "fld_1": [1, 2, 2, 3, 3, 4, 5, 5],
             "fld_2": ["A", np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-        }
+        },
+        strict=False,
     )
     df2 = pl.DataFrame(
-        {"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", np.nan, np.nan, np.nan, np.nan]}
+        {"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", np.nan, np.nan, np.nan, np.nan]},
+        strict=False,
     )
     comp = PolarsCompare(df1, df2, join_columns=["fld_1", "fld_2"])
     assert comp.subset()
@@ -1216,25 +1221,36 @@ def test_dupes_with_nulls():
 @pytest.mark.parametrize(
     "dataframe,expected",
     [
-        (pl.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}), pl.Series([1, 1, 1])),
         (
-            pl.DataFrame({"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}),
-            pl.Series([1, 2, 1]),
-        ),
-        (pl.DataFrame({"a": [-999, 2, 3], "b": [1, 2, 3]}), pl.Series([1, 1, 1])),
-        (
-            pl.DataFrame({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}),
-            pl.Series([1, 1, 2]),
-        ),
-        (
-            pl.DataFrame({"a": ["1", np.nan, np.nan], "b": ["1", "2", "2"]}),
-            pl.Series([1, 1, 2]),
+            pl.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}),
+            pl.Series([1, 1, 1], strict=False),
         ),
         (
             pl.DataFrame(
-                {"a": [datetime(2018, 1, 1), None, None], "b": ["1", "2", "2"]}
+                {"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}, strict=False
             ),
-            pl.Series([1, 1, 2]),
+            pl.Series([1, 2, 1], strict=False),
+        ),
+        (
+            pl.DataFrame({"a": [-999, 2, 3], "b": [1, 2, 3]}, strict=False),
+            pl.Series([1, 1, 1], strict=False),
+        ),
+        (
+            pl.DataFrame({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}, strict=False),
+            pl.Series([1, 1, 2], strict=False),
+        ),
+        (
+            pl.DataFrame(
+                {"a": ["1", np.nan, np.nan], "b": ["1", "2", "2"]}, strict=False
+            ),
+            pl.Series([1, 1, 2], strict=False),
+        ),
+        (
+            pl.DataFrame(
+                {"a": [datetime(2018, 1, 1), None, None], "b": ["1", "2", "2"]},
+                strict=False,
+            ),
+            pl.Series([1, 1, 2], strict=False),
         ),
     ],
 )
@@ -1242,11 +1258,14 @@ def test_generate_id_within_group(dataframe, expected):
     assert (generate_id_within_group(dataframe, ["a", "b"]) == expected).all()
 
 
+@pytest.mark.skipif(pl.__version__ < "1.0.0", reason="polars breaking changes")
 @pytest.mark.parametrize(
     "dataframe, message",
     [
         (
-            pl.DataFrame({"a": [1, np.nan, "DATACOMPY_NULL"], "b": [1, 2, 3]}),
+            pl.DataFrame(
+                {"a": [1, None, "DATACOMPY_NULL"], "b": [1, 2, 3]}, strict=False
+            ),
             "DATACOMPY_NULL was found in your join columns",
         )
     ],

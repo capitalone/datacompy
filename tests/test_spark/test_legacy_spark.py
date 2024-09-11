@@ -23,8 +23,13 @@ import pytest
 
 pytest.importorskip("pyspark")
 
-from pyspark.sql import Row  # noqa: E402
-from pyspark.sql.types import (  # noqa: E402
+from datacompy.spark.legacy import (
+    NUMERIC_SPARK_TYPES,
+    LegacySparkCompare,
+    _is_comparable,
+)
+from pyspark.sql import Row
+from pyspark.sql.types import (
     DateType,
     DecimalType,
     DoubleType,
@@ -32,12 +37,6 @@ from pyspark.sql.types import (  # noqa: E402
     StringType,
     StructField,
     StructType,
-)
-
-from datacompy.spark.legacy import (  # noqa: E402
-    NUMERIC_SPARK_TYPES,
-    LegacySparkCompare,
-    _is_comparable,
 )
 
 # Turn off py4j debug messages for all tests in this module

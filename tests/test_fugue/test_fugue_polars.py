@@ -13,10 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Test fugue and polars."""
-import pytest
-from ordered_set import OrderedSet
-from pytest import raises
 
+import pytest
 from datacompy import (
     all_columns_match,
     all_rows_overlap,
@@ -25,6 +23,8 @@ from datacompy import (
     is_match,
     unq_columns,
 )
+from ordered_set import OrderedSet
+from pytest import raises
 
 pl = pytest.importorskip("polars")
 

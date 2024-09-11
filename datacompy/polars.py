@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Compare two Polars DataFrames
+Compare two Polars DataFrames.
 
 Originally this package was meant to provide similar functionality to
 PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 import numpy as np
 from ordered_set import OrderedSet
 
-from .base import BaseCompare, temp_column_name
+from datacompy.base import BaseCompare, temp_column_name
 
 try:
     import polars as pl
@@ -123,19 +123,20 @@ class PolarsCompare(BaseCompare):
         self.rel_tol = rel_tol
         self.ignore_spaces = ignore_spaces
         self.ignore_case = ignore_case
-        self.df1_unq_rows: "pl.DataFrame"
-        self.df2_unq_rows: "pl.DataFrame"
-        self.intersect_rows: "pl.DataFrame"
+        self.df1_unq_rows: pl.DataFrame
+        self.df2_unq_rows: pl.DataFrame
+        self.intersect_rows: pl.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
     @property
     def df1(self) -> "pl.DataFrame":
+        """Get the first dataframe."""
         return self._df1
 
     @df1.setter
     def df1(self, df1: "pl.DataFrame") -> None:
-        """Check that it is a dataframe and has the join columns"""
+        """Check that it is a dataframe and has the join columns."""
         self._df1 = df1
         self._validate_dataframe(
             "df1", cast_column_names_lower=self.cast_column_names_lower
@@ -143,11 +144,12 @@ class PolarsCompare(BaseCompare):
 
     @property
     def df2(self) -> "pl.DataFrame":
+        """Get the second dataframe."""
         return self._df2
 
     @df2.setter
     def df2(self, df2: "pl.DataFrame") -> None:
-        """Check that it is a dataframe and has the join columns"""
+        """Check that it is a dataframe and has the join columns."""
         self._df2 = df2
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
@@ -156,7 +158,7 @@ class PolarsCompare(BaseCompare):
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
     ) -> None:
-        """Check that it is a dataframe and has the join columns
+        """Check that it is a dataframe and has the join columns.
 
         Parameters
         ----------
@@ -183,7 +185,9 @@ class PolarsCompare(BaseCompare):
             self._any_dupes = True
 
     def _compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
-        """Actually run the comparison.  This tries to run df1.equals(df2)
+        """Run the comparison.
+
+        This tries to run df1.equals(df2)
         first so that if they're truly equal we can tell.
 
         This method will log out information about what is different between
@@ -215,24 +219,26 @@ class PolarsCompare(BaseCompare):
             LOG.info("df1 does not match df2")
 
     def df1_unq_columns(self) -> OrderedSet[str]:
-        """Get columns that are unique to df1"""
+        """Get columns that are unique to df1."""
         return cast(
             OrderedSet[str], OrderedSet(self.df1.columns) - OrderedSet(self.df2.columns)
         )
 
     def df2_unq_columns(self) -> OrderedSet[str]:
-        """Get columns that are unique to df2"""
+        """Get columns that are unique to df2."""
         return cast(
             OrderedSet[str], OrderedSet(self.df2.columns) - OrderedSet(self.df1.columns)
         )
 
     def intersect_columns(self) -> OrderedSet[str]:
-        """Get columns that are shared between the two dataframes"""
+        """Get columns that are shared between the two dataframes."""
         return OrderedSet(self.df1.columns) & OrderedSet(self.df2.columns)
 
     def _dataframe_merge(self, ignore_spaces: bool) -> None:
-        """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
-        and df1 & df2
+        """Merge df1 to df2 on the join columns.
+
+        To get df1 - df2, df2 - df1
+        and df1 & df2.
         """
         params: Dict[str, Any]
         LOG.debug("Outer joining")
@@ -274,24 +280,15 @@ class PolarsCompare(BaseCompare):
         df1 = df1.with_columns(_merge_left=pl.lit(True))
         df2 = df2.with_columns(_merge_right=pl.lit(True))
 
-        outer_join = df1.join(df2, how="outer_coalesce", join_nulls=True, **params)
+        outer_join = df1.join(df2, how="full", coalesce=True, join_nulls=True, **params)
 
         # process merge indicator
         outer_join = outer_join.with_columns(
-            pl.when(
-                (pl.col("_merge_left") == True)
-                & (pl.col("_merge_right") == True)  # noqa: E712
-            )
+            pl.when(pl.col("_merge_left") & pl.col("_merge_right"))
             .then(pl.lit("both"))
-            .when(
-                (pl.col("_merge_left") == True)
-                & (pl.col("_merge_right").is_null())  # noqa: E712
-            )
+            .when(pl.col("_merge_left") & pl.col("_merge_right").is_null())
             .then(pl.lit("left_only"))
-            .when(
-                (pl.col("_merge_left").is_null())
-                & (pl.col("_merge_right") == True)  # noqa: E712
-            )
+            .when(pl.col("_merge_left").is_null() & pl.col("_merge_right"))
             .then(pl.lit("right_only"))
             .alias("_merge")
         )
@@ -325,7 +322,7 @@ class PolarsCompare(BaseCompare):
         )
 
     def _intersect_compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
-        """Run the comparison on the intersect dataframe
+        """Run the comparison on the intersect dataframe.
 
         This loops through all columns that are shared between df1 and df2, and
         creates a column column_match which is True for matches, False
@@ -390,11 +387,11 @@ class PolarsCompare(BaseCompare):
             )
 
     def all_columns_match(self) -> bool:
-        """Whether the columns all match in the dataframes"""
+        """Whether the columns all match in the dataframes."""
         return self.df1_unq_columns() == self.df2_unq_columns() == set()
 
     def all_rows_overlap(self) -> bool:
-        """Whether the rows are all present in both dataframes
+        """Whether the rows are all present in both dataframes.
 
         Returns
         -------
@@ -405,7 +402,7 @@ class PolarsCompare(BaseCompare):
         return len(self.df1_unq_rows) == len(self.df2_unq_rows) == 0
 
     def count_matching_rows(self) -> int:
-        """Count the number of rows match (on overlapping fields)
+        """Count the number of rows match (on overlapping fields).
 
         Returns
         -------
@@ -432,7 +429,7 @@ class PolarsCompare(BaseCompare):
                 return 0
 
     def intersect_rows_match(self) -> bool:
-        """Check whether the intersect rows all match"""
+        """Check whether the intersect rows all match."""
         actual_length = self.intersect_rows.shape[0]
         return self.count_matching_rows() == actual_length
 
@@ -449,14 +446,11 @@ class PolarsCompare(BaseCompare):
         bool
             True or False if the dataframes match.
         """
-        if not ignore_extra_columns and not self.all_columns_match():
-            return False
-        elif not self.all_rows_overlap():
-            return False
-        elif not self.intersect_rows_match():
-            return False
-        else:
-            return True
+        return (
+            (ignore_extra_columns or self.all_columns_match())
+            and self.all_rows_overlap()
+            and self.intersect_rows_match()
+        )
 
     def subset(self) -> bool:
         """Return True if dataframe 2 is a subset of dataframe 1.
@@ -470,19 +464,18 @@ class PolarsCompare(BaseCompare):
         bool
             True if dataframe 2 is a subset of dataframe 1.
         """
-        if not self.df2_unq_columns() == set():
-            return False
-        elif not len(self.df2_unq_rows) == 0:
-            return False
-        elif not self.intersect_rows_match():
-            return False
-        else:
-            return True
+        return (
+            self.df2_unq_columns() == set()
+            and len(self.df2_unq_rows) == 0
+            and self.intersect_rows_match()
+        )
 
     def sample_mismatch(
         self, column: str, sample_count: int = 10, for_display: bool = False
     ) -> "pl.DataFrame":
-        """Returns a sample sub-dataframe which contains the identifying
+        """Return sample mismatches.
+
+        Get a sub-dataframe which contains the identifying
         columns, and df1 and df2 versions of the column.
 
         Parameters
@@ -509,20 +502,24 @@ class PolarsCompare(BaseCompare):
         sample = self.intersect_rows.filter(
             pl.col(column + "_match") != True  # noqa: E712
         ).sample(sample_count)
-        return_cols = self.join_columns + [
+        return_cols = [
+            *self.join_columns,
             column + "_" + self.df1_name,
             column + "_" + self.df2_name,
         ]
         to_return = sample[return_cols]
         if for_display:
-            to_return.columns = self.join_columns + [
+            to_return.columns = [
+                *self.join_columns,
                 column + " (" + self.df1_name + ")",
                 column + " (" + self.df2_name + ")",
             ]
         return to_return
 
     def all_mismatch(self, ignore_matching_cols: bool = False) -> "pl.DataFrame":
-        """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
+        """Get all rows with any columns that have a mismatch.
+
+        Returns all df1 and df2 versions of the columns and join
         columns.
 
         Parameters
@@ -577,7 +574,9 @@ class PolarsCompare(BaseCompare):
         column_count: int = 10,
         html_file: Optional[str] = None,
     ) -> str:
-        """Returns a string representation of a report.  The representation can
+        """Return a string representation of a report.
+
+        The representation can
         then be printed or saved to a file.
 
         Parameters
@@ -644,7 +643,7 @@ class PolarsCompare(BaseCompare):
             "column_comparison.txt",
             len([col for col in self.column_stats if col["unequal_cnt"] > 0]),
             len([col for col in self.column_stats if col["unequal_cnt"] == 0]),
-            sum([col["unequal_cnt"] for col in self.column_stats]),
+            sum(col["unequal_cnt"] for col in self.column_stats),
         )
 
         match_stats = []
@@ -737,7 +736,9 @@ class PolarsCompare(BaseCompare):
 
 
 def render(filename: str, *fields: Union[int, float, str]) -> str:
-    """Renders out an individual template.  This basically just reads in a
+    """Render out an individual template.
+
+    This basically just reads in a
     template file, and applies ``.format()`` on the fields.
 
     Parameters
@@ -766,7 +767,9 @@ def columns_equal(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
 ) -> "pl.Series":
-    """Compares two columns from a dataframe, returning a True/False series,
+    """Compare two columns from a dataframe.
+
+    Returns a True/False series,
     with the same index as column 1.
 
     - Two nulls (np.nan) will evaluate to True.
@@ -850,7 +853,9 @@ def columns_equal(
 def compare_string_and_date_columns(
     col_1: "pl.Series", col_2: "pl.Series"
 ) -> "pl.Series":
-    """Compare a string column and date column, value-wise.  This tries to
+    """Compare a string column and date column, value-wise.
+
+    This tries to
     convert a string column to a date column and compare that way.
 
     Parameters
@@ -885,7 +890,7 @@ def compare_string_and_date_columns(
 def get_merged_columns(
     original_df: "pl.DataFrame", merged_df: "pl.DataFrame", suffix: str
 ) -> List[str]:
-    """Gets the columns from an original dataframe, in the new merged dataframe
+    """Get the columns from an original dataframe, in the new merged dataframe.
 
     Parameters
     ----------
@@ -909,7 +914,7 @@ def get_merged_columns(
 
 
 def calculate_max_diff(col_1: "pl.Series", col_2: "pl.Series") -> float:
-    """Get a maximum difference between two columns
+    """Get a maximum difference between two columns.
 
     Parameters
     ----------
@@ -934,7 +939,9 @@ def calculate_max_diff(col_1: "pl.Series", col_2: "pl.Series") -> float:
 def generate_id_within_group(
     dataframe: "pl.DataFrame", join_columns: List[str]
 ) -> "pl.Series":
-    """Generate an ID column that can be used to deduplicate identical rows.  The series generated
+    """Generate an ID column that can be used to deduplicate identical rows.
+
+    The series generated
     is the order within a unique group, and it handles nulls.
 
     Parameters

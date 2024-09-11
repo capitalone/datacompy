@@ -13,11 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Test fugue and spark."""
-import pytest
-from ordered_set import OrderedSet
-from pytest import raises
-from test_fugue_helpers import _compare_report
 
+import pytest
 from datacompy import (
     Compare,
     all_columns_match,
@@ -28,6 +25,9 @@ from datacompy import (
     report,
     unq_columns,
 )
+from ordered_set import OrderedSet
+from pytest import raises
+from test_fugue_helpers import _compare_report
 
 pyspark = pytest.importorskip("pyspark")
 

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Compare two Pandas DataFrames
+Compare two Pandas DataFrames.
 
 Originally this package was meant to provide similar functionality to
 PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
@@ -29,7 +29,7 @@ import numpy as np
 import pandas as pd
 from ordered_set import OrderedSet
 
-from .base import BaseCompare, temp_column_name
+from datacompy.base import BaseCompare, temp_column_name
 
 LOG = logging.getLogger(__name__)
 
@@ -131,11 +131,12 @@ class Compare(BaseCompare):
 
     @property
     def df1(self) -> pd.DataFrame:
+        """Get the first dataframe."""
         return self._df1
 
     @df1.setter
     def df1(self, df1: pd.DataFrame) -> None:
-        """Check that it is a dataframe and has the join columns"""
+        """Check that it is a dataframe and has the join columns."""
         self._df1 = df1
         self._validate_dataframe(
             "df1", cast_column_names_lower=self.cast_column_names_lower
@@ -143,11 +144,12 @@ class Compare(BaseCompare):
 
     @property
     def df2(self) -> pd.DataFrame:
+        """Get the second dataframe."""
         return self._df2
 
     @df2.setter
     def df2(self, df2: pd.DataFrame) -> None:
-        """Check that it is a dataframe and has the join columns"""
+        """Check that it is a dataframe and has the join columns."""
         self._df2 = df2
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
@@ -156,7 +158,7 @@ class Compare(BaseCompare):
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
     ) -> None:
-        """Check that it is a dataframe and has the join columns
+        """Check that it is a dataframe and has the join columns.
 
         Parameters
         ----------
@@ -192,7 +194,9 @@ class Compare(BaseCompare):
                 self._any_dupes = True
 
     def _compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
-        """Actually run the comparison.  This tries to run df1.equals(df2)
+        """Run the comparison.
+
+        This tries to run df1.equals(df2)
         first so that if they're truly equal we can tell.
 
         This method will log out information about what is different between
@@ -224,24 +228,26 @@ class Compare(BaseCompare):
             LOG.info("df1 does not match df2")
 
     def df1_unq_columns(self) -> OrderedSet[str]:
-        """Get columns that are unique to df1"""
+        """Get columns that are unique to df1."""
         return cast(
             OrderedSet[str], OrderedSet(self.df1.columns) - OrderedSet(self.df2.columns)
         )
 
     def df2_unq_columns(self) -> OrderedSet[str]:
-        """Get columns that are unique to df2"""
+        """Get columns that are unique to df2."""
         return cast(
             OrderedSet[str], OrderedSet(self.df2.columns) - OrderedSet(self.df1.columns)
         )
 
     def intersect_columns(self) -> OrderedSet[str]:
-        """Get columns that are shared between the two dataframes"""
+        """Get columns that are shared between the two dataframes."""
         return OrderedSet(self.df1.columns) & OrderedSet(self.df2.columns)
 
     def _dataframe_merge(self, ignore_spaces: bool) -> None:
-        """Merge df1 to df2 on the join columns, to get df1 - df2, df2 - df1
-        and df1 & df2
+        """Merge df1 to df2 on the join columns.
+
+        To get df1 - df2, df2 - df1
+        and df1 & df2.
 
         If ``on_index`` is True, this will join on index values, otherwise it
         will join on the ``join_columns``.
@@ -324,7 +330,7 @@ class Compare(BaseCompare):
         )
 
     def _intersect_compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
-        """Run the comparison on the intersect dataframe
+        """Run the comparison on the intersect dataframe.
 
         This loops through all columns that are shared between df1 and df2, and
         creates a column column_match which is True for matches, False
@@ -385,11 +391,11 @@ class Compare(BaseCompare):
             )
 
     def all_columns_match(self) -> bool:
-        """Whether the columns all match in the dataframes"""
+        """Whether the columns all match in the dataframes."""
         return self.df1_unq_columns() == self.df2_unq_columns() == set()
 
     def all_rows_overlap(self) -> bool:
-        """Whether the rows are all present in both dataframes
+        """Whether the rows are all present in both dataframes.
 
         Returns
         -------
@@ -400,7 +406,7 @@ class Compare(BaseCompare):
         return len(self.df1_unq_rows) == len(self.df2_unq_rows) == 0
 
     def count_matching_rows(self) -> int:
-        """Count the number of rows match (on overlapping fields)
+        """Count the number of rows match (on overlapping fields).
 
         Returns
         -------
@@ -414,7 +420,7 @@ class Compare(BaseCompare):
         return self.intersect_rows[match_columns].all(axis=1).sum()
 
     def intersect_rows_match(self) -> bool:
-        """Check whether the intersect rows all match"""
+        """Check whether the intersect rows all match."""
         actual_length = self.intersect_rows.shape[0]
         return self.count_matching_rows() == actual_length
 
@@ -431,14 +437,11 @@ class Compare(BaseCompare):
         bool
             True or False if the dataframes match.
         """
-        if not ignore_extra_columns and not self.all_columns_match():
-            return False
-        elif not self.all_rows_overlap():
-            return False
-        elif not self.intersect_rows_match():
-            return False
-        else:
-            return True
+        return (
+            (ignore_extra_columns or self.all_columns_match())
+            and self.all_rows_overlap()
+            and self.intersect_rows_match()
+        )
 
     def subset(self) -> bool:
         """Return True if dataframe 2 is a subset of dataframe 1.
@@ -452,19 +455,18 @@ class Compare(BaseCompare):
         bool
             True if dataframe 2 is a subset of dataframe 1.
         """
-        if not self.df2_unq_columns() == set():
-            return False
-        elif not len(self.df2_unq_rows) == 0:
-            return False
-        elif not self.intersect_rows_match():
-            return False
-        else:
-            return True
+        return (
+            self.df2_unq_columns() == set()
+            and len(self.df2_unq_rows) == 0
+            and self.intersect_rows_match()
+        )
 
     def sample_mismatch(
         self, column: str, sample_count: int = 10, for_display: bool = False
     ) -> pd.DataFrame:
-        """Returns a sample sub-dataframe which contains the identifying
+        """Return sample mismatches.
+
+        Gets a sub-dataframe which contains the identifying
         columns, and df1 and df2 versions of the column.
 
         Parameters
@@ -489,15 +491,16 @@ class Compare(BaseCompare):
         match_cnt = col_match.sum()
         sample_count = min(sample_count, row_cnt - match_cnt)
         sample = self.intersect_rows[~col_match].sample(sample_count)
-        return_cols = self.join_columns + [
+        return_cols = [
+            *self.join_columns,
             column + "_" + self.df1_name,
             column + "_" + self.df2_name,
         ]
         to_return = sample[return_cols]
         if for_display:
             to_return.columns = pd.Index(
-                self.join_columns
-                + [
+                [
+                    *self.join_columns,
                     column + " (" + self.df1_name + ")",
                     column + " (" + self.df2_name + ")",
                 ]
@@ -505,7 +508,9 @@ class Compare(BaseCompare):
         return to_return
 
     def all_mismatch(self, ignore_matching_cols: bool = False) -> pd.DataFrame:
-        """All rows with any columns that have a mismatch. Returns all df1 and df2 versions of the columns and join
+        """Get all rows with any columns that have a mismatch.
+
+        Returns all df1 and df2 versions of the columns and join
         columns.
 
         Parameters
@@ -558,7 +563,9 @@ class Compare(BaseCompare):
         column_count: int = 10,
         html_file: Optional[str] = None,
     ) -> str:
-        """Returns a string representation of a report.  The representation can
+        """Return a string representation of a report.
+
+        The representation can
         then be printed or saved to a file.
 
         Parameters
@@ -630,7 +637,7 @@ class Compare(BaseCompare):
             "column_comparison.txt",
             len([col for col in self.column_stats if col["unequal_cnt"] > 0]),
             len([col for col in self.column_stats if col["unequal_cnt"] == 0]),
-            sum([col["unequal_cnt"] for col in self.column_stats]),
+            sum(col["unequal_cnt"] for col in self.column_stats),
         )
 
         match_stats = []
@@ -719,7 +726,9 @@ class Compare(BaseCompare):
 
 
 def render(filename: str, *fields: Union[int, float, str]) -> str:
-    """Renders out an individual template.  This basically just reads in a
+    """Render out an individual template.
+
+    This basically just reads in a
     template file, and applies ``.format()`` on the fields.
 
     Parameters
@@ -748,7 +757,9 @@ def columns_equal(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
 ) -> "pd.Series[bool]":
-    """Compares two columns from a dataframe, returning a True/False series,
+    """Compare two columns from a dataframe.
+
+    Returns a True/False series,
     with the same index as column 1.
 
     - Two nulls (np.nan) will evaluate to True.
@@ -826,7 +837,9 @@ def columns_equal(
 def compare_string_and_date_columns(
     col_1: "pd.Series[Any]", col_2: "pd.Series[Any]"
 ) -> "pd.Series[bool]":
-    """Compare a string column and date column, value-wise.  This tries to
+    """Compare a string column and date column, value-wise.
+
+    This tries to
     convert a string column to a date column and compare that way.
 
     Parameters
@@ -867,7 +880,7 @@ def compare_string_and_date_columns(
 def get_merged_columns(
     original_df: pd.DataFrame, merged_df: pd.DataFrame, suffix: str
 ) -> List[str]:
-    """Gets the columns from an original dataframe, in the new merged dataframe
+    """Get the columns from an original dataframe, in the new merged dataframe.
 
     Parameters
     ----------
@@ -891,7 +904,7 @@ def get_merged_columns(
 
 
 def calculate_max_diff(col_1: "pd.Series[Any]", col_2: "pd.Series[Any]") -> float:
-    """Get a maximum difference between two columns
+    """Get a maximum difference between two columns.
 
     Parameters
     ----------
@@ -914,7 +927,9 @@ def calculate_max_diff(col_1: "pd.Series[Any]", col_2: "pd.Series[Any]") -> floa
 def generate_id_within_group(
     dataframe: pd.DataFrame, join_columns: List[str]
 ) -> "pd.Series[int]":
-    """Generate an ID column that can be used to deduplicate identical rows.  The series generated
+    """Generate an ID column that can be used to deduplicate identical rows.
+
+    The series generated
     is the order within a unique group, and it handles nulls.
 
     Parameters
