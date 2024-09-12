@@ -263,3 +263,6 @@ Additional considerations
 - It is strongly recommended against joining on float columns (or any column with floating point precision).
 Columns joining tables are compared on the basis of an exact comparison, therefore if the values comparing
 your float columns are not exact, you will likely get unexpected results.
+- Case-sensitive columns are only partially supported. We essentially treat case-sensitive
+columns as if they are case-insensitive. Therefore you may use case-sensitive columns as long as
+you don't have several columns with the same name differentiated only be case sensitivity.
