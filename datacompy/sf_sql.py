@@ -87,9 +87,6 @@ class SFTableCompare(BaseCompare):
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns (including any join
         columns).
-    cast_join_columns_upper : bool, optional
-        Uppercases joined columns, enabled by default as columns are by default uppercased in
-        Snowpark.
 
     Attributes
     ----------
@@ -108,7 +105,6 @@ class SFTableCompare(BaseCompare):
         abs_tol: float = 0,
         rel_tol: float = 0,
         ignore_spaces: bool = False,
-        cast_join_columns_upper=True,
     ) -> None:
         if join_columns is None:
             errmsg = "join_columns cannot be None"
@@ -117,17 +113,12 @@ class SFTableCompare(BaseCompare):
             errmsg = "join_columns is empty"
             raise ValueError(errmsg)
         elif isinstance(join_columns, (str, int, float)):
-            self.join_columns = (
-                [str(join_columns).upper()]
-                if cast_join_columns_upper
-                else [str(join_columns)]
-            )
+            self.join_columns = [str(join_columns).replace('"', "").upper()]
         else:
-            self.join_columns = (
-                [str(col).upper() for col in cast(List[str], join_columns)]
-                if cast_join_columns_upper
-                else [str(col) for col in cast(List[str], join_columns)]
-            )
+            self.join_columns = [
+                str(col).replace('"', "").upper()
+                for col in cast(List[str], join_columns)
+            ]
 
         self._any_dupes: bool = False
         self.session = session
@@ -161,7 +152,7 @@ class SFTableCompare(BaseCompare):
         else:
             self._df1 = df1
             self.df1_name = "DF1"
-        self._validate_dataframe(self.df1, self.df1_name)
+        self._validate_dataframe(self.df1, self.df1_name, "df1")
 
     @property
     def df2(self) -> sp.DataFrame:
@@ -182,9 +173,9 @@ class SFTableCompare(BaseCompare):
         else:
             self._df2 = df2
             self.df2_name = "DF2"
-        self._validate_dataframe(self.df2, self.df2_name)
+        self._validate_dataframe(self.df2, self.df2_name, "df2")
 
-    def _validate_dataframe(self, df: sp.DataFrame, df_name: str) -> None:
+    def _validate_dataframe(self, df: sp.DataFrame, df_name: str, index: str) -> None:
         """Validate the provided Snowpark dataframe.
 
         The dataframe can either be a standalone Snowpark dataframe or a representative
@@ -195,14 +186,32 @@ class SFTableCompare(BaseCompare):
         ----------
         df : sp.DataFrame
             Snowpark Dataframe (either directly instantiated or as a Snowpark Table object).
+        df_name : str
+            Name of the Snowflake table / Snowpark dataframe
+        index : str
+            The "index" of the dataframe - df1 or df2.
         """
         if not isinstance(df, sp.DataFrame):
             raise TypeError(f"{df_name} must be a valid sp.Dataframe")
-        # Check that the dataframe actually exists by forcing collection
-        df.columns  # noqa: B018
-        # Check if join_columns are present in the dataframe
+
+        # force all columns to be non-case-sensitive
+        if index == "df1":
+            col_map = zip(
+                self._df1.columns,
+                [str(c).replace('"', "").upper() for c in self._df1.columns],
+            )
+            self._df1 = self._df1.rename(dict(col_map))
+        if index == "df2":
+            col_map = zip(
+                self._df2.columns,
+                [str(c).replace('"', "").upper() for c in self._df2.columns],
+            )
+            self._df2 = self._df2.rename(dict(col_map))
+
         if not set(self.join_columns).issubset(set(df.columns)):
             raise ValueError(f"{df_name} must have all columns from join_columns")
+        if len(set(df.columns)) < len(df.columns):
+            raise ValueError(f"{df_name} must have unique column names")
 
         if df.drop_duplicates(self.join_columns).count() < df.count():
             self._any_dupes = True

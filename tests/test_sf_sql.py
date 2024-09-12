@@ -425,14 +425,6 @@ def test_compare_df_setter_different_cases(snowpark_session):
     assert compare.df1.toPandas().equals(df1.toPandas())
 
 
-def test_compare_default_uppercase_join_columns(snowpark_session):
-    df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 2}])
-    df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
-    with raises(ValueError, match="DF1 must have all columns from join_columns"):
-        SFTableCompare(snowpark_session, df1, df2, ["a"], cast_join_columns_upper=False)
-    assert SFTableCompare(snowpark_session, df1, df2, ["a"])
-
-
 def test_columns_overlap(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 2}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
@@ -852,6 +844,37 @@ def test_joins_with_ignore_spaces(snowpark_session):
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A "}])
 
     compare = SFTableCompare(snowpark_session, df1, df2, "A", ignore_spaces=True)
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+
+
+def test_joins_with_insensitive_lowercase_cols(snowpark_session):
+    df1 = snowpark_session.createDataFrame([{"a": 1, "B": "A"}, {"a": 2, "B": "A"}])
+    df2 = snowpark_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A"}])
+
+    compare = SFTableCompare(snowpark_session, df1, df2, "A")
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+
+    df1 = snowpark_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A"}])
+    df2 = snowpark_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A"}])
+
+    compare = SFTableCompare(snowpark_session, df1, df2, "a")
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+
+
+def test_joins_with_sensitive_lowercase_cols(snowpark_session):
+    df1 = snowpark_session.createDataFrame([{'"a"': 1, "B": "A"}, {'"a"': 2, "B": "A"}])
+    df2 = snowpark_session.createDataFrame([{'"a"': 1, "B": "A"}, {'"a"': 2, "B": "A"}])
+
+    compare = SFTableCompare(snowpark_session, df1, df2, '"a"')
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
