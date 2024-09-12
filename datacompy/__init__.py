@@ -43,6 +43,7 @@ from datacompy.fugue import (
     unq_columns,
 )
 from datacompy.polars import PolarsCompare
+from datacompy.sf_sql import SFTableCompare
 from datacompy.spark.pandas import SparkPandasCompare
 from datacompy.spark.sql import SparkSQLCompare
 
@@ -50,6 +51,7 @@ __all__ = [
     "BaseCompare",
     "Compare",
     "PolarsCompare",
+    "SFTableCompare",
     "SparkPandasCompare",
     "SparkSQLCompare",
     "all_columns_match",
