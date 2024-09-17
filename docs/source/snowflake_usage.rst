@@ -1,7 +1,7 @@
 Snowpark/Snowflake Usage
 ========================
 
-For ``SFTableCompare``
+For ``SnowflakeCompare``
 
 - ``on_index`` is not supported.
 - Joining is done using ``EQUAL_NULL`` which is the equality test that is safe for null values.
@@ -9,9 +9,9 @@ For ``SFTableCompare``
 or the as the names of full names of valid snowflake tables, which we will process into Snowpark dataframes.
 
 
-SFTableCompare Object Setup
+SnowflakeCompare Object Setup
 ---------------------------------------------------
-There are two ways to specify input dataframes for ``SFTableCompare``
+There are two ways to specify input dataframes for ``SnowflakeCompare``
 
 Provide Snowpark dataframes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -21,7 +21,7 @@ Provide Snowpark dataframes
     from snowflake.snowpark import Session
     from snowflake.snowpark import Row
     import datetime
-    import datacompy.sf_sql as sp
+    import datacompy.snowflake as sp
 
     connection_parameters = {
         ...
@@ -52,7 +52,7 @@ Provide Snowpark dataframes
     df_1 = session.createDataFrame(data1)
     df_2 = session.createDataFrame(data2)
 
-    compare = sp.SFTableCompare(
+    compare = sp.SnowflakeCompare(
         session,
         df_1,
         df_2,
@@ -74,7 +74,7 @@ Given the dataframes from the prior examples...
     df_1.write.mode("overwrite").save_as_table("toy_table_1")
     df_2.write.mode("overwrite").save_as_table("toy_table_2")
 
-    compare = sp.SFTableCompare(
+    compare = sp.SnowflakeCompare(
         session,
         f"{db}.{schema}.toy_table_1",
         f"{db}.{schema}.toy_table_2",

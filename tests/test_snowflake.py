@@ -32,8 +32,8 @@ from pytest import raises
 
 pytest.importorskip("pyspark")
 
-from datacompy.sf_sql import (
-    SFTableCompare,
+from datacompy.snowflake import (
+    SnowflakeCompare,
     _generate_id_within_group,
     calculate_max_diff,
     columns_equal,
@@ -344,12 +344,12 @@ def test_infinity_and_beyond(snowpark_session):
 def test_compare_table_setter_bad(snowpark_session):
     # Invalid table name
     with raises(ValueError, match="invalid_table_name_1 is not a valid table name."):
-        SFTableCompare(
+        SnowflakeCompare(
             snowpark_session, "invalid_table_name_1", "invalid_table_name_2", ["A"]
         )
     # Valid table name but table does not exist
     with raises(SnowparkSQLException):
-        SFTableCompare(
+        SnowflakeCompare(
             snowpark_session, "non.existant.table_1", "non.existant.table_2", ["A"]
         )
 
@@ -379,7 +379,7 @@ def test_compare_table_setter_good(snowpark_session):
         df, toy_table_name_2, table_type="temp", auto_create_table=True, overwrite=True
     )
 
-    compare = SFTableCompare(
+    compare = SnowflakeCompare(
         snowpark_session,
         full_toy_table_name_1,
         full_toy_table_name_2,
@@ -393,13 +393,13 @@ def test_compare_df_setter_bad(snowpark_session):
     pdf = pd.DataFrame([{"A": 1, "C": 2}, {"A": 2, "C": 2}])
     df = snowpark_session.createDataFrame(pdf)
     with raises(TypeError, match="DF1 must be a valid sp.Dataframe"):
-        SFTableCompare(snowpark_session, 3, 2, ["A"])
+        SnowflakeCompare(snowpark_session, 3, 2, ["A"])
     with raises(ValueError, match="DF1 must have all columns from join_columns"):
-        SFTableCompare(snowpark_session, df, df.select("*"), ["B"])
+        SnowflakeCompare(snowpark_session, df, df.select("*"), ["B"])
     pdf = pd.DataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 3}])
     df_dupe = snowpark_session.createDataFrame(pdf)
     pd.testing.assert_frame_equal(
-        SFTableCompare(
+        SnowflakeCompare(
             snowpark_session, df_dupe, df_dupe.select("*"), ["A", "B"]
         ).df1.toPandas(),
         pdf,
@@ -410,10 +410,10 @@ def test_compare_df_setter_bad(snowpark_session):
 def test_compare_df_setter_good(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 2}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
-    compare = SFTableCompare(snowpark_session, df1, df2, ["A"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, ["A"])
     assert compare.df1.toPandas().equals(df1.toPandas())
     assert compare.join_columns == ["A"]
-    compare = SFTableCompare(snowpark_session, df1, df2, ["A", "B"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, ["A", "B"])
     assert compare.df1.toPandas().equals(df1.toPandas())
     assert compare.join_columns == ["A", "B"]
 
@@ -421,14 +421,14 @@ def test_compare_df_setter_good(snowpark_session):
 def test_compare_df_setter_different_cases(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 2}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
-    compare = SFTableCompare(snowpark_session, df1, df2, ["A"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, ["A"])
     assert compare.df1.toPandas().equals(df1.toPandas())
 
 
 def test_columns_overlap(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 2}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
-    compare = SFTableCompare(snowpark_session, df1, df2, ["A"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, ["A"])
     assert compare.df1_unq_columns() == set()
     assert compare.df2_unq_columns() == set()
     assert compare.intersect_columns() == {"A", "B"}
@@ -441,7 +441,7 @@ def test_columns_no_overlap(snowpark_session):
     df2 = snowpark_session.createDataFrame(
         [{"A": 1, "B": 2, "D": "OH"}, {"A": 2, "B": 3, "D": "YA"}]
     )
-    compare = SFTableCompare(snowpark_session, df1, df2, ["A"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, ["A"])
     assert compare.df1_unq_columns() == {"C"}
     assert compare.df2_unq_columns() == {"D"}
     assert compare.intersect_columns() == {"A", "B"}
@@ -472,7 +472,7 @@ def test_columns_maintain_order_through_set_operations(snowpark_session):
     )
     df1 = snowpark_session.createDataFrame(pdf1)
     df2 = snowpark_session.createDataFrame(pdf2)
-    compare = SFTableCompare(snowpark_session, df1, df2, ["JOIN"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, ["JOIN"])
     assert list(compare.df1_unq_columns()) == ["F", "C"]
     assert list(compare.df2_unq_columns()) == ["E", "D"]
     assert list(compare.intersect_columns()) == ["JOIN", "G", "B", "H", "A"]
@@ -487,7 +487,7 @@ def test_10k_rows(snowpark_session):
     pdf2["B"] = pdf2["B"] + 0.1
     df1 = snowpark_session.createDataFrame(pdf)
     df2 = snowpark_session.createDataFrame(pdf2)
-    compare_tol = SFTableCompare(snowpark_session, df1, df2, ["A"], abs_tol=0.2)
+    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], abs_tol=0.2)
     assert compare_tol.matches()
     assert compare_tol.df1_unq_rows.count() == 0
     assert compare_tol.df2_unq_rows.count() == 0
@@ -496,7 +496,7 @@ def test_10k_rows(snowpark_session):
     assert compare_tol.all_rows_overlap()
     assert compare_tol.intersect_rows_match()
 
-    compare_no_tol = SFTableCompare(snowpark_session, df1, df2, ["A"])
+    compare_no_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"])
     assert not compare_no_tol.matches()
     assert compare_no_tol.df1_unq_rows.count() == 0
     assert compare_no_tol.df2_unq_rows.count() == 0
@@ -512,7 +512,7 @@ def test_subset(snowpark_session, caplog):
         [{"A": 1, "B": 2, "C": "HI"}, {"A": 2, "B": 2, "C": "YO"}]
     )
     df2 = snowpark_session.createDataFrame([{"A": 1, "C": "HI"}])
-    comp = SFTableCompare(snowpark_session, df1, df2, ["A"])
+    comp = SnowflakeCompare(snowpark_session, df1, df2, ["A"])
     assert comp.subset()
 
 
@@ -524,7 +524,7 @@ def test_not_subset(snowpark_session, caplog):
     df2 = snowpark_session.createDataFrame(
         [{"A": 1, "B": 2, "C": "HI"}, {"A": 2, "B": 2, "C": "GREAT"}]
     )
-    comp = SFTableCompare(snowpark_session, df1, df2, ["A"])
+    comp = SnowflakeCompare(snowpark_session, df1, df2, ["A"])
     assert not comp.subset()
     assert "C: 1 / 2 (50.00%) match" in caplog.text
 
@@ -537,7 +537,7 @@ def test_large_subset(snowpark_session):
     pdf2 = pdf[["A", "B"]].head(50).copy()
     df1 = snowpark_session.createDataFrame(pdf)
     df2 = snowpark_session.createDataFrame(pdf2)
-    comp = SFTableCompare(snowpark_session, df1, df2, ["A"])
+    comp = SnowflakeCompare(snowpark_session, df1, df2, ["A"])
     assert not comp.matches()
     assert comp.subset()
 
@@ -545,7 +545,7 @@ def test_large_subset(snowpark_session):
 def test_string_joiner(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"AB": 1, "BC": 2}, {"AB": 2, "BC": 2}])
     df2 = snowpark_session.createDataFrame([{"AB": 1, "BC": 2}, {"AB": 2, "BC": 2}])
-    compare = SFTableCompare(snowpark_session, df1, df2, "AB")
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "AB")
     assert compare.matches()
 
 
@@ -554,7 +554,7 @@ def test_decimal_with_joins(snowpark_session):
         [{"A": Decimal("1"), "B": 2}, {"A": Decimal("2"), "B": 2}]
     )
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 2}])
-    compare = SFTableCompare(snowpark_session, df1, df2, "A")
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A")
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -568,7 +568,7 @@ def test_decimal_with_nulls(snowpark_session):
     df2 = snowpark_session.createDataFrame(
         [{"A": 1, "B": 2}, {"A": 2, "B": 2}, {"A": 3, "B": 2}]
     )
-    compare = SFTableCompare(snowpark_session, df1, df2, "A")
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A")
     assert not compare.matches()
     assert compare.all_columns_match()
     assert not compare.all_rows_overlap()
@@ -578,7 +578,7 @@ def test_decimal_with_nulls(snowpark_session):
 def test_strings_with_joins(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": "HI", "B": 2}, {"A": "BYE", "B": 2}])
     df2 = snowpark_session.createDataFrame([{"A": "HI", "B": 2}, {"A": "BYE", "B": 2}])
-    compare = SFTableCompare(snowpark_session, df1, df2, "A")
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A")
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -656,7 +656,7 @@ def test_temp_column_name_one_already(snowpark_session):
 def test_simple_dupes_one_field(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
-    compare = SFTableCompare(snowpark_session, df1, df2, join_columns=["A"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, join_columns=["A"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     compare.report()
@@ -665,7 +665,7 @@ def test_simple_dupes_one_field(snowpark_session):
 def test_simple_dupes_two_fields(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2, "C": 2}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2, "C": 2}])
-    compare = SFTableCompare(snowpark_session, df1, df2, join_columns=["A", "B"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, join_columns=["A", "B"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     compare.report()
@@ -674,7 +674,7 @@ def test_simple_dupes_two_fields(snowpark_session):
 def test_simple_dupes_one_field_two_vals_1(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 0}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 0}])
-    compare = SFTableCompare(snowpark_session, df1, df2, join_columns=["A"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, join_columns=["A"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     compare.report()
@@ -683,7 +683,7 @@ def test_simple_dupes_one_field_two_vals_1(snowpark_session):
 def test_simple_dupes_one_field_two_vals_2(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 0}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 0}])
-    compare = SFTableCompare(snowpark_session, df1, df2, join_columns=["A"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, join_columns=["A"])
     assert not compare.matches()
     assert compare.df1_unq_rows.count() == 1
     assert compare.df2_unq_rows.count() == 1
@@ -697,7 +697,7 @@ def test_simple_dupes_one_field_three_to_two_vals(snowpark_session):
         [{"A": 1, "B": 2}, {"A": 1, "B": 0}, {"A": 1, "B": 0}]
     )
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 0}])
-    compare = SFTableCompare(snowpark_session, df1, df2, join_columns=["A"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, join_columns=["A"])
     assert not compare.matches()
     assert compare.df1_unq_rows.count() == 1
     assert compare.df2_unq_rows.count() == 0
@@ -732,11 +732,13 @@ def test_dupes_from_real_data(snowpark_session):
 200,0,2017-07-01,1009393,2.01,2017-06-29,D,USA,5814,22102,,F,"""
     df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data), sep=","))
     df2 = df1.select("*")
-    compare_acct = SFTableCompare(snowpark_session, df1, df2, join_columns=["ACCT_ID"])
+    compare_acct = SnowflakeCompare(
+        snowpark_session, df1, df2, join_columns=["ACCT_ID"]
+    )
     assert compare_acct.matches()
     compare_acct.report()
 
-    compare_unq = SFTableCompare(
+    compare_unq = SnowflakeCompare(
         snowpark_session,
         df1,
         df2,
@@ -784,7 +786,7 @@ def test_table_compare_from_real_data(snowpark_session):
         df, toy_table_name_2, table_type="temp", auto_create_table=True, overwrite=True
     )
 
-    compare_acct = SFTableCompare(
+    compare_acct = SnowflakeCompare(
         snowpark_session,
         full_toy_table_name_1,
         full_toy_table_name_2,
@@ -793,7 +795,7 @@ def test_table_compare_from_real_data(snowpark_session):
     assert compare_acct.matches()
     compare_acct.report()
 
-    compare_unq = SFTableCompare(
+    compare_unq = SnowflakeCompare(
         snowpark_session,
         full_toy_table_name_1,
         full_toy_table_name_2,
@@ -810,13 +812,13 @@ def test_strings_with_joins_with_ignore_spaces(snowpark_session):
     df2 = snowpark_session.createDataFrame(
         [{"A": "HI", "B": "A"}, {"A": "BYE", "B": "A "}]
     )
-    compare = SFTableCompare(snowpark_session, df1, df2, "A", ignore_spaces=False)
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A", ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = SFTableCompare(snowpark_session, df1, df2, "A", ignore_spaces=True)
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -826,13 +828,13 @@ def test_strings_with_joins_with_ignore_spaces(snowpark_session):
 def test_decimal_with_joins_with_ignore_spaces(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": " A"}, {"A": 2, "B": "A"}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A "}])
-    compare = SFTableCompare(snowpark_session, df1, df2, "A", ignore_spaces=False)
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A", ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = SFTableCompare(snowpark_session, df1, df2, "A", ignore_spaces=True)
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -843,7 +845,7 @@ def test_joins_with_ignore_spaces(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": " A"}, {"A": 2, "B": "A"}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A "}])
 
-    compare = SFTableCompare(snowpark_session, df1, df2, "A", ignore_spaces=True)
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -854,7 +856,7 @@ def test_joins_with_insensitive_lowercase_cols(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"a": 1, "B": "A"}, {"a": 2, "B": "A"}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A"}])
 
-    compare = SFTableCompare(snowpark_session, df1, df2, "A")
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A")
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -863,7 +865,7 @@ def test_joins_with_insensitive_lowercase_cols(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A"}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A"}])
 
-    compare = SFTableCompare(snowpark_session, df1, df2, "a")
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "a")
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -874,7 +876,7 @@ def test_joins_with_sensitive_lowercase_cols(snowpark_session):
     df1 = snowpark_session.createDataFrame([{'"a"': 1, "B": "A"}, {'"a"': 2, "B": "A"}])
     df2 = snowpark_session.createDataFrame([{'"a"': 1, "B": "A"}, {'"a"': 2, "B": "A"}])
 
-    compare = SFTableCompare(snowpark_session, df1, df2, '"a"')
+    compare = SnowflakeCompare(snowpark_session, df1, df2, '"a"')
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -888,13 +890,13 @@ def test_strings_with_ignore_spaces_and_join_columns(snowpark_session):
     df2 = snowpark_session.createDataFrame(
         [{"A": " HI ", "B": "A"}, {"A": " BYE ", "B": "A"}]
     )
-    compare = SFTableCompare(snowpark_session, df1, df2, "A", ignore_spaces=False)
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A", ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert not compare.all_rows_overlap()
     assert compare.count_matching_rows() == 0
 
-    compare = SFTableCompare(snowpark_session, df1, df2, "A", ignore_spaces=True)
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -905,14 +907,14 @@ def test_strings_with_ignore_spaces_and_join_columns(snowpark_session):
 def test_integers_with_ignore_spaces_and_join_columns(snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A"}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A"}])
-    compare = SFTableCompare(snowpark_session, df1, df2, "A", ignore_spaces=False)
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A", ignore_spaces=False)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert compare.intersect_rows_match()
     assert compare.count_matching_rows() == 2
 
-    compare = SFTableCompare(snowpark_session, df1, df2, "A", ignore_spaces=True)
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "A", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -942,7 +944,7 @@ def test_sample_mismatch(snowpark_session):
     df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
 
-    compare = SFTableCompare(snowpark_session, df1, df2, "ACCT_ID")
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID")
 
     output = compare.sample_mismatch(column="NAME", sample_count=1).toPandas()
     assert output.shape[0] == 1
@@ -977,7 +979,7 @@ def test_all_mismatch_not_ignore_matching_cols_no_cols_matching(snowpark_session
     """
     df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
-    compare = SFTableCompare(snowpark_session, df1, df2, "ACCT_ID")
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID")
 
     output = compare.all_mismatch().toPandas()
     assert output.shape[0] == 4
@@ -1017,7 +1019,7 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching(snowpark_sessi
         """
     df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
-    compare = SFTableCompare(snowpark_session, df1, df2, "ACCT_ID")
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID")
 
     output = compare.all_mismatch().toPandas()
     assert output.shape[0] == 4
@@ -1060,7 +1062,7 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows(
         """
     df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
-    compare = SFTableCompare(snowpark_session, df1, df2, "ACCT_ID")
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID")
 
     output = compare.all_mismatch(ignore_matching_cols=True).toPandas()
 
@@ -1098,7 +1100,7 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching(snowpark_session):
         """
     df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
-    compare = SFTableCompare(snowpark_session, df1, df2, "ACCT_ID")
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID")
 
     output = compare.all_mismatch(ignore_matching_cols=True).toPandas()
 
@@ -1135,7 +1137,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching(snowpark_session):
         """
     df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
-    compare = SFTableCompare(snowpark_session, df1, df2, "ACCT_ID")
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID")
 
     output = compare.all_mismatch().toPandas()
     assert output.shape[0] == 4
@@ -1206,7 +1208,7 @@ def test_dupes_with_nulls_strings(snowpark_session):
     )
     df1 = snowpark_session.createDataFrame(pdf1)
     df2 = snowpark_session.createDataFrame(pdf2)
-    comp = SFTableCompare(snowpark_session, df1, df2, join_columns=["FLD_1", "FLD_2"])
+    comp = SnowflakeCompare(snowpark_session, df1, df2, join_columns=["FLD_1", "FLD_2"])
     assert comp.subset()
 
 
@@ -1227,7 +1229,7 @@ def test_dupes_with_nulls_ints(snowpark_session):
     )
     df1 = snowpark_session.createDataFrame(pdf1)
     df2 = snowpark_session.createDataFrame(pdf2)
-    comp = SFTableCompare(snowpark_session, df1, df2, join_columns=["FLD_1", "FLD_2"])
+    comp = SnowflakeCompare(snowpark_session, df1, df2, join_columns=["FLD_1", "FLD_2"])
     assert comp.subset()
 
 
@@ -1301,14 +1303,14 @@ def test_generate_id_within_group_single_join(snowpark_session):
     assert (actual["_TEMP_0"] == expected).all()
 
 
-@mock.patch("datacompy.sf_sql.render")
+@mock.patch("datacompy.snowflake.render")
 def test_save_html(mock_render, snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
-    compare = SFTableCompare(snowpark_session, df1, df2, join_columns=["A"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, join_columns=["A"])
 
     m = mock.mock_open()
-    with mock.patch("datacompy.sf_sql.open", m, create=True):
+    with mock.patch("datacompy.snowflake.open", m, create=True):
         # assert without HTML call
         compare.report()
         assert mock_render.call_count == 4
@@ -1316,7 +1318,7 @@ def test_save_html(mock_render, snowpark_session):
 
     mock_render.reset_mock()
     m = mock.mock_open()
-    with mock.patch("datacompy.sf_sql.open", m, create=True):
+    with mock.patch("datacompy.snowflake.open", m, create=True):
         # assert with HTML call
         compare.report(html_file="test.html")
         assert mock_render.call_count == 4

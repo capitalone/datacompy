@@ -61,7 +61,7 @@ NUMERIC_SNOWPARK_TYPES = [
 ]
 
 
-class SFTableCompare(BaseCompare):
+class SnowflakeCompare(BaseCompare):
     """Comparison class to be used to compare whether two Snowpark dataframes are equal.
 
     df1 and df2 can refer to either a Snowpark dataframe or the name of a valid Snowflake table.
@@ -84,6 +84,11 @@ class SFTableCompare(BaseCompare):
         Absolute tolerance between two values.
     rel_tol : float, optional
         Relative tolerance between two values.
+    df1_name : str, optional
+        A string name for the first dataframe. If used alongside a snowflake table,
+        overrides the default convention of naming the dataframe after the table.
+    df2_name : str, optional
+        A string name for the second dataframe.
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns (including any join
         columns).
@@ -104,6 +109,8 @@ class SFTableCompare(BaseCompare):
         join_columns: Optional[Union[List[str], str]],
         abs_tol: float = 0,
         rel_tol: float = 0,
+        df1_name: Optional[str] = None,
+        df2_name: Optional[str] = None,
         ignore_spaces: bool = False,
     ) -> None:
         if join_columns is None:
@@ -122,8 +129,8 @@ class SFTableCompare(BaseCompare):
 
         self._any_dupes: bool = False
         self.session = session
-        self.df1 = df1
-        self.df2 = df2
+        self.df1 = (df1, df1_name)
+        self.df2 = (df2, df2_name)
         self.abs_tol = abs_tol
         self.rel_tol = rel_tol
         self.ignore_spaces = ignore_spaces
@@ -139,19 +146,20 @@ class SFTableCompare(BaseCompare):
         return self._df1
 
     @df1.setter
-    def df1(self, df1: Union[str, sp.DataFrame]) -> None:
+    def df1(self, df1: tuple[Union[str, sp.DataFrame], Optional[str]]) -> None:
         """Check that df1 is either a Snowpark DF or the name of a valid Snowflake table."""
-        if isinstance(df1, str):
-            table_name = [table_comp.upper() for table_comp in df1.split(".")]
+        df, df_name = df1
+        if isinstance(df, str):
+            table_name = [table_comp.upper() for table_comp in df.split(".")]
             if len(table_name) == 3:
-                self.df1_name = table_name[2]
+                self.df1_name = df_name if df_name else table_name[2]
             else:
-                errmsg = f"{df1} is not a valid table name. Be sure to include the target db and schema."
+                errmsg = f"{df} is not a valid table name. Be sure to include the target db and schema."
                 raise ValueError(errmsg)
-            self._df1 = self.session.table(df1)
+            self._df1 = self.session.table(df)
         else:
-            self._df1 = df1
-            self.df1_name = "DF1"
+            self._df1 = df
+            self.df1_name = df_name if df_name else "DF1"
         self._validate_dataframe(self.df1, self.df1_name, "df1")
 
     @property
@@ -160,19 +168,20 @@ class SFTableCompare(BaseCompare):
         return self._df2
 
     @df2.setter
-    def df2(self, df2: Union[str, sp.DataFrame]) -> None:
+    def df2(self, df2: tuple[Union[str, sp.DataFrame], Optional[str]]) -> None:
         """Check that df2 is either a Snowpark DF or the name of a valid Snowflake table."""
-        if isinstance(df2, str):
-            table_name = [table_comp.upper() for table_comp in df2.split(".")]
+        df, df_name = df2
+        if isinstance(df, str):
+            table_name = [table_comp.upper() for table_comp in df.split(".")]
             if len(table_name) == 3:
-                self.df2_name = table_name[2]
+                self.df2_name = df_name if df_name else table_name[2]
             else:
-                errmsg = f"{df2} is not a valid table name. Be sure to include the target db and schema."
+                errmsg = f"{df} is not a valid table name. Be sure to include the target db and schema."
                 raise ValueError(errmsg)
-            self._df2 = self.session.table(df2)
+            self._df2 = self.session.table(df)
         else:
-            self._df2 = df2
-            self.df2_name = "DF2"
+            self._df2 = df
+            self.df2_name = df_name if df_name else "DF2"
         self._validate_dataframe(self.df2, self.df2_name, "df2")
 
     def _validate_dataframe(self, df: sp.DataFrame, df_name: str, index: str) -> None:
@@ -196,15 +205,19 @@ class SFTableCompare(BaseCompare):
 
         # force all columns to be non-case-sensitive
         if index == "df1":
-            col_map = zip(
-                self._df1.columns,
-                [str(c).replace('"', "").upper() for c in self._df1.columns],
+            col_map = dict(
+                zip(
+                    self._df1.columns,
+                    [str(c).replace('"', "").upper() for c in self._df1.columns],
+                )
             )
-            self._df1 = self._df1.rename(dict(col_map))
+            self._df1 = self._df1.rename(col_map)
         if index == "df2":
-            col_map = zip(
-                self._df2.columns,
-                [str(c).replace('"', "").upper() for c in self._df2.columns],
+            col_map = dict(
+                zip(
+                    self._df2.columns,
+                    [str(c).replace('"', "").upper() for c in self._df2.columns],
+                )
             )
             self._df2 = self._df2.rename(dict(col_map))
 
@@ -307,8 +320,8 @@ class SFTableCompare(BaseCompare):
                 ):
                     df2 = df2.withColumn(column, trim(col(column)))
 
-        df1 = df1.with_column("merge", lit(True))
-        df2 = df2.with_column("merge", lit(True))
+        df1 = df1.withColumn("merge", lit(True))
+        df2 = df2.withColumn("merge", lit(True))
 
         for c in df1.columns:
             df1 = df1.withColumnRenamed(c, c + "_" + self.df1_name)
@@ -333,7 +346,7 @@ class SFTableCompare(BaseCompare):
             + on
         )
         # Create join indicator
-        outer_join = outer_join.with_column(
+        outer_join = outer_join.withColumn(
             "_merge",
             when(
                 outer_join[f"MERGE_{self.df1_name}"]
