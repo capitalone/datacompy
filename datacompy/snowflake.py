@@ -148,19 +148,18 @@ class SnowflakeCompare(BaseCompare):
     @df1.setter
     def df1(self, df1: tuple[Union[str, sp.DataFrame], Optional[str]]) -> None:
         """Check that df1 is either a Snowpark DF or the name of a valid Snowflake table."""
-        df, df_name = df1
+        (df, df_name) = df1
         if isinstance(df, str):
             table_name = [table_comp.upper() for table_comp in df.split(".")]
-            if len(table_name) == 3:
-                self.df1_name = df_name if df_name else table_name[2]
-            else:
+            if len(table_name) != 3:
                 errmsg = f"{df} is not a valid table name. Be sure to include the target db and schema."
                 raise ValueError(errmsg)
+            self.df1_name = df_name.upper() if df_name else table_name[2]
             self._df1 = self.session.table(df)
         else:
             self._df1 = df
-            self.df1_name = df_name if df_name else "DF1"
-        self._validate_dataframe(self.df1, self.df1_name, "df1")
+            self.df1_name = df_name.upper() if df_name else "DF1"
+        self._validate_dataframe(self.df1_name, "df1")
 
     @property
     def df2(self) -> sp.DataFrame:
@@ -170,21 +169,20 @@ class SnowflakeCompare(BaseCompare):
     @df2.setter
     def df2(self, df2: tuple[Union[str, sp.DataFrame], Optional[str]]) -> None:
         """Check that df2 is either a Snowpark DF or the name of a valid Snowflake table."""
-        df, df_name = df2
+        (df, df_name) = df2
         if isinstance(df, str):
             table_name = [table_comp.upper() for table_comp in df.split(".")]
-            if len(table_name) == 3:
-                self.df2_name = df_name if df_name else table_name[2]
-            else:
+            if len(table_name) != 3:
                 errmsg = f"{df} is not a valid table name. Be sure to include the target db and schema."
                 raise ValueError(errmsg)
+            self.df2_name = df_name.upper() if df_name else table_name[2]
             self._df2 = self.session.table(df)
         else:
             self._df2 = df
-            self.df2_name = df_name if df_name else "DF2"
-        self._validate_dataframe(self.df2, self.df2_name, "df2")
+            self.df2_name = df_name.upper() if df_name else "DF2"
+        self._validate_dataframe(self.df2_name, "df2")
 
-    def _validate_dataframe(self, df: sp.DataFrame, df_name: str, index: str) -> None:
+    def _validate_dataframe(self, df_name: str, index: str) -> None:
         """Validate the provided Snowpark dataframe.
 
         The dataframe can either be a standalone Snowpark dataframe or a representative
@@ -193,13 +191,12 @@ class SnowflakeCompare(BaseCompare):
 
         Parameters
         ----------
-        df : sp.DataFrame
-            Snowpark Dataframe (either directly instantiated or as a Snowpark Table object).
         df_name : str
             Name of the Snowflake table / Snowpark dataframe
         index : str
             The "index" of the dataframe - df1 or df2.
         """
+        df = getattr(self, index)
         if not isinstance(df, sp.DataFrame):
             raise TypeError(f"{df_name} must be a valid sp.Dataframe")
 
@@ -221,6 +218,7 @@ class SnowflakeCompare(BaseCompare):
             )
             self._df2 = self._df2.rename(dict(col_map))
 
+        df = getattr(self, index)  # refresh
         if not set(self.join_columns).issubset(set(df.columns)):
             raise ValueError(f"{df_name} must have all columns from join_columns")
         if len(set(df.columns)) < len(df.columns):
