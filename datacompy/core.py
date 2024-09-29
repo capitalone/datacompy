@@ -770,6 +770,11 @@ def columns_equal(
     - Non-numeric values (i.e. where np.isclose can't be used) will just
       trigger True on two nulls or exact matches.
 
+    Notes
+    -----
+    As of version ``0.14.0`` If a column is of a mixed data type the compare will
+    default to returning ``False``.
+
     Parameters
     ----------
     col_1 : Pandas.Series
@@ -792,6 +797,15 @@ def columns_equal(
         values don't match.
     """
     compare: pd.Series[bool]
+
+    # short circuit if comparing mixed type columns. We don't want to support this moving forward.
+    if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(
+        col_1
+    ).startswith("mixed"):
+        compare = pd.Series(False, index=col_1.index)
+        compare.index = col_1.index
+        return compare
+
     try:
         compare = pd.Series(
             np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
@@ -810,15 +824,15 @@ def columns_equal(
         except (ValueError, TypeError):
             try:
                 if ignore_spaces:
-                    if col_1.dtype.kind == "O":
+                    if col_1.dtype.kind == "O" and pd.api.types.is_string_dtype(col_1):
                         col_1 = col_1.str.strip()
-                    if col_2.dtype.kind == "O":
+                    if col_2.dtype.kind == "O" and pd.api.types.is_string_dtype(col_2):
                         col_2 = col_2.str.strip()
 
                 if ignore_case:
-                    if col_1.dtype.kind == "O":
+                    if col_1.dtype.kind == "O" and pd.api.types.is_string_dtype(col_1):
                         col_1 = col_1.str.upper()
-                    if col_2.dtype.kind == "O":
+                    if col_2.dtype.kind == "O" and pd.api.types.is_string_dtype(col_2):
                         col_2 = col_2.str.upper()
 
                 if {col_1.dtype.kind, col_2.dtype.kind} == {"M", "O"}:
