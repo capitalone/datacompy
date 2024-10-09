@@ -800,7 +800,7 @@ def columns_equal(
 
     # short circuit if comparing mixed type columns. We don't want to support this moving forward.
     if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(
-        col_1
+        col_2
     ).startswith("mixed"):
         compare = pd.Series(False, index=col_1.index)
         compare.index = col_1.index
