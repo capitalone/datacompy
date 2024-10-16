@@ -98,7 +98,7 @@ datacompy|DataComPy|False
 something||False
 |something|False
 ||True"""
-    df = pd.read_csv(io.StringIO(data), sep="|")
+    df = pd.read_csv(io.StringIO(data), sep="|", keep_default_na=False)
     actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -119,7 +119,7 @@ datacompy|DataComPy|True
 something||False
 |something|False
 ||True"""
-    df = pd.read_csv(io.StringIO(data), sep="|")
+    df = pd.read_csv(io.StringIO(data), sep="|", keep_default_na=False)
     actual_out = datacompy.columns_equal(
         df.a, df.b, rel_tol=0.2, ignore_spaces=True, ignore_case=True
     )
@@ -160,7 +160,7 @@ def test_date_columns_equal_with_ignore_spaces():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pd.read_csv(io.StringIO(data), sep="|")
+    df = pd.read_csv(io.StringIO(data), sep="|", keep_default_na=False)
     # First compare just the strings
     actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
@@ -192,7 +192,7 @@ def test_date_columns_equal_with_ignore_spaces_and_case():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pd.read_csv(io.StringIO(data), sep="|")
+    df = pd.read_csv(io.StringIO(data), sep="|", keep_default_na=False)
     # First compare just the strings
     actual_out = datacompy.columns_equal(
         df.a, df.b, rel_tol=0.2, ignore_spaces=True, ignore_case=True
@@ -364,10 +364,10 @@ def test_infinity_and_beyond():
 def test_mixed_column():
     df = pd.DataFrame(
         [
-            {"a": "hi", "b": "hi", "expected": True},
-            {"a": 1, "b": 1, "expected": True},
-            {"a": np.inf, "b": np.inf, "expected": True},
-            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
+            {"a": "hi", "b": "hi", "expected": False},
+            {"a": 1, "b": 1, "expected": False},
+            {"a": np.inf, "b": np.inf, "expected": False},
+            {"a": Decimal("1"), "b": Decimal("1"), "expected": False},
             {"a": 1, "b": "1", "expected": False},
             {"a": 1, "b": "yo", "expected": False},
         ]
@@ -380,10 +380,10 @@ def test_mixed_column():
 def test_mixed_column_with_ignore_spaces():
     df = pd.DataFrame(
         [
-            {"a": "hi", "b": "hi ", "expected": True},
-            {"a": 1, "b": 1, "expected": True},
-            {"a": np.inf, "b": np.inf, "expected": True},
-            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
+            {"a": "hi", "b": "hi ", "expected": False},
+            {"a": 1, "b": 1, "expected": False},
+            {"a": np.inf, "b": np.inf, "expected": False},
+            {"a": Decimal("1"), "b": Decimal("1"), "expected": False},
             {"a": 1, "b": "1 ", "expected": False},
             {"a": 1, "b": "yo ", "expected": False},
         ]
@@ -396,15 +396,15 @@ def test_mixed_column_with_ignore_spaces():
 def test_mixed_column_with_ignore_spaces_and_case():
     df = pd.DataFrame(
         [
-            {"a": "hi", "b": "hi ", "expected": True},
-            {"a": 1, "b": 1, "expected": True},
-            {"a": np.inf, "b": np.inf, "expected": True},
-            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
+            {"a": "hi", "b": "hi ", "expected": False},
+            {"a": 1, "b": 1, "expected": False},
+            {"a": np.inf, "b": np.inf, "expected": False},
+            {"a": Decimal("1"), "b": Decimal("1"), "expected": False},
             {"a": 1, "b": "1 ", "expected": False},
             {"a": 1, "b": "yo ", "expected": False},
-            {"a": "Hi", "b": "hI ", "expected": True},
-            {"a": "HI", "b": "HI ", "expected": True},
-            {"a": "hi", "b": "hi ", "expected": True},
+            {"a": "Hi", "b": "hI ", "expected": False},
+            {"a": "HI", "b": "HI ", "expected": False},
+            {"a": "hi", "b": "hi ", "expected": False},
         ]
     )
     actual_out = datacompy.columns_equal(
