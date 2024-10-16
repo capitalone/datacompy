@@ -666,8 +666,8 @@ class SparkPandasCompare(BaseCompare):
         report += render(
             "column_summary.txt",
             len(self.intersect_columns()),
-            len(self.df1_unq_columns()),
-            len(self.df2_unq_columns()),
+            f"{len(self.df1_unq_columns())} {self.df1_unq_columns().items}",
+            f"{len(self.df2_unq_columns())} {self.df2_unq_columns().items}",
             self.df1_name,
             self.df2_name,
         )
