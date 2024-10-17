@@ -179,7 +179,10 @@ class Compare(BaseCompare):
             dataframe.columns = pd.Index([str(col) for col in dataframe.columns])
         # Check if join_columns are present in the dataframe
         if not set(self.join_columns).issubset(set(dataframe.columns)):
-            raise ValueError(f"{index} must have all columns from join_columns")
+            missing_cols = set(self.join_columns) - set(dataframe.columns)
+            raise ValueError(
+                f"{index} must have all columns from join_columns: {missing_cols}"
+            )
 
         if len(set(dataframe.columns)) < len(dataframe.columns):
             raise ValueError(f"{index} must have unique column names")
