@@ -11,6 +11,7 @@ Contents
     Installation <install>
     Pandas Usage <pandas_usage>
     Spark Usage <spark_usage>
+    Snowflake Usage <snowflake_usage>
     Polars Usage <polars_usage>
     Fugue Usage <fugue_usage>
     Benchmarks <benchmark>
