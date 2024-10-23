@@ -14,6 +14,8 @@
 # limitations under the License.
 """Test fugue and spark."""
 
+import sys
+
 import pytest
 from datacompy import (
     Compare,
@@ -30,6 +32,9 @@ from pytest import raises
 from test_fugue_helpers import _compare_report
 
 pyspark = pytest.importorskip("pyspark")
+
+if sys.version_info >= (3, 12):
+    pytest.skip("unsupported python version", allow_module_level=True)
 
 
 def test_is_match_spark(

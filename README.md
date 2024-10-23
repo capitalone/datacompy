@@ -39,26 +39,32 @@ pip install datacompy[ray]
 
 ### Legacy Spark Deprecation
 
-With version ``v0.12.0`` the original ``SparkCompare`` was replaced with a 
-Pandas on Spark implementation. The original ``SparkCompare`` implementation differs 
-from all the other native implementations. To align the API better,  and keep behaviour 
+With version ``v0.12.0`` the original ``SparkCompare`` was replaced with a
+Pandas on Spark implementation. The original ``SparkCompare`` implementation differs
+from all the other native implementations. To align the API better,  and keep behaviour
 consistent we are deprecating the original ``SparkCompare`` into a new module ``LegacySparkCompare``
 
 Subsequently in ``v0.13.0`` a PySaprk DataFrame class has been introduced (``SparkSQLCompare``)
-which accepts ``pyspark.sql.DataFrame`` and should provide better performance. With this version 
-the Pandas on Spark implementation has been renamed to ``SparkPandasCompare`` and all the spark 
+which accepts ``pyspark.sql.DataFrame`` and should provide better performance. With this version
+the Pandas on Spark implementation has been renamed to ``SparkPandasCompare`` and all the spark
 logic is now under the ``spark`` submodule.
 
 If you wish to use the old SparkCompare moving forward you can import it like so:
 
 ```python
 from datacompy.spark.legacy import LegacySparkCompare
-``` 
+```
+
+### SparkPandasCompare Deprecation
+
+Starting with ``v0.14.1``, ``SparkPandasCompare`` is slated for deprecation. ``SparkSQLCompare`` is the prefered and much more performant.
+It should be noted that if you continue to use ``SparkPandasCompare`` that ``numpy`` 2+ is not supported due to dependency issues.
+
 
 #### Supported versions and dependncies
 
-Different versions of Spark, Pandas, and Python interact differently. Below is a matrix of what we test with. 
-With the move to Pandas on Spark API and compatability issues with Pandas 2+ we will for the mean time note support Pandas 2 
+Different versions of Spark, Pandas, and Python interact differently. Below is a matrix of what we test with.
+With the move to Pandas on Spark API and compatability issues with Pandas 2+ we will for the mean time note support Pandas 2
 with the Pandas on Spark implementation. Spark plans to support Pandas 2 in [Spark 4](https://issues.apache.org/jira/browse/SPARK-44101)
 
 
@@ -80,7 +86,7 @@ with the Pandas on Spark implementation. Spark plans to support Pandas 2 in [Spa
 
 
 > [!NOTE]
-> At the current time Python `3.12` is not supported by Spark and also Ray within Fugue. 
+> At the current time Python `3.12` is not supported by Spark and also Ray within Fugue.
 > If you are using Python `3.12` and above, please note that not all functioanlity will be supported.
 > Pandas and Polars support should work fine and are tested.
 

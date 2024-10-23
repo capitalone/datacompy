@@ -3,15 +3,15 @@ Spark Usage
 
 .. important::
 
-    With version ``v0.12.0`` the original ``SparkCompare`` was replaced with a 
-    Pandas on Spark implementation The original ``SparkCompare`` 
-    implementation differs from all the other native implementations. To align the API better, 
-    and keep behaviour consistent we are deprecating the original ``SparkCompare`` 
+    With version ``v0.12.0`` the original ``SparkCompare`` was replaced with a
+    Pandas on Spark implementation The original ``SparkCompare``
+    implementation differs from all the other native implementations. To align the API better,
+    and keep behaviour consistent we are deprecating the original ``SparkCompare``
     into a new module ``LegacySparkCompare``
 
     Subsequently in ``v0.13.0`` a PySaprk DataFrame class has been introduced (``SparkSQLCompare``)
-    which accepts ``pyspark.sql.DataFrame`` and should provide better performance. With this version 
-    the Pandas on Spark implementation has been renamed to ``SparkPandasCompare`` and all the spark 
+    which accepts ``pyspark.sql.DataFrame`` and should provide better performance. With this version
+    the Pandas on Spark implementation has been renamed to ``SparkPandasCompare`` and all the spark
     logic is now under the ``spark`` submodule.
 
     If you wish to use the old SparkCompare moving forward you can import it like so:
@@ -19,29 +19,24 @@ Spark Usage
     .. code-block:: python
 
         from datacompy.spark.legacy import LegacySparkCompare
-    
 
-For both ``SparkSQLCompare`` and ``SparkPandasCompare``
-
-- ``on_index`` is not supported.
-- Joining is done using ``<=>`` which is the equality test that is safe for null values.
-- ``SparkPandasCompare`` compares ``pyspark.pandas.DataFrame``'s
-- ``SparkSQLCompare`` compares ``pyspark.sql.DataFrame``'s
-
-Supported Version
-------------------
 
 .. important::
 
-    Spark will not offically support Pandas 2 until Spark 4: https://issues.apache.org/jira/browse/SPARK-44101
+    Starting with ``v0.14.1``, ``SparkPandasCompare`` is slated for deprecation. ``SparkSQLCompare``
+    is the prefered and much more performant. It should be noted that if you continue to use ``SparkPandasCompare``
+    that ``numpy`` 2+ is not supported due to dependnecy issues.
 
 
-Until then we will not be supporting Pandas 2 for the Pandas on Spark API implementaion.
-For Fugue, the Native Pandas (`Compare`), and `SparkSQLCompare` implementations, Pandas 2 is supported.
+For ``SparkSQLCompare``
+
+- ``on_index`` is not supported.
+- Joining is done using ``<=>`` which is the equality test that is safe for null values.
+- ``SparkSQLCompare`` compares ``pyspark.sql.DataFrame``'s
 
 
-SparkPandasCompare and SparkSQLCompare Object Setup
----------------------------------------------------
+SparkSQLCompare
+---------------
 
 There is currently only one supported method for joining your dataframes - by
 join column(s).
@@ -52,7 +47,7 @@ join column(s).
     from io import StringIO
     import pandas as pd
     import pyspark.pandas as ps
-    from datacompy import SparkPandasCompare, SparkSQLCompare
+    from datacompy import  SparkSQLCompare
     from pyspark.sql import SparkSession
 
     spark = SparkSession.builder.getOrCreate()
@@ -72,25 +67,6 @@ join column(s).
     10000001237,123456,Robert Loblaw,345.12
     10000001238,1.05,Loose Seal Bluth,111
     """
-
-    # SparkPandasCompare
-    df1 = ps.from_pandas(pd.read_csv(StringIO(data1)))
-    df2 = ps.from_pandas(pd.read_csv(StringIO(data2)))
-
-    compare = SparkPandasCompare(
-        df1,
-        df2,
-        join_columns='acct_id',  # You can also specify a list of columns
-        abs_tol=0,  # Optional, defaults to 0
-        rel_tol=0,  # Optional, defaults to 0
-        df1_name='Original',  # Optional, defaults to 'df1'
-        df2_name='New'  # Optional, defaults to 'df2'
-    )
-    compare.matches(ignore_extra_columns=False)
-    # False
-    # This method prints out a human-readable report summarizing and sampling differences
-    print(compare.report())
-
 
     # SparkSQLCompare
     df1 = spark.createDataFrame(pd.read_csv(StringIO(data1)))
