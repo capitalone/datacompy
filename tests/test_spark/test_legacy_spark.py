@@ -17,11 +17,15 @@ import datetime
 import io
 import logging
 import re
+import sys
 from decimal import Decimal
 
 import pytest
 
 pytest.importorskip("pyspark")
+
+if sys.version_info >= (3, 12):
+    pytest.skip("unsupported python version", allow_module_level=True)
 
 from datacompy.spark.legacy import (
     NUMERIC_SPARK_TYPES,
