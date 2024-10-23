@@ -24,6 +24,7 @@ two dataframes.
 import logging
 import os
 from typing import List, Optional, Union
+from warnings import warn
 
 import pandas as pd
 from ordered_set import OrderedSet
@@ -38,6 +39,13 @@ except ImportError:
 
 
 LOG = logging.getLogger(__name__)
+
+
+warn(
+    f"The module {__name__} is deprecated. In future versions SparkPandasCompare will be completely removed.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 class SparkPandasCompare(BaseCompare):
