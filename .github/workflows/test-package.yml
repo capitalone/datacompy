@@ -44,6 +44,8 @@ jobs:
             spark-version: 3.3.4
           - python-version: 3.9
             numpy-version: 2.1.2
+          - pandas-version: 1.5.3
+            numpy-version: 2.1.2
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SPARK_VERSION: ${{ matrix.spark-version }}
