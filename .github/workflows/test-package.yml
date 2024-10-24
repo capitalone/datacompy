@@ -33,14 +33,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9, '3.10', '3.11']
+        python-version: [3.9, '3.10', '3.11', '3.12']
         spark-version: [3.2.4, 3.3.4, 3.4.2, 3.5.1]
-        pandas-version: [2.2.2, 1.5.3]
+        pandas-version: [2.2.3, 1.5.3]
+        numpy-version: [2.1.2, 1.26.4]
         exclude:
           - python-version: '3.11'
             spark-version: 3.2.4
           - python-version: '3.11'
             spark-version: 3.3.4
+          - python-version: 3.9
+            numpy-version: 2.1.2
+          - pandas-version: 1.5.3
+            numpy-version: 2.1.2
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SPARK_VERSION: ${{ matrix.spark-version }}
@@ -65,6 +70,7 @@ jobs:
         python -m pip install pytest pytest-spark pypandoc
         python -m pip install pyspark[connect]==${{ matrix.spark-version }}
         python -m pip install pandas==${{ matrix.pandas-version }}
+        python -m pip install numpy==${{ matrix.numpy-version }}
         python -m pip install .[dev]
     - name: Test with pytest
       run: |
