@@ -23,6 +23,7 @@ import sys
 from datetime import datetime
 from decimal import Decimal
 from io import StringIO
+from typing import Optional
 from unittest import mock
 
 import numpy as np
@@ -31,6 +32,7 @@ import pytest
 from pytest import raises
 
 pytest.importorskip("pyspark")
+
 
 from datacompy.snowflake import (
     SnowflakeCompare,
@@ -41,11 +43,39 @@ from datacompy.snowflake import (
 )
 from pandas.testing import assert_series_equal
 from snowflake.snowpark.exceptions import SnowparkSQLException
+from snowflake.snowpark.functions import abs, trim
+from snowflake.snowpark.mock import ColumnEmulator, patch
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 pd.DataFrame.iteritems = pd.DataFrame.items  # Pandas 2+ compatability
 np.bool = np.bool_  # Numpy 1.24.3+ comptability
+
+
+@patch(abs)
+def mock_abs(expr):
+    if isinstance(expr, ColumnEmulator):
+        try:
+            result = ColumnEmulator(data=[np.abs(row) if row else None for row in expr])
+        except AttributeError:
+            result = expr
+        result.sf_type = expr.sf_type
+        return result
+    else:
+        return abs(expr)
+
+
+@patch(trim)
+def mock_trim(expr: ColumnEmulator, trim_string: Optional[ColumnEmulator] = None):
+    if isinstance(expr, ColumnEmulator):
+        try:
+            result = ColumnEmulator(data=[row.strip() if row else None for row in expr])
+        except AttributeError:
+            result = expr
+        result.sf_type = expr.sf_type
+        return result
+    else:
+        return abs(expr)
 
 
 def test_numeric_columns_equal_abs(snowpark_session):
@@ -58,6 +88,7 @@ NULL|4|False
 NULL|NULL|True"""
 
     df = snowpark_session.createDataFrame(pd.read_csv(StringIO(data), sep="|"))
+    xd = df.collect()
     actual_out = columns_equal(df, "A", "B", "ACTUAL", abs_tol=0.2).toPandas()["ACTUAL"]
     expect_out = df.select("EXPECTED").toPandas()["EXPECTED"]
     assert_series_equal(expect_out, actual_out, check_names=False)
