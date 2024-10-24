@@ -32,6 +32,12 @@ from pytest import raises
 
 pytest.importorskip("pyspark")
 
+if np.__version__ >= "2.0.0":
+    pytest.skip("unsupported numpy version", allow_module_level=True)
+
+if sys.version_info >= (3, 12):
+    pytest.skip("unsupported python version", allow_module_level=True)
+
 import pyspark.pandas as ps
 from datacompy.spark.pandas import (
     SparkPandasCompare,

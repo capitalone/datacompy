@@ -526,8 +526,8 @@ def report(
     rpt += render(
         "column_summary.txt",
         len(first["intersect_columns"]),
-        len(first["df1_unq_columns"]),
-        len(first["df2_unq_columns"]),
+        f"{len(first['df1_unq_columns'])} {first['df1_unq_columns'].items}",
+        f"{len(first['df2_unq_columns'])} {first['df2_unq_columns'].items}",
         df1_name,
         df2_name,
     )

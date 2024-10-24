@@ -56,6 +56,12 @@ If you wish to use the old SparkCompare moving forward you can import it like so
 from datacompy.spark.legacy import LegacySparkCompare
 ```
 
+### SparkPandasCompare Deprecation
+
+Starting with ``v0.14.1``, ``SparkPandasCompare`` is slated for deprecation. ``SparkSQLCompare`` is the prefered and much more performant.
+It should be noted that if you continue to use ``SparkPandasCompare`` that ``numpy`` 2+ is not supported due to dependency issues.
+
+
 #### Supported versions and dependncies
 
 Different versions of Spark, Pandas, and Python interact differently. Below is a matrix of what we test with.
