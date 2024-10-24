@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Installation" href="install.html" />
 
     <!-- Generated with Sphinx 7.4.7 and Furo 2024.08.06 -->
-        <title>datacompy 0.14.0 documentation</title>
+        <title>datacompy 0.14.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="#"><div class="brand">datacompy 0.14.0 documentation</div></a>
+      <a href="#"><div class="brand">datacompy 0.14.1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
   
   
-  <span class="sidebar-brand-text">datacompy 0.14.0 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.14.1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -302,6 +302,11 @@ logic is now under the <code class="docutils literal notranslate"><span class="p
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">datacompy.spark.legacy</span> <span class="kn">import</span> <span class="n">LegacySparkCompare</span>
 </pre></div>
 </div>
+</section>
+<section id="sparkpandascompare-deprecation">
+<h3>SparkPandasCompare Deprecation<a class="headerlink" href="#sparkpandascompare-deprecation" title="Link to this heading">¶</a></h3>
+<p>Starting with <code class="docutils literal notranslate"><span class="pre">v0.14.1</span></code>, <code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code> is slated for deprecation. <code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code> is the prefered and much more performant.
+It should be noted that if you continue to use <code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code> that <code class="docutils literal notranslate"><span class="pre">numpy</span></code> 2+ is not supported due to dependency issues.</p>
 <section id="supported-versions-and-dependncies">
 <h4>Supported versions and dependncies<a class="headerlink" href="#supported-versions-and-dependncies" title="Link to this heading">¶</a></h4>
 <p>Different versions of Spark, Pandas, and Python interact differently. Below is a matrix of what we test with.
@@ -426,8 +431,7 @@ By participating, you are expected to honor this code.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#supported-version">Supported Version</a></li>
-<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#sparkpandascompare-and-sparksqlcompare-object-setup">SparkPandasCompare and SparkSQLCompare Object Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#sparksqlcompare">SparkSQLCompare</a></li>
 <li class="toctree-l2"><a class="reference internal" href="spark_usage.html#reports">Reports</a></li>
 <li class="toctree-l2"><a class="reference internal" href="spark_usage.html#convenience-methods">Convenience Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="spark_usage.html#duplicate-rows">Duplicate rows</a></li>
@@ -600,7 +604,8 @@ By participating, you are expected to honor this code.</p>
 <li><a class="reference internal" href="#">DataComPy</a><ul>
 <li><a class="reference internal" href="#quick-installation">Quick Installation</a><ul>
 <li><a class="reference internal" href="#installing-extras">Installing extras</a></li>
-<li><a class="reference internal" href="#legacy-spark-deprecation">Legacy Spark Deprecation</a><ul>
+<li><a class="reference internal" href="#legacy-spark-deprecation">Legacy Spark Deprecation</a></li>
+<li><a class="reference internal" href="#sparkpandascompare-deprecation">SparkPandasCompare Deprecation</a><ul>
 <li><a class="reference internal" href="#supported-versions-and-dependncies">Supported versions and dependncies</a></li>
 </ul>
 </li>
@@ -624,7 +629,7 @@ By participating, you are expected to honor this code.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=9e420a66"></script>
+</div><script src="_static/documentation_options.js?v=3a3a8e7f"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=5fa4622c"></script>

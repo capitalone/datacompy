@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Polars Usage" href="polars_usage.html" /><link rel="prev" title="Pandas Usage" href="pandas_usage.html" />
 
     <!-- Generated with Sphinx 7.4.7 and Furo 2024.08.06 -->
-        <title>Spark Usage - datacompy 0.14.0 documentation</title>
+        <title>Spark Usage - datacompy 0.14.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.14.0 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.14.1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.14.0 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.14.1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -275,30 +275,26 @@ logic is now under the <code class="docutils literal notranslate"><span class="p
 </pre></div>
 </div>
 </div>
-<p>For both <code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code> and <code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code></p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Starting with <code class="docutils literal notranslate"><span class="pre">v0.14.1</span></code>, <code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code> is slated for deprecation. <code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code>
+is the prefered and much more performant. It should be noted that if you continue to use <code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code>
+that <code class="docutils literal notranslate"><span class="pre">numpy</span></code> 2+ is not supported due to dependnecy issues.</p>
+</div>
+<p>For <code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code></p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">on_index</span></code> is not supported.</p></li>
 <li><p>Joining is done using <code class="docutils literal notranslate"><span class="pre">&lt;=&gt;</span></code> which is the equality test that is safe for null values.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code> compares <code class="docutils literal notranslate"><span class="pre">pyspark.pandas.DataFrame</span></code>’s</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code> compares <code class="docutils literal notranslate"><span class="pre">pyspark.sql.DataFrame</span></code>’s</p></li>
 </ul>
-<section id="supported-version">
-<h2>Supported Version<a class="headerlink" href="#supported-version" title="Link to this heading">¶</a></h2>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>Spark will not offically support Pandas 2 until Spark 4: <a class="reference external" href="https://issues.apache.org/jira/browse/SPARK-44101">https://issues.apache.org/jira/browse/SPARK-44101</a></p>
-</div>
-<p>Until then we will not be supporting Pandas 2 for the Pandas on Spark API implementaion.
-For Fugue, the Native Pandas (<cite>Compare</cite>), and <cite>SparkSQLCompare</cite> implementations, Pandas 2 is supported.</p>
-</section>
-<section id="sparkpandascompare-and-sparksqlcompare-object-setup">
-<h2>SparkPandasCompare and SparkSQLCompare Object Setup<a class="headerlink" href="#sparkpandascompare-and-sparksqlcompare-object-setup" title="Link to this heading">¶</a></h2>
+<section id="sparksqlcompare">
+<h2>SparkSQLCompare<a class="headerlink" href="#sparksqlcompare" title="Link to this heading">¶</a></h2>
 <p>There is currently only one supported method for joining your dataframes - by
 join column(s).</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">pyspark.pandas</span> <span class="k">as</span> <span class="nn">ps</span>
-<span class="kn">from</span> <span class="nn">datacompy</span> <span class="kn">import</span> <span class="n">SparkPandasCompare</span><span class="p">,</span> <span class="n">SparkSQLCompare</span>
+<span class="kn">from</span> <span class="nn">datacompy</span> <span class="kn">import</span>  <span class="n">SparkSQLCompare</span>
 <span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
 
 <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
@@ -318,25 +314,6 @@ join column(s).</p>
 <span class="s2">10000001237,123456,Robert Loblaw,345.12</span>
 <span class="s2">10000001238,1.05,Loose Seal Bluth,111</span>
 <span class="s2">&quot;&quot;&quot;</span>
-
-<span class="c1"># SparkPandasCompare</span>
-<span class="n">df1</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">from_pandas</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data1</span><span class="p">)))</span>
-<span class="n">df2</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">from_pandas</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data2</span><span class="p">)))</span>
-
-<span class="n">compare</span> <span class="o">=</span> <span class="n">SparkPandasCompare</span><span class="p">(</span>
-    <span class="n">df1</span><span class="p">,</span>
-    <span class="n">df2</span><span class="p">,</span>
-    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1"># You can also specify a list of columns</span>
-    <span class="n">abs_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Optional, defaults to 0</span>
-    <span class="n">rel_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Optional, defaults to 0</span>
-    <span class="n">df1_name</span><span class="o">=</span><span class="s1">&#39;Original&#39;</span><span class="p">,</span>  <span class="c1"># Optional, defaults to &#39;df1&#39;</span>
-    <span class="n">df2_name</span><span class="o">=</span><span class="s1">&#39;New&#39;</span>  <span class="c1"># Optional, defaults to &#39;df2&#39;</span>
-<span class="p">)</span>
-<span class="n">compare</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">ignore_extra_columns</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="c1"># False</span>
-<span class="c1"># This method prints out a human-readable report summarizing and sampling differences</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">report</span><span class="p">())</span>
-
 
 <span class="c1"># SparkSQLCompare</span>
 <span class="n">df1</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data1</span><span class="p">)))</span>
@@ -634,8 +611,7 @@ as uniquely in the second.</p>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Spark Usage</a><ul>
-<li><a class="reference internal" href="#supported-version">Supported Version</a></li>
-<li><a class="reference internal" href="#sparkpandascompare-and-sparksqlcompare-object-setup">SparkPandasCompare and SparkSQLCompare Object Setup</a></li>
+<li><a class="reference internal" href="#sparksqlcompare">SparkSQLCompare</a></li>
 <li><a class="reference internal" href="#reports">Reports</a></li>
 <li><a class="reference internal" href="#convenience-methods">Convenience Methods</a></li>
 <li><a class="reference internal" href="#duplicate-rows">Duplicate rows</a></li>
@@ -650,7 +626,7 @@ as uniquely in the second.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=9e420a66"></script>
+</div><script src="_static/documentation_options.js?v=3a3a8e7f"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=5fa4622c"></script>
