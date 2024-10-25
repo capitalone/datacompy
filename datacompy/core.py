@@ -490,7 +490,7 @@ class Compare(BaseCompare):
             column.
         """
         row_cnt = self.intersect_rows.shape[0]
-        col_match = self.intersect_rows[column + "_match"]
+        col_match = self.intersect_rows[column + "_match"].fillna(False)
         match_cnt = col_match.sum()
         sample_count = min(sample_count, row_cnt - match_cnt)
         sample = self.intersect_rows[~col_match].sample(sample_count)
