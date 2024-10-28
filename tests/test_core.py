@@ -958,6 +958,36 @@ def test_sample_mismatch():
     assert (output.name_df1 != output.name_df2).all()
 
 
+def test_sample_mismatch_with_nans():
+    """Checks that comparison of StringArrays with pd.NA values returns booleans
+
+    When comparing pd.NA with a string the result is pd.NA, this breaks the compare
+    report with the following error:
+    "E ValueError: a must be greater than 0 unless no samples are taken"
+
+    Dataframes with StringArray type rows come when using pd.Dataframes created from
+    parquet files using the pyarrow engine.
+    """
+    df1 = pd.DataFrame({
+        'acct_id': [10000001221, 10000001222, 10000001223],
+        'name': pd.array([pd.NA, pd.NA, pd.NA], dtype='string')
+    })
+    df1.set_index('acct_id', inplace=True)
+
+    df2 = pd.DataFrame({
+        'acct_id': [10000001221, 10000001222, 10000001223],
+        'name': pd.array([pd.NA, 'Tobias Funke', pd.NA], dtype='string')
+    })
+
+    df2.set_index('acct_id', inplace=True)
+
+    report = datacompy.Compare(df1=df1, df2=df2, on_index=True).report()
+
+    print(report)
+
+    assert 'Tobias Funke' in report
+
+
 def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
