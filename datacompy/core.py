@@ -490,7 +490,7 @@ class Compare(BaseCompare):
             column.
         """
         row_cnt = self.intersect_rows.shape[0]
-        col_match = self.intersect_rows[column + "_match"].fillna(False)
+        col_match = self.intersect_rows[column + "_match"]
         match_cnt = col_match.sum()
         sample_count = min(sample_count, row_cnt - match_cnt)
         sample = self.intersect_rows[~col_match].sample(sample_count)
@@ -799,6 +799,7 @@ def columns_equal(
         A series of Boolean values.  True == the values match, False == the
         values don't match.
     """
+    default_value = "DATACOMPY_NULL"
     compare: pd.Series[bool]
 
     # short circuit if comparing mixed type columns. We don't want to support this moving forward.
@@ -842,7 +843,7 @@ def columns_equal(
                     compare = compare_string_and_date_columns(col_1, col_2)
                 else:
                     compare = pd.Series(
-                        (col_1 == col_2) | (col_1.isnull() & col_2.isnull())
+                        (col_1.fillna(default_value) == col_2.fillna(default_value)) | (col_1.isnull() & col_2.isnull())
                     )
             except Exception:
                 # Blanket exception should just return all False
