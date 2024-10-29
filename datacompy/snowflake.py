@@ -27,23 +27,26 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union, cast
 
 import pandas as pd
-import snowflake.snowpark as sp
 from ordered_set import OrderedSet
-from snowflake.snowpark import Window
-from snowflake.snowpark.exceptions import SnowparkSQLException
-from snowflake.snowpark.functions import (
-    abs,
-    col,
-    concat,
-    contains,
-    is_null,
-    lit,
-    monotonically_increasing_id,
-    row_number,
-    trim,
-    when,
-)
 
+try:
+    import snowflake.snowpark as sp
+    from snowflake.snowpark import Window
+    from snowflake.snowpark.exceptions import SnowparkSQLException
+    from snowflake.snowpark.functions import (
+        abs,
+        col,
+        concat,
+        contains,
+        is_null,
+        lit,
+        monotonically_increasing_id,
+        row_number,
+        trim,
+        when,
+    )
+except ImportError:
+    pass  # for non-snowflake users
 from datacompy.base import BaseCompare
 from datacompy.spark.sql import decimal_comparator
 
@@ -103,9 +106,9 @@ class SnowflakeCompare(BaseCompare):
 
     def __init__(
         self,
-        session: sp.Session,
-        df1: Union[str, sp.DataFrame],
-        df2: Union[str, sp.DataFrame],
+        session: "sp.Session",
+        df1: Union[str, "sp.DataFrame"],
+        df2: Union[str, "sp.DataFrame"],
         join_columns: Optional[Union[List[str], str]],
         abs_tol: float = 0,
         rel_tol: float = 0,
@@ -141,12 +144,12 @@ class SnowflakeCompare(BaseCompare):
         self._compare(ignore_spaces=ignore_spaces)
 
     @property
-    def df1(self) -> sp.DataFrame:
+    def df1(self) -> "sp.DataFrame":
         """Get the first dataframe."""
         return self._df1
 
     @df1.setter
-    def df1(self, df1: tuple[Union[str, sp.DataFrame], Optional[str]]) -> None:
+    def df1(self, df1: tuple[Union[str, "sp.DataFrame"], Optional[str]]) -> None:
         """Check that df1 is either a Snowpark DF or the name of a valid Snowflake table."""
         (df, df_name) = df1
         if isinstance(df, str):
@@ -162,12 +165,12 @@ class SnowflakeCompare(BaseCompare):
         self._validate_dataframe(self.df1_name, "df1")
 
     @property
-    def df2(self) -> sp.DataFrame:
+    def df2(self) -> "sp.DataFrame":
         """Get the second dataframe."""
         return self._df2
 
     @df2.setter
-    def df2(self, df2: tuple[Union[str, sp.DataFrame], Optional[str]]) -> None:
+    def df2(self, df2: tuple[Union[str, "sp.DataFrame"], Optional[str]]) -> None:
         """Check that df2 is either a Snowpark DF or the name of a valid Snowflake table."""
         (df, df_name) = df2
         if isinstance(df, str):
@@ -197,7 +200,7 @@ class SnowflakeCompare(BaseCompare):
             The "index" of the dataframe - df1 or df2.
         """
         df = getattr(self, index)
-        if not isinstance(df, sp.DataFrame):
+        if not isinstance(df, "sp.DataFrame"):
             raise TypeError(f"{df_name} must be a valid sp.Dataframe")
 
         # force all columns to be non-case-sensitive
@@ -550,7 +553,7 @@ class SnowflakeCompare(BaseCompare):
 
     def sample_mismatch(
         self, column: str, sample_count: int = 10, for_display: bool = False
-    ) -> sp.DataFrame:
+    ) -> "sp.DataFrame":
         """Return sample mismatches.
 
         Gets a sub-dataframe which contains the identifying
@@ -605,7 +608,7 @@ class SnowflakeCompare(BaseCompare):
             )
         return to_return
 
-    def all_mismatch(self, ignore_matching_cols: bool = False) -> sp.DataFrame:
+    def all_mismatch(self, ignore_matching_cols: bool = False) -> "sp.DataFrame":
         """Get all rows with any columns that have a mismatch.
 
         Returns all df1 and df2 versions of the columns and join
@@ -860,14 +863,14 @@ def render(filename: str, *fields: Union[int, float, str]) -> str:
 
 
 def columns_equal(
-    dataframe: sp.DataFrame,
+    dataframe: "sp.DataFrame",
     col_1: str,
     col_2: str,
     col_match: str,
     rel_tol: float = 0,
     abs_tol: float = 0,
     ignore_spaces: bool = False,
-) -> sp.DataFrame:
+) -> "sp.DataFrame":
     """Compare two columns from a dataframe.
 
     Returns a True/False series with the same index as column 1.
@@ -943,7 +946,7 @@ def columns_equal(
 
 
 def get_merged_columns(
-    original_df: sp.DataFrame, merged_df: sp.DataFrame, suffix: str
+    original_df: "sp.DataFrame", merged_df: "sp.DataFrame", suffix: str
 ) -> List[str]:
     """Get the columns from an original dataframe, in the new merged dataframe.
 
@@ -973,7 +976,7 @@ def get_merged_columns(
     return columns
 
 
-def calculate_max_diff(dataframe: sp.DataFrame, col_1: str, col_2: str) -> float:
+def calculate_max_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> float:
     """Get a maximum difference between two columns.
 
     Parameters
@@ -1010,7 +1013,7 @@ def calculate_max_diff(dataframe: sp.DataFrame, col_1: str, col_2: str) -> float
         return max_diff
 
 
-def calculate_null_diff(dataframe: sp.DataFrame, col_1: str, col_2: str) -> int:
+def calculate_null_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> int:
     """Get the null differences between two columns.
 
     Parameters
@@ -1053,8 +1056,8 @@ def calculate_null_diff(dataframe: sp.DataFrame, col_1: str, col_2: str) -> int:
 
 
 def _generate_id_within_group(
-    dataframe: sp.DataFrame, join_columns: List[str], order_column_name: str
-) -> sp.DataFrame:
+    dataframe: "sp.DataFrame", join_columns: List[str], order_column_name: str
+) -> "sp.DataFrame":
     """Generate an ID column that can be used to deduplicate identical rows.
 
     The series generated
@@ -1117,7 +1120,7 @@ def _generate_id_within_group(
 
 
 def _get_column_dtypes(
-    dataframe: sp.DataFrame, col_1: "str", col_2: "str"
+    dataframe: "sp.DataFrame", col_1: "str", col_2: "str"
 ) -> tuple[str, str]:
     """Get the dtypes of two columns.
 
