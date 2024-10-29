@@ -43,12 +43,14 @@ from datacompy.fugue import (
     unq_columns,
 )
 from datacompy.polars import PolarsCompare
+from datacompy.snowflake import SnowflakeCompare
 from datacompy.spark.sql import SparkSQLCompare
 
 __all__ = [
     "BaseCompare",
     "Compare",
     "PolarsCompare",
+    "SnowflakeCompare",
     "SparkSQLCompare",
     "all_columns_match",
     "all_rows_overlap",

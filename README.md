@@ -34,6 +34,7 @@ pip install datacompy[spark]
 pip install datacompy[dask]
 pip install datacompy[duckdb]
 pip install datacompy[ray]
+pip install datacompy[snowflake]
 
 ```
 
@@ -95,6 +96,7 @@ with the Pandas on Spark implementation. Spark plans to support Pandas 2 in [Spa
 - Pandas: ([See documentation](https://capitalone.github.io/datacompy/pandas_usage.html))
 - Spark: ([See documentation](https://capitalone.github.io/datacompy/spark_usage.html))
 - Polars: ([See documentation](https://capitalone.github.io/datacompy/polars_usage.html))
+- Snowflake/Snowpark: ([See documentation](https://capitalone.github.io/datacompy/snowflake_usage.html))
 - Fugue is a Python library that provides a unified interface for data processing on Pandas, DuckDB, Polars, Arrow,
   Spark, Dask, Ray, and many other backends. DataComPy integrates with Fugue to provide a simple way to compare data
   across these backends. Please note that Fugue will use the Pandas (Native) logic at its lowest level

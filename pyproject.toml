@@ -56,16 +56,19 @@ python-tag = "py3"
 [project.optional-dependencies]
 duckdb = ["fugue[duckdb]"]
 spark = ["pyspark[connect]>=3.1.1; python_version < \"3.11\"", "pyspark[connect]>=3.4; python_version >= \"3.11\""]
+snowflake = ["snowflake-connector-python", "snowflake-snowpark-python"]
 dask = ["fugue[dask]"]
 ray = ["fugue[ray]"]
 docs = ["sphinx", "furo", "myst-parser"]
 tests = ["pytest", "pytest-cov"]
 
 tests-spark = ["pytest", "pytest-cov", "pytest-spark"]
+tests-snowflake = ["snowflake-snowpark-python[localtest]"]
 qa = ["pre-commit", "ruff==0.5.7", "mypy", "pandas-stubs"]
 build = ["build", "twine", "wheel"]
 edgetest = ["edgetest", "edgetest-conda"]
-dev = ["datacompy[duckdb]", "datacompy[spark]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[qa]", "datacompy[build]"]
+dev_no_snowflake = ["datacompy[duckdb]", "datacompy[spark]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[qa]", "datacompy[build]"]
+dev = ["datacompy[duckdb]", "datacompy[spark]", "datacompy[snowflake]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[tests-snowflake]", "datacompy[qa]", "datacompy[build]"]
 
 # Linters, formatters and type checkers
 [tool.ruff]
