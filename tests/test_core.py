@@ -968,22 +968,26 @@ def test_sample_mismatch_with_nans():
     Dataframes with StringArray type rows come when using pd.Dataframes created from
     parquet files using the pyarrow engine.
     """
-    df1 = pd.DataFrame({
-        'acct_id': [10000001221, 10000001222, 10000001223],
-        'name': pd.array([pd.NA, pd.NA, pd.NA], dtype='string')
-    })
-    df1.set_index('acct_id', inplace=True)
+    df1 = pd.DataFrame(
+        {
+            "acct_id": [10000001221, 10000001222, 10000001223],
+            "name": pd.array([pd.NA, pd.NA, pd.NA], dtype="string"),
+        }
+    )
+    df1.set_index("acct_id", inplace=True)
 
-    df2 = pd.DataFrame({
-        'acct_id': [10000001221, 10000001222, 10000001223],
-        'name': pd.array([pd.NA, 'Tobias Funke', pd.NA], dtype='string')
-    })
+    df2 = pd.DataFrame(
+        {
+            "acct_id": [10000001221, 10000001222, 10000001223],
+            "name": pd.array([pd.NA, "Tobias Funke", pd.NA], dtype="string"),
+        }
+    )
 
-    df2.set_index('acct_id', inplace=True)
+    df2.set_index("acct_id", inplace=True)
 
     report = datacompy.Compare(df1=df1, df2=df2, on_index=True).report()
 
-    assert 'Tobias Funke' in report
+    assert "Tobias Funke" in report
 
 
 def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():
