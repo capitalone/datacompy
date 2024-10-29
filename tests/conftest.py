@@ -20,5 +20,5 @@ CONNECTION_PARAMETERS = {
 
 
 @pytest.fixture(scope="module")
-def snowpark_session() -> Session:
+def snowpark_session() -> "Session":
     return Session.builder.configs(CONNECTION_PARAMETERS).create()
