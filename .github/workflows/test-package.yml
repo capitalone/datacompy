@@ -74,7 +74,7 @@ jobs:
         python -m pip install .[dev]
     - name: Test with pytest
       run: |
-        python -m pytest tests/
+        python -m pytest tests/ --ignore=tests/test_snowflake.py
 
   test-bare-install:
 
@@ -101,7 +101,7 @@ jobs:
         python -m pip install .[tests]
     - name: Test with pytest
       run: |
-        python -m pytest tests/
+        python -m pytest tests/ --ignore=tests/test_snowflake.py
 
   test-fugue-install-no-spark:
 
@@ -127,4 +127,4 @@ jobs:
         python -m pip install .[tests,duckdb,polars,dask,ray]
     - name: Test with pytest
       run: |
-        python -m pytest tests/
+        python -m pytest tests/ --ignore=tests/test_snowflake.py
