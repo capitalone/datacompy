@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9, '3.10', '3.11']
+        python-version: [3.9, '3.10', '3.11', '3.12']
         spark-version: [3.2.4, 3.3.4, 3.4.2, 3.5.1]
         pandas-version: [2.2.3, 1.5.3]
         numpy-version: [2.1.2, 1.26.4]
@@ -64,57 +64,24 @@ jobs:
         java-version: '8'
         distribution: 'adopt'
 
-    - name: Install Spark and datacompy
+    - name: Install Spark, Pandas, and Numpy
       run: |
         python -m pip install --upgrade pip
         python -m pip install pytest pytest-spark pypandoc
         python -m pip install pyspark[connect]==${{ matrix.spark-version }}
         python -m pip install pandas==${{ matrix.pandas-version }}
         python -m pip install numpy==${{ matrix.numpy-version }}
-        python -m pip install .[dev]
-    - name: Test with pytest
+
+    - name: Install dependencies without Snowflake/Snowpark if Python 3.12
+      if: ${{ matrix.python-version }} == '3.12'
       run: |
-        python -m pytest tests/ --ignore=tests/test_snowflake.py
-
-  test-dev-install_no_snowflake_deps:
-
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.12']
-        spark-version: [3.2.4, 3.3.4, 3.4.2, 3.5.1]
-        pandas-version: [2.2.3, 1.5.3]
-        numpy-version: [2.1.2, 1.26.4]
-        exclude:
-          - pandas-version: 1.5.3
-            numpy-version: 2.1.2
-    env:
-      PYTHON_VERSION: ${{ matrix.python-version }}
-      SPARK_VERSION: ${{ matrix.spark-version }}
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Setup Java JDK
-      uses: actions/setup-java@v3
-      with:
-        java-version: '8'
-        distribution: 'adopt'
-
-    - name: Install Spark and datacompy
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install pytest pytest-spark pypandoc
-        python -m pip install pyspark[connect]==${{ matrix.spark-version }}
-        python -m pip install pandas==${{ matrix.pandas-version }}
-        python -m pip install numpy==${{ matrix.numpy-version }}
         python -m pip install .[dev_no_snowflake]
+
+    - name: Install all dependencies if Python 3.9, 3.10, or 3.11
+      if: ${{ matrix.python-version }} != '3.12'
+      run: |
+        python -m pip install .[dev]
+
     - name: Test with pytest
       run: |
         python -m pytest tests/ --ignore=tests/test_snowflake.py
