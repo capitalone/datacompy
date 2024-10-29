@@ -76,7 +76,7 @@ jobs:
       run: |
         python -m pytest tests/ --ignore=tests/test_snowflake.py
 
-    test-dev-install_no_snowflake_deps:
+  test-dev-install_no_snowflake_deps:
 
     runs-on: ubuntu-latest
     strategy:
