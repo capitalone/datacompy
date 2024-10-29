@@ -983,8 +983,6 @@ def test_sample_mismatch_with_nans():
 
     report = datacompy.Compare(df1=df1, df2=df2, on_index=True).report()
 
-    print(report)
-
     assert 'Tobias Funke' in report
 
 
