@@ -843,7 +843,8 @@ def columns_equal(
                     compare = compare_string_and_date_columns(col_1, col_2)
                 else:
                     compare = pd.Series(
-                        (col_1.fillna(default_value) == col_2.fillna(default_value)) | (col_1.isnull() & col_2.isnull())
+                        (col_1.fillna(default_value) == col_2.fillna(default_value))
+                        | (col_1.isnull() & col_2.isnull())
                     )
             except Exception:
                 # Blanket exception should just return all False
