@@ -77,7 +77,7 @@ jobs:
       run: |
         python -m pip install .[dev_no_snowflake]
 
-    - name: Install dev Datacompy if Python 3.9, 3.10, or 3.11
+    - name: Install Datacompy with all dev dependencies if Python 3.9, 3.10, or 3.11
       if: ${{ matrix.python-version }} != '3.12'
       run: |
         python -m pip install .[dev]
