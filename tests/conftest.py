@@ -3,7 +3,11 @@
 import os
 
 import pytest
-from snowflake.snowpark.session import Session
+
+try:
+    from snowflake.snowpark.session import Session
+except ModuleNotFoundError:
+    pass
 
 CONNECTION_PARAMETERS = {
     "account": os.environ.get("SF_ACCOUNT"),
@@ -13,10 +17,6 @@ CONNECTION_PARAMETERS = {
     "database": os.environ.get("SF_DATABASE"),
     "schema": os.environ.get("SF_SCHEMA"),
 }
-
-
-def pytest_addoption(parser):
-    parser.addoption("--snowflake-session", action="store", default="live")
 
 
 @pytest.fixture(scope="module")
