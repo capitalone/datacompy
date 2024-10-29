@@ -51,12 +51,12 @@ the process of running these tests locally.
 
 Note that you must have the following environment variables set in order to instantiate a Snowflake Connection (for testing purposes):
 
-"SF_ACCOUNT": with your SF account
-"SF_UID": with your SF username
-"SF_PWD": with your SF password
-"SF_WAREHOUSE": with your desired SF warehouse
-"SF_DATABASE": with a valid database with which you have access
-"SF_SCHEMA": with a valid schema belonging to the provided database
+- "SF_ACCOUNT": with your SF account
+- "SF_UID": with your SF username
+- "SF_PWD": with your SF password
+- "SF_WAREHOUSE": with your desired SF warehouse
+- "SF_DATABASE": with a valid database with which you have access
+- "SF_SCHEMA": with a valid schema belonging to the provided database
 
 Once these are set, you are free to run the suite of Snowflake tests.
 
