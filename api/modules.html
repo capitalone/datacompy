@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="datacompy package" href="datacompy.html" /><link rel="prev" title="Developer Instructions" href="../developer_instructions.html" />
 
     <!-- Generated with Sphinx 7.4.7 and Furo 2024.08.06 -->
-        <title>datacompy - datacompy 0.14.1 documentation</title>
+        <title>datacompy - datacompy 0.14.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=302659d7" />
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 0.14.1 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 0.14.2 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.14.1 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.14.2 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -202,6 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../snowflake_usage.html">Snowflake Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../fugue_usage.html">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../benchmark.html">Benchmarks</a></li>
@@ -357,6 +358,32 @@
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="datacompy.html#module-datacompy.snowflake">datacompy.snowflake module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.all_columns_match()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.all_mismatch"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.all_mismatch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.all_rows_overlap"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.all_rows_overlap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.count_matching_rows"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.count_matching_rows()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.df1"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.df1_unq_columns"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df1_unq_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.df2"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.df2_unq_columns"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df2_unq_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.intersect_columns"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.intersect_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.intersect_rows_match"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.intersect_rows_match()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.matches"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.matches()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.report"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.report()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.sample_mismatch"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.sample_mismatch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare.subset"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.subset()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.snowflake.calculate_max_diff"><code class="docutils literal notranslate"><span class="pre">calculate_max_diff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.snowflake.calculate_null_diff"><code class="docutils literal notranslate"><span class="pre">calculate_null_diff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.snowflake.columns_equal"><code class="docutils literal notranslate"><span class="pre">columns_equal()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.snowflake.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.snowflake.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.snowflake.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="datacompy.html#module-datacompy">Module contents</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.BaseCompare"><code class="docutils literal notranslate"><span class="pre">BaseCompare</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.BaseCompare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">BaseCompare.all_columns_match()</span></code></a></li>
@@ -407,6 +434,23 @@
 <li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.PolarsCompare.report"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.report()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.PolarsCompare.sample_mismatch"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.sample_mismatch()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.PolarsCompare.subset"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.subset()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.all_columns_match()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.all_mismatch"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.all_mismatch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.all_rows_overlap"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.all_rows_overlap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.count_matching_rows"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.count_matching_rows()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.df1"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.df1_unq_columns"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df1_unq_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.df2"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.df2_unq_columns"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df2_unq_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.intersect_columns"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.intersect_columns()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.intersect_rows_match"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.intersect_rows_match()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.matches"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.matches()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.report"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.report()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.sample_mismatch"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.sample_mismatch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.subset"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.subset()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code></a><ul>
@@ -514,7 +558,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=3a3a8e7f"></script>
+</div><script src="../_static/documentation_options.js?v=0dc20415"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=5fa4622c"></script>

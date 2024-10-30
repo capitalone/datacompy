@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="datacompy.spark package" href="datacompy.spark.html" /><link rel="prev" title="datacompy" href="modules.html" />
 
     <!-- Generated with Sphinx 7.4.7 and Furo 2024.08.06 -->
-        <title>datacompy package - datacompy 0.14.1 documentation</title>
+        <title>datacompy package - datacompy 0.14.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=302659d7" />
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 0.14.1 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 0.14.2 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.14.1 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.14.2 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -202,6 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../snowflake_usage.html">Snowflake Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../fugue_usage.html">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../benchmark.html">Benchmarks</a></li>
@@ -1400,6 +1401,370 @@ templates directory before opening</p></li>
 </dd></dl>
 
 </section>
+<section id="module-datacompy.snowflake">
+<span id="datacompy-snowflake-module"></span><h2>datacompy.snowflake module<a class="headerlink" href="#module-datacompy.snowflake" title="Link to this heading">¶</a></h2>
+<p>Compare two Snowpark SQL DataFrames and Snowflake tables.</p>
+<p>Originally this package was meant to provide similar functionality to
+PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
+two dataframes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">datacompy.snowflake.</span></span><span class="sig-name descname"><span class="pre">SnowflakeCompare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df1_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_spaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.base.BaseCompare" title="datacompy.base.BaseCompare"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCompare</span></code></a></p>
+<p>Comparison class to be used to compare whether two Snowpark dataframes are equal.</p>
+<p>df1 and df2 can refer to either a Snowpark dataframe or the name of a valid Snowflake table.
+The data structures which df1 and df2 represent must contain all of the join_columns,
+with unique column names. Differences between values are compared to
+abs_tol + rel_tol * abs(df2[‘value’]).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session</strong> (<em>snowflake.snowpark.session</em>) – Session with the required connection session info for user and targeted tables</p></li>
+<li><p><strong>df1</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>sp.Dataframe</em><em>]</em>) – First table to check, provided either as the table’s name or as a Snowpark DF.</p></li>
+<li><p><strong>df2</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>sp.Dataframe</em><em>]</em>) – Second table to check, provided either as the table’s name or as a Snowpark DF.</p></li>
+<li><p><strong>join_columns</strong> (<em>list</em><em> or </em><em>str</em><em>, </em><em>optional</em>) – Column(s) to join dataframes on.  If a string is passed in, that one
+column will be used.</p></li>
+<li><p><strong>abs_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Absolute tolerance between two values.</p></li>
+<li><p><strong>rel_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative tolerance between two values.</p></li>
+<li><p><strong>df1_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the first dataframe. If used alongside a snowflake table,
+overrides the default convention of naming the dataframe after the table.</p></li>
+<li><p><strong>df2_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the second dataframe.</p></li>
+<li><p><strong>ignore_spaces</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to strip whitespace (including newlines) from string columns (including any join
+columns).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Variables<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>df1_unq_rows</strong> (<em>sp.DataFrame</em>) – All records that are only in df1 (based on a join on join_columns)</p></li>
+<li><p><strong>df2_unq_rows</strong> (<em>sp.DataFrame</em>) – All records that are only in df2 (based on a join on join_columns)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.all_columns_match">
+<span class="sig-name descname"><span class="pre">all_columns_match</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.all_columns_match" title="Link to this definition">¶</a></dt>
+<dd><p>Whether the columns all match in the dataframes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><em>bool</em></p></li>
+<li><p><em>True if all columns in df1 are in df2 and vice versa</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.all_mismatch">
+<span class="sig-name descname"><span class="pre">all_mismatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_matching_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.all_mismatch" title="Link to this definition">¶</a></dt>
+<dd><p>Get all rows with any columns that have a mismatch.</p>
+<p>Returns all df1 and df2 versions of the columns and join
+columns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ignore_matching_cols</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether showing the matching columns in the output or not. The default is False.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>All rows of the intersection dataframe, containing any columns, that don’t match.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sp.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.all_rows_overlap">
+<span class="sig-name descname"><span class="pre">all_rows_overlap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.all_rows_overlap" title="Link to this definition">¶</a></dt>
+<dd><p>Whether the rows are all present in both dataframes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if all rows in df1 are in df2 and vice versa (based on
+existence for join option)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.count_matching_rows">
+<span class="sig-name descname"><span class="pre">count_matching_rows</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.count_matching_rows" title="Link to this definition">¶</a></dt>
+<dd><p>Count the number of rows match (on overlapping fields).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of matching rows</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.df1">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">df1</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.df1" title="Link to this definition">¶</a></dt>
+<dd><p>Get the first dataframe.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.df1_unq_columns">
+<span class="sig-name descname"><span class="pre">df1_unq_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedSet</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.df1_unq_columns" title="Link to this definition">¶</a></dt>
+<dd><p>Get columns that are unique to df1.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.df2">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">df2</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.df2" title="Link to this definition">¶</a></dt>
+<dd><p>Get the second dataframe.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.df2_unq_columns">
+<span class="sig-name descname"><span class="pre">df2_unq_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedSet</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.df2_unq_columns" title="Link to this definition">¶</a></dt>
+<dd><p>Get columns that are unique to df2.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.intersect_columns">
+<span class="sig-name descname"><span class="pre">intersect_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedSet</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.intersect_columns" title="Link to this definition">¶</a></dt>
+<dd><p>Get columns that are shared between the two dataframes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.intersect_rows_match">
+<span class="sig-name descname"><span class="pre">intersect_rows_match</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.intersect_rows_match" title="Link to this definition">¶</a></dt>
+<dd><p>Check whether the intersect rows all match.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.matches">
+<span class="sig-name descname"><span class="pre">matches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_extra_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.matches" title="Link to this definition">¶</a></dt>
+<dd><p>Return True or False if the dataframes match.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ignore_extra_columns</strong> (<em>bool</em>) – Ignores any columns in one dataframe and not in the other.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True or False if the dataframes match.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.report">
+<span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">html_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.report" title="Link to this definition">¶</a></dt>
+<dd><p>Return a string representation of a report.</p>
+<p>The representation can
+then be printed or saved to a file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sample records to return.  Defaults to 10.</p></li>
+<li><p><strong>column_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of columns to display in the sample records output.  Defaults to 10.</p></li>
+<li><p><strong>html_file</strong> (<em>str</em><em>, </em><em>optional</em>) – HTML file name to save report output to. If <code class="docutils literal notranslate"><span class="pre">None</span></code> the file creation will be skipped.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The report, formatted kinda nicely.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.sample_mismatch">
+<span class="sig-name descname"><span class="pre">sample_mismatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">for_display</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.sample_mismatch" title="Link to this definition">¶</a></dt>
+<dd><p>Return sample mismatches.</p>
+<p>Gets a sub-dataframe which contains the identifying
+columns, and df1 and df2 versions of the column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>column</strong> (<em>str</em>) – The raw column name (i.e. without <code class="docutils literal notranslate"><span class="pre">_df1</span></code> appended)</p></li>
+<li><p><strong>sample_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sample records to return.  Defaults to 10.</p></li>
+<li><p><strong>for_display</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether this is just going to be used for display (overwrite the
+column names)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A sample of the intersection dataframe, containing only the
+“pertinent” columns, for rows that don’t match on the provided
+column.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sp.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.snowflake.SnowflakeCompare.subset">
+<span class="sig-name descname"><span class="pre">subset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.snowflake.SnowflakeCompare.subset" title="Link to this definition">¶</a></dt>
+<dd><p>Return True if dataframe 2 is a subset of dataframe 1.</p>
+<p>Dataframe 2 is considered a subset if all of its columns are in
+dataframe 1, and all of its rows match rows in dataframe 1 for the
+shared columns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if dataframe 2 is a subset of dataframe 1.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.snowflake.calculate_max_diff">
+<span class="sig-prename descclassname"><span class="pre">datacompy.snowflake.</span></span><span class="sig-name descname"><span class="pre">calculate_max_diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#datacompy.snowflake.calculate_max_diff" title="Link to this definition">¶</a></dt>
+<dd><p>Get a maximum difference between two columns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> (<em>sp.DataFrame</em>) – DataFrame to do comparison on</p></li>
+<li><p><strong>col_1</strong> (<em>str</em>) – The first column to look at</p></li>
+<li><p><strong>col_2</strong> (<em>str</em>) – The second column</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>max diff</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.snowflake.calculate_null_diff">
+<span class="sig-prename descclassname"><span class="pre">datacompy.snowflake.</span></span><span class="sig-name descname"><span class="pre">calculate_null_diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#datacompy.snowflake.calculate_null_diff" title="Link to this definition">¶</a></dt>
+<dd><p>Get the null differences between two columns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> (<em>sp.DataFrame</em>) – DataFrame to do comparison on</p></li>
+<li><p><strong>col_1</strong> (<em>str</em>) – The first column to look at</p></li>
+<li><p><strong>col_2</strong> (<em>str</em>) – The second column</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>null diff</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.snowflake.columns_equal">
+<span class="sig-prename descclassname"><span class="pre">datacompy.snowflake.</span></span><span class="sig-name descname"><span class="pre">columns_equal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_match</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_spaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.snowflake.columns_equal" title="Link to this definition">¶</a></dt>
+<dd><p>Compare two columns from a dataframe.</p>
+<p>Returns a True/False series with the same index as column 1.</p>
+<ul class="simple">
+<li><p>Two nulls (np.nan) will evaluate to True.</p></li>
+<li><p>A null and a non-null value will evaluate to False.</p></li>
+<li><p>Numeric values will use the relative and absolute tolerances.</p></li>
+<li><p>Decimal values (decimal.Decimal) will attempt to be converted to floats
+before comparing</p></li>
+<li><p>Non-numeric values (i.e. where np.isclose can’t be used) will just
+trigger True on two nulls or exact matches.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> (<em>sp.DataFrame</em>) – DataFrame to do comparison on</p></li>
+<li><p><strong>col_1</strong> (<em>str</em>) – The first column to look at</p></li>
+<li><p><strong>col_2</strong> (<em>str</em>) – The second column</p></li>
+<li><p><strong>col_match</strong> (<em>str</em>) – The matching column denoting if the compare was a match or not</p></li>
+<li><p><strong>rel_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative tolerance</p></li>
+<li><p><strong>abs_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Absolute tolerance</p></li>
+<li><p><strong>ignore_spaces</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to strip whitespace (including newlines) from string columns</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A column of boolean values are added.  True == the values match, False == the
+values don’t match.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sp.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.snowflake.get_merged_columns">
+<span class="sig-prename descclassname"><span class="pre">datacompy.snowflake.</span></span><span class="sig-name descname"><span class="pre">get_merged_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">original_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merged_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.snowflake.get_merged_columns" title="Link to this definition">¶</a></dt>
+<dd><p>Get the columns from an original dataframe, in the new merged dataframe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>original_df</strong> (<em>sp.DataFrame</em>) – The original, pre-merge dataframe</p></li>
+<li><p><strong>merged_df</strong> (<em>sp.DataFrame</em>) – Post-merge with another dataframe, with suffixes added in.</p></li>
+<li><p><strong>suffix</strong> (<em>str</em>) – What suffix was used to distinguish when the original dataframe was
+overlapping with the other merged dataframe.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Column list of the original dataframe pre suffix</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.snowflake.render">
+<span class="sig-prename descclassname"><span class="pre">datacompy.snowflake.</span></span><span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.snowflake.render" title="Link to this definition">¶</a></dt>
+<dd><p>Render out an individual template.</p>
+<p>This basically just reads in a
+template file, and applies <code class="docutils literal notranslate"><span class="pre">.format()</span></code> on the fields.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – The file that contains the template.  Will automagically prepend the
+templates directory before opening</p></li>
+<li><p><strong>fields</strong> (<em>list</em>) – Fields to be rendered out in the template</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The fully rendered out file.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.snowflake.temp_column_name">
+<span class="sig-prename descclassname"><span class="pre">datacompy.snowflake.</span></span><span class="sig-name descname"><span class="pre">temp_column_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">dataframes</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.snowflake.temp_column_name" title="Link to this definition">¶</a></dt>
+<dd><p>Get a temp column name that isn’t included in columns of any dataframes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataframes</strong> (<em>list</em><em> of </em><em>DataFrames</em>) – The DataFrames to create a temporary column name for</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>String column name that looks like ‘_temp_x’ for some integer x</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 <section id="module-datacompy">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-datacompy" title="Link to this heading">¶</a></h2>
 <p>DataComPy is a package to compare two Pandas DataFrames.</p>
@@ -1901,6 +2266,223 @@ column.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="datacompy.PolarsCompare.subset">
 <span class="sig-name descname"><span class="pre">subset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.PolarsCompare.subset" title="Link to this definition">¶</a></dt>
+<dd><p>Return True if dataframe 2 is a subset of dataframe 1.</p>
+<p>Dataframe 2 is considered a subset if all of its columns are in
+dataframe 1, and all of its rows match rows in dataframe 1 for the
+shared columns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if dataframe 2 is a subset of dataframe 1.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">datacompy.</span></span><span class="sig-name descname"><span class="pre">SnowflakeCompare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df1_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_spaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.SnowflakeCompare" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.base.BaseCompare" title="datacompy.base.BaseCompare"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCompare</span></code></a></p>
+<p>Comparison class to be used to compare whether two Snowpark dataframes are equal.</p>
+<p>df1 and df2 can refer to either a Snowpark dataframe or the name of a valid Snowflake table.
+The data structures which df1 and df2 represent must contain all of the join_columns,
+with unique column names. Differences between values are compared to
+abs_tol + rel_tol * abs(df2[‘value’]).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session</strong> (<em>snowflake.snowpark.session</em>) – Session with the required connection session info for user and targeted tables</p></li>
+<li><p><strong>df1</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>sp.Dataframe</em><em>]</em>) – First table to check, provided either as the table’s name or as a Snowpark DF.</p></li>
+<li><p><strong>df2</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>sp.Dataframe</em><em>]</em>) – Second table to check, provided either as the table’s name or as a Snowpark DF.</p></li>
+<li><p><strong>join_columns</strong> (<em>list</em><em> or </em><em>str</em><em>, </em><em>optional</em>) – Column(s) to join dataframes on.  If a string is passed in, that one
+column will be used.</p></li>
+<li><p><strong>abs_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Absolute tolerance between two values.</p></li>
+<li><p><strong>rel_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative tolerance between two values.</p></li>
+<li><p><strong>df1_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the first dataframe. If used alongside a snowflake table,
+overrides the default convention of naming the dataframe after the table.</p></li>
+<li><p><strong>df2_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the second dataframe.</p></li>
+<li><p><strong>ignore_spaces</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to strip whitespace (including newlines) from string columns (including any join
+columns).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Variables<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>df1_unq_rows</strong> (<em>sp.DataFrame</em>) – All records that are only in df1 (based on a join on join_columns)</p></li>
+<li><p><strong>df2_unq_rows</strong> (<em>sp.DataFrame</em>) – All records that are only in df2 (based on a join on join_columns)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.all_columns_match">
+<span class="sig-name descname"><span class="pre">all_columns_match</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.SnowflakeCompare.all_columns_match" title="Link to this definition">¶</a></dt>
+<dd><p>Whether the columns all match in the dataframes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><em>bool</em></p></li>
+<li><p><em>True if all columns in df1 are in df2 and vice versa</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.all_mismatch">
+<span class="sig-name descname"><span class="pre">all_mismatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_matching_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.SnowflakeCompare.all_mismatch" title="Link to this definition">¶</a></dt>
+<dd><p>Get all rows with any columns that have a mismatch.</p>
+<p>Returns all df1 and df2 versions of the columns and join
+columns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ignore_matching_cols</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether showing the matching columns in the output or not. The default is False.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>All rows of the intersection dataframe, containing any columns, that don’t match.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sp.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.all_rows_overlap">
+<span class="sig-name descname"><span class="pre">all_rows_overlap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.SnowflakeCompare.all_rows_overlap" title="Link to this definition">¶</a></dt>
+<dd><p>Whether the rows are all present in both dataframes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if all rows in df1 are in df2 and vice versa (based on
+existence for join option)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.count_matching_rows">
+<span class="sig-name descname"><span class="pre">count_matching_rows</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#datacompy.SnowflakeCompare.count_matching_rows" title="Link to this definition">¶</a></dt>
+<dd><p>Count the number of rows match (on overlapping fields).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of matching rows</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.df1">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">df1</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#datacompy.SnowflakeCompare.df1" title="Link to this definition">¶</a></dt>
+<dd><p>Get the first dataframe.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.df1_unq_columns">
+<span class="sig-name descname"><span class="pre">df1_unq_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedSet</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.SnowflakeCompare.df1_unq_columns" title="Link to this definition">¶</a></dt>
+<dd><p>Get columns that are unique to df1.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.df2">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">df2</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#datacompy.SnowflakeCompare.df2" title="Link to this definition">¶</a></dt>
+<dd><p>Get the second dataframe.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.df2_unq_columns">
+<span class="sig-name descname"><span class="pre">df2_unq_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedSet</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.SnowflakeCompare.df2_unq_columns" title="Link to this definition">¶</a></dt>
+<dd><p>Get columns that are unique to df2.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.intersect_columns">
+<span class="sig-name descname"><span class="pre">intersect_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedSet</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.SnowflakeCompare.intersect_columns" title="Link to this definition">¶</a></dt>
+<dd><p>Get columns that are shared between the two dataframes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.intersect_rows_match">
+<span class="sig-name descname"><span class="pre">intersect_rows_match</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.SnowflakeCompare.intersect_rows_match" title="Link to this definition">¶</a></dt>
+<dd><p>Check whether the intersect rows all match.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.matches">
+<span class="sig-name descname"><span class="pre">matches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_extra_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.SnowflakeCompare.matches" title="Link to this definition">¶</a></dt>
+<dd><p>Return True or False if the dataframes match.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ignore_extra_columns</strong> (<em>bool</em>) – Ignores any columns in one dataframe and not in the other.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True or False if the dataframes match.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.report">
+<span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">html_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.SnowflakeCompare.report" title="Link to this definition">¶</a></dt>
+<dd><p>Return a string representation of a report.</p>
+<p>The representation can
+then be printed or saved to a file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sample records to return.  Defaults to 10.</p></li>
+<li><p><strong>column_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of columns to display in the sample records output.  Defaults to 10.</p></li>
+<li><p><strong>html_file</strong> (<em>str</em><em>, </em><em>optional</em>) – HTML file name to save report output to. If <code class="docutils literal notranslate"><span class="pre">None</span></code> the file creation will be skipped.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The report, formatted kinda nicely.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.sample_mismatch">
+<span class="sig-name descname"><span class="pre">sample_mismatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">for_display</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.SnowflakeCompare.sample_mismatch" title="Link to this definition">¶</a></dt>
+<dd><p>Return sample mismatches.</p>
+<p>Gets a sub-dataframe which contains the identifying
+columns, and df1 and df2 versions of the column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>column</strong> (<em>str</em>) – The raw column name (i.e. without <code class="docutils literal notranslate"><span class="pre">_df1</span></code> appended)</p></li>
+<li><p><strong>sample_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sample records to return.  Defaults to 10.</p></li>
+<li><p><strong>for_display</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether this is just going to be used for display (overwrite the
+column names)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A sample of the intersection dataframe, containing only the
+“pertinent” columns, for rows that don’t match on the provided
+column.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sp.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.SnowflakeCompare.subset">
+<span class="sig-name descname"><span class="pre">subset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.SnowflakeCompare.subset" title="Link to this definition">¶</a></dt>
 <dd><p>Return True if dataframe 2 is a subset of dataframe 1.</p>
 <p>Dataframe 2 is considered a subset if all of its columns are in
 dataframe 1, and all of its rows match rows in dataframe 1 for the
@@ -2849,6 +3431,32 @@ will force to use of Fugue over just vanilla Pandas</p></li>
 <li><a class="reference internal" href="#datacompy.polars.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#module-datacompy.snowflake">datacompy.snowflake module</a><ul>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.all_columns_match()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.all_mismatch"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.all_mismatch()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.all_rows_overlap"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.all_rows_overlap()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.count_matching_rows"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.count_matching_rows()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.df1"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df1</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.df1_unq_columns"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df1_unq_columns()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.df2"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df2</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.df2_unq_columns"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df2_unq_columns()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.intersect_columns"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.intersect_columns()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.intersect_rows_match"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.intersect_rows_match()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.matches"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.matches()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.report"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.report()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.sample_mismatch"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.sample_mismatch()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.SnowflakeCompare.subset"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.subset()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.snowflake.calculate_max_diff"><code class="docutils literal notranslate"><span class="pre">calculate_max_diff()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.calculate_null_diff"><code class="docutils literal notranslate"><span class="pre">calculate_null_diff()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.columns_equal"><code class="docutils literal notranslate"><span class="pre">columns_equal()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.snowflake.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-datacompy">Module contents</a><ul>
 <li><a class="reference internal" href="#datacompy.BaseCompare"><code class="docutils literal notranslate"><span class="pre">BaseCompare</span></code></a><ul>
 <li><a class="reference internal" href="#datacompy.BaseCompare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">BaseCompare.all_columns_match()</span></code></a></li>
@@ -2899,6 +3507,23 @@ will force to use of Fugue over just vanilla Pandas</p></li>
 <li><a class="reference internal" href="#datacompy.PolarsCompare.report"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.report()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.PolarsCompare.sample_mismatch"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.sample_mismatch()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.PolarsCompare.subset"><code class="docutils literal notranslate"><span class="pre">PolarsCompare.subset()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.all_columns_match()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.all_mismatch"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.all_mismatch()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.all_rows_overlap"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.all_rows_overlap()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.count_matching_rows"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.count_matching_rows()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.df1"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df1</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.df1_unq_columns"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df1_unq_columns()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.df2"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df2</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.df2_unq_columns"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.df2_unq_columns()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.intersect_columns"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.intersect_columns()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.intersect_rows_match"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.intersect_rows_match()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.matches"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.matches()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.report"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.report()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.sample_mismatch"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.sample_mismatch()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.SnowflakeCompare.subset"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.subset()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#datacompy.SparkPandasCompare"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code></a><ul>
@@ -2962,7 +3587,7 @@ will force to use of Fugue over just vanilla Pandas</p></li>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=3a3a8e7f"></script>
+</div><script src="../_static/documentation_options.js?v=0dc20415"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=5fa4622c"></script>

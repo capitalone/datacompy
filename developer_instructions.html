@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="datacompy" href="api/modules.html" /><link rel="prev" title="Benchmarks" href="benchmark.html" />
 
     <!-- Generated with Sphinx 7.4.7 and Furo 2024.08.06 -->
-        <title>Developer Instructions - datacompy 0.14.1 documentation</title>
+        <title>Developer Instructions - datacompy 0.14.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.14.1 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.14.2 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.14.1 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.14.2 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -202,6 +202,7 @@
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="snowflake_usage.html">Snowflake Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmarks</a></li>
@@ -292,6 +293,22 @@ Just make sure Sphinx 1.3 or above is installed.</p>
 <p>Run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pytest</span></code> to run all unittests defined in the subfolder
 <code class="docutils literal notranslate"><span class="pre">tests</span></code> with the help of <a class="reference external" href="http://pytest.org/">py.test</a> and
 <a class="reference external" href="https://pypi.python.org/pypi/pytest-runner">pytest-runner</a>.</p>
+</section>
+<section id="snowflake-testing">
+<h2>Snowflake testing<a class="headerlink" href="#snowflake-testing" title="Link to this heading">¶</a></h2>
+<p>Testing the Snowflake compare requires the use of a Snowflake cluster, as Snowflake does not support local running.
+This means that Snowflake tests do not get run in CICD, and changes to the Snowflake Compare must be validated by
+the process of running these tests locally.</p>
+<p>Note that you must have the following environment variables set in order to instantiate a Snowflake Connection (for testing purposes):</p>
+<ul class="simple">
+<li><p>“SF_ACCOUNT”: with your SF account</p></li>
+<li><p>“SF_UID”: with your SF username</p></li>
+<li><p>“SF_PWD”: with your SF password</p></li>
+<li><p>“SF_WAREHOUSE”: with your desired SF warehouse</p></li>
+<li><p>“SF_DATABASE”: with a valid database with which you have access</p></li>
+<li><p>“SF_SCHEMA”: with a valid schema belonging to the provided database</p></li>
+</ul>
+<p>Once these are set, you are free to run the suite of Snowflake tests.</p>
 </section>
 <section id="management-of-requirements">
 <h2>Management of Requirements<a class="headerlink" href="#management-of-requirements" title="Link to this heading">¶</a></h2>
@@ -423,6 +440,7 @@ from <a class="reference external" href="https://packaging.python.org/tutorials/
 <li><a class="reference internal" href="#pre-commit-hooks">Pre-Commit Hooks</a></li>
 <li><a class="reference internal" href="#generating-documentation">Generating Documentation</a></li>
 <li><a class="reference internal" href="#run-unit-tests">Run unit tests</a></li>
+<li><a class="reference internal" href="#snowflake-testing">Snowflake testing</a></li>
 <li><a class="reference internal" href="#management-of-requirements">Management of Requirements</a></li>
 <li><a class="reference internal" href="#edgetest">edgetest</a></li>
 <li><a class="reference internal" href="#release-guide">Release Guide</a></li>
@@ -438,7 +456,7 @@ from <a class="reference external" href="https://packaging.python.org/tutorials/
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=3a3a8e7f"></script>
+</div><script src="_static/documentation_options.js?v=0dc20415"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=5fa4622c"></script>

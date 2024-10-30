@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Snowpark/Snowflake Usage" href="snowflake_usage.html" /><link rel="prev" title="Pandas Usage" href="pandas_usage.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Polars Usage" href="polars_usage.html" /><link rel="prev" title="Spark Usage" href="spark_usage.html" />
 
     <!-- Generated with Sphinx 7.4.7 and Furo 2024.08.06 -->
-        <title>Spark Usage - datacompy 0.14.2 documentation</title>
+        <title>Snowpark/Snowflake Usage - datacompy 0.14.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
@@ -201,8 +201,8 @@
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Spark Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="snowflake_usage.html">Snowflake Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Snowflake Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmarks</a></li>
@@ -238,7 +238,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/spark_usage.rst.txt" title="View this page">
+  <a class="muted-link" href="_sources/snowflake_usage.rst.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -258,119 +258,108 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="spark-usage">
-<h1>Spark Usage<a class="headerlink" href="#spark-usage" title="Link to this heading">¶</a></h1>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>With version <code class="docutils literal notranslate"><span class="pre">v0.12.0</span></code> the original <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> was replaced with a
-Pandas on Spark implementation The original <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>
-implementation differs from all the other native implementations. To align the API better,
-and keep behaviour consistent we are deprecating the original <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>
-into a new module <code class="docutils literal notranslate"><span class="pre">LegacySparkCompare</span></code></p>
-<p>Subsequently in <code class="docutils literal notranslate"><span class="pre">v0.13.0</span></code> a PySaprk DataFrame class has been introduced (<code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code>)
-which accepts <code class="docutils literal notranslate"><span class="pre">pyspark.sql.DataFrame</span></code> and should provide better performance. With this version
-the Pandas on Spark implementation has been renamed to <code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code> and all the spark
-logic is now under the <code class="docutils literal notranslate"><span class="pre">spark</span></code> submodule.</p>
-<p>If you wish to use the old SparkCompare moving forward you can import it like so:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">datacompy.spark.legacy</span> <span class="kn">import</span> <span class="n">LegacySparkCompare</span>
-</pre></div>
-</div>
-</div>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>Starting with <code class="docutils literal notranslate"><span class="pre">v0.14.1</span></code>, <code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code> is slated for deprecation. <code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code>
-is the prefered and much more performant. It should be noted that if you continue to use <code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code>
-that <code class="docutils literal notranslate"><span class="pre">numpy</span></code> 2+ is not supported due to dependnecy issues.</p>
-</div>
-<p>For <code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code></p>
+          <section id="snowpark-snowflake-usage">
+<h1>Snowpark/Snowflake Usage<a class="headerlink" href="#snowpark-snowflake-usage" title="Link to this heading">¶</a></h1>
+<p>For <code class="docutils literal notranslate"><span class="pre">SnowflakeCompare</span></code></p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">on_index</span></code> is not supported.</p></li>
-<li><p>Joining is done using <code class="docutils literal notranslate"><span class="pre">&lt;=&gt;</span></code> which is the equality test that is safe for null values.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code> compares <code class="docutils literal notranslate"><span class="pre">pyspark.sql.DataFrame</span></code>’s</p></li>
+<li><p>Joining is done using <code class="docutils literal notranslate"><span class="pre">EQUAL_NULL</span></code> which is the equality test that is safe for null values.</p></li>
+<li><p>Compares <code class="docutils literal notranslate"><span class="pre">snowflake.snowpark.DataFrame</span></code>, which can be provided as either raw Snowflake dataframes</p></li>
 </ul>
-<section id="sparksqlcompare">
-<h2>SparkSQLCompare<a class="headerlink" href="#sparksqlcompare" title="Link to this heading">¶</a></h2>
-<p>There is currently only one supported method for joining your dataframes - by
-join column(s).</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">pyspark.pandas</span> <span class="k">as</span> <span class="nn">ps</span>
-<span class="kn">from</span> <span class="nn">datacompy</span> <span class="kn">import</span>  <span class="n">SparkSQLCompare</span>
-<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
+<p>or the as the names of full names of valid snowflake tables, which we will process into Snowpark dataframes.</p>
+<section id="snowflakecompare-object-setup">
+<h2>SnowflakeCompare Object Setup<a class="headerlink" href="#snowflakecompare-object-setup" title="Link to this heading">¶</a></h2>
+<p>There are two ways to specify input dataframes for <code class="docutils literal notranslate"><span class="pre">SnowflakeCompare</span></code></p>
+<section id="provide-snowpark-dataframes">
+<h3>Provide Snowpark dataframes<a class="headerlink" href="#provide-snowpark-dataframes" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">snowflake.snowpark</span> <span class="kn">import</span> <span class="n">Session</span>
+<span class="kn">from</span> <span class="nn">snowflake.snowpark</span> <span class="kn">import</span> <span class="n">Row</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">datacompy.snowflake</span> <span class="k">as</span> <span class="nn">sp</span>
 
-<span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+<span class="n">connection_parameters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">configs</span><span class="p">(</span><span class="n">connection_parameters</span><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 
-<span class="n">data1</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld,date_fld</span>
-<span class="s2">10000001234,123.45,George Maharis,14530.1555,2017-01-01</span>
-<span class="s2">10000001235,0.45,Michael Bluth,1,2017-01-01</span>
-<span class="s2">10000001236,1345,George Bluth,,2017-01-01</span>
-<span class="s2">10000001237,123456,Bob Loblaw,345.12,2017-01-01</span>
-<span class="s2">10000001239,1.05,Lucille Bluth,,2017-01-01</span>
-<span class="s2">&quot;&quot;&quot;</span>
+<span class="n">data1</span> <span class="o">=</span> <span class="p">[</span>
+<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Maharis&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.1555</span><span class="p">,</span>
+    <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Bob Loblaw&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">,</span>
+    <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001239</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Lucille Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+<span class="p">]</span>
 
-<span class="n">data2</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld</span>
-<span class="s2">10000001234,123.4,George Michael Bluth,14530.155</span>
-<span class="s2">10000001235,0.45,Michael Bluth,</span>
-<span class="s2">10000001236,1345,George Bluth,1</span>
-<span class="s2">10000001237,123456,Robert Loblaw,345.12</span>
-<span class="s2">10000001238,1.05,Loose Seal Bluth,111</span>
-<span class="s2">&quot;&quot;&quot;</span>
+<span class="n">data2</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.4</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.155</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Robert Loblaw&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001238</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Loose Seal Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">111.0</span><span class="p">),</span>
+<span class="p">]</span>
 
-<span class="c1"># SparkSQLCompare</span>
-<span class="n">df1</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data1</span><span class="p">)))</span>
-<span class="n">df2</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data2</span><span class="p">)))</span>
+<span class="n">df_1</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">data1</span><span class="p">)</span>
+<span class="n">df_2</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">data2</span><span class="p">)</span>
 
-<span class="n">compare</span> <span class="o">=</span> <span class="n">SparkSQLCompare</span><span class="p">(</span>
-    <span class="n">spark</span><span class="p">,</span>
-    <span class="n">df1</span><span class="p">,</span>
-    <span class="n">df2</span><span class="p">,</span>
-    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1"># You can also specify a list of columns</span>
-    <span class="n">abs_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Optional, defaults to 0</span>
-    <span class="n">rel_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Optional, defaults to 0</span>
-    <span class="n">df1_name</span><span class="o">=</span><span class="s1">&#39;Original&#39;</span><span class="p">,</span>  <span class="c1"># Optional, defaults to &#39;df1&#39;</span>
-    <span class="n">df2_name</span><span class="o">=</span><span class="s1">&#39;New&#39;</span>  <span class="c1"># Optional, defaults to &#39;df2&#39;</span>
+<span class="n">compare</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">SnowflakeCompare</span><span class="p">(</span>
+    <span class="n">session</span><span class="p">,</span>
+    <span class="n">df_1</span><span class="p">,</span>
+    <span class="n">df_2</span><span class="p">,</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;acct_id&#39;</span><span class="p">],</span>
+    <span class="n">rel_tol</span><span class="o">=</span><span class="mf">1e-03</span><span class="p">,</span>
+    <span class="n">abs_tol</span><span class="o">=</span><span class="mf">1e-04</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">compare</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">ignore_extra_columns</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="c1"># False</span>
+
 <span class="c1"># This method prints out a human-readable report summarizing and sampling differences</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">report</span><span class="p">())</span>
 </pre></div>
 </div>
 </section>
+<section id="provide-the-full-name-db-schema-table-name-of-valid-snowflake-tables">
+<h3>Provide the full name (<code class="docutils literal notranslate"><span class="pre">{db}.{schema}.{table_name}</span></code>) of valid Snowflake tables<a class="headerlink" href="#provide-the-full-name-db-schema-table-name-of-valid-snowflake-tables" title="Link to this heading">¶</a></h3>
+<p>Given the dataframes from the prior examples…</p>
+</section>
+</section>
 <section id="reports">
 <h2>Reports<a class="headerlink" href="#reports" title="Link to this heading">¶</a></h2>
 <p>A report is generated by calling <code class="docutils literal notranslate"><span class="pre">report()</span></code>, which returns a string.
 Here is a sample report generated by <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> for the two tables above,
-joined on <code class="docutils literal notranslate"><span class="pre">acct_id</span></code> (Note: if you don’t specify <code class="docutils literal notranslate"><span class="pre">df1_name</span></code> and/or <code class="docutils literal notranslate"><span class="pre">df2_name</span></code>,
-then any instance of “original” or “new” in the report is replaced with “df1”
-and/or “df2”.):</p>
+joined on <code class="docutils literal notranslate"><span class="pre">acct_id</span></code> (Note: the names for your dataframes are extracted from
+the name of the provided Snowflake table. If you chose to directly use Snowpark
+dataframes, then the names will default to <code class="docutils literal notranslate"><span class="pre">DF1</span></code> and <code class="docutils literal notranslate"><span class="pre">DF2</span></code>.):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataComPy</span> <span class="n">Comparison</span>
 <span class="o">--------------------</span>
 
 <span class="n">DataFrame</span> <span class="n">Summary</span>
 <span class="o">-----------------</span>
 
-  <span class="n">DataFrame</span>  <span class="n">Columns</span>  <span class="n">Rows</span>
-<span class="mi">0</span>  <span class="n">Original</span>        <span class="mi">5</span>     <span class="mi">5</span>
-<span class="mi">1</span>       <span class="n">New</span>        <span class="mi">4</span>     <span class="mi">5</span>
+<span class="n">DataFrame</span>  <span class="n">Columns</span>  <span class="n">Rows</span>
+<span class="mi">0</span>       <span class="n">DF1</span>        <span class="mi">5</span>     <span class="mi">5</span>
+<span class="mi">1</span>       <span class="n">DF2</span>        <span class="mi">4</span>     <span class="mi">5</span>
 
 <span class="n">Column</span> <span class="n">Summary</span>
 <span class="o">--------------</span>
 
 <span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">common</span><span class="p">:</span> <span class="mi">4</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">Original</span> <span class="n">but</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">New</span><span class="p">:</span> <span class="mi">1</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">New</span> <span class="n">but</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Original</span><span class="p">:</span> <span class="mi">0</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">DF1</span> <span class="n">but</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DF2</span><span class="p">:</span> <span class="mi">1</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">columns</span> <span class="ow">in</span> <span class="n">DF2</span> <span class="n">but</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DF1</span><span class="p">:</span> <span class="mi">0</span>
 
 <span class="n">Row</span> <span class="n">Summary</span>
 <span class="o">-----------</span>
 
-<span class="n">Matched</span> <span class="n">on</span><span class="p">:</span> <span class="n">acct_id</span>
+<span class="n">Matched</span> <span class="n">on</span><span class="p">:</span> <span class="n">ACCT_ID</span>
 <span class="n">Any</span> <span class="n">duplicates</span> <span class="n">on</span> <span class="n">match</span> <span class="n">values</span><span class="p">:</span> <span class="n">No</span>
 <span class="n">Absolute</span> <span class="n">Tolerance</span><span class="p">:</span> <span class="mi">0</span>
 <span class="n">Relative</span> <span class="n">Tolerance</span><span class="p">:</span> <span class="mi">0</span>
 <span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="ow">in</span> <span class="n">common</span><span class="p">:</span> <span class="mi">4</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="ow">in</span> <span class="n">Original</span> <span class="n">but</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">New</span><span class="p">:</span> <span class="mi">1</span>
-<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="ow">in</span> <span class="n">New</span> <span class="n">but</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Original</span><span class="p">:</span> <span class="mi">1</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="ow">in</span> <span class="n">DF1</span> <span class="n">but</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DF2</span><span class="p">:</span> <span class="mi">1</span>
+<span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="ow">in</span> <span class="n">DF2</span> <span class="n">but</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DF1</span><span class="p">:</span> <span class="mi">1</span>
 
 <span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="k">with</span> <span class="n">some</span> <span class="n">compared</span> <span class="n">columns</span> <span class="n">unequal</span><span class="p">:</span> <span class="mi">4</span>
 <span class="n">Number</span> <span class="n">of</span> <span class="n">rows</span> <span class="k">with</span> <span class="nb">all</span> <span class="n">compared</span> <span class="n">columns</span> <span class="n">equal</span><span class="p">:</span> <span class="mi">0</span>
@@ -385,57 +374,66 @@ and/or “df2”.):</p>
 <span class="n">Columns</span> <span class="k">with</span> <span class="n">Unequal</span> <span class="n">Values</span> <span class="ow">or</span> <span class="n">Types</span>
 <span class="o">------------------------------------</span>
 
-       <span class="n">Column</span> <span class="n">Original</span> <span class="n">dtype</span> <span class="n">New</span> <span class="n">dtype</span>  <span class="c1"># Unequal  Max Diff  # Null Diff</span>
-<span class="mi">0</span>  <span class="n">dollar_amt</span>        <span class="n">float64</span>   <span class="n">float64</span>          <span class="mi">1</span>    <span class="mf">0.0500</span>            <span class="mi">0</span>
-<span class="mi">2</span>   <span class="n">float_fld</span>        <span class="n">float64</span>   <span class="n">float64</span>          <span class="mi">3</span>    <span class="mf">0.0005</span>            <span class="mi">2</span>
-<span class="mi">1</span>        <span class="n">name</span>         <span class="nb">object</span>    <span class="nb">object</span>          <span class="mi">2</span>       <span class="n">NaN</span>            <span class="mi">0</span>
+    <span class="n">Column</span>         <span class="n">DF1</span> <span class="n">dtype</span>         <span class="n">DF2</span> <span class="n">dtype</span>  <span class="c1"># Unequal  Max Diff  # Null Diff</span>
+<span class="mi">0</span>  <span class="n">DOLLAR_AMT</span>            <span class="n">double</span>            <span class="n">double</span>          <span class="mi">1</span>    <span class="mf">0.0500</span>            <span class="mi">0</span>
+<span class="mi">2</span>   <span class="n">FLOAT_FLD</span>            <span class="n">double</span>            <span class="n">double</span>          <span class="mi">3</span>    <span class="mf">0.0005</span>            <span class="mi">2</span>
+<span class="mi">1</span>        <span class="n">NAME</span>  <span class="n">string</span><span class="p">(</span><span class="mi">16777216</span><span class="p">)</span>  <span class="n">string</span><span class="p">(</span><span class="mi">16777216</span><span class="p">)</span>          <span class="mi">2</span>       <span class="n">NaN</span>            <span class="mi">0</span>
 
 <span class="n">Sample</span> <span class="n">Rows</span> <span class="k">with</span> <span class="n">Unequal</span> <span class="n">Values</span>
 <span class="o">-------------------------------</span>
 
-       <span class="n">acct_id</span>  <span class="n">dollar_amt</span> <span class="p">(</span><span class="n">Original</span><span class="p">)</span>  <span class="n">dollar_amt</span> <span class="p">(</span><span class="n">New</span><span class="p">)</span>
-<span class="mi">0</span>  <span class="mi">10000001234</span>                 <span class="mf">123.45</span>             <span class="mf">123.4</span>
+    <span class="n">ACCT_ID</span>  <span class="n">DOLLAR_AMT</span> <span class="p">(</span><span class="n">DF1</span><span class="p">)</span>  <span class="n">DOLLAR_AMT</span> <span class="p">(</span><span class="n">DF2</span><span class="p">)</span>
+<span class="mi">0</span>  <span class="mi">10000001234</span>            <span class="mf">123.45</span>             <span class="mf">123.4</span>
 
-       <span class="n">acct_id</span> <span class="n">name</span> <span class="p">(</span><span class="n">Original</span><span class="p">)</span>            <span class="n">name</span> <span class="p">(</span><span class="n">New</span><span class="p">)</span>
+    <span class="n">ACCT_ID</span>      <span class="n">NAME</span> <span class="p">(</span><span class="n">DF1</span><span class="p">)</span>            <span class="n">NAME</span> <span class="p">(</span><span class="n">DF2</span><span class="p">)</span>
 <span class="mi">0</span>  <span class="mi">10000001234</span>  <span class="n">George</span> <span class="n">Maharis</span>  <span class="n">George</span> <span class="n">Michael</span> <span class="n">Bluth</span>
-<span class="mi">3</span>  <span class="mi">10000001237</span>      <span class="n">Bob</span> <span class="n">Loblaw</span>         <span class="n">Robert</span> <span class="n">Loblaw</span>
+<span class="mi">1</span>  <span class="mi">10000001237</span>      <span class="n">Bob</span> <span class="n">Loblaw</span>         <span class="n">Robert</span> <span class="n">Loblaw</span>
 
-       <span class="n">acct_id</span>  <span class="n">float_fld</span> <span class="p">(</span><span class="n">Original</span><span class="p">)</span>  <span class="n">float_fld</span> <span class="p">(</span><span class="n">New</span><span class="p">)</span>
-<span class="mi">0</span>  <span class="mi">10000001234</span>            <span class="mf">14530.1555</span>        <span class="mf">14530.155</span>
-<span class="mi">1</span>  <span class="mi">10000001235</span>                <span class="mf">1.0000</span>              <span class="n">NaN</span>
-<span class="mi">2</span>  <span class="mi">10000001236</span>                   <span class="n">NaN</span>            <span class="mf">1.000</span>
+    <span class="n">ACCT_ID</span>  <span class="n">FLOAT_FLD</span> <span class="p">(</span><span class="n">DF1</span><span class="p">)</span>  <span class="n">FLOAT_FLD</span> <span class="p">(</span><span class="n">DF2</span><span class="p">)</span>
+<span class="mi">0</span>  <span class="mi">10000001234</span>       <span class="mf">14530.1555</span>        <span class="mf">14530.155</span>
+<span class="mi">1</span>  <span class="mi">10000001235</span>           <span class="mf">1.0000</span>              <span class="n">NaN</span>
+<span class="mi">2</span>  <span class="mi">10000001236</span>              <span class="n">NaN</span>            <span class="mf">1.000</span>
 
-<span class="n">Sample</span> <span class="n">Rows</span> <span class="n">Only</span> <span class="ow">in</span> <span class="n">Original</span> <span class="p">(</span><span class="n">First</span> <span class="mi">10</span> <span class="n">Columns</span><span class="p">)</span>
-<span class="o">-----------------------------------------------</span>
-
-   <span class="n">acct_id_df1</span>  <span class="n">dollar_amt_df1</span>       <span class="n">name_df1</span>  <span class="n">float_fld_df1</span> <span class="n">date_fld_df1</span>  <span class="n">_merge_left</span>
-<span class="mi">5</span>  <span class="mi">10000001239</span>            <span class="mf">1.05</span>  <span class="n">Lucille</span> <span class="n">Bluth</span>            <span class="n">NaN</span>   <span class="mi">2017</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">01</span>         <span class="kc">True</span>
-
-<span class="n">Sample</span> <span class="n">Rows</span> <span class="n">Only</span> <span class="ow">in</span> <span class="n">New</span> <span class="p">(</span><span class="n">First</span> <span class="mi">10</span> <span class="n">Columns</span><span class="p">)</span>
+<span class="n">Sample</span> <span class="n">Rows</span> <span class="n">Only</span> <span class="ow">in</span> <span class="n">DF1</span> <span class="p">(</span><span class="n">First</span> <span class="mi">10</span> <span class="n">Columns</span><span class="p">)</span>
 <span class="o">------------------------------------------</span>
 
-   <span class="n">acct_id_df2</span>  <span class="n">dollar_amt_df2</span>          <span class="n">name_df2</span>  <span class="n">float_fld_df2</span>  <span class="n">_merge_right</span>
-<span class="mi">4</span>  <span class="mi">10000001238</span>            <span class="mf">1.05</span>  <span class="n">Loose</span> <span class="n">Seal</span> <span class="n">Bluth</span>          <span class="mf">111.0</span>          <span class="kc">True</span>
+<span class="n">ACCT_ID_DF1</span>  <span class="n">DOLLAR_AMT_DF1</span>       <span class="n">NAME_DF1</span>  <span class="n">FLOAT_FLD_DF1</span> <span class="n">DATE_FLD_DF1</span>
+<span class="mi">0</span>  <span class="mi">10000001239</span>            <span class="mf">1.05</span>  <span class="n">Lucille</span> <span class="n">Bluth</span>            <span class="n">NaN</span>   <span class="mi">2017</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">01</span>
+
+<span class="n">Sample</span> <span class="n">Rows</span> <span class="n">Only</span> <span class="ow">in</span> <span class="n">DF2</span> <span class="p">(</span><span class="n">First</span> <span class="mi">10</span> <span class="n">Columns</span><span class="p">)</span>
+<span class="o">------------------------------------------</span>
+
+<span class="n">ACCT_ID_DF2</span>  <span class="n">DOLLAR_AMT_DF2</span>          <span class="n">NAME_DF2</span>  <span class="n">FLOAT_FLD_DF2</span>
+<span class="mi">0</span>  <span class="mi">10000001238</span>            <span class="mf">1.05</span>  <span class="n">Loose</span> <span class="n">Seal</span> <span class="n">Bluth</span>          <span class="mf">111.0</span>
 </pre></div>
 </div>
 </section>
 <section id="convenience-methods">
 <h2>Convenience Methods<a class="headerlink" href="#convenience-methods" title="Link to this heading">¶</a></h2>
 <p>There are a few convenience methods and attributes available after the comparison has been run:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_rows</span><span class="p">[[</span><span class="s1">&#39;name_df1&#39;</span><span class="p">,</span> <span class="s1">&#39;name_df2&#39;</span><span class="p">,</span> <span class="s1">&#39;name_match&#39;</span><span class="p">]])</span>
-<span class="c1">#          name_df1              name_df2  name_match</span>
-<span class="c1"># 0  George Maharis  George Michael Bluth       False</span>
-<span class="c1"># 1   Michael Bluth         Michael Bluth        True</span>
-<span class="c1"># 2    George Bluth          George Bluth        True</span>
-<span class="c1"># 3      Bob Loblaw         Robert Loblaw       False</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_rows</span><span class="p">[[</span><span class="s1">&#39;name_df1&#39;</span><span class="p">,</span> <span class="s1">&#39;name_df2&#39;</span><span class="p">,</span> <span class="s1">&#39;name_match&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="c1"># --------------------------------------------------------</span>
+<span class="c1"># |&quot;NAME_DF1&quot;      |&quot;NAME_DF2&quot;            |&quot;NAME_MATCH&quot;  |</span>
+<span class="c1"># --------------------------------------------------------</span>
+<span class="c1"># |George Maharis  |George Michael Bluth  |False         |</span>
+<span class="c1"># |Michael Bluth   |Michael Bluth         |True          |</span>
+<span class="c1"># |George Bluth    |George Bluth          |True          |</span>
+<span class="c1"># |Bob Loblaw      |Robert Loblaw         |False         |</span>
+<span class="c1"># --------------------------------------------------------</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">df1_unq_rows</span><span class="p">)</span>
-<span class="c1">#    acct_id_df1  dollar_amt_df1       name_df1  float_fld_df1 date_fld_df1  _merge_left</span>
-<span class="c1"># 5  10000001239            1.05  Lucille Bluth            NaN   2017-01-01         True</span>
+<span class="n">compare</span><span class="o">.</span><span class="n">df1_unq_rows</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="c1"># ---------------------------------------------------------------------------------------</span>
+<span class="c1"># |&quot;ACCT_ID_DF1&quot;  |&quot;DOLLAR_AMT_DF1&quot;  |&quot;NAME_DF1&quot;     |&quot;FLOAT_FLD_DF1&quot;  |&quot;DATE_FLD_DF1&quot;  |</span>
+<span class="c1"># ---------------------------------------------------------------------------------------</span>
+<span class="c1"># |10000001239    |1.05              |Lucille Bluth  |NULL             |2017-01-01      |</span>
+<span class="c1"># ---------------------------------------------------------------------------------------</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">df2_unq_rows</span><span class="p">)</span>
-<span class="c1">#    acct_id_df2  dollar_amt_df2          name_df2  float_fld_df2  _merge_right</span>
-<span class="c1"># 4  10000001238            1.05  Loose Seal Bluth          111.0          True</span>
+<span class="n">compare</span><span class="o">.</span><span class="n">df2_unq_rows</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># |&quot;ACCT_ID_DF2&quot;  |&quot;DOLLAR_AMT_DF2&quot;  |&quot;NAME_DF2&quot;        |&quot;FLOAT_FLD_DF2&quot;  |</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
+<span class="c1"># |10000001238    |1.05              |Loose Seal Bluth  |111.0            |</span>
+<span class="c1"># -------------------------------------------------------------------------</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_columns</span><span class="p">())</span>
 <span class="c1"># OrderedSet([&#39;acct_id&#39;, &#39;dollar_amt&#39;, &#39;name&#39;, &#39;float_fld&#39;])</span>
@@ -554,6 +552,17 @@ ID, before dropping the temp_id again.  So the first two rows in the first dataf
 first two rows in the second dataframe, and the third row in the second dataframe will be recognized
 as uniquely in the second.</p>
 </section>
+<section id="additional-considerations">
+<h2>Additional considerations<a class="headerlink" href="#additional-considerations" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>It is strongly recommended against joining on float columns (or any column with floating point precision).</p></li>
+</ul>
+<p>Columns joining tables are compared on the basis of an exact comparison, therefore if the values comparing
+your float columns are not exact, you will likely get unexpected results.
+- Case-sensitive columns are only partially supported. We essentially treat case-sensitive
+columns as if they are case-insensitive. Therefore you may use case-sensitive columns as long as
+you don’t have several columns with the same name differentiated only be case sensitivity.</p>
+</section>
 </section>
 
         </article>
@@ -561,23 +570,23 @@ as uniquely in the second.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="snowflake_usage.html">
+          <a class="next-page" href="polars_usage.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Snowpark/Snowflake Usage</div>
+                <div class="title">Polars Usage</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="pandas_usage.html">
+          <a class="prev-page" href="spark_usage.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Pandas Usage</div>
+                <div class="title">Spark Usage</div>
                 
               </div>
             </a>
@@ -611,11 +620,16 @@ as uniquely in the second.</p>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Spark Usage</a><ul>
-<li><a class="reference internal" href="#sparksqlcompare">SparkSQLCompare</a></li>
+<li><a class="reference internal" href="#">Snowpark/Snowflake Usage</a><ul>
+<li><a class="reference internal" href="#snowflakecompare-object-setup">SnowflakeCompare Object Setup</a><ul>
+<li><a class="reference internal" href="#provide-snowpark-dataframes">Provide Snowpark dataframes</a></li>
+<li><a class="reference internal" href="#provide-the-full-name-db-schema-table-name-of-valid-snowflake-tables">Provide the full name (<code class="docutils literal notranslate"><span class="pre">{db}.{schema}.{table_name}</span></code>) of valid Snowflake tables</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#reports">Reports</a></li>
 <li><a class="reference internal" href="#convenience-methods">Convenience Methods</a></li>
 <li><a class="reference internal" href="#duplicate-rows">Duplicate rows</a></li>
+<li><a class="reference internal" href="#additional-considerations">Additional considerations</a></li>
 </ul>
 </li>
 </ul>
