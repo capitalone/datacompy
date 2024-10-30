@@ -6,11 +6,12 @@ For ``SnowflakeCompare``
 - ``on_index`` is not supported.
 - Joining is done using ``EQUAL_NULL`` which is the equality test that is safe for null values.
 - Compares ``snowflake.snowpark.DataFrame``, which can be provided as either raw Snowflake dataframes
-or the as the names of full names of valid snowflake tables, which we will process into Snowpark dataframes.
+  or as the names of full names of valid snowflake tables, which we will process into Snowpark dataframes.
 
 
-SnowflakeCompare Object Setup
----------------------------------------------------
+SnowflakeCompare setup
+----------------------
+
 There are two ways to specify input dataframes for ``SnowflakeCompare``
 
 Provide Snowpark dataframes
@@ -66,11 +67,12 @@ Provide Snowpark dataframes
     print(compare.report())
 
 
-Provide the full name (``{db}.{schema}.{table_name}``) of valid Snowflake tables
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Provide the full name (``db.schema.table_name``) of valid Snowflake tables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Given the dataframes from the prior examples...
 
 .. code-block:: python
+
     df_1.write.mode("overwrite").save_as_table("toy_table_1")
     df_2.write.mode("overwrite").save_as_table("toy_table_2")
 
@@ -210,6 +212,7 @@ There are a few convenience methods and attributes available after the compariso
     print(compare.df2_unq_columns())
     # OrderedSet()
 
+
 Duplicate rows
 --------------
 
@@ -260,9 +263,10 @@ as uniquely in the second.
 
 Additional considerations
 -------------------------
-- It is strongly recommended against joining on float columns (or any column with floating point precision).
-Columns joining tables are compared on the basis of an exact comparison, therefore if the values comparing
-your float columns are not exact, you will likely get unexpected results.
-- Case-sensitive columns are only partially supported. We essentially treat case-sensitive
-columns as if they are case-insensitive. Therefore you may use case-sensitive columns as long as
-you don't have several columns with the same name differentiated only be case sensitivity.
+
+- It is strongly recommended against joining on float columns or any column with floating point precision.
+  Columns joining tables are compared on the basis of an exact comparison, therefore if the values
+  comparing your float columns are not exact, you will likely get unexpected results.
+- Case-sensitive columns are only partially supported. We essentially treat case-sensitive columns as
+  if they are case-insensitive. Therefore you may use case-sensitive columns as long as you don't have several
+  columns with the same name differentiated only be case sensitivity.
