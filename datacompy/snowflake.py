@@ -200,7 +200,7 @@ class SnowflakeCompare(BaseCompare):
             The "index" of the dataframe - df1 or df2.
         """
         df = getattr(self, index)
-        if not isinstance(df, "sp.DataFrame"):
+        if not isinstance(df, sp.DataFrame):
             raise TypeError(f"{df_name} must be a valid sp.Dataframe")
 
         # force all columns to be non-case-sensitive
