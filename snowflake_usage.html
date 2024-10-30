@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Polars Usage" href="polars_usage.html" /><link rel="prev" title="Spark Usage" href="spark_usage.html" />
 
     <!-- Generated with Sphinx 7.4.7 and Furo 2024.08.06 -->
-        <title>Snowpark/Snowflake Usage - datacompy 0.14.2 documentation</title>
+        <title>Snowpark/Snowflake Usage - datacompy 0.14.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.14.2 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.14.3 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.14.2 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.14.3 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -264,11 +264,11 @@
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">on_index</span></code> is not supported.</p></li>
 <li><p>Joining is done using <code class="docutils literal notranslate"><span class="pre">EQUAL_NULL</span></code> which is the equality test that is safe for null values.</p></li>
-<li><p>Compares <code class="docutils literal notranslate"><span class="pre">snowflake.snowpark.DataFrame</span></code>, which can be provided as either raw Snowflake dataframes</p></li>
+<li><p>Compares <code class="docutils literal notranslate"><span class="pre">snowflake.snowpark.DataFrame</span></code>, which can be provided as either raw Snowflake dataframes
+or as the names of full names of valid snowflake tables, which we will process into Snowpark dataframes.</p></li>
 </ul>
-<p>or the as the names of full names of valid snowflake tables, which we will process into Snowpark dataframes.</p>
-<section id="snowflakecompare-object-setup">
-<h2>SnowflakeCompare Object Setup<a class="headerlink" href="#snowflakecompare-object-setup" title="Link to this heading">¶</a></h2>
+<section id="snowflakecompare-setup">
+<h2>SnowflakeCompare setup<a class="headerlink" href="#snowflakecompare-setup" title="Link to this heading">¶</a></h2>
 <p>There are two ways to specify input dataframes for <code class="docutils literal notranslate"><span class="pre">SnowflakeCompare</span></code></p>
 <section id="provide-snowpark-dataframes">
 <h3>Provide Snowpark dataframes<a class="headerlink" href="#provide-snowpark-dataframes" title="Link to this heading">¶</a></h3>
@@ -322,8 +322,25 @@
 </div>
 </section>
 <section id="provide-the-full-name-db-schema-table-name-of-valid-snowflake-tables">
-<h3>Provide the full name (<code class="docutils literal notranslate"><span class="pre">{db}.{schema}.{table_name}</span></code>) of valid Snowflake tables<a class="headerlink" href="#provide-the-full-name-db-schema-table-name-of-valid-snowflake-tables" title="Link to this heading">¶</a></h3>
+<h3>Provide the full name (<code class="docutils literal notranslate"><span class="pre">db.schema.table_name</span></code>) of valid Snowflake tables<a class="headerlink" href="#provide-the-full-name-db-schema-table-name-of-valid-snowflake-tables" title="Link to this heading">¶</a></h3>
 <p>Given the dataframes from the prior examples…</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df_1</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">save_as_table</span><span class="p">(</span><span class="s2">&quot;toy_table_1&quot;</span><span class="p">)</span>
+<span class="n">df_2</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">save_as_table</span><span class="p">(</span><span class="s2">&quot;toy_table_2&quot;</span><span class="p">)</span>
+
+<span class="n">compare</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">SnowflakeCompare</span><span class="p">(</span>
+    <span class="n">session</span><span class="p">,</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">db</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">schema</span><span class="si">}</span><span class="s2">.toy_table_1&quot;</span><span class="p">,</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">db</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">schema</span><span class="si">}</span><span class="s2">.toy_table_2&quot;</span><span class="p">,</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;acct_id&#39;</span><span class="p">],</span>
+    <span class="n">rel_tol</span><span class="o">=</span><span class="mf">1e-03</span><span class="p">,</span>
+    <span class="n">abs_tol</span><span class="o">=</span><span class="mf">1e-04</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">compare</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">ignore_extra_columns</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># This method prints out a human-readable report summarizing and sampling differences</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">report</span><span class="p">())</span>
+</pre></div>
+</div>
 </section>
 </section>
 <section id="reports">
@@ -555,13 +572,13 @@ as uniquely in the second.</p>
 <section id="additional-considerations">
 <h2>Additional considerations<a class="headerlink" href="#additional-considerations" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p>It is strongly recommended against joining on float columns (or any column with floating point precision).</p></li>
+<li><p>It is strongly recommended against joining on float columns or any column with floating point precision.
+Columns joining tables are compared on the basis of an exact comparison, therefore if the values
+comparing your float columns are not exact, you will likely get unexpected results.</p></li>
+<li><p>Case-sensitive columns are only partially supported. We essentially treat case-sensitive columns as
+if they are case-insensitive. Therefore you may use case-sensitive columns as long as you don’t have several
+columns with the same name differentiated only be case sensitivity.</p></li>
 </ul>
-<p>Columns joining tables are compared on the basis of an exact comparison, therefore if the values comparing
-your float columns are not exact, you will likely get unexpected results.
-- Case-sensitive columns are only partially supported. We essentially treat case-sensitive
-columns as if they are case-insensitive. Therefore you may use case-sensitive columns as long as
-you don’t have several columns with the same name differentiated only be case sensitivity.</p>
 </section>
 </section>
 
@@ -621,9 +638,9 @@ you don’t have several columns with the same name differentiated only be case 
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Snowpark/Snowflake Usage</a><ul>
-<li><a class="reference internal" href="#snowflakecompare-object-setup">SnowflakeCompare Object Setup</a><ul>
+<li><a class="reference internal" href="#snowflakecompare-setup">SnowflakeCompare setup</a><ul>
 <li><a class="reference internal" href="#provide-snowpark-dataframes">Provide Snowpark dataframes</a></li>
-<li><a class="reference internal" href="#provide-the-full-name-db-schema-table-name-of-valid-snowflake-tables">Provide the full name (<code class="docutils literal notranslate"><span class="pre">{db}.{schema}.{table_name}</span></code>) of valid Snowflake tables</a></li>
+<li><a class="reference internal" href="#provide-the-full-name-db-schema-table-name-of-valid-snowflake-tables">Provide the full name (<code class="docutils literal notranslate"><span class="pre">db.schema.table_name</span></code>) of valid Snowflake tables</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#reports">Reports</a></li>
@@ -641,7 +658,7 @@ you don’t have several columns with the same name differentiated only be case 
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=0dc20415"></script>
+</div><script src="_static/documentation_options.js?v=a9ba800c"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=5fa4622c"></script>
