@@ -6,7 +6,7 @@ For ``SnowflakeCompare``
 - ``on_index`` is not supported.
 - Joining is done using ``EQUAL_NULL`` which is the equality test that is safe for null values.
 - Compares ``snowflake.snowpark.DataFrame``, which can be provided as either raw Snowflake dataframes
-  or the as the names of full names of valid snowflake tables, which we will process into Snowpark dataframes.
+  or as the names of full names of valid snowflake tables, which we will process into Snowpark dataframes.
 
 
 SnowflakeCompare setup
