@@ -18,7 +18,7 @@ Originally started to be something of a replacement for SAS's PROC COMPARE for P
 Then extended to carry that functionality over to Spark Dataframes.
 """
 
-__version__ = "0.14.1"
+__version__ = "0.14.2"
 
 import platform
 from warnings import warn
@@ -43,12 +43,14 @@ from datacompy.fugue import (
     unq_columns,
 )
 from datacompy.polars import PolarsCompare
+from datacompy.snowflake import SnowflakeCompare
 from datacompy.spark.sql import SparkSQLCompare
 
 __all__ = [
     "BaseCompare",
     "Compare",
     "PolarsCompare",
+    "SnowflakeCompare",
     "SparkSQLCompare",
     "all_columns_match",
     "all_rows_overlap",
