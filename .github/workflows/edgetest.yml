@@ -31,9 +31,26 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
 
-      - id: run-edgetest
-        uses: edgetest-dev/run-edgetest-action@v1.5
+      - name: Install edgetest
+        shell: bash -el {0}
+        run: |
+          conda install pip
+          conda install edgetest edgetest-conda
+          python -m pip install .[dev]
+
+      - name: Run edgetest
+        shell: bash -el {0}
+        run: |
+          edgetest -c pyproject.toml --export
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
         with:
-          edgetest-flags: '-c pyproject.toml --export'
-          base-branch: ${{ github.ref_name }}
-          skip-pr: 'false'
+          branch: edgetest-patch
+          base: ${{ github.ref_name }}
+          delete-branch: true
+          title: Changes by run-edgetest action
+          commit-message: '[edgetest] automated change'
+          body: Automated changes by [run-edgetest-action](https://github.com/edgetest-dev/run-edgetest-action) GitHub action
+          add-paths: |
+            pyproject.toml
