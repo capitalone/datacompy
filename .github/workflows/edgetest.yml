@@ -8,12 +8,15 @@ on:
   workflow_dispatch:  # allows manual dispatch
 jobs:
   edgetest:
+    permissions:
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     name: running edgetest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: ${{ github.ref_name }}
 
       - name: Set up Python 3.10
         uses: conda-incubator/setup-miniconda@v3
@@ -28,16 +31,9 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
 
-      # - name: Install edgetest
-      #   shell: bash -el {0}
-      #   run: |
-      #     conda install pip
-      #     conda install edgetest edgetest-conda
-      #     python -m pip install .[dev]
-
       - id: run-edgetest
         uses: edgetest-dev/run-edgetest-action@v1.5
         with:
           edgetest-flags: '-c pyproject.toml --export'
-          base-branch: 'develop'
+          base-branch: ${{ github.ref_name }}
           skip-pr: 'false'
