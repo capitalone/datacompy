@@ -1187,7 +1187,7 @@ def test_calculate_max_diff(snowpark_session, column, expected):
     )
     MAX_DIFF_DF = snowpark_session.createDataFrame(pdf)
     assert np.isclose(
-        calculate_max_diff(MAX_DIFF_DF, "BASE", column),
+        calculate_max_diff(MAX_DIFF_DF, "BASE", column).result()[0][0],
         expected,
     )
 
