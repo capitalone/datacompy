@@ -291,8 +291,12 @@ class SnowflakeCompare(BaseCompare):
             LOG.debug("Duplicate rows found, deduping by order of remaining fields")
             # setting internal index
             LOG.info("Adding internal index to dataframes")
-            df1 = df1.withColumn("__index", monotonically_increasing_id())
-            df2 = df2.withColumn("__index", monotonically_increasing_id())
+            df1 = df1.withColumn(
+                "__index", monotonically_increasing_id()
+            ).cache_result()
+            df2 = df2.withColumn(
+                "__index", monotonically_increasing_id()
+            ).cache_result()
 
             # Create order column for uniqueness of match
             order_column = temp_column_name(df1, df2)
@@ -307,11 +311,6 @@ class SnowflakeCompare(BaseCompare):
                 how="inner",
             ).drop("__index")
             temp_join_columns.append(order_column)
-
-            # drop index
-            LOG.info("Dropping internal index")
-            df1 = df1.drop("__index")
-            df2 = df2.drop("__index")
 
         if ignore_spaces:
             for column in self.join_columns:
