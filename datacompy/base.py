@@ -118,7 +118,7 @@ class BaseCompare(ABC):
 
     @abstractmethod
     def count_matching_rows(self) -> int:
-        """Count the number of matchin grows."""
+        """Count the number of matching rows."""
         pass
 
     @abstractmethod
