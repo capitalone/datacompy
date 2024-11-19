@@ -23,6 +23,7 @@ two dataframes.
 
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union, cast
 
@@ -31,8 +32,9 @@ from ordered_set import OrderedSet
 
 try:
     import snowflake.snowpark as sp
+    from snowflake.connector.errors import ProgrammingError
     from snowflake.snowpark import Window
-    from snowflake.snowpark.exceptions import SnowparkSQLException
+    from snowflake.snowpark.exceptions import SnowparkClientException
     from snowflake.snowpark.functions import (
         abs,
         col,
@@ -45,6 +47,7 @@ try:
         trim,
         when,
     )
+
 except ImportError:
     pass  # for non-snowflake users
 from datacompy.base import BaseCompare
@@ -288,8 +291,12 @@ class SnowflakeCompare(BaseCompare):
             LOG.debug("Duplicate rows found, deduping by order of remaining fields")
             # setting internal index
             LOG.info("Adding internal index to dataframes")
-            df1 = df1.withColumn("__index", monotonically_increasing_id())
-            df2 = df2.withColumn("__index", monotonically_increasing_id())
+            df1 = df1.withColumn(
+                "__index", monotonically_increasing_id()
+            ).cache_result()
+            df2 = df2.withColumn(
+                "__index", monotonically_increasing_id()
+            ).cache_result()
 
             # Create order column for uniqueness of match
             order_column = temp_column_name(df1, df2)
@@ -304,11 +311,6 @@ class SnowflakeCompare(BaseCompare):
                 how="inner",
             ).drop("__index")
             temp_join_columns.append(order_column)
-
-            # drop index
-            LOG.info("Dropping internal index")
-            df1 = df1.drop("__index")
-            df2 = df2.drop("__index")
 
         if ignore_spaces:
             for column in self.join_columns:
@@ -400,23 +402,15 @@ class SnowflakeCompare(BaseCompare):
         """Run the comparison on the intersect dataframe.
 
         This loops through all columns that are shared between df1 and df2, and
-        creates a column column_match which is True for matches, False
-        otherwise.
+        creates a column column_match which is True for matches, False otherwise.
+        Finally calculates and stores the compare metrics for matching column pairs.
         """
         LOG.debug("Comparing intersection")
-        max_diff: float
-        null_diff: int
-        row_cnt = self.intersect_rows.count()
-        for column in self.intersect_columns():
-            if column in self.join_columns:
-                match_cnt = row_cnt
-                col_match = ""
-                max_diff = 0
-                null_diff = 0
-            else:
-                col_1 = column + "_" + self.df1_name
-                col_2 = column + "_" + self.df2_name
-                col_match = column + "_MATCH"
+        for col in self.intersect_columns():
+            if col not in self.join_columns:
+                col_1 = col + "_" + self.df1_name
+                col_2 = col + "_" + self.df2_name
+                col_match = col + "_MATCH"
                 self.intersect_rows = columns_equal(
                     self.intersect_rows,
                     col_1,
@@ -426,45 +420,86 @@ class SnowflakeCompare(BaseCompare):
                     self.abs_tol,
                     ignore_spaces,
                 )
-                match_cnt = (
-                    self.intersect_rows.select(col_match)
-                    .where(col(col_match) == True)  # noqa: E712
-                    .count()
+        row_cnt = self.intersect_rows.count()
+
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            for column in self.intersect_columns():
+                future = executor.submit(
+                    self._calculate_column_compare_stats, column, row_cnt
                 )
-                max_diff = calculate_max_diff(
-                    self.intersect_rows,
-                    col_1,
-                    col_2,
-                )
-                null_diff = calculate_null_diff(self.intersect_rows, col_1, col_2)
+                futures.append(future)
+            for future in as_completed(futures):
+                if future.exception():
+                    raise future.exception()
 
-            if row_cnt > 0:
-                match_rate = float(match_cnt) / row_cnt
-            else:
-                match_rate = 0
-            LOG.info(f"{column}: {match_cnt} / {row_cnt} ({match_rate:.2%}) match")
+    def _calculate_column_compare_stats(self, column: str, row_cnt: int) -> None:
+        """Populate the column stats for all intersecting column pairs.
 
-            col1_dtype, _ = _get_column_dtypes(self.df1, column, column)
-            col2_dtype, _ = _get_column_dtypes(self.df2, column, column)
+        Calculates compare stats by intersecting column pairs. For the non-trivial case
+        where intersecting columns are not join columns, a match count, max difference,
+        and null difference must be calculated.
+        """
+        if column in self.join_columns:
+            match_cnt = row_cnt
+            col_match = ""
+            max_diff = 0
+            null_diff = 0
+        else:
+            col_1 = column + "_" + self.df1_name
+            col_2 = column + "_" + self.df2_name
+            col_match = column + "_MATCH"
 
-            self.column_stats.append(
-                {
-                    "column": column,
-                    "match_column": col_match,
-                    "match_cnt": match_cnt,
-                    "unequal_cnt": row_cnt - match_cnt,
-                    "dtype1": str(col1_dtype),
-                    "dtype2": str(col2_dtype),
-                    "all_match": all(
-                        (
-                            col1_dtype == col2_dtype,
-                            row_cnt == match_cnt,
-                        )
-                    ),
-                    "max_diff": max_diff,
-                    "null_diff": null_diff,
-                }
+            match_cnt = (
+                self.intersect_rows.select(col_match)
+                .where(col(col_match) == True)  # noqa: E712
+                .count(block=False)
             )
+
+            max_diff = calculate_max_diff(
+                self.intersect_rows,
+                col_1,
+                col_2,
+            )
+            null_diff = calculate_null_diff(self.intersect_rows, col_1, col_2)
+
+            match_cnt = match_cnt.result()
+            try:
+                max_diff = max_diff.result()[0][0]
+            except (SnowparkClientException, ProgrammingError):
+                max_diff = 0
+            try:
+                null_diff = null_diff.result()
+            except (SnowparkClientException, ProgrammingError):
+                null_diff = 0
+
+        if row_cnt > 0:
+            match_rate = float(match_cnt) / row_cnt
+        else:
+            match_rate = 0
+        LOG.info(f"{column}: {match_cnt} / {row_cnt} ({match_rate:.2%}) match")
+
+        col1_dtype, _ = _get_column_dtypes(self.df1, column, column)
+        col2_dtype, _ = _get_column_dtypes(self.df2, column, column)
+
+        self.column_stats.append(
+            {
+                "column": column,
+                "match_column": col_match,
+                "match_cnt": match_cnt,
+                "unequal_cnt": row_cnt - match_cnt,
+                "dtype1": str(col1_dtype),
+                "dtype2": str(col2_dtype),
+                "all_match": all(
+                    (
+                        col1_dtype == col2_dtype,
+                        row_cnt == match_cnt,
+                    )
+                ),
+                "max_diff": max_diff,
+                "null_diff": null_diff,
+            }
+        )
 
     def all_columns_match(self) -> bool:
         """Whether the columns all match in the dataframes.
@@ -994,23 +1029,16 @@ def calculate_max_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> flo
         max diff
     """
     # Attempting to coalesce maximum diff for non-numeric results in error, if error return 0 max diff.
-    try:
-        diff = dataframe.select(
-            (col(col_1).astype("float") - col(col_2).astype("float")).alias("diff")
-        )
-        abs_diff = diff.select(abs(col("diff")).alias("abs_diff"))
-        max_diff: float = (
-            abs_diff.where(is_null(col("abs_diff")) == False)  # noqa: E712
-            .agg({"abs_diff": "max"})
-            .collect()[0][0]
-        )
-    except SnowparkSQLException:
-        return None
-
-    if pd.isna(max_diff) or pd.isnull(max_diff) or max_diff is None:
-        return 0
-    else:
-        return max_diff
+    diff = dataframe.select(
+        (col(col_1).astype("float") - col(col_2).astype("float")).alias("diff")
+    )
+    abs_diff = diff.select(abs(col("diff")).alias("abs_diff"))
+    max_diff: float = (
+        abs_diff.where(is_null(col("abs_diff")) == False)  # noqa: E712
+        .agg({"abs_diff": "max"})
+        .collect(block=False)
+    )
+    return max_diff
 
 
 def calculate_null_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> int:
@@ -1047,12 +1075,9 @@ def calculate_null_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> in
     null_diff = nulls_df.where(
         ((col("col_1_null") == False) & (col("col_2_null") == True))  # noqa: E712
         | ((col("col_1_null") == True) & (col("col_2_null") == False))  # noqa: E712
-    ).count()
+    ).count(block=False)
 
-    if pd.isna(null_diff) or pd.isnull(null_diff) or null_diff is None:
-        return 0
-    else:
-        return null_diff
+    return null_diff
 
 
 def _generate_id_within_group(
