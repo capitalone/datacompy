@@ -32,9 +32,8 @@ from ordered_set import OrderedSet
 
 try:
     import snowflake.snowpark as sp
-    from snowflake.connector.errors import ProgrammingError
+    from snowflake.connector.errors import DatabaseError, ProgrammingError
     from snowflake.snowpark import Window
-    from snowflake.snowpark.exceptions import SnowparkClientException
     from snowflake.snowpark.functions import (
         abs,
         col,
@@ -466,11 +465,11 @@ class SnowflakeCompare(BaseCompare):
             match_cnt = match_cnt.result()
             try:
                 max_diff = max_diff.result()[0][0]
-            except (SnowparkClientException, ProgrammingError):
+            except (ProgrammingError, DatabaseError):
                 max_diff = 0
             try:
                 null_diff = null_diff.result()
-            except (SnowparkClientException, ProgrammingError):
+            except (ProgrammingError, DatabaseError):
                 null_diff = 0
 
         if row_cnt > 0:
@@ -747,8 +746,8 @@ class SnowflakeCompare(BaseCompare):
         report += render(
             "column_summary.txt",
             len(self.intersect_columns()),
-            len(self.df1_unq_columns()),
-            len(self.df2_unq_columns()),
+            f"{len(self.df1_unq_columns())} {self.df1_unq_columns().items}",
+            f"{len(self.df2_unq_columns())} {self.df2_unq_columns().items}",
             self.df1_name,
             self.df2_name,
         )
