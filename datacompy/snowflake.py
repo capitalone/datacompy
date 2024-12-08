@@ -21,7 +21,6 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
-import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
@@ -29,6 +28,12 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 import pandas as pd
 from ordered_set import OrderedSet
+
+from datacompy.base import BaseCompare
+from datacompy.logger import INFO, get_logger
+from datacompy.spark.sql import decimal_comparator
+
+LOG = get_logger(__name__, INFO)
 
 try:
     import snowflake.snowpark as sp
@@ -48,11 +53,10 @@ try:
     )
 
 except ImportError:
-    pass  # for non-snowflake users
-from datacompy.base import BaseCompare
-from datacompy.spark.sql import decimal_comparator
-
-LOG = logging.getLogger(__name__)
+    LOG.warning(
+        "Please note that you are missing the optional dependency: snowflake. "
+        "If you need to use this functionality it must be installed."
+    )
 
 
 NUMERIC_SNOWPARK_TYPES = [

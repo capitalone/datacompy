@@ -21,7 +21,6 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
-import logging
 import os
 from copy import deepcopy
 from typing import List, Optional, Tuple, Union
@@ -30,6 +29,9 @@ import pandas as pd
 from ordered_set import OrderedSet
 
 from datacompy.base import BaseCompare, temp_column_name
+from datacompy.logger import INFO, get_logger
+
+LOG = get_logger(__name__, INFO)
 
 try:
     import pyspark.sql
@@ -49,10 +51,10 @@ try:
         when,
     )
 except ImportError:
-    pass  # Let non-Spark people at least enjoy the loveliness of the spark sql datacompy functionality
-
-
-LOG = logging.getLogger(__name__)
+    LOG.warning(
+        "Please note that you are missing the optional dependency: spark. "
+        "If you need to use this functionality it must be installed."
+    )
 
 
 def decimal_comparator():
