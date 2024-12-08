@@ -31,9 +31,7 @@ If you would like to use Spark or any other backends please make sure you instal
 
 ```shell
 pip install datacompy[spark]
-pip install datacompy[dask]
-pip install datacompy[duckdb]
-pip install datacompy[ray]
+pip install datacompy[fugue]
 pip install datacompy[snowflake]
 
 ```
