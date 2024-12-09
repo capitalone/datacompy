@@ -5,6 +5,15 @@ Fugue Detail
 for data processing on Pandas, DuckDB, Polars, Arrow, Spark, Dask, Ray, and many other backends.
 DataComPy integrates with Fugue to provide a simple way to compare data across these backends.
 
+
+Installation
+------------
+
+::
+
+    pip install datacompy[fugue]
+
+
 Basic Usage
 -----------
 
@@ -90,13 +99,6 @@ to compare a Pandas dataframe with a Spark dataframe:
         join_columns='acct_id',
     )
 
-Notice that in order to use a specific backend, you need to have the corresponding library installed.
-For example, if you want compare Ray datasets, you must do
-
-::
-
-    pip install datacompy[ray]
-
 
 How it works
 ------------
@@ -106,11 +108,3 @@ using the Pandas-based ``Compare``. The comparison results are then aggregated t
 Different from the join operation used in ``SparkCompare``, the Fugue version uses the ``cogroup -> map``
 like semantic (not exactly the same, Fugue adopts a coarse version to achieve great performance), which
 guarantees full data comparison with consistent result compared to Pandas-based ``Compare``.
-
-
-Future releases
----------------
-
-We are hoping to pilot Fugue for the community in future releases (0.10+) and gather feedback. With Fugue we get the
-benefits of not having to maintain Framework specific code, and also having cross-framework compatibility. We may in
-future depending on feedback deprecate ``SparkCompare`` in favour of just using Fugue to manage non-Pandas use cases.

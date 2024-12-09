@@ -21,23 +21,19 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
-import logging
 import os
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union, cast
 
 import numpy as np
+import polars as pl
 from ordered_set import OrderedSet
+from polars.exceptions import ComputeError, InvalidOperationError
 
 from datacompy.base import BaseCompare, temp_column_name
+from datacompy.logger import INFO, get_logger
 
-try:
-    import polars as pl
-    from polars.exceptions import ComputeError, InvalidOperationError
-except ImportError:
-    pass  # Let non-Polars people at least enjoy the loveliness of the pandas datacompy functionality
-
-LOG = logging.getLogger(__name__)
+LOG = get_logger(__name__, INFO)
 
 STRING_TYPE = ["String", "Utf8"]
 DATE_TYPE = ["Date", "Datetime"]

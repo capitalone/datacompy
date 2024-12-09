@@ -31,6 +31,7 @@ from ordered_set import OrderedSet
 from pytest import raises
 from test_fugue_helpers import _compare_report
 
+pytest.importorskip("fugue")
 pyspark = pytest.importorskip("pyspark")
 
 if sys.version_info >= (3, 12):

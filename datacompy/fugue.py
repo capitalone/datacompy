@@ -15,25 +15,33 @@
 
 """Compare two DataFrames that are supported by Fugue."""
 
-import logging
 import pickle
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
 
-import fugue.api as fa
 import pandas as pd
-import pyarrow as pa
-from fugue import AnyDataFrame
 from ordered_set import OrderedSet
-from triad import Schema
 
 from datacompy.core import Compare, render
+from datacompy.logger import INFO, get_logger
 
-LOG = logging.getLogger(__name__)
+LOG = get_logger(__name__, INFO)
 HASH_COL = "__datacompy__hash__"
 
 
-def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
+try:
+    import fugue.api as fa
+    import pyarrow as pa
+    from fugue import AnyDataFrame
+    from triad import Schema
+except ImportError:
+    LOG.warning(
+        "Please note that you are missing the optional dependency: fugue. "
+        "If you need to use this functionality it must be installed."
+    )
+
+
+def unq_columns(df1: "AnyDataFrame", df2: "AnyDataFrame") -> OrderedSet[str]:
     """Get columns that are unique to df1.
 
     Parameters
@@ -54,7 +62,7 @@ def unq_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
     return cast(OrderedSet[str], OrderedSet(col1) - OrderedSet(col2))
 
 
-def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
+def intersect_columns(df1: "AnyDataFrame", df2: "AnyDataFrame") -> OrderedSet[str]:
     """Get columns that are shared between the two dataframes.
 
     Parameters
@@ -75,7 +83,7 @@ def intersect_columns(df1: AnyDataFrame, df2: AnyDataFrame) -> OrderedSet[str]:
     return OrderedSet(col1) & OrderedSet(col2)
 
 
-def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame) -> bool:
+def all_columns_match(df1: "AnyDataFrame", df2: "AnyDataFrame") -> bool:
     """Whether the columns all match in the dataframes.
 
     Parameters
@@ -95,8 +103,8 @@ def all_columns_match(df1: AnyDataFrame, df2: AnyDataFrame) -> bool:
 
 
 def is_match(
-    df1: AnyDataFrame,
-    df2: AnyDataFrame,
+    df1: "AnyDataFrame",
+    df2: "AnyDataFrame",
     join_columns: Union[str, List[str]],
     abs_tol: float = 0,
     rel_tol: float = 0,
@@ -194,8 +202,8 @@ def is_match(
 
 
 def all_rows_overlap(
-    df1: AnyDataFrame,
-    df2: AnyDataFrame,
+    df1: "AnyDataFrame",
+    df2: "AnyDataFrame",
     join_columns: Union[str, List[str]],
     abs_tol: float = 0,
     rel_tol: float = 0,
@@ -290,8 +298,8 @@ def all_rows_overlap(
 
 
 def count_matching_rows(
-    df1: AnyDataFrame,
-    df2: AnyDataFrame,
+    df1: "AnyDataFrame",
+    df2: "AnyDataFrame",
     join_columns: Union[str, List[str]],
     abs_tol: float = 0,
     rel_tol: float = 0,
@@ -385,8 +393,8 @@ def count_matching_rows(
 
 
 def report(
-    df1: AnyDataFrame,
-    df2: AnyDataFrame,
+    df1: "AnyDataFrame",
+    df2: "AnyDataFrame",
     join_columns: Union[str, List[str]],
     abs_tol: float = 0,
     rel_tol: float = 0,
@@ -638,8 +646,8 @@ def report(
 
 
 def _distributed_compare(
-    df1: AnyDataFrame,
-    df2: AnyDataFrame,
+    df1: "AnyDataFrame",
+    df2: "AnyDataFrame",
     join_columns: Union[str, List[str]],
     return_obj_func: Callable[[Compare], Any],
     abs_tol: float = 0,

@@ -21,7 +21,6 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
-import logging
 import os
 from typing import Any, Dict, List, Optional, Union, cast
 
@@ -30,8 +29,9 @@ import pandas as pd
 from ordered_set import OrderedSet
 
 from datacompy.base import BaseCompare, temp_column_name
+from datacompy.logger import INFO, get_logger
 
-LOG = logging.getLogger(__name__)
+LOG = get_logger(__name__, INFO)
 
 
 class Compare(BaseCompare):

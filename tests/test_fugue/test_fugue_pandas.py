@@ -17,6 +17,7 @@
 from io import StringIO
 
 import pandas as pd
+import pytest
 from datacompy import (
     Compare,
     all_columns_match,
@@ -30,6 +31,8 @@ from datacompy import (
 from ordered_set import OrderedSet
 from pytest import raises
 from test_fugue_helpers import _compare_report
+
+pytest.importorskip("fugue")
 
 
 def test_is_match_native(
