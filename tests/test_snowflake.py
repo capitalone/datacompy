@@ -30,6 +30,7 @@ import pandas as pd
 import pytest
 from pytest import raises
 
+pytest.importorskip("snowflake")
 pytest.importorskip("pyspark")
 
 

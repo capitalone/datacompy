@@ -26,6 +26,7 @@ from datacompy import (
 from ordered_set import OrderedSet
 from pytest import raises
 
+pytest.importorskip("fugue")
 pl = pytest.importorskip("polars")
 
 
