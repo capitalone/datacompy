@@ -11,7 +11,7 @@ maintainers = [
   { name="Faisal Dosani", email="faisal.dosani@capitalone.com" }
 ]
 license = {text = "Apache Software License"}
-dependencies = ["pandas<=2.2.3,>=0.25.0", "numpy<=2.1.2,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "fugue<=0.9.1,>=0.8.7", "polars<=1.12.0,>=0.20.4"]
+dependencies = ["pandas<=2.2.3,>=0.25.0", "numpy<=2.2.0,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "polars[pandas]<=1.17.1,>=0.20.4"]
 requires-python = ">=3.9.0"
 classifiers = [
     "Intended Audience :: Developers",
@@ -54,11 +54,9 @@ version = {attr = "datacompy.__version__"}
 python-tag = "py3"
 
 [project.optional-dependencies]
-duckdb = ["fugue[duckdb]"]
+fugue = ["fugue[duckdb,dask,ray]<=0.9.1,>=0.8.7"]
 spark = ["pyspark[connect]>=3.1.1; python_version < \"3.11\"", "pyspark[connect]>=3.4; python_version >= \"3.11\""]
 snowflake = ["snowflake-connector-python", "snowflake-snowpark-python"]
-dask = ["fugue[dask]"]
-ray = ["fugue[ray]"]
 docs = ["sphinx", "furo", "myst-parser"]
 tests = ["pytest", "pytest-cov"]
 
@@ -67,8 +65,8 @@ tests-snowflake = ["snowflake-snowpark-python[localtest]"]
 qa = ["pre-commit", "ruff==0.5.7", "mypy", "pandas-stubs"]
 build = ["build", "twine", "wheel"]
 edgetest = ["edgetest", "edgetest-conda"]
-dev_no_snowflake = ["datacompy[duckdb]", "datacompy[spark]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[qa]", "datacompy[build]"]
-dev = ["datacompy[duckdb]", "datacompy[spark]", "datacompy[snowflake]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[tests-snowflake]", "datacompy[qa]", "datacompy[build]"]
+dev_no_snowflake = ["datacompy[fugue]", "datacompy[spark]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[qa]", "datacompy[build]"]
+dev = ["datacompy[fugue]", "datacompy[spark]", "datacompy[snowflake]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[tests-snowflake]", "datacompy[qa]", "datacompy[build]"]
 
 # Linters, formatters and type checkers
 [tool.ruff]
@@ -143,6 +141,5 @@ upgrade = [
     "pandas",
     "numpy",
     "ordered-set",
-    "fugue",
-    "polars",
+    "polars[pandas]",
 ]

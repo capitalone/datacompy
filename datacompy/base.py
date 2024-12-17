@@ -21,13 +21,14 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
-import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
 from ordered_set import OrderedSet
 
-LOG = logging.getLogger(__name__)
+from datacompy.logger import INFO, get_logger
+
+LOG = get_logger(__name__, INFO)
 
 
 class BaseCompare(ABC):
@@ -118,7 +119,7 @@ class BaseCompare(ABC):
 
     @abstractmethod
     def count_matching_rows(self) -> int:
-        """Count the number of matchin grows."""
+        """Count the number of matching rows."""
         pass
 
     @abstractmethod
