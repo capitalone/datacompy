@@ -38,7 +38,7 @@ from datacompy.polars import (
     generate_id_within_group,
     temp_column_name,
 )
-from polars.exceptions import ComputeError, DuplicateError
+from polars.exceptions import ComputeError, DuplicateError, SchemaError
 from polars.testing import assert_series_equal
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -536,7 +536,7 @@ def test_string_joiner():
 def test_float_and_string_with_joins():
     df1 = pl.DataFrame([{"a": float("1"), "b": 2}, {"a": float("2"), "b": 2}])
     df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    with raises(ComputeError):
+    with raises((ComputeError, SchemaError)):
         PolarsCompare(df1, df2, "a")
 
 
