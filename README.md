@@ -69,7 +69,6 @@ with the Pandas on Spark implementation. Spark plans to support Pandas 2 in [Spa
 
 |             | Spark 3.2.4 | Spark 3.3.4 | Spark 3.4.2 | Spark 3.5.1 |
 |-------------|-------------|-------------|-------------|-------------|
-| Python 3.9  | ✅           | ✅           | ✅           | ✅           |
 | Python 3.10 | ✅           | ✅           | ✅           | ✅           |
 | Python 3.11 | ❌           | ❌           | ✅           | ✅           |
 | Python 3.12 | ❌           | ❌           | ❌           | ❌           |
