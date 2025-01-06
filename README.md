@@ -7,7 +7,7 @@
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/datacompy)
 
 
-DataComPy is a package to compare two Pandas DataFrames. Originally started to
+DataComPy is a package to compare two DataFrames. Originally started to
 be something of a replacement for SAS's ``PROC COMPARE`` for Pandas DataFrames
 with some more functionality than just ``Pandas.DataFrame.equals(Pandas.DataFrame)``
 (in that it prints out some stats, and lets you tweak how accurate matches have to be).
