@@ -17,7 +17,7 @@
 import sys
 from enum import Enum
 from itertools import chain
-from typing import Any, Dict, List, Optional, Set, TextIO, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, TextIO, Tuple
 from warnings import warn
 
 try:
@@ -160,10 +160,10 @@ class LegacySparkCompare:
         spark_session: "pyspark.sql.SparkSession",
         base_df: "pyspark.sql.DataFrame",
         compare_df: "pyspark.sql.DataFrame",
-        join_columns: List[Union[str, Tuple[str, str]]],
-        column_mapping: Optional[List[Tuple[str, str]]] = None,
+        join_columns: List[str | Tuple[str, str]],
+        column_mapping: List[Tuple[str, str]] | None = None,
         cache_intermediates: bool = False,
-        known_differences: Optional[List[Dict[str, Any]]] = None,
+        known_differences: List[Dict[str, Any]] | None = None,
         rel_tol: float = 0,
         abs_tol: float = 0,
         show_all_columns: bool = False,
@@ -198,14 +198,14 @@ class LegacySparkCompare:
 
         self.spark = spark_session
         self.base_unq_rows = self.compare_unq_rows = None
-        self._base_row_count: Optional[int] = None
-        self._compare_row_count: Optional[int] = None
-        self._common_row_count: Optional[int] = None
-        self._joined_dataframe: Optional[pyspark.sql.DataFrame] = None
-        self._rows_only_base: Optional[pyspark.sql.DataFrame] = None
-        self._rows_only_compare: Optional[pyspark.sql.DataFrame] = None
-        self._all_matched_rows: Optional[pyspark.sql.DataFrame] = None
-        self._all_rows_mismatched: Optional[pyspark.sql.DataFrame] = None
+        self._base_row_count: int | None = None
+        self._compare_row_count: int | None = None
+        self._common_row_count: int | None = None
+        self._joined_dataframe: pyspark.sql.DataFrame | None = None
+        self._rows_only_base: pyspark.sql.DataFrame | None = None
+        self._rows_only_compare: pyspark.sql.DataFrame | None = None
+        self._all_matched_rows: pyspark.sql.DataFrame | None = None
+        self._all_rows_mismatched: pyspark.sql.DataFrame | None = None
         self.columns_match_dict: Dict[str, Any] = {}
 
         # drop the duplicates before actual comparison made.
@@ -219,7 +219,7 @@ class LegacySparkCompare:
             self._compare_row_count = self.compare_df.count()
 
     def _tuplizer(
-        self, input_list: List[Union[str, Tuple[str, str]]]
+        self, input_list: List[str | Tuple[str, str]]
     ) -> List[Tuple[str, str]]:
         join_columns: List[Tuple[str, str]] = []
         for val in input_list:

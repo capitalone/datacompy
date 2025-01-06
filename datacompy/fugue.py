@@ -17,7 +17,7 @@
 
 import pickle
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, Iterable, List, Tuple, cast
 
 import pandas as pd
 from ordered_set import OrderedSet
@@ -105,7 +105,7 @@ def all_columns_match(df1: "AnyDataFrame", df2: "AnyDataFrame") -> bool:
 def is_match(
     df1: "AnyDataFrame",
     df2: "AnyDataFrame",
-    join_columns: Union[str, List[str]],
+    join_columns: str | List[str],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -113,7 +113,7 @@ def is_match(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    parallelism: Optional[int] = None,
+    parallelism: int | None = None,
     strict_schema: bool = False,
 ) -> bool:
     """Check whether two dataframes match.
@@ -204,7 +204,7 @@ def is_match(
 def all_rows_overlap(
     df1: "AnyDataFrame",
     df2: "AnyDataFrame",
-    join_columns: Union[str, List[str]],
+    join_columns: str | List[str],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -212,7 +212,7 @@ def all_rows_overlap(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    parallelism: Optional[int] = None,
+    parallelism: int | None = None,
     strict_schema: bool = False,
 ) -> bool:
     """Check if the rows are all present in both dataframes.
@@ -300,7 +300,7 @@ def all_rows_overlap(
 def count_matching_rows(
     df1: "AnyDataFrame",
     df2: "AnyDataFrame",
-    join_columns: Union[str, List[str]],
+    join_columns: str | List[str],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -308,7 +308,7 @@ def count_matching_rows(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    parallelism: Optional[int] = None,
+    parallelism: int | None = None,
     strict_schema: bool = False,
 ) -> int:
     """Count the number of rows match (on overlapping fields).
@@ -395,7 +395,7 @@ def count_matching_rows(
 def report(
     df1: "AnyDataFrame",
     df2: "AnyDataFrame",
-    join_columns: Union[str, List[str]],
+    join_columns: str | List[str],
     abs_tol: float = 0,
     rel_tol: float = 0,
     df1_name: str = "df1",
@@ -405,8 +405,8 @@ def report(
     cast_column_names_lower: bool = True,
     sample_count: int = 10,
     column_count: int = 10,
-    html_file: Optional[str] = None,
-    parallelism: Optional[int] = None,
+    html_file: str | None = None,
+    parallelism: int | None = None,
 ) -> str:
     """Return a string representation of a report.
 
@@ -648,7 +648,7 @@ def report(
 def _distributed_compare(
     df1: "AnyDataFrame",
     df2: "AnyDataFrame",
-    join_columns: Union[str, List[str]],
+    join_columns: str | List[str],
     return_obj_func: Callable[[Compare], Any],
     abs_tol: float = 0,
     rel_tol: float = 0,
@@ -657,7 +657,7 @@ def _distributed_compare(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    parallelism: Optional[int] = None,
+    parallelism: int | None = None,
     strict_schema: bool = False,
 ) -> List[Any]:
     """Compare the data distributively using the core Compare class.

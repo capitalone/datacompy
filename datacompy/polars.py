@@ -23,7 +23,7 @@ two dataframes.
 
 import os
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, cast
 
 import numpy as np
 import polars as pl
@@ -85,7 +85,7 @@ class PolarsCompare(BaseCompare):
         self,
         df1: "pl.DataFrame",
         df2: "pl.DataFrame",
-        join_columns: Union[List[str], str],
+        join_columns: List[str] | str,
         abs_tol: float = 0,
         rel_tol: float = 0,
         df1_name: str = "df1",
@@ -327,8 +327,8 @@ class PolarsCompare(BaseCompare):
         creates a column column_match which is True for matches, False
         otherwise.
         """
-        match_cnt: Union[int, float]
-        null_diff: Union[int, float]
+        match_cnt: int | float
+        null_diff: int | float
 
         LOG.debug("Comparing intersection")
         row_cnt = len(self.intersect_rows)
@@ -571,7 +571,7 @@ class PolarsCompare(BaseCompare):
         self,
         sample_count: int = 10,
         column_count: int = 10,
-        html_file: Optional[str] = None,
+        html_file: str | None = None,
     ) -> str:
         """Return a string representation of a report.
 
@@ -734,7 +734,7 @@ class PolarsCompare(BaseCompare):
         return report
 
 
-def render(filename: str, *fields: Union[int, float, str]) -> str:
+def render(filename: str, *fields: int | float | str) -> str:
     """Render out an individual template.
 
     This basically just reads in a
