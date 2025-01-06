@@ -22,7 +22,7 @@ two dataframes.
 """
 
 import os
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, cast
 
 import numpy as np
 import pandas as pd
@@ -84,7 +84,7 @@ class Compare(BaseCompare):
         self,
         df1: pd.DataFrame,
         df2: pd.DataFrame,
-        join_columns: Optional[Union[List[str], str]] = None,
+        join_columns: List[str] | str | None = None,
         on_index: bool = False,
         abs_tol: float = 0,
         rel_tol: float = 0,
@@ -100,7 +100,7 @@ class Compare(BaseCompare):
         elif on_index:
             self.on_index = True
             self.join_columns = []
-        elif isinstance(join_columns, (str, int, float)):
+        elif isinstance(join_columns, str | int | float):
             self.join_columns = [
                 str(join_columns).lower()
                 if self.cast_column_names_lower
@@ -564,7 +564,7 @@ class Compare(BaseCompare):
         self,
         sample_count: int = 10,
         column_count: int = 10,
-        html_file: Optional[str] = None,
+        html_file: str | None = None,
     ) -> str:
         """Return a string representation of a report.
 
@@ -728,7 +728,7 @@ class Compare(BaseCompare):
         return report
 
 
-def render(filename: str, *fields: Union[int, float, str]) -> str:
+def render(filename: str, *fields: int | float | str) -> str:
     """Render out an individual template.
 
     This basically just reads in a

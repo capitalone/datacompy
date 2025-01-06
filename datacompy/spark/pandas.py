@@ -23,7 +23,7 @@ two dataframes.
 
 import logging
 import os
-from typing import List, Optional, Union
+from typing import List
 from warnings import warn
 
 import pandas as pd
@@ -94,7 +94,7 @@ class SparkPandasCompare(BaseCompare):
         self,
         df1: "ps.DataFrame",
         df2: "ps.DataFrame",
-        join_columns: Union[List[str], str],
+        join_columns: List[str] | str,
         abs_tol: float = 0,
         rel_tol: float = 0,
         df1_name: str = "df1",
@@ -110,7 +110,7 @@ class SparkPandasCompare(BaseCompare):
 
         ps.set_option("compute.ops_on_diff_frames", True)
         self.cast_column_names_lower = cast_column_names_lower
-        if isinstance(join_columns, (str, int, float)):
+        if isinstance(join_columns, str | int | float):
             self.join_columns = [
                 (
                     str(join_columns).lower()
@@ -638,7 +638,7 @@ class SparkPandasCompare(BaseCompare):
         self,
         sample_count: int = 10,
         column_count: int = 10,
-        html_file: Optional[str] = None,
+        html_file: str | None = None,
     ) -> str:
         """Return a string representation of a report.
 
@@ -793,7 +793,7 @@ class SparkPandasCompare(BaseCompare):
         return report
 
 
-def render(filename: str, *fields: Union[int, float, str]) -> str:
+def render(filename: str, *fields: int | float | str) -> str:
     """Render out an individual template.
 
     This basically just reads in a

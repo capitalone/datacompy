@@ -23,7 +23,7 @@ two dataframes.
 
 import os
 from copy import deepcopy
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple
 
 import pandas as pd
 from ordered_set import OrderedSet
@@ -132,7 +132,7 @@ class SparkSQLCompare(BaseCompare):
         spark_session: "pyspark.sql.SparkSession",
         df1: "pyspark.sql.DataFrame",
         df2: "pyspark.sql.DataFrame",
-        join_columns: Union[List[str], str],
+        join_columns: List[str] | str,
         abs_tol: float = 0,
         rel_tol: float = 0,
         df1_name: str = "df1",
@@ -142,7 +142,7 @@ class SparkSQLCompare(BaseCompare):
         cast_column_names_lower: bool = True,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
-        if isinstance(join_columns, (str, int, float)):
+        if isinstance(join_columns, str | int | float):
             self.join_columns = [
                 (
                     str(join_columns).lower()
@@ -721,7 +721,7 @@ class SparkSQLCompare(BaseCompare):
         self,
         sample_count: int = 10,
         column_count: int = 10,
-        html_file: Optional[str] = None,
+        html_file: str | None = None,
     ) -> str:
         """Return a string representation of a report.
 
@@ -886,7 +886,7 @@ class SparkSQLCompare(BaseCompare):
         return report
 
 
-def render(filename: str, *fields: Union[int, float, str]) -> str:
+def render(filename: str, *fields: int | float | str) -> str:
     """Render out an individual template.
 
     This basically just reads in a
