@@ -5,7 +5,7 @@ Overview
 --------
 
 The main goal of ``datacompy`` is to provide a human-readable output describing
-differences between two dataframes.  For example, if you have two dataframes
+differences between two dataframes. For example, if you have two dataframes
 containing data like:
 
 df1

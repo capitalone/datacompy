@@ -3,12 +3,14 @@ name = "datacompy"
 description = "Dataframe comparison in Python"
 readme = "README.md"
 authors = [
+  { name="Faisal Dosani", email="faisal.dosani@capitalone.com" },
   { name="Ian Robertson" },
   { name="Dan Coates" },
-  { name="Faisal Dosani", email="faisal.dosani@capitalone.com" },
 ]
 maintainers = [
-  { name="Faisal Dosani", email="faisal.dosani@capitalone.com" }
+  { name="Faisal Dosani", email="faisal.dosani@capitalone.com" },
+  { name="Jacob Dawang", email="jacob.dawang@capitalone.com" },
+  { name="Raymond Haffar", email="raymond.haffar@capitalone.com" },
 ]
 license = {text = "Apache Software License"}
 dependencies = ["pandas<=2.2.3,>=0.25.0", "numpy<=2.2.0,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "polars[pandas]<=1.17.1,>=0.20.4"]
