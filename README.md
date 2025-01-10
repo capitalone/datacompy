@@ -7,11 +7,19 @@
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/datacompy)
 
 
-DataComPy is a package to compare two Pandas DataFrames. Originally started to
-be something of a replacement for SAS's ``PROC COMPARE`` for Pandas DataFrames
-with some more functionality than just ``Pandas.DataFrame.equals(Pandas.DataFrame)``
-(in that it prints out some stats, and lets you tweak how accurate matches have to be).
-Then extended to carry that functionality over to Spark Dataframes.
+DataComPy is a package to compare two DataFrames (or tables) such as Pandas, Spark, Polars, and
+even Snowflake. Originally it was created to be something of a replacement
+for SAS's ``PROC COMPARE`` for Pandas DataFrames with some more functionality than
+just ``Pandas.DataFrame.equals(Pandas.DataFrame)`` (in that it prints out some stats,
+and lets you tweak how accurate matches have to be). Supported types include:
+
+- Pandas
+- Polars
+- Spark
+- Snowflake (via snowpark)
+- Dask (via Fugue)
+- DuckDB (via Fugue)
+
 
 ## Quick Installation
 
@@ -69,7 +77,6 @@ with the Pandas on Spark implementation. Spark plans to support Pandas 2 in [Spa
 
 |             | Spark 3.2.4 | Spark 3.3.4 | Spark 3.4.2 | Spark 3.5.1 |
 |-------------|-------------|-------------|-------------|-------------|
-| Python 3.9  | ✅           | ✅           | ✅           | ✅           |
 | Python 3.10 | ✅           | ✅           | ✅           | ✅           |
 | Python 3.11 | ❌           | ❌           | ✅           | ✅           |
 | Python 3.12 | ❌           | ❌           | ❌           | ❌           |

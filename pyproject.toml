@@ -3,16 +3,18 @@ name = "datacompy"
 description = "Dataframe comparison in Python"
 readme = "README.md"
 authors = [
+  { name="Faisal Dosani", email="faisal.dosani@capitalone.com" },
   { name="Ian Robertson" },
   { name="Dan Coates" },
-  { name="Faisal Dosani", email="faisal.dosani@capitalone.com" },
 ]
 maintainers = [
-  { name="Faisal Dosani", email="faisal.dosani@capitalone.com" }
+  { name="Faisal Dosani", email="faisal.dosani@capitalone.com" },
+  { name="Jacob Dawang", email="jacob.dawang@capitalone.com" },
+  { name="Raymond Haffar", email="raymond.haffar@capitalone.com" },
 ]
 license = {text = "Apache Software License"}
 dependencies = ["pandas<=2.2.3,>=0.25.0", "numpy<=2.2.0,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "polars[pandas]<=1.17.1,>=0.20.4"]
-requires-python = ">=3.9.0"
+requires-python = ">=3.10.0"
 classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
@@ -20,7 +22,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -71,7 +72,7 @@ dev = ["datacompy[fugue]", "datacompy[spark]", "datacompy[snowflake]", "datacomp
 # Linters, formatters and type checkers
 [tool.ruff]
 extend-include = ["*.ipynb"]
-target-version = "py39"
+target-version = "py310"
 src = ["src"]
 
 [tool.ruff.lint]

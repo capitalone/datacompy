@@ -24,7 +24,7 @@ two dataframes.
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Union, cast
 
 import pandas as pd
 from ordered_set import OrderedSet
@@ -115,11 +115,11 @@ class SnowflakeCompare(BaseCompare):
         session: "sp.Session",
         df1: Union[str, "sp.DataFrame"],
         df2: Union[str, "sp.DataFrame"],
-        join_columns: Optional[Union[List[str], str]],
+        join_columns: List[str] | str | None,
         abs_tol: float = 0,
         rel_tol: float = 0,
-        df1_name: Optional[str] = None,
-        df2_name: Optional[str] = None,
+        df1_name: str | None = None,
+        df2_name: str | None = None,
         ignore_spaces: bool = False,
     ) -> None:
         if join_columns is None:
@@ -128,7 +128,7 @@ class SnowflakeCompare(BaseCompare):
         elif not join_columns:
             errmsg = "join_columns is empty"
             raise ValueError(errmsg)
-        elif isinstance(join_columns, (str, int, float)):
+        elif isinstance(join_columns, str | int | float):
             self.join_columns = [str(join_columns).replace('"', "").upper()]
         else:
             self.join_columns = [
@@ -155,7 +155,7 @@ class SnowflakeCompare(BaseCompare):
         return self._df1
 
     @df1.setter
-    def df1(self, df1: tuple[Union[str, "sp.DataFrame"], Optional[str]]) -> None:
+    def df1(self, df1: tuple[Union[str, "sp.DataFrame"], str | None]) -> None:
         """Check that df1 is either a Snowpark DF or the name of a valid Snowflake table."""
         (df, df_name) = df1
         if isinstance(df, str):
@@ -176,7 +176,7 @@ class SnowflakeCompare(BaseCompare):
         return self._df2
 
     @df2.setter
-    def df2(self, df2: tuple[Union[str, "sp.DataFrame"], Optional[str]]) -> None:
+    def df2(self, df2: tuple[Union[str, "sp.DataFrame"], str | None]) -> None:
         """Check that df2 is either a Snowpark DF or the name of a valid Snowflake table."""
         (df, df_name) = df2
         if isinstance(df, str):
@@ -215,6 +215,7 @@ class SnowflakeCompare(BaseCompare):
                 zip(
                     self._df1.columns,
                     [str(c).replace('"', "").upper() for c in self._df1.columns],
+                    strict=False,
                 )
             )
             self._df1 = self._df1.rename(col_map)
@@ -223,6 +224,7 @@ class SnowflakeCompare(BaseCompare):
                 zip(
                     self._df2.columns,
                     [str(c).replace('"', "").upper() for c in self._df2.columns],
+                    strict=False,
                 )
             )
             self._df2 = self._df2.rename(dict(col_map))
@@ -711,7 +713,7 @@ class SnowflakeCompare(BaseCompare):
         self,
         sample_count: int = 10,
         column_count: int = 10,
-        html_file: Optional[str] = None,
+        html_file: str | None = None,
     ) -> str:
         """Return a string representation of a report.
 
@@ -876,7 +878,7 @@ class SnowflakeCompare(BaseCompare):
         return report
 
 
-def render(filename: str, *fields: Union[int, float, str]) -> str:
+def render(filename: str, *fields: int | float | str) -> str:
     """Render out an individual template.
 
     This basically just reads in a
