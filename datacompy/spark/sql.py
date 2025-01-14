@@ -1220,3 +1220,6 @@ def _is_comparable(type1: str, type2: str) -> bool:
         or ({type1, type2} == {"string", "timestamp"})
         or ({type1, type2} == {"string", "date"})
     )
+
+def detailed_compare():
+    return
