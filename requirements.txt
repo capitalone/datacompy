@@ -1,0 +1,17 @@
+dbus-python==1.3.2
+distro==1.9.0
+dnf==4.22.0
+libcomps==0.1.21
+libdnf==0.73.4
+mercurial==6.8.2
+numpy==2.2.0
+ordered-set==4.1.0
+pandas==2.2.3
+polars==1.17.1
+pyarrow==18.1.0
+python-dateutil==2.8.2
+pytz==2024.2
+rpm==4.20.0
+six==1.16.0
+systemd-python==235
+tzdata==2024.2
