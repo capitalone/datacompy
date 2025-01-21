@@ -38,11 +38,11 @@ except ImportError:
 
 
 def detailed_compare(
-    spark_session,
-    prod_dataframe: pyspark.sql.DataFrame,
-    release_dataframe: pyspark.sql.DataFrame,
-    column_to_join,
-    string2double_cols=None,
+    spark_session: "pyspark.sql.SparkSession",
+    base_dataframe: "pyspark.sql.DataFrame",
+    compare_dataframe: "pyspark.sql.DataFrame",
+    column_to_join: list,
+    string2double_cols: list = None,
 ) -> SparkSQLCompare:
     """Run a detailed analysis on results.
 
@@ -51,10 +51,10 @@ def detailed_compare(
     spark_session : pyspark.sql.SparkSession
         A ``SparkSession`` to be used to execute Spark commands in the comparison.
 
-    prod_dataframe: pyspark.sql.DataFrame
+    base_dataframe: pyspark.sql.DataFrame
         Dataset to be compared against
 
-    release_dataframe: pyspark.sql.DataFrame
+    compare_dataframe: pyspark.sql.DataFrame
         dataset to compare
 
     column_to_join: List[str], optional
@@ -71,19 +71,19 @@ def detailed_compare(
     """
     # Convert fields that contain numeric values stored as strings to numeric types for comparison
     if len(string2double_cols) != 0:
-        prod_dataframe = handle_numeric_strings(prod_dataframe, string2double_cols)
-        release_dataframe = handle_numeric_strings(
-            release_dataframe, string2double_cols
+        base_dataframe = handle_numeric_strings(base_dataframe, string2double_cols)
+        compare_dataframe = handle_numeric_strings(
+            compare_dataframe, string2double_cols
         )
 
     if len(column_to_join) == 0:
         # will add a new column that numbers the rows so datasets can be compared by row number instead of by a
         # common column
-        sorted_prod_df, sorted_release_df = sort_rows(prod_dataframe, release_dataframe)
+        sorted_prod_df, sorted_release_df = sort_rows(base_dataframe, compare_dataframe)
         column_to_join = ["row"]
     else:
-        sorted_prod_df = prod_dataframe
-        sorted_release_df = release_dataframe
+        sorted_prod_df = base_dataframe
+        sorted_compare_df = compare_dataframe
 
     LOG.info("Compared by column(s): ", column_to_join)
     if string2double_cols:
@@ -94,24 +94,49 @@ def detailed_compare(
     compared_data = SparkSQLCompare(
         spark_session,
         sorted_prod_df,
-        sorted_release_df,
+        sorted_compare_df,
         join_columns=column_to_join,
         abs_tol=0.0001,
     )
     return compared_data
 
+def handle_numeric_strings(df: "pyspark.sql.DataFrame", field_list: list) -> "pyspark.sql.DataFrame":
+    """Converts columns in field_list from numeric strings to DoubleType
 
-def handle_numeric_strings(df, field_list):
-    """"""
+    Parameters
+    ---------
+    df: pyspark.sql.DataFrame
+        The DataFrame to be converted
+    field_list: list
+        List of StringType columns to be converted to DoubleType
+
+    Returns
+    -------
+    pyspark.sql.DataFrame
+    """
     for this_col in field_list:
         df = df.withColumn(this_col, col(this_col).cast(T.DoubleType()))
     return df
 
 
-def sort_rows(prod_df, release_df):
-    """"""
-    prod_cols = prod_df.columns
-    release_cols = release_df.columns
+def sort_rows(base_df: "pyspark.sql.DataFrame", compare_df: "pyspark.sql.DataFrame") -> "pyspark.sql.DataFrame":
+    """Adds new column to each DataFrame that numbers the rows, so they can be compared by row number.
+
+    Parameters
+    ----------
+    base_df: pyspark.sql.DataFrame
+        The base DataFrame to be sorted
+    compare_df: pyspark.sql.DataFrame
+        The compare DataFrame to be sorted
+
+    Returns
+    ------
+    pyspark.sql.DataFrame, pyspark.sql.DataFrame
+
+
+    """
+    prod_cols = base_df.columns
+    release_cols = compare_df.columns
 
     # Ensure both DataFrames have the same columns
     for x in prod_cols:
@@ -128,28 +153,50 @@ def sort_rows(prod_df, release_df):
         )
 
     w = Window.orderBy(*prod_cols)
-    sorted_prod_df = prod_df.select("*", row_number().over(w).alias("row"))
-    sorted_release_df = release_df.select("*", row_number().over(w).alias("row"))
-    return sorted_prod_df, sorted_release_df
+    sorted_base_df = base_df.select("*", row_number().over(w).alias("row"))
+    sorted_compare_df = compare_df.select("*", row_number().over(w).alias("row"))
+    return sorted_base_df, sorted_compare_df
 
 
-def sort_columns(prod_df, release_df):
-    """"""
+def sort_columns(base_df: "pyspark.sql.DataFrame", compare_df: "pyspark.sql.DataFrame") -> "pyspark.sql.DataFrame":
+    """Sorts both DataFrames by their columns to ensure consistent order.
+
+    Parameters
+    ----------
+    base_df: pyspark.sql.DataFrame
+        The base DataFrame to be sorted
+    compare_df: pyspark.sql.DataFrame
+        The compare DataFrame to be sorted
+
+    Returns
+    -------
+    pyspark.sql.DataFrame, pyspark.sql.DataFrame
+    """
     # Ensure both DataFrames have the same columns
-    common_columns = set(prod_df.columns)
+    common_columns = set(base_df.columns)
     for x in common_columns:
-        if x not in release_df.columns:
+        if x not in compare_df.columns:
             raise Exception(
                 f"{x} is present in prod_df but does not exist in release_df"
             )
     # Sort both DataFrames to ensure consistent order
-    prod_df = prod_df.orderBy(*common_columns)
-    release_df = release_df.orderBy(*common_columns)
-    return prod_df, release_df
+    base_df = base_df.orderBy(*common_columns)
+    compare_df = compare_df.orderBy(*common_columns)
+    return base_df, compare_df
 
 
-def format_numeric_fields(df):
-    """"""
+def format_numeric_fields(df: "pyspark.sql.DataFrame") -> "pyspark.sql.DataFrame":
+    """ Rounds and truncates numeric fields to 5 decimal places.
+
+    Parameters
+    ----------
+    df: pyspark.sql.DataFrame
+        The DataFrame to be formatted
+
+    Returns
+    -------
+    pyspark.sql.DataFrame
+    """
     fixed_cols = []
     numeric_types = [
         "tinyint",
