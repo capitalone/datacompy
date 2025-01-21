@@ -79,10 +79,10 @@ def detailed_compare(
     if len(column_to_join) == 0:
         # will add a new column that numbers the rows so datasets can be compared by row number instead of by a
         # common column
-        sorted_prod_df, sorted_release_df = sort_rows(base_dataframe, compare_dataframe)
+        sorted_base_df, sorted_compare_df = sort_rows(base_dataframe, compare_dataframe)
         column_to_join = ["row"]
     else:
-        sorted_prod_df = base_dataframe
+        sorted_base_df = base_dataframe
         sorted_compare_df = compare_dataframe
 
     LOG.info("Compared by column(s): ", column_to_join)
@@ -93,7 +93,7 @@ def detailed_compare(
         )
     compared_data = SparkSQLCompare(
         spark_session,
-        sorted_prod_df,
+        sorted_base_df,
         sorted_compare_df,
         join_columns=column_to_join,
         abs_tol=0.0001,
@@ -135,24 +135,24 @@ def sort_rows(base_df: "pyspark.sql.DataFrame", compare_df: "pyspark.sql.DataFra
 
 
     """
-    prod_cols = base_df.columns
-    release_cols = compare_df.columns
+    base_cols = base_df.columns
+    compare_cols = compare_df.columns
 
     # Ensure both DataFrames have the same columns
-    for x in prod_cols:
-        if x not in release_cols:
+    for x in base_cols:
+        if x not in compare_cols:
             raise Exception(
-                f"{x} is present in prod_df but does not exist in release_df"
+                f"{x} is present in base_df but does not exist in compare_df"
             )
 
-    if set(prod_cols) != set(release_cols):
+    if set(base_cols) != set(compare_cols):
         LOG.warning(
             "WARNING: There are columns present in Compare df that do not exist in Base df. "
             "The Base df columns will be used for row-wise sorting and may produce unanticipated "
             "report output if the extra fields are not null."
         )
 
-    w = Window.orderBy(*prod_cols)
+    w = Window.orderBy(*base_cols)
     sorted_base_df = base_df.select("*", row_number().over(w).alias("row"))
     sorted_compare_df = compare_df.select("*", row_number().over(w).alias("row"))
     return sorted_base_df, sorted_compare_df
@@ -177,7 +177,7 @@ def sort_columns(base_df: "pyspark.sql.DataFrame", compare_df: "pyspark.sql.Data
     for x in common_columns:
         if x not in compare_df.columns:
             raise Exception(
-                f"{x} is present in prod_df but does not exist in release_df"
+                f"{x} is present in base_df but does not exist in compare_df"
             )
     # Sort both DataFrames to ensure consistent order
     base_df = base_df.orderBy(*common_columns)

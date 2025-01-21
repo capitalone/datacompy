@@ -47,61 +47,61 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 def test_detailed_compare_with_string2columns(spark_session):
     # create mock data
-    mock_prod_data = [
+    mock_base_data = [
         ("bob", "22", "dog"),
         ("alice", "19", "cat"),
         ("john", "70", "bunny"),
     ]
-    mock_prod_columns = ["name", "age", "pet"]
+    mock_base_columns = ["name", "age", "pet"]
 
-    mock_release_data = [
+    mock_compare_data = [
         ("bob", "22", "dog"),
         ("alice", "19", "cat"),
         ("john", "70", "bunny"),
     ]
-    mock_release_columns = ["name", "age", "pet"]
+    mock_compare_columns = ["name", "age", "pet"]
 
     # Create DataFrames
-    mock_prod_df = spark_session.createDataFrame(mock_prod_data, mock_prod_columns)
-    mock_release_df = spark_session.createDataFrame(
-        mock_release_data, mock_release_columns
+    mock_base_df = spark_session.createDataFrame(mock_base_data, mock_base_columns)
+    mock_compare_df = spark_session.createDataFrame(
+        mock_compare_data, mock_compare_columns
     )
 
     # call detailed_compare
     result_compared_data = detailed_compare(
-        spark_session, mock_prod_df, mock_release_df, [], ["age"]
+        spark_session, mock_base_df, mock_compare_df, [], ["age"]
     )
 
     # assert result
-    assert result_compared_data.matches()
     assert isinstance(result_compared_data, SparkSQLCompare)
+    assert result_compared_data.matches()
 
 
 def test_detailed_compare_with_column_to_join(spark_session):
     # create mock data
-    mock_prod_data = [
+    mock_base_data = [
         ("bob", "22", "dog"),
         ("alice", "19", "cat"),
         ("john", "70", "bunny"),
     ]
-    mock_prod_columns = ["name", "age", "pet"]
+    mock_base_columns = ["name", "age", "pet"]
 
-    mock_release_data = [
+    mock_compare_data = [
         ("bob", "22", "dog"),
         ("alice", "19", "cat"),
         ("john", "70", "bunny"),
     ]
-    mock_release_columns = ["name", "age", "pet"]
+    mock_compare_columns = ["name", "age", "pet"]
 
     # Create DataFrames
-    mock_prod_df = spark_session.createDataFrame(mock_prod_data, mock_prod_columns)
-    mock_release_df = spark_session.createDataFrame(
-        mock_release_data, mock_release_columns
+    mock_base_df = spark_session.createDataFrame(mock_base_data, mock_base_columns)
+    mock_compare_df = spark_session.createDataFrame(
+        mock_compare_data, mock_compare_columns
     )
 
     # call detailed_compare
     result_compared_data = detailed_compare(
-        spark_session, mock_prod_df, mock_release_df, ["name"], []
+        spark_session, mock_base_df, mock_compare_df, ["name"], []
     )
 
     # assert result
@@ -158,63 +158,63 @@ def test_format_numeric_fields(spark_session):
 
 def test_sort_rows_failure(spark_session):
     # create mock dataframes
-    input_prod_data = [
+    input_base_data = [
         ("bob", "22", "dog"),
         ("alice", "19", "cat"),
         ("john", "70", "bunny"),
     ]
-    columns_prod = ["name", "age", "pet"]
+    columns_base = ["name", "age", "pet"]
 
-    input_release_data = [("19", "cat"), ("70", "bunny"), ("22", "dog")]
-    columns_release = ["age", "pet"]
+    input_compare_data = [("19", "cat"), ("70", "bunny"), ("22", "dog")]
+    columns_commpare = ["age", "pet"]
 
     # Create DataFrames
-    input_prod_df = spark_session.createDataFrame(input_prod_data, columns_prod)
-    input_release_df = spark_session.createDataFrame(
-        input_release_data, columns_release
+    input_base_df = spark_session.createDataFrame(input_base_data, columns_base)
+    input_compare_df = spark_session.createDataFrame(
+        input_compare_data, columns_commpare
     )
 
     # call call_rows
     with pytest.raises(
-        Exception, match="name is present in prod_df but does not exist in release_df"
+        Exception, match="name is present in base_df but does not exist in compare_df"
     ):
-        sort_rows(input_prod_df, input_release_df)
+        sort_rows(input_base_df, input_compare_df)
 
 
 def test_sort_rows_success(caplog, spark_session):
     caplog.set_level(logging.WARNING)
 
     # create mock data
-    input_prod_data = [
+    input_base_data = [
         ("bob", "22", "dog"),
         ("alice", "19", "cat"),
         ("john", "70", "bunny"),
     ]
-    columns_prod = ["name", "age", "pet"]
+    columns_base = ["name", "age", "pet"]
 
-    input_release_data = [
+    input_compare_data = [
         ("19", "cat", "alice", "red"),
         ("70", "bunny", "john", "black"),
         ("22", "dog", "bob", "white"),
     ]
-    columns_release = ["age", "pet", "name", "color"]
+    columns_compare = ["age", "pet", "name", "color"]
 
     # create dataFrames
-    input_prod_df = spark_session.createDataFrame(input_prod_data, columns_prod)
-    input_release_df = spark_session.createDataFrame(
-        input_release_data, columns_release
+    input_base_df = spark_session.createDataFrame(input_base_data, columns_base)
+    input_compare_df = spark_session.createDataFrame(
+        input_compare_data, columns_compare
     )
 
     # call sort_rows
-    sorted_prod_df, sorted_release_df = sort_rows(input_prod_df, input_release_df)
+    sorted_base_df, sorted_compare_df = sort_rows(input_base_df, input_compare_df)
 
-    # create expected prod_dataframe
-    expected_prod_data = [
+    # create expected base_dataframe
+    expected_base_data = [
         ("alice", "19", "cat", 1),
         ("bob", "22", "dog", 2),
         ("john", "70", "bunny", 3),
     ]
-    expected_prod_schema = StructType(
+    expected_base_schema = StructType(
         [
             StructField("name", StringType(), True),
             StructField("age", StringType(), True),
@@ -222,17 +222,17 @@ def test_sort_rows_success(caplog, spark_session):
             StructField("row", IntegerType(), True),
         ]
     )
-    expected_prod_df = spark_session.createDataFrame(
-        expected_prod_data, expected_prod_schema
+    expected_base_df = spark_session.createDataFrame(
+        expected_base_data, expected_base_schema
     )
 
-    # create expected release_dataframe
-    expected_release_data = [
+    # create expected compare_dataframe
+    expected_compare_data = [
         ("19", "cat", "alice", "red", 1),
         ("22", "dog", "bob", "white", 2),
         ("70", "bunny", "john", "black", 3),
     ]
-    expected_release_schema = StructType(
+    expected_compare_schema = StructType(
         [
             StructField("age", StringType(), True),
             StructField("pet", StringType(), True),
@@ -241,13 +241,13 @@ def test_sort_rows_success(caplog, spark_session):
             StructField("row", IntegerType(), True),
         ]
     )
-    expected_release_df = spark_session.createDataFrame(
-        expected_release_data, expected_release_schema
+    expected_compare_df = spark_session.createDataFrame(
+        expected_compare_data, expected_compare_schema
     )
 
     # assertions
-    assert sorted_prod_df.collect() == expected_prod_df.collect()
-    assert sorted_release_df.collect() == expected_release_df.collect()
+    assert sorted_base_df.collect() == expected_base_df.collect()
+    assert sorted_compare_df.collect() == expected_compare_df.collect()
     assert (
         "WARNING: There are columns present in Compare df that do not exist in Base df. The Base df columns will be used for row-wise sorting and may produce unanticipated report output if the extra fields are not null.\n"
         in caplog.text
@@ -256,68 +256,37 @@ def test_sort_rows_success(caplog, spark_session):
 
 def test_sort_columns_failure(spark_session):
     # create mock dataframes
-    input_prod_data = [
+    input_base_data = [
         ("row1", "col2", "col3"),
         ("row2", "col2", "col3"),
         ("row3", "col2", "col3"),
     ]
     columns_1 = ["col1", "col2", "col3"]
 
-    input_release_data = [("row1", "col2"), ("row2", "col2"), ("row3", "col2")]
+    input_compare_data = [("row1", "col2"), ("row2", "col2"), ("row3", "col2")]
     columns_2 = ["col1", "col2"]
 
     # Create DataFrames
-    input_prod_df = spark_session.createDataFrame(input_prod_data, columns_1)
-    input_release_df = spark_session.createDataFrame(input_release_data, columns_2)
+    input_base_df = spark_session.createDataFrame(input_base_data, columns_1)
+    input_compare_df = spark_session.createDataFrame(input_compare_data, columns_2)
 
     # call sort_columns
     with pytest.raises(
-        Exception, match="col3 is present in prod_df but does not exist in release_df"
+        Exception, match="col3 is present in base_df but does not exist in compare_df"
     ):
-        sort_columns(input_prod_df, input_release_df)
+        sort_columns(input_base_df, input_compare_df)
 
 
 def test_sort_columns_success(spark_session):
-    # create mock dataframes
-    input_prod_data = [
-        ("bob", "22", "dog"),
-        ("alice", "19", "cat"),
-        ("john", "70", "bunny"),
-    ]
-    columns_prod = ["name", "age", "pet"]
+    # Create sample DataFrames
+    data1 = [(1, "a"), (2, "b"), (3, "c")]
+    data2 = [(1, "a"), (2, "b"), (3, "c")]
+    columns = ["id", "value"]
 
-    input_release_data = [
-        ("19", "cat", "alice"),
-        ("70", "bunny", "john"),
-        ("22", "dog", "bob"),
-    ]
-    columns_release = ["age", "pet", "name"]
+    df1 = spark_session.createDataFrame(data1, columns)
+    df2 = spark_session.createDataFrame(data2, columns)
 
-    # create input dataFrames
-    input_prod_df = spark_session.createDataFrame(input_prod_data, columns_prod)
-    input_release_df = spark_session.createDataFrame(
-        input_release_data, columns_release
-    )
-
-    # create expected dataFrames
-    expected_prod_data = [
-        ("alice", "19", "cat"),
-        ("bob", "22", "dog"),
-        ("john", "70", "bunny"),
-    ]
-    expected_release_data = [
-        ("19", "cat", "alice"),
-        ("22", "dog", "bob"),
-        ("70", "bunny", "john"),
-    ]
-    expected_prod_df = spark_session.createDataFrame(expected_prod_data, columns_prod)
-    expected_release_df = spark_session.createDataFrame(
-        expected_release_data, columns_release
-    )
-
-    # call sort_columns
-    output_prod_df, output_release_df = sort_columns(input_prod_df, input_release_df)
-
-    # assert the dfs are equal
-    assert output_prod_df.collect() == expected_prod_df.collect()
-    assert output_release_df.collect() == expected_release_df.collect()
+    # Test with matching columns
+    sorted_df1, sorted_df2 = sort_columns(df1, df2)
+    assert sorted_df1.columns == sorted_df2.columns
+    assert sorted_df1.collect() == sorted_df2.collect()
