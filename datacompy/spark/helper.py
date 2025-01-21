@@ -102,7 +102,7 @@ def detailed_compare(
 
 
 def handle_numeric_strings(
-        df: "pyspark.sql.DataFrame", field_list: list
+    df: "pyspark.sql.DataFrame", field_list: list
 ) -> "pyspark.sql.DataFrame":
     """Convert columns in field_list from numeric strings to DoubleType.
 
@@ -122,7 +122,9 @@ def handle_numeric_strings(
     return df
 
 
-def sort_rows(base_df: "pyspark.sql.DataFrame", compare_df: "pyspark.sql.DataFrame") -> "pyspark.sql.DataFrame":
+def sort_rows(
+    base_df: "pyspark.sql.DataFrame", compare_df: "pyspark.sql.DataFrame"
+) -> "pyspark.sql.DataFrame":
     """Add new column to each DataFrame that numbers the rows, so they can be compared by row number.
 
     Parameters
@@ -161,7 +163,9 @@ def sort_rows(base_df: "pyspark.sql.DataFrame", compare_df: "pyspark.sql.DataFra
     return sorted_base_df, sorted_compare_df
 
 
-def sort_columns(base_df: "pyspark.sql.DataFrame", compare_df: "pyspark.sql.DataFrame") -> "pyspark.sql.DataFrame":
+def sort_columns(
+    base_df: "pyspark.sql.DataFrame", compare_df: "pyspark.sql.DataFrame"
+) -> "pyspark.sql.DataFrame":
     """Sort both DataFrames by their columns to ensure consistent order.
 
     Parameters
