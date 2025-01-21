@@ -42,7 +42,7 @@ def detailed_compare(
     base_dataframe: "pyspark.sql.DataFrame",
     compare_dataframe: "pyspark.sql.DataFrame",
     column_to_join: list,
-    string2double_cols: list = None,
+    string2double_cols: list | None,
 ) -> SparkSQLCompare:
     """Run a detailed analysis on results.
 
@@ -100,11 +100,13 @@ def detailed_compare(
     )
     return compared_data
 
-def handle_numeric_strings(df: "pyspark.sql.DataFrame", field_list: list) -> "pyspark.sql.DataFrame":
-    """Converts columns in field_list from numeric strings to DoubleType
+def handle_numeric_strings(
+        df: "pyspark.sql.DataFrame", field_list: list
+) -> "pyspark.sql.DataFrame":
+    """Converts columns in field_list from numeric strings to DoubleType.
 
     Parameters
-    ---------
+    ----------
     df: pyspark.sql.DataFrame
         The DataFrame to be converted
     field_list: list
@@ -130,7 +132,7 @@ def sort_rows(base_df: "pyspark.sql.DataFrame", compare_df: "pyspark.sql.DataFra
         The compare DataFrame to be sorted
 
     Returns
-    ------
+    -------
     pyspark.sql.DataFrame, pyspark.sql.DataFrame
 
 
