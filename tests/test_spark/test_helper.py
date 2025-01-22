@@ -28,7 +28,7 @@ if sys.version_info >= (3, 12):
 
 
 from datacompy.spark.helper import (
-    detailed_compare,
+    compare_by_row,
     format_numeric_fields,
     handle_numeric_strings,
     sort_columns,
@@ -68,8 +68,11 @@ def test_detailed_compare_with_string2columns(spark_session):
     )
 
     # call detailed_compare
-    result_compared_data = detailed_compare(
-        spark_session, mock_base_df, mock_compare_df, [], ["age"]
+    result_compared_data = compare_by_row(
+        spark_session=spark_session,
+        base_dataframe=mock_base_df,
+        compare_dataframe=mock_compare_df,
+        string2double_cols=["age"],
     )
 
     # assert result
@@ -100,8 +103,11 @@ def test_detailed_compare_with_column_to_join(spark_session):
     )
 
     # call detailed_compare
-    result_compared_data = detailed_compare(
-        spark_session, mock_base_df, mock_compare_df, ["name"], []
+    result_compared_data = compare_by_row(
+        spark_session=spark_session,
+        base_dataframe=mock_base_df,
+        compare_dataframe=mock_compare_df,
+        string2double_cols=[],
     )
 
     # assert result

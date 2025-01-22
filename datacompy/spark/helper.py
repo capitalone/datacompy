@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Helper function module.
+Helper function module contributed by Capital One's Hydra Team.
 
 Helper functions to assist in specific usecases where there is no columns to join
 and use the row order of the datasets.
@@ -37,33 +37,52 @@ except ImportError:
     )
 
 
-def detailed_compare(
+def compare_by_row(
     spark_session: "pyspark.sql.SparkSession",
     base_dataframe: "pyspark.sql.DataFrame",
     compare_dataframe: "pyspark.sql.DataFrame",
-    column_to_join: list,
-    string2double_cols: list | None,
+    string2double_cols: list[str] | None,
+    abs_tol: float = 0,
+    rel_tol: float = 0,
+    df1_name: str = "df1",
+    df2_name: str = "df2",
+    ignore_spaces: bool = False,
+    ignore_case: bool = False,
+    cast_column_names_lower: bool = True,
+    
 ) -> SparkSQLCompare:
-    """Run a detailed analysis on results.
+    """Run a detailed analysis on specific usecases where there is no columns to join and use the row order of the datasets.
+
+    If you know which columns to join on then please use ``SparkSQLCompare`` directly as this is meant to help
+    support very specific helper usecases using row order contributed by Capital One's Hydra Team.
 
     Parameters
     ----------
     spark_session : pyspark.sql.SparkSession
         A ``SparkSession`` to be used to execute Spark commands in the comparison.
-
     base_dataframe: pyspark.sql.DataFrame
         Dataset to be compared against
-
     compare_dataframe: pyspark.sql.DataFrame
         dataset to compare
-
-    column_to_join: List[str], optional
-        the column by which the two datasets can be joined, an identifier that indicates which
-        rows in both datasets should be compared. If null, the rows are compared in the order
-        they are given dataset to compare
-
     string2double_cols: List[str], optional
         The columns that contain numeric values but are stored as string types
+    abs_tol : float, optional
+        Absolute tolerance between two values.
+    rel_tol : float, optional
+        Relative tolerance between two values.
+    df1_name : str, optional
+        A string name for the first dataframe.  This allows the reporting to
+        print out an actual name instead of "df1", and allows human users to
+        more easily track the dataframes.
+    df2_name : str, optional
+        A string name for the second dataframe
+    ignore_spaces : bool, optional
+        Flag to strip whitespace (including newlines) from string columns (including any join
+        columns)
+    ignore_case : bool, optional
+        Flag to ignore the case of string columns
+    cast_column_names_lower: bool, optional
+        Boolean indicator that controls of column names will be cast into lower case
 
     Returns
     -------
@@ -76,14 +95,8 @@ def detailed_compare(
             compare_dataframe, string2double_cols
         )
 
-    if len(column_to_join) == 0:
-        # will add a new column that numbers the rows so datasets can be compared by row number instead of by a
-        # common column
-        sorted_base_df, sorted_compare_df = sort_rows(base_dataframe, compare_dataframe)
-        column_to_join = ["row"]
-    else:
-        sorted_base_df = base_dataframe
-        sorted_compare_df = compare_dataframe
+    sorted_base_df, sorted_compare_df = sort_rows(base_dataframe, compare_dataframe)
+    column_to_join = ["row"]
 
     LOG.info("Compared by column(s): ", column_to_join)
     if string2double_cols:
@@ -91,18 +104,23 @@ def detailed_compare(
             "String column(s) cast to doubles for numeric comparison: ",
             string2double_cols,
         )
-    compared_data = SparkSQLCompare(
-        spark_session,
-        sorted_base_df,
-        sorted_compare_df,
+    return SparkSQLCompare(
+        spark_session=spark_session,
+        df1=sorted_base_df,
+        df2=sorted_compare_df,
         join_columns=column_to_join,
-        abs_tol=0.0001,
+        abs_tol=abs_tol,
+        rel_tol=rel_tol,
+        df1_name=df1_name,
+        df2_name=df2_name,
+        ignore_spaces=ignore_spaces,
+        ignore_case=ignore_case,
+        cast_column_names_lower=cast_column_names_lower,
     )
-    return compared_data
 
 
 def handle_numeric_strings(
-    df: "pyspark.sql.DataFrame", field_list: list
+    df: "pyspark.sql.DataFrame", field_list: list[str]
 ) -> "pyspark.sql.DataFrame":
     """Convert columns in field_list from numeric strings to DoubleType.
 
@@ -110,7 +128,7 @@ def handle_numeric_strings(
     ----------
     df: pyspark.sql.DataFrame
         The DataFrame to be converted
-    field_list: list
+    field_list: List[str]
         List of StringType columns to be converted to DoubleType
 
     Returns
