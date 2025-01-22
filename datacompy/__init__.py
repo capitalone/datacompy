@@ -18,7 +18,7 @@ Originally started to be something of a replacement for SAS's PROC COMPARE for P
 Then extended to carry that functionality over to Spark Dataframes.
 """
 
-__version__ = "0.16.0"
+__version__ = "0.16.1"
 
 import platform
 from warnings import warn
