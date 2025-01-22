@@ -49,7 +49,6 @@ def compare_by_row(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     cast_column_names_lower: bool = True,
-    
 ) -> SparkSQLCompare:
     """Run a detailed analysis on specific usecases where there is no columns to join and use the row order of the datasets.
 
