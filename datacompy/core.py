@@ -380,8 +380,12 @@ class Compare(BaseCompare):
                     "match_column": col_match,
                     "match_cnt": match_cnt,
                     "unequal_cnt": row_cnt - match_cnt,
-                    "dtype1": str(self.df1[column].dtype),
-                    "dtype2": str(self.df2[column].dtype),
+                    "dtype1": str(self.df1[column].dtype.__repr__())
+                    if self.df1[column].dtype == "string"
+                    else str(self.df1[column].dtype),
+                    "dtype2": str(self.df2[column].dtype.__repr__())
+                    if self.df2[column].dtype == "string"
+                    else str(self.df2[column].dtype),
                     "all_match": all(
                         (
                             self.df1[column].dtype == self.df2[column].dtype,
@@ -847,8 +851,14 @@ def columns_equal(
                         | (col_1.isnull() & col_2.isnull())
                     )
             except Exception:
-                # Blanket exception should just return all False
-                compare = pd.Series(False, index=col_1.index)
+                # Check for string[pyarrow] and string[python]
+                if col_1.dtype in (
+                    "string[python]",
+                    "string[pyarrow]",
+                ) and col_2.dtype in ("string[python]", "string[pyarrow]"):
+                    compare = pd.Series(col_1.astype(str) == col_2.astype(str))
+                else:  # Blanket exception should just return all False
+                    compare = pd.Series(False, index=col_1.index)
     compare.index = col_1.index
     return compare
 
