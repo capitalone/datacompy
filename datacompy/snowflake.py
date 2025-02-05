@@ -1,5 +1,5 @@
 #
-# Copyright 2024 Capital One Services, LLC
+# Copyright 2025 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
+import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
@@ -30,10 +31,9 @@ import pandas as pd
 from ordered_set import OrderedSet
 
 from datacompy.base import BaseCompare
-from datacompy.logger import INFO, get_logger
 from datacompy.spark.sql import decimal_comparator
 
-LOG = get_logger(__name__, INFO)
+LOG = logging.getLogger(__name__)
 
 try:
     import snowflake.snowpark as sp
