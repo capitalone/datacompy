@@ -384,7 +384,7 @@ class Compare(BaseCompare):
                     if str(self.df1[column].dtype) == "string"
                     else str(self.df1[column].dtype),
                     "dtype2": str(self.df2[column].dtype.__repr__())
-                    if self.df2[column].dtype == "string"
+                    if str(self.df2[column].dtype) == "string"
                     else str(self.df2[column].dtype),
                     "all_match": all(
                         (
