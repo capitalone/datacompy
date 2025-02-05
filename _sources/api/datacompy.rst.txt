@@ -36,14 +36,6 @@ datacompy.fugue module
    :undoc-members:
    :show-inheritance:
 
-datacompy.logger module
------------------------
-
-.. automodule:: datacompy.logger
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 datacompy.polars module
 -----------------------
 

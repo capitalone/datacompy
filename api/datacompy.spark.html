@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="prev" title="datacompy package" href="datacompy.html" />
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
-        <title>datacompy.spark package - datacompy 0.16.0 documentation</title>
+        <title>datacompy.spark package - datacompy 0.16.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=302659d7" />
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 0.16.0 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 0.16.1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.16.0 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.16.1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -262,6 +262,108 @@
 <h1>datacompy.spark package<a class="headerlink" href="#datacompy-spark-package" title="Link to this heading">¶</a></h1>
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-datacompy.spark.helper">
+<span id="datacompy-spark-helper-module"></span><h2>datacompy.spark.helper module<a class="headerlink" href="#module-datacompy.spark.helper" title="Link to this heading">¶</a></h2>
+<p>Helper function module contributed by Capital One’s Hydra Team.</p>
+<p>Helper functions to assist in specific usecases where there is no columns to join
+and use the row order of the datasets.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.spark.helper.compare_by_row">
+<span class="sig-prename descclassname"><span class="pre">datacompy.spark.helper.</span></span><span class="sig-name descname"><span class="pre">compare_by_row</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SparkSession</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compare_dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">string2double_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df1_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'df1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'df2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_spaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_case</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cast_column_names_lower</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#datacompy.spark.sql.SparkSQLCompare" title="datacompy.spark.sql.SparkSQLCompare"><span class="pre">SparkSQLCompare</span></a></span></span><a class="headerlink" href="#datacompy.spark.helper.compare_by_row" title="Link to this definition">¶</a></dt>
+<dd><p>Run a detailed analysis on specific usecases where there is no columns to join and use the row order of the datasets.</p>
+<p>If you know which columns to join on then please use <code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code> directly as this is meant to help
+support very specific helper usecases using row order contributed by Capital One’s Hydra Team.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spark_session</strong> (<em>pyspark.sql.SparkSession</em>) – A <code class="docutils literal notranslate"><span class="pre">SparkSession</span></code> to be used to execute Spark commands in the comparison.</p></li>
+<li><p><strong>base_dataframe</strong> (<em>pyspark.sql.DataFrame</em>) – Dataset to be compared against</p></li>
+<li><p><strong>compare_dataframe</strong> (<em>pyspark.sql.DataFrame</em>) – dataset to compare</p></li>
+<li><p><strong>string2double_cols</strong> (<em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The columns that contain numeric values but are stored as string types</p></li>
+<li><p><strong>abs_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Absolute tolerance between two values.</p></li>
+<li><p><strong>rel_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative tolerance between two values.</p></li>
+<li><p><strong>df1_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the first dataframe.  This allows the reporting to
+print out an actual name instead of “df1”, and allows human users to
+more easily track the dataframes.</p></li>
+<li><p><strong>df2_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the second dataframe</p></li>
+<li><p><strong>ignore_spaces</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to strip whitespace (including newlines) from string columns (including any join
+columns)</p></li>
+<li><p><strong>ignore_case</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to ignore the case of string columns</p></li>
+<li><p><strong>cast_column_names_lower</strong> (<em>bool</em><em>, </em><em>optional</em>) – Boolean indicator that controls of column names will be cast into lower case</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#datacompy.spark.sql.SparkSQLCompare" title="datacompy.spark.sql.SparkSQLCompare">datacompy.spark.sql.SparkSQLCompare</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.spark.helper.format_numeric_fields">
+<span class="sig-prename descclassname"><span class="pre">datacompy.spark.helper.</span></span><span class="sig-name descname"><span class="pre">format_numeric_fields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.spark.helper.format_numeric_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Round and truncate numeric fields to 5 decimal places.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pyspark.sql.DataFrame</em>) – The DataFrame to be formatted</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pyspark.sql.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.spark.helper.handle_numeric_strings">
+<span class="sig-prename descclassname"><span class="pre">datacompy.spark.helper.</span></span><span class="sig-name descname"><span class="pre">handle_numeric_strings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.spark.helper.handle_numeric_strings" title="Link to this definition">¶</a></dt>
+<dd><p>Convert columns in field_list from numeric strings to DoubleType.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pyspark.sql.DataFrame</em>) – The DataFrame to be converted</p></li>
+<li><p><strong>field_list</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of StringType columns to be converted to DoubleType</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pyspark.sql.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.spark.helper.sort_columns">
+<span class="sig-prename descclassname"><span class="pre">datacompy.spark.helper.</span></span><span class="sig-name descname"><span class="pre">sort_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compare_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.spark.helper.sort_columns" title="Link to this definition">¶</a></dt>
+<dd><p>Sort both DataFrames by their columns to ensure consistent order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_df</strong> (<em>pyspark.sql.DataFrame</em>) – The base DataFrame to be sorted</p></li>
+<li><p><strong>compare_df</strong> (<em>pyspark.sql.DataFrame</em>) – The compare DataFrame to be sorted</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pyspark.sql.DataFrame, pyspark.sql.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.spark.helper.sort_rows">
+<span class="sig-prename descclassname"><span class="pre">datacompy.spark.helper.</span></span><span class="sig-name descname"><span class="pre">sort_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compare_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.spark.helper.sort_rows" title="Link to this definition">¶</a></dt>
+<dd><p>Add new column to each DataFrame that numbers the rows, so they can be compared by row number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_df</strong> (<em>pyspark.sql.DataFrame</em>) – The base DataFrame to be sorted</p></li>
+<li><p><strong>compare_df</strong> (<em>pyspark.sql.DataFrame</em>) – The compare DataFrame to be sorted</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pyspark.sql.DataFrame, pyspark.sql.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-datacompy.spark.legacy">
 <span id="datacompy-spark-legacy-module"></span><h2>datacompy.spark.legacy module<a class="headerlink" href="#module-datacompy.spark.legacy" title="Link to this heading">¶</a></h2>
@@ -1266,6 +1368,14 @@ templates directory before opening</p></li>
             <ul>
 <li><a class="reference internal" href="#">datacompy.spark package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-datacompy.spark.helper">datacompy.spark.helper module</a><ul>
+<li><a class="reference internal" href="#datacompy.spark.helper.compare_by_row"><code class="docutils literal notranslate"><span class="pre">compare_by_row()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.spark.helper.format_numeric_fields"><code class="docutils literal notranslate"><span class="pre">format_numeric_fields()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.spark.helper.handle_numeric_strings"><code class="docutils literal notranslate"><span class="pre">handle_numeric_strings()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.spark.helper.sort_columns"><code class="docutils literal notranslate"><span class="pre">sort_columns()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.spark.helper.sort_rows"><code class="docutils literal notranslate"><span class="pre">sort_rows()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-datacompy.spark.legacy">datacompy.spark.legacy module</a><ul>
 <li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare</span></code></a><ul>
 <li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.base_row_count"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.base_row_count</span></code></a></li>
@@ -1355,7 +1465,7 @@ templates directory before opening</p></li>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=7de89ed4"></script>
+</div><script src="../_static/documentation_options.js?v=d9901acd"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=5fa4622c"></script>

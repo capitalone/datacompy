@@ -4,6 +4,14 @@ datacompy.spark package
 Submodules
 ----------
 
+datacompy.spark.helper module
+-----------------------------
+
+.. automodule:: datacompy.spark.helper
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 datacompy.spark.legacy module
 -----------------------------
 
