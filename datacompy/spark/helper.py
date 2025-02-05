@@ -20,10 +20,11 @@ Helper functions to assist in specific usecases where there is no columns to joi
 and use the row order of the datasets.
 """
 
-from datacompy.logger import INFO, get_logger
+import logging
+
 from datacompy.spark.sql import SparkSQLCompare
 
-LOG = get_logger(__name__, INFO)
+LOG = logging.getLogger(__name__)
 
 try:
     import pyspark.sql

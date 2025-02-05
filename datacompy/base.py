@@ -1,5 +1,5 @@
 #
-# Copyright 2024 Capital One Services, LLC
+# Copyright 2025 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,14 +21,13 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
 from ordered_set import OrderedSet
 
-from datacompy.logger import INFO, get_logger
-
-LOG = get_logger(__name__, INFO)
+LOG = logging.getLogger(__name__)
 
 
 class BaseCompare(ABC):

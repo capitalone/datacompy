@@ -1,5 +1,5 @@
 #
-# Copyright 2024 Capital One Services, LLC
+# Copyright 2025 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
+import logging
 import os
 from copy import deepcopy
 from typing import Any, Dict, List, cast
@@ -31,9 +32,8 @@ from ordered_set import OrderedSet
 from polars.exceptions import ComputeError, InvalidOperationError
 
 from datacompy.base import BaseCompare, temp_column_name
-from datacompy.logger import INFO, get_logger
 
-LOG = get_logger(__name__, INFO)
+LOG = logging.getLogger(__name__)
 
 STRING_TYPE = ["String", "Utf8"]
 DATE_TYPE = ["Date", "Datetime"]

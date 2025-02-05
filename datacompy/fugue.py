@@ -1,5 +1,5 @@
 #
-# Copyright 2024 Capital One Services, LLC
+# Copyright 2025 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 
 """Compare two DataFrames that are supported by Fugue."""
 
+import logging
 import pickle
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterable, List, Tuple, cast
@@ -23,9 +24,8 @@ import pandas as pd
 from ordered_set import OrderedSet
 
 from datacompy.core import Compare, render
-from datacompy.logger import INFO, get_logger
 
-LOG = get_logger(__name__, INFO)
+LOG = logging.getLogger(__name__)
 HASH_COL = "__datacompy__hash__"
 
 
