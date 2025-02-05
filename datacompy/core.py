@@ -381,7 +381,7 @@ class Compare(BaseCompare):
                     "match_cnt": match_cnt,
                     "unequal_cnt": row_cnt - match_cnt,
                     "dtype1": str(self.df1[column].dtype.__repr__())
-                    if self.df1[column].dtype == "string"
+                    if str(self.df1[column].dtype) == "string"
                     else str(self.df1[column].dtype),
                     "dtype2": str(self.df2[column].dtype.__repr__())
                     if self.df2[column].dtype == "string"
