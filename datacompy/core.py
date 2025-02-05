@@ -1,5 +1,5 @@
 #
-# Copyright 2024 Capital One Services, LLC
+# Copyright 2025 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
+import logging
 import os
 from typing import Any, Dict, List, cast
 
@@ -29,9 +30,8 @@ import pandas as pd
 from ordered_set import OrderedSet
 
 from datacompy.base import BaseCompare, temp_column_name
-from datacompy.logger import INFO, get_logger
 
-LOG = get_logger(__name__, INFO)
+LOG = logging.getLogger(__name__)
 
 
 class Compare(BaseCompare):
@@ -380,8 +380,12 @@ class Compare(BaseCompare):
                     "match_column": col_match,
                     "match_cnt": match_cnt,
                     "unequal_cnt": row_cnt - match_cnt,
-                    "dtype1": str(self.df1[column].dtype),
-                    "dtype2": str(self.df2[column].dtype),
+                    "dtype1": str(self.df1[column].dtype.__repr__())
+                    if str(self.df1[column].dtype) == "string"
+                    else str(self.df1[column].dtype),
+                    "dtype2": str(self.df2[column].dtype.__repr__())
+                    if str(self.df2[column].dtype) == "string"
+                    else str(self.df2[column].dtype),
                     "all_match": all(
                         (
                             self.df1[column].dtype == self.df2[column].dtype,
@@ -847,8 +851,14 @@ def columns_equal(
                         | (col_1.isnull() & col_2.isnull())
                     )
             except Exception:
-                # Blanket exception should just return all False
-                compare = pd.Series(False, index=col_1.index)
+                # Check for string[pyarrow] and string[python]
+                if col_1.dtype in (
+                    "string[python]",
+                    "string[pyarrow]",
+                ) and col_2.dtype in ("string[python]", "string[pyarrow]"):
+                    compare = pd.Series(col_1.astype(str) == col_2.astype(str))
+                else:  # Blanket exception should just return all False
+                    compare = pd.Series(False, index=col_1.index)
     compare.index = col_1.index
     return compare
 

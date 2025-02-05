@@ -1,5 +1,5 @@
 #
-# Copyright 2024 Capital One Services, LLC
+# Copyright 2025 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -60,6 +60,29 @@ NULL|NULL|True"""
     actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
+
+
+def test_string_pyarrow_columns_equal():
+    data = """a|b|expected
+Hi|Hi|True
+Yo|Yo|True
+Hey|Hey |False
+résumé|resume|False
+résumé|résumé|True
+💩|💩|True
+💩|🤔|False
+ | |True
+  | |False
+datacompy|DataComPy|False
+something||False
+|something|False
+||True"""
+    df = pd.read_csv(io.StringIO(data), sep="|")
+    actual_out = datacompy.columns_equal(
+        df.a.astype("string[python]"), df.b.astype("string[pyarrow]"), rel_tol=0.2
+    )
+    expect_out = df["expected"]
+    assert (actual_out == expect_out).all()
 
 
 def test_string_columns_equal():
