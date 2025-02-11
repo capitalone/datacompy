@@ -546,7 +546,7 @@ class SnowflakeCompare(BaseCompare):
                 " and ".join(conditions)
             ).count()
         else:
-            match_columns_count = 0
+            match_columns_count = self.intersect_rows.count()
         return match_columns_count
 
     def intersect_rows_match(self) -> bool:

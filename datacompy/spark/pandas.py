@@ -490,7 +490,7 @@ class SparkPandasCompare(BaseCompare):
                 .shape[0]
             )
         else:
-            match_columns_count = 0
+            self.intersect_rows.shape[0]
         return match_columns_count
 
     def intersect_rows_match(self) -> bool:
