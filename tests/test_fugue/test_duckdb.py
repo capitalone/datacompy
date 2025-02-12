@@ -171,6 +171,15 @@ def test_count_matching_rows_duckdb(count_matching_rows_df):
         assert (
             count_matching_rows(
                 df1,
+                df1_copy,
+                join_columns=["a", "b"],
+                parallelism=2,
+            )
+            == 100
+        )
+        assert (
+            count_matching_rows(
+                df1,
                 df2,
                 join_columns="a",
                 parallelism=2,

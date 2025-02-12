@@ -227,6 +227,15 @@ def test_count_matching_rows_native(count_matching_rows_df):
     assert (
         count_matching_rows(
             count_matching_rows_df[0],
+            count_matching_rows_df[0].copy(),
+            join_columns=["a", "b"],
+            parallelism=2,
+        )
+        == 100
+    )
+    assert (
+        count_matching_rows(
+            count_matching_rows_df[0],
             count_matching_rows_df[1],
             join_columns="a",
             parallelism=2,

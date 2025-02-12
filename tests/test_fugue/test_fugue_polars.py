@@ -152,6 +152,15 @@ def test_count_matching_rows_polars(count_matching_rows_df):
     assert (
         count_matching_rows(
             df1,
+            df1.clone(),
+            join_columns=["a", "b"],
+            parallelism=2,
+        )
+        == 100
+    )
+    assert (
+        count_matching_rows(
+            df1,
             df2,
             join_columns="a",
             parallelism=2,
