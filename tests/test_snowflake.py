@@ -885,6 +885,15 @@ def test_joins_with_sensitive_lowercase_cols(snowpark_session):
     assert compare.intersect_rows_match()
 
 
+def test_full_join_counts_all_matches(snowpark_session):
+    df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
+    df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
+    compare = SnowflakeCompare(
+        snowpark_session, df1, df2, ["A", "B"], ignore_spaces=False
+    )
+    assert compare.count_matching_rows() == 2
+
+
 def test_strings_with_ignore_spaces_and_join_columns(snowpark_session):
     df1 = snowpark_session.createDataFrame(
         [{"A": "HI", "B": "A"}, {"A": "BYE", "B": "A"}]
