@@ -793,6 +793,13 @@ def test_joins_with_ignore_case():
     assert compare.intersect_rows_match()
 
 
+def test_full_join_counts_all_matches():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    compare = PolarsCompare(df1, df2, ["a", "b"], ignore_spaces=False)
+    assert compare.count_matching_rows() == 2
+
+
 def test_strings_with_ignore_spaces_and_join_columns():
     df1 = pl.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A"}])
     df2 = pl.DataFrame([{"a": " hi ", "b": "A"}, {"a": " bye ", "b": "A"}])

@@ -863,6 +863,14 @@ def test_joins_with_ignore_case():
 
 
 @pandas_version
+def test_full_join_counts_all_matches():
+    df1 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    df2 = ps.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
+    compare = SparkPandasCompare(df1, df2, ["a", "b"], ignore_spaces=False)
+    assert compare.count_matching_rows() == 2
+
+
+@pandas_version
 def test_strings_with_ignore_spaces_and_join_columns():
     df1 = ps.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A"}])
     df2 = ps.DataFrame([{"a": " hi ", "b": "A"}, {"a": " bye ", "b": "A"}])
