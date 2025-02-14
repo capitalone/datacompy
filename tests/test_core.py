@@ -918,6 +918,28 @@ def test_full_join_counts_all_matches():
     assert compare.count_matching_rows() == 2
 
 
+def test_full_join_counts_no_matches():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
+    df2 = pd.DataFrame([{"a": 1, "b": 4}, {"a": 1, "b": 5}])
+    compare = datacompy.Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 0
+
+
+def test_full_join_counts_some_matches():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 5}])
+    compare = datacompy.Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 1
+
+
 def test_strings_with_ignore_spaces_and_join_columns():
     df1 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A"}])
     df2 = pd.DataFrame([{"a": " hi ", "b": "A"}, {"a": " bye ", "b": "A"}])
