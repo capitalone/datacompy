@@ -343,7 +343,7 @@ class Compare(BaseCompare):
         for column in self.intersect_columns():
             if column in self.join_columns:
                 col_match = column + "_match"
-                if not self.common_columns_strictly_join_columns():
+                if not self.only_join_columns():
                     row_cnt = len(self.intersect_rows)
                     match_cnt = len(self.intersect_rows[column])
                 else:
@@ -501,9 +501,27 @@ class Compare(BaseCompare):
             "pertinent" columns, for rows that don't match on the provided
             column.
         """
-        if not self.common_columns_strictly_join_columns():
+        if not self.only_join_columns():
             row_cnt = self.intersect_rows.shape[0]
             col_match = self.intersect_rows[column + "_match"]
+            match_cnt = col_match.sum()
+            sample_count = min(sample_count, row_cnt - match_cnt)
+            sample = self.intersect_rows[~col_match].sample(sample_count)
+            return_cols = [
+                *self.join_columns,
+                column + "_" + self.df1_name,
+                column + "_" + self.df2_name,
+            ]
+            to_return = sample[return_cols]
+            if for_display:
+                to_return.columns = pd.Index(
+                    [
+                        *self.join_columns,
+                        column + " (" + self.df1_name + ")",
+                        column + " (" + self.df2_name + ")",
+                    ]
+                )
+            return to_return
         else:
             row_cnt = (
                 len(self.intersect_rows)
@@ -511,24 +529,15 @@ class Compare(BaseCompare):
                 + len(self.df2_unq_rows)
             )
             col_match = self.intersect_rows[column]
-        match_cnt = col_match.sum()
-        sample_count = min(sample_count, row_cnt - match_cnt)
-        sample = self.intersect_rows[~col_match].sample(sample_count)
-        return_cols = [
-            *self.join_columns,
-            column + "_" + self.df1_name,
-            column + "_" + self.df2_name,
-        ]
-        to_return = sample[return_cols]
-        if for_display:
-            to_return.columns = pd.Index(
-                [
-                    *self.join_columns,
-                    column + " (" + self.df1_name + ")",
-                    column + " (" + self.df2_name + ")",
-                ]
-            )
-        return to_return
+            match_cnt = col_match.sum()
+            sample_count = min(sample_count, row_cnt - match_cnt)
+            sample = pd.concat(
+                [self.df1_unq_rows[[column]], self.df2_unq_rows[[column]]]
+            ).sample(sample_count)
+            to_return = sample
+            if for_display:
+                to_return.columns = pd.Index([column])
+            return to_return
 
     def all_mismatch(self, ignore_matching_cols: bool = False) -> pd.DataFrame:
         """Get all rows with any columns that have a mismatch.
@@ -548,6 +557,10 @@ class Compare(BaseCompare):
         """
         match_list = []
         return_list = []
+        if self.only_join_columns():
+            LOG.info("Only join keys in data, returning mismatches based on unq_rows")
+            return pd.concat([self.df1_unq_rows, self.df2_unq_rows])
+
         for col in self.intersect_rows.columns:
             if col.endswith("_match"):
                 orig_col_name = col[:-6]
