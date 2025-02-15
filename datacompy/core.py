@@ -340,11 +340,19 @@ class Compare(BaseCompare):
         otherwise.
         """
         LOG.debug("Comparing intersection")
-        row_cnt = len(self.intersect_rows)
         for column in self.intersect_columns():
             if column in self.join_columns:
-                match_cnt = row_cnt
-                col_match = ""
+                col_match = column + "_match"
+                if not self.common_columns_strictly_join_columns():
+                    row_cnt = len(self.intersect_rows)
+                    match_cnt = len(self.intersect_rows[column])
+                else:
+                    row_cnt = (
+                        len(self.intersect_rows)
+                        + len(self.df1_unq_rows)
+                        + len(self.df2_unq_rows)
+                    )
+                    match_cnt = len(self.intersect_rows[column])
                 max_diff = 0.0
                 null_diff = 0
             else:
@@ -493,8 +501,16 @@ class Compare(BaseCompare):
             "pertinent" columns, for rows that don't match on the provided
             column.
         """
-        row_cnt = self.intersect_rows.shape[0]
-        col_match = self.intersect_rows[column + "_match"]
+        if not self.common_columns_strictly_join_columns():
+            row_cnt = self.intersect_rows.shape[0]
+            col_match = self.intersect_rows[column + "_match"]
+        else:
+            row_cnt = (
+                len(self.intersect_rows)
+                + len(self.df1_unq_rows)
+                + len(self.df2_unq_rows)
+            )
+            col_match = self.intersect_rows[column]
         match_cnt = col_match.sum()
         sample_count = min(sample_count, row_cnt - match_cnt)
         sample = self.intersect_rows[~col_match].sample(sample_count)
