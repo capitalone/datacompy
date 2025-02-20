@@ -13,7 +13,7 @@ maintainers = [
   { name="Raymond Haffar", email="raymond.haffar@capitalone.com" },
 ]
 license = {text = "Apache Software License"}
-dependencies = ["pandas<=2.2.3,>=0.25.0", "numpy<=2.2.0,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "polars[pandas]<=1.17.1,>=0.20.4"]
+dependencies = ["pandas<=2.2.3,>=0.25.0", "numpy<=2.2.3,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "polars[pandas]<=1.22.0,>=0.20.4"]
 requires-python = ">=3.10.0"
 classifiers = [
     "Intended Audience :: Developers",
@@ -55,7 +55,7 @@ version = {attr = "datacompy.__version__"}
 python-tag = "py3"
 
 [project.optional-dependencies]
-fugue = ["fugue[duckdb,dask,ray]<=0.9.1,>=0.8.7"]
+fugue = ["fugue[dask,duckdb,ray]<=0.9.1,>=0.8.7"]
 spark = ["pyspark[connect]>=3.1.1; python_version < \"3.11\"", "pyspark[connect]>=3.4; python_version >= \"3.11\""]
 snowflake = ["snowflake-connector-python", "snowflake-snowpark-python"]
 docs = ["sphinx", "furo", "myst-parser"]
