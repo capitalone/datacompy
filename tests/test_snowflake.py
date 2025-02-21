@@ -356,6 +356,31 @@ def test_compare_table_setter_bad(snowpark_session):
         )
 
 
+@mock.patch(
+    "datacompy.snowflake.SnowflakeCompare._validate_dataframe", new=mock.MagicMock()
+)
+@mock.patch("datacompy.snowflake.SnowflakeCompare._compare", new=mock.MagicMock())
+def test_compare_table_unique_names(snowpark_session):
+    # Assert that two tables with the same name but from a different DB/Schema have unique names
+    # Same schema/name, different DB
+    compare = SnowflakeCompare(
+        snowpark_session,
+        "test_db1.test_schema.test_name",
+        "test_db2.test_schema.test_name",
+        ["A"],
+    )
+    assert compare.df1_name != compare.df2_name
+
+    # Same db/name, different schema
+    compare = SnowflakeCompare(
+        snowpark_session,
+        "test_db.test_schema1.test_name",
+        "test_db.test_schema2.test_name",
+        ["A"],
+    )
+    assert compare.df1_name != compare.df2_name
+
+
 def test_compare_table_setter_good(snowpark_session):
     data = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
     10000001234,123.4,George Michael Bluth,14530.155,
