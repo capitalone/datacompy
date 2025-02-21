@@ -8,8 +8,8 @@ For ``SnowflakeCompare``
 - Compares ``snowflake.snowpark.DataFrame``, which can be provided as either raw Snowflake dataframes
   or as the names of full names of valid snowflake tables, which we will process into Snowpark dataframes.
 - Note that if Snowflake tables are provided, that dataframe names will default to the full name of their
-respective Snowflake tables. This can be overriden by setting the ``df1_name`` and ``df2_name`` connection_parameters
-in the Compare object initialization.
+respective Snowflake tables. This can be overriden by setting the ``df1_name`` and ``df2_name`` arguments
+when creating the Compare object.
 
 
 SnowflakeCompare setup
