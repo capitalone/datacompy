@@ -7,6 +7,9 @@ For ``SnowflakeCompare``
 - Joining is done using ``EQUAL_NULL`` which is the equality test that is safe for null values.
 - Compares ``snowflake.snowpark.DataFrame``, which can be provided as either raw Snowflake dataframes
   or as the names of full names of valid snowflake tables, which we will process into Snowpark dataframes.
+- Note that if Snowflake tables are provided, that dataframe names will default to the full name of their
+respective Snowflake tables. This can be overriden by setting the ``df1_name`` and ``df2_name`` connection_parameters
+in the Compare object initialization.
 
 
 SnowflakeCompare setup
@@ -57,6 +60,8 @@ Provide Snowpark dataframes
         session,
         df_1,
         df_2,
+        #df1_name='original', # optional param for naming df1
+        #df2_name='new' # optional param for naming df2
         join_columns=['acct_id'],
         rel_tol=1e-03,
         abs_tol=1e-04,
@@ -80,6 +85,8 @@ Given the dataframes from the prior examples...
         session,
         f"{db}.{schema}.toy_table_1",
         f"{db}.{schema}.toy_table_2",
+        #df1_name='original', # optional param for naming df1
+        #df2_name='new' # optional param for naming df2
         join_columns=['acct_id'],
         rel_tol=1e-03,
         abs_tol=1e-04,
