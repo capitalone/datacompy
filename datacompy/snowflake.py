@@ -163,7 +163,7 @@ class SnowflakeCompare(BaseCompare):
             if len(table_name) != 3:
                 errmsg = f"{df} is not a valid table name. Be sure to include the target db and schema."
                 raise ValueError(errmsg)
-            self.df1_name = df_name.upper() if df_name else table_name[2]
+            self.df1_name = df_name.upper() if df_name else "__".join(table_name)
             self._df1 = self.session.table(df)
         else:
             self._df1 = df
@@ -184,7 +184,7 @@ class SnowflakeCompare(BaseCompare):
             if len(table_name) != 3:
                 errmsg = f"{df} is not a valid table name. Be sure to include the target db and schema."
                 raise ValueError(errmsg)
-            self.df2_name = df_name.upper() if df_name else table_name[2]
+            self.df2_name = df_name.upper() if df_name else "__".join(table_name)
             self._df2 = self.session.table(df)
         else:
             self._df2 = df
