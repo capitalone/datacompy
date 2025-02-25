@@ -356,6 +356,7 @@ class Compare(BaseCompare):
                 max_diff = 0.0
                 null_diff = 0
             else:
+                row_cnt = len(self.intersect_rows)
                 col_1 = column + "_" + self.df1_name
                 col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
