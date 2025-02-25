@@ -28,7 +28,7 @@ import datacompy
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.testing import assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -1370,3 +1370,43 @@ def test_save_html(mock_render):
         compare.report(html_file="test.html")
         assert mock_render.call_count == 4
         m.assert_called_with("test.html", "w")
+
+
+def test_full_join_counts_no_matches():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
+    df2 = pd.DataFrame([{"a": 1, "b": 4}, {"a": 1, "b": 5}])
+    compare = datacompy.Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 0
+    assert_frame_equal(
+        compare.sample_mismatch(column="a").sort_index(),
+        pd.concat(
+            [compare.df1_unq_rows[["a"]], compare.df2_unq_rows[["a"]]]
+        ).sort_index(),
+    )
+    assert_frame_equal(
+        compare.all_mismatch(), pd.concat([compare.df1_unq_rows, compare.df2_unq_rows])
+    )
+
+
+def test_full_join_counts_some_matches():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 5}])
+    compare = datacompy.Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 1
+    assert_frame_equal(
+        compare.sample_mismatch(column="a").sort_index(),
+        pd.concat(
+            [compare.df1_unq_rows[["a"]], compare.df2_unq_rows[["a"]]]
+        ).sort_index(),
+    )
+    assert_frame_equal(
+        compare.all_mismatch(), pd.concat([compare.df1_unq_rows, compare.df2_unq_rows])
+    )
