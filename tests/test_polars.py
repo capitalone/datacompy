@@ -1343,11 +1343,18 @@ def test_full_join_counts_no_matches():
     assert not compare.intersect_rows_match()
     assert compare.count_matching_rows() == 0
     assert_frame_equal(
-        compare.sample_mismatch(column="a"),
-        pl.concat([compare.df1_unq_rows[["a"]], compare.df2_unq_rows[["a"]]]),
+        compare.sample_mismatch(column="a").sort("a"),
+        pl.DataFrame([1, 1, 1, 1], schema=["a"]),
     )
     assert_frame_equal(
-        compare.all_mismatch(), pl.concat([compare.df1_unq_rows, compare.df2_unq_rows])
+        compare.sample_mismatch(column="b").sort("b"),
+        pl.DataFrame([2, 3, 4, 5], schema=["b"]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch().sort(["a", "b"]),
+        pl.DataFrame(
+            [{"a": 1, "b": 2}, {"a": 1, "b": 3}, {"a": 1, "b": 4}, {"a": 1, "b": 5}]
+        ),
     )
 
 
@@ -1361,11 +1368,21 @@ def test_full_join_counts_some_matches():
     assert compare.intersect_rows_match()
     assert compare.count_matching_rows() == 1
     assert_frame_equal(
-        compare.sample_mismatch(column="a"),
-        pl.concat([compare.df1_unq_rows[["a"]], compare.df2_unq_rows[["a"]]]),
+        compare.sample_mismatch(column="a").sort("a"),
+        pl.DataFrame([1, 1], schema=["a"]),
     )
     assert_frame_equal(
-        compare.all_mismatch(), pl.concat([compare.df1_unq_rows, compare.df2_unq_rows])
+        compare.sample_mismatch(column="b").sort("b"),
+        pl.DataFrame([3, 5], schema=["b"]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch().sort(["a", "b"]),
+        pl.DataFrame(
+            [
+                {"a": 1, "b": 3},
+                {"a": 1, "b": 5},
+            ]
+        ),
     )
 
 
@@ -1379,12 +1396,18 @@ def test_non_full_join_counts_no_matches():
     assert not compare.intersect_rows_match()
     assert compare.count_matching_rows() == 0
     assert_frame_equal(
-        compare.sample_mismatch(column="a"),
-        pl.concat([compare.df1_unq_rows[["a"]], compare.df2_unq_rows[["a"]]]),
+        compare.sample_mismatch(column="a").sort("a"),
+        pl.DataFrame([1, 1, 1, 1], schema=["a"]),
     )
     assert_frame_equal(
-        compare.all_mismatch(),
-        pl.concat([compare.df1_unq_rows[["a", "b"]], compare.df2_unq_rows[["a", "b"]]]),
+        compare.sample_mismatch(column="b").sort("b"),
+        pl.DataFrame([2, 3, 4, 5], schema=["b"]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch().sort(["a", "b"]),
+        pl.DataFrame(
+            [{"a": 1, "b": 2}, {"a": 1, "b": 3}, {"a": 1, "b": 4}, {"a": 1, "b": 5}]
+        ),
     )
 
 
@@ -1398,10 +1421,19 @@ def test_non_full_join_counts_some_matches():
     assert compare.intersect_rows_match()
     assert compare.count_matching_rows() == 1
     assert_frame_equal(
-        compare.sample_mismatch(column="a"),
-        pl.concat([compare.df1_unq_rows[["a"]], compare.df2_unq_rows[["a"]]]),
+        compare.sample_mismatch(column="a").sort("a"),
+        pl.DataFrame([1, 1], schema=["a"]),
     )
     assert_frame_equal(
-        compare.all_mismatch(),
-        pl.concat([compare.df1_unq_rows[["a", "b"]], compare.df2_unq_rows[["a", "b"]]]),
+        compare.sample_mismatch(column="b").sort("b"),
+        pl.DataFrame([3, 5], schema=["b"]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch().sort(["a", "b"]),
+        pl.DataFrame(
+            [
+                {"a": 1, "b": 3},
+                {"a": 1, "b": 5},
+            ]
+        ),
     )
