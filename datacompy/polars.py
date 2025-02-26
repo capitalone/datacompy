@@ -536,7 +536,7 @@ class PolarsCompare(BaseCompare):
                 + len(self.df2_unq_rows)
             )
             col_match = self.intersect_rows[column]
-            match_cnt = col_match.sum()
+            match_cnt = col_match.count()
             sample_count = min(sample_count, row_cnt - match_cnt)
             sample = pl.concat(
                 [self.df1_unq_rows[[column]], self.df2_unq_rows[[column]]]
@@ -600,12 +600,12 @@ class PolarsCompare(BaseCompare):
                     self.df2_unq_rows.select(self.join_columns),
                 ]
             )
-        else:
-            return (
-                self.intersect_rows.with_columns(__all=pl.all_horizontal(match_list))
-                .filter(pl.col("__all") != True)  # noqa: E712
-                .select(self.join_columns + return_list)
-            )
+
+        return (
+            self.intersect_rows.with_columns(__all=pl.all_horizontal(match_list))
+            .filter(pl.col("__all") != True)  # noqa: E712
+            .select(self.join_columns + return_list)
+        )
 
     def report(
         self,

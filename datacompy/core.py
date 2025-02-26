@@ -541,7 +541,7 @@ class Compare(BaseCompare):
                 + len(self.df2_unq_rows)
             )
             col_match = self.intersect_rows[column]
-            match_cnt = col_match.sum()
+            match_cnt = col_match.count()
             sample_count = min(sample_count, row_cnt - match_cnt)
             sample = pd.concat(
                 [self.df1_unq_rows[[column]], self.df2_unq_rows[[column]]]
@@ -601,6 +601,13 @@ class Compare(BaseCompare):
                     LOG.debug(
                         f"Column {orig_col_name} is equal in df1 and df2. It will not be added to the result."
                     )
+        if len(match_list) == 0:
+            return pd.concat(
+                [
+                    self.df1_unq_rows[self.join_columns],
+                    self.df2_unq_rows[self.join_columns],
+                ]
+            )
 
         mm_bool = self.intersect_rows[match_list].all(axis="columns")
         return self.intersect_rows[~mm_bool][self.join_columns + return_list]
