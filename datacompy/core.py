@@ -481,7 +481,7 @@ class Compare(BaseCompare):
 
     def sample_mismatch(
         self, column: str, sample_count: int = 10, for_display: bool = False
-    ) -> pd.DataFrame:
+    ) -> pd.DataFrame | None:
         """Return sample mismatches.
 
         Gets a sub-dataframe which contains the identifying
