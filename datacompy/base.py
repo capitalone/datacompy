@@ -159,10 +159,10 @@ class BaseCompare(ABC):
         pass
 
     def only_join_columns(self) -> bool:
-        """Boolean on if the only common columns are the join columns."""
-        df1_compare_cols = set(self.df1.columns) - set(self.join_columns)
-        df2_compare_cols = set(self.df2.columns) - set(self.join_columns)
-        return df1_compare_cols.intersection(df2_compare_cols) == set()
+        """Boolean on if the only columns are the join columns."""
+        return (set(self.join_columns) == set(self.df1.columns)) & (
+            set(self.join_columns) == set(self.df2.columns)
+        )
 
 
 def temp_column_name(*dataframes) -> str:
