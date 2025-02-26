@@ -594,6 +594,7 @@ class PolarsCompare(BaseCompare):
                         f"Column {orig_col_name} is equal in df1 and df2. It will not be added to the result."
                     )
         if len(match_list) == 0:
+            LOG.info("No match columns found, returning mismatches based on unq_rows")
             return pl.concat(
                 [
                     self.df1_unq_rows.select(self.join_columns),
