@@ -437,6 +437,8 @@ class Compare(BaseCompare):
 
     def intersect_rows_match(self) -> bool:
         """Check whether the intersect rows all match."""
+        if self.intersect_rows.empty:
+            return False
         actual_length = self.intersect_rows.shape[0]
         return self.count_matching_rows() == actual_length
 
@@ -501,10 +503,19 @@ class Compare(BaseCompare):
             A sample of the intersection dataframe, containing only the
             "pertinent" columns, for rows that don't match on the provided
             column.
+
+        None
+            When the column being requested is not an intersecting column between dataframes.
         """
-        if not self.only_join_columns():
+        if not self.only_join_columns() and column not in self.join_columns:
             row_cnt = self.intersect_rows.shape[0]
-            col_match = self.intersect_rows[column + "_match"]
+            try:
+                col_match = self.intersect_rows[column + "_match"]
+            except KeyError:
+                LOG.error(
+                    f"Column: {column} is not an intersecting column. No mismatches can be generated."
+                )
+                return None
             match_cnt = col_match.sum()
             sample_count = min(sample_count, row_cnt - match_cnt)
             sample = self.intersect_rows[~col_match].sample(sample_count)
