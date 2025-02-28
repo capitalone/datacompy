@@ -160,9 +160,7 @@ class BaseCompare(ABC):
 
     def only_join_columns(self) -> bool:
         """Boolean on if the only columns are the join columns."""
-        return (set(self.join_columns) == set(self.df1.columns)) & (
-            set(self.join_columns) == set(self.df2.columns)
-        )
+        return set(self.join_columns) == set(self.df1.columns) == set(self.df2.columns)
 
 
 def temp_column_name(*dataframes) -> str:
