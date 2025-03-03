@@ -158,6 +158,10 @@ class BaseCompare(ABC):
         """Return a string representation of a report."""
         pass
 
+    def only_join_columns(self) -> bool:
+        """Boolean on if the only columns are the join columns."""
+        return set(self.join_columns) == set(self.df1.columns) == set(self.df2.columns)
+
 
 def temp_column_name(*dataframes) -> str:
     """Get a temp column name that isn't included in columns of any dataframes.
