@@ -459,14 +459,22 @@ class SparkSQLCompare(BaseCompare):
         LOG.debug("Comparing intersection")
         max_diff: float
         null_diff: int
-        row_cnt = self.intersect_rows.count()
         for column in self.intersect_columns():
             if column in self.join_columns:
-                match_cnt = row_cnt
-                col_match = ""
+                col_match = column + "_match"
+                match_cnt = self.intersect_rows.count()
+                if not self.only_join_columns():
+                    row_cnt = self.intersect_rows.count()
+                else:
+                    row_cnt = (
+                        self.intersect_rows.count()
+                        + self.df1_unq_rows.count()
+                        + self.df2_unq_rows.count()
+                    )
                 max_diff = 0
                 null_diff = 0
             else:
+                row_cnt = self.intersect_rows.count()
                 col_1 = column + "_" + self.df1_name
                 col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
@@ -561,6 +569,8 @@ class SparkSQLCompare(BaseCompare):
 
     def intersect_rows_match(self) -> bool:
         """Check whether the intersect rows all match."""
+        if self.intersect_rows.isEmpty():
+            return False
         actual_length = self.intersect_rows.count()
         return self.count_matching_rows() == actual_length
 
@@ -621,37 +631,54 @@ class SparkSQLCompare(BaseCompare):
             "pertinent" columns, for rows that don't match on the provided
             column.
         """
-        row_cnt = self.intersect_rows.count()
-        col_match = self.intersect_rows.select(column + "_match")
-        match_cnt = col_match.where(
-            col(column + "_match") == True  # noqa: E712
-        ).count()
-        sample_count = min(sample_count, row_cnt - match_cnt)
-        sample = (
-            self.intersect_rows.where(col(column + "_match") == False)  # noqa: E712
-            .drop(column + "_match")
-            .limit(sample_count)
-        )
-
-        for c in self.join_columns:
-            sample = sample.withColumnRenamed(c + "_" + self.df1_name, c)
-
-        return_cols = [
-            *self.join_columns,
-            column + "_" + self.df1_name,
-            column + "_" + self.df2_name,
-        ]
-        to_return = sample.select(return_cols)
-
-        if for_display:
-            return to_return.toDF(
-                *[
-                    *self.join_columns,
-                    column + " (" + self.df1_name + ")",
-                    column + " (" + self.df2_name + ")",
-                ]
+        if not self.only_join_columns() and column not in self.join_columns:
+            row_cnt = self.intersect_rows.count()
+            col_match = self.intersect_rows.select(column + "_match")
+            match_cnt = col_match.where(
+                col(column + "_match") == True  # noqa: E712
+            ).count()
+            sample_count = min(sample_count, row_cnt - match_cnt)
+            sample = (
+                self.intersect_rows.where(col(column + "_match") == False)  # noqa: E712
+                .drop(column + "_match")
+                .limit(sample_count)
             )
-        return to_return
+
+            for c in self.join_columns:
+                sample = sample.withColumnRenamed(c + "_" + self.df1_name, c)
+
+            return_cols = [
+                *self.join_columns,
+                column + "_" + self.df1_name,
+                column + "_" + self.df2_name,
+            ]
+            to_return = sample.select(return_cols)
+
+            if for_display:
+                return to_return.toDF(
+                    *[
+                        *self.join_columns,
+                        column + " (" + self.df1_name + ")",
+                        column + " (" + self.df2_name + ")",
+                    ]
+                )
+            return to_return
+        else:
+            row_cnt = (
+                self.intersect_rows.count()
+                + self.df1_unq_rows.count()
+                + self.df2_unq_rows.count()
+            )
+            match_cnt = self.intersect_rows.count()
+            sample_count = min(sample_count, row_cnt - match_cnt)
+            df1_col = column + "_" + self.df1_name
+            df2_col = column + "_" + self.df2_name
+            sample = (
+                self.df1_unq_rows[[df1_col]]
+                .union(self.df2_unq_rows[[df2_col]])
+                .limit(sample_count)
+            )
+            return sample.toDF(column)
 
     def all_mismatch(
         self, ignore_matching_cols: bool = False
@@ -673,6 +700,14 @@ class SparkSQLCompare(BaseCompare):
         """
         match_list = []
         return_list = []
+        if self.only_join_columns():
+            LOG.info("Only join keys in data, returning mismatches based on unq_rows")
+            df1_cols = [f"{cols}_{self.df1_name}" for cols in self.join_columns]
+            df2_cols = [f"{cols}_{self.df2_name}" for cols in self.join_columns]
+            to_return = self.df1_unq_rows[df1_cols].union(self.df2_unq_rows[df2_cols])
+            for c in self.join_columns:
+                to_return = to_return.withColumnRenamed(c + "_" + self.df1_name, c)
+            return to_return
         for c in self.intersect_rows.columns:
             if c.endswith("_match"):
                 orig_col_name = c[:-6]
@@ -707,6 +742,14 @@ class SparkSQLCompare(BaseCompare):
                     LOG.debug(
                         f"Column {orig_col_name} is equal in df1 and df2. It will not be added to the result."
                     )
+        if len(match_list) == 0:
+            LOG.info("No match columns found, returning mismatches based on unq_rows")
+            df1_cols = [f"{cols}_{self.df1_name}" for cols in self.join_columns]
+            df2_cols = [f"{cols}_{self.df2_name}" for cols in self.join_columns]
+            to_return = self.df1_unq_rows[df1_cols].union(self.df2_unq_rows[df2_cols])
+            for c in self.join_columns:
+                to_return = to_return.withColumnRenamed(c + "_" + self.df1_name, c)
+            return to_return
 
         mm_rows = self.intersect_rows.withColumn(
             "match_array", array(match_list)
