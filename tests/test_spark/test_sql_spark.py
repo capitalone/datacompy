@@ -28,7 +28,6 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
-from pyspark.testing.utils import assertDataFrameEqual
 from pytest import raises
 
 pytest.importorskip("pyspark")
@@ -44,6 +43,7 @@ from datacompy.spark.sql import (
     temp_column_name,
 )
 from pandas.testing import assert_series_equal
+from pyspark.testing.utils import assertDataFrameEqual
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
