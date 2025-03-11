@@ -569,7 +569,7 @@ class SparkSQLCompare(BaseCompare):
 
     def intersect_rows_match(self) -> bool:
         """Check whether the intersect rows all match."""
-        if self.intersect_rows.isEmpty():
+        if self.intersect_rows.count() == 0:
             return False
         actual_length = self.intersect_rows.count()
         return self.count_matching_rows() == actual_length
