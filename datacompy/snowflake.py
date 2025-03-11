@@ -425,20 +425,17 @@ class SnowflakeCompare(BaseCompare):
                     self.abs_tol,
                     ignore_spaces,
                 )
-        row_cnt = self.intersect_rows.count()
 
         with ThreadPoolExecutor() as executor:
             futures = []
             for column in self.intersect_columns():
-                future = executor.submit(
-                    self._calculate_column_compare_stats, column, row_cnt
-                )
+                future = executor.submit(self._calculate_column_compare_stats, column)
                 futures.append(future)
             for future in as_completed(futures):
                 if future.exception():
                     raise future.exception()
 
-    def _calculate_column_compare_stats(self, column: str, row_cnt: int) -> None:
+    def _calculate_column_compare_stats(self, column: str) -> None:
         """Populate the column stats for all intersecting column pairs.
 
         Calculates compare stats by intersecting column pairs. For the non-trivial case
@@ -446,11 +443,20 @@ class SnowflakeCompare(BaseCompare):
         and null difference must be calculated.
         """
         if column in self.join_columns:
-            match_cnt = row_cnt
-            col_match = ""
+            col_match = column + "_MATCH"
+            match_cnt = self.intersect_rows.count()
+            if not self.only_join_columns():
+                row_cnt = self.intersect_rows.count()
+            else:
+                row_cnt = (
+                    self.intersect_rows.count()
+                    + self.df1_unq_rows.count()
+                    + self.df2_unq_rows.count()
+                )
             max_diff = 0
             null_diff = 0
         else:
+            row_cnt = self.intersect_rows.count()
             col_1 = column + "_" + self.df1_name
             col_2 = column + "_" + self.df2_name
             col_match = column + "_MATCH"
@@ -551,6 +557,8 @@ class SnowflakeCompare(BaseCompare):
 
     def intersect_rows_match(self) -> bool:
         """Check whether the intersect rows all match."""
+        if self.intersect_rows.count() == 0:
+            return False
         actual_length = self.intersect_rows.count()
         return self.count_matching_rows() == actual_length
 
@@ -616,37 +624,55 @@ class SnowflakeCompare(BaseCompare):
             "pertinent" columns, for rows that don't match on the provided
             column.
         """
-        row_cnt = self.intersect_rows.count()
-        col_match = self.intersect_rows.select(column + "_MATCH")
-        match_cnt = col_match.where(
-            col(column + "_MATCH") == True  # noqa: E712
-        ).count()
-        sample_count = min(sample_count, row_cnt - match_cnt)
-        sample = (
-            self.intersect_rows.where(col(column + "_MATCH") == False)  # noqa: E712
-            .drop(column + "_MATCH")
-            .limit(sample_count)
-        )
-
-        for c in self.join_columns:
-            sample = sample.withColumnRenamed(c + "_" + self.df1_name, c)
-
-        return_cols = [
-            *self.join_columns,
-            column + "_" + self.df1_name,
-            column + "_" + self.df2_name,
-        ]
-        to_return = sample.select(return_cols)
-
-        if for_display:
-            return to_return.toDF(
-                *[
-                    *self.join_columns,
-                    column + " (" + self.df1_name + ")",
-                    column + " (" + self.df2_name + ")",
-                ]
+        column = column.upper()
+        if not self.only_join_columns() and column not in self.join_columns:
+            row_cnt = self.intersect_rows.count()
+            col_match = self.intersect_rows.select(column + "_MATCH")
+            match_cnt = col_match.where(
+                col(column + "_MATCH") == True  # noqa: E712
+            ).count()
+            sample_count = min(sample_count, row_cnt - match_cnt)
+            sample = (
+                self.intersect_rows.where(col(column + "_MATCH") == False)  # noqa: E712
+                .drop(column + "_MATCH")
+                .limit(sample_count)
             )
-        return to_return
+
+            for c in self.join_columns:
+                sample = sample.withColumnRenamed(c + "_" + self.df1_name, c)
+
+            return_cols = [
+                *self.join_columns,
+                column + "_" + self.df1_name,
+                column + "_" + self.df2_name,
+            ]
+            to_return = sample.select(return_cols)
+
+            if for_display:
+                return to_return.toDF(
+                    *[
+                        *self.join_columns,
+                        column + " (" + self.df1_name + ")",
+                        column + " (" + self.df2_name + ")",
+                    ]
+                )
+            return to_return
+        else:
+            row_cnt = (
+                self.intersect_rows.count()
+                + self.df1_unq_rows.count()
+                + self.df2_unq_rows.count()
+            )
+            match_cnt = self.intersect_rows.count()
+            sample_count = min(sample_count, row_cnt - match_cnt)
+            df1_col = column + "_" + self.df1_name
+            df2_col = column + "_" + self.df2_name
+            sample = (
+                self.df1_unq_rows[[df1_col]]
+                .union_all(self.df2_unq_rows[[df2_col]])
+                .limit(sample_count)
+            )
+            return sample.toDF(column)
 
     def all_mismatch(self, ignore_matching_cols: bool = False) -> "sp.DataFrame":
         """Get all rows with any columns that have a mismatch.
@@ -666,6 +692,16 @@ class SnowflakeCompare(BaseCompare):
         """
         match_list = []
         return_list = []
+        if self.only_join_columns():
+            LOG.info("Only join keys in data, returning mismatches based on unq_rows")
+            df1_cols = [f"{cols}_{self.df1_name}" for cols in self.join_columns]
+            df2_cols = [f"{cols}_{self.df2_name}" for cols in self.join_columns]
+            to_return = self.df1_unq_rows[df1_cols].union_all(
+                self.df2_unq_rows[df2_cols]
+            )
+            for c in self.join_columns:
+                to_return = to_return.withColumnRenamed(c + "_" + self.df1_name, c)
+            return to_return
         for c in self.intersect_rows.columns:
             if c.endswith("_MATCH"):
                 orig_col_name = c[:-6]
@@ -699,7 +735,16 @@ class SnowflakeCompare(BaseCompare):
                     LOG.debug(
                         f"Column {orig_col_name} is equal in df1 and df2. It will not be added to the result."
                     )
-
+        if len(match_list) == 0:
+            LOG.info("No match columns found, returning mismatches based on unq_rows")
+            df1_cols = [f"{cols}_{self.df1_name}" for cols in self.join_columns]
+            df2_cols = [f"{cols}_{self.df2_name}" for cols in self.join_columns]
+            to_return = self.df1_unq_rows[df1_cols].union_all(
+                self.df2_unq_rows[df2_cols]
+            )
+            for c in self.join_columns:
+                to_return = to_return.withColumnRenamed(c + "_" + self.df1_name, c)
+            return to_return
         mm_rows = self.intersect_rows.withColumn(
             "match_array", concat(*match_list)
         ).where(contains(col("match_array"), lit("false")))
