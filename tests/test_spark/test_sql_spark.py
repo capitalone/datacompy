@@ -42,7 +42,7 @@ from datacompy.spark.sql import (
     columns_equal,
     temp_column_name,
 )
-from pandas.testing import assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -1351,3 +1351,159 @@ def test_unicode_columns(spark_session):
     assert compare.matches()
     # Just render the report to make sure it renders.
     compare.report()
+
+
+def test_full_join_counts_no_matches(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 4}, {"a": 1, "b": 5}])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["a", "b"], ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert not compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 0
+    assert_frame_equal(
+        compare.sample_mismatch(column="a")
+        .toPandas()
+        .sort_values("a")
+        .reset_index(drop=True),
+        pd.DataFrame([{"a": 1}, {"a": 1}, {"a": 1}, {"a": 1}]),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="b")
+        .toPandas()
+        .sort_values("b")
+        .reset_index(drop=True),
+        pd.DataFrame([{"b": 2}, {"b": 3}, {"b": 4}, {"b": 5}]),
+        check_like=False,
+    )
+    assert_frame_equal(
+        compare.all_mismatch()
+        .toPandas()
+        .sort_values(["a", "b"])
+        .reset_index(drop=True),
+        pd.DataFrame(
+            [{"a": 1, "b": 2}, {"a": 1, "b": 3}, {"a": 1, "b": 4}, {"a": 1, "b": 5}]
+        ),
+    )
+
+
+def test_full_join_counts_some_matches(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 5}])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["a", "b"], ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 1
+    assert_frame_equal(
+        compare.sample_mismatch(column="a")
+        .toPandas()
+        .sort_values("a")
+        .reset_index(drop=True),
+        pd.DataFrame([{"a": 1}, {"a": 1}]),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="b")
+        .toPandas()
+        .sort_values("b")
+        .reset_index(drop=True),
+        pd.DataFrame([{"b": 3}, {"b": 5}]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch()
+        .toPandas()
+        .sort_values(["a", "b"])
+        .reset_index(drop=True),
+        pd.DataFrame(
+            [
+                {"a": 1, "b": 3},
+                {"a": 1, "b": 5},
+            ]
+        ),
+    )
+
+
+def test_non_full_join_counts_no_matches(spark_session):
+    df1 = spark_session.createDataFrame(
+        [{"a": 1, "b": 2, "c": 4}, {"a": 1, "b": 3, "c": 4}]
+    )
+    df2 = spark_session.createDataFrame(
+        [{"a": 1, "b": 4, "d": 5}, {"a": 1, "b": 5, "d": 5}]
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, ["a", "b"], ignore_spaces=False)
+    assert not compare.matches()
+    assert not compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert not compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 0
+    assert_frame_equal(
+        compare.sample_mismatch(column="a")
+        .toPandas()
+        .sort_values("a")
+        .reset_index(drop=True),
+        pd.DataFrame([{"a": 1}, {"a": 1}, {"a": 1}, {"a": 1}]),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="b")
+        .toPandas()
+        .sort_values("b")
+        .reset_index(drop=True),
+        pd.DataFrame([{"b": 2}, {"b": 3}, {"b": 4}, {"b": 5}]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch()
+        .toPandas()
+        .sort_values(["a", "b"])
+        .reset_index(drop=True),
+        pd.DataFrame(
+            [
+                {"a": 1, "b": 2},
+                {"a": 1, "b": 3},
+                {"a": 1, "b": 4},
+                {"a": 1, "b": 5},
+            ]
+        ),
+    )
+
+
+def test_non_full_join_counts_some_matches(spark_session):
+    df1 = spark_session.createDataFrame(
+        [{"a": 1, "b": 2, "c": 4}, {"a": 1, "b": 3, "c": 4}]
+    )
+    df2 = spark_session.createDataFrame(
+        [{"a": 1, "b": 2, "d": 5}, {"a": 1, "b": 5, "d": 5}]
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, ["a", "b"], ignore_spaces=False)
+    assert not compare.matches()
+    assert not compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 1
+    assert_frame_equal(
+        compare.sample_mismatch(column="a")
+        .toPandas()
+        .sort_values("a")
+        .reset_index(drop=True),
+        pd.DataFrame([{"a": 1}, {"a": 1}]),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="b")
+        .toPandas()
+        .sort_values("b")
+        .reset_index(drop=True),
+        pd.DataFrame([{"b": 3}, {"b": 5}]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch()
+        .toPandas()
+        .sort_values(["a", "b"])
+        .reset_index(drop=True),
+        pd.DataFrame(
+            [
+                {"a": 1, "b": 3},
+                {"a": 1, "b": 5},
+            ]
+        ),
+    )

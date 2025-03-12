@@ -334,16 +334,15 @@ class PolarsCompare(BaseCompare):
         for column in self.intersect_columns():
             if column in self.join_columns:
                 col_match = column + "_match"
+                match_cnt = len(self.intersect_rows)
                 if not self.only_join_columns():
                     row_cnt = len(self.intersect_rows)
-                    match_cnt = len(self.intersect_rows[column])
                 else:
                     row_cnt = (
                         len(self.intersect_rows)
                         + len(self.df1_unq_rows)
                         + len(self.df2_unq_rows)
                     )
-                    match_cnt = len(self.intersect_rows[column])
                 max_diff = 0.0
                 null_diff = 0
             else:

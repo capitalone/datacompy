@@ -41,7 +41,7 @@ from datacompy.snowflake import (
     columns_equal,
     temp_column_name,
 )
-from pandas.testing import assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 from snowflake.snowpark.exceptions import SnowparkSQLException
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -1359,3 +1359,168 @@ def test_save_html(mock_render, snowpark_session):
         compare.report(html_file="test.html")
         assert mock_render.call_count == 4
         m.assert_called_with("test.html", "w")
+
+
+def test_full_join_counts_no_matches(snowpark_session):
+    df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 3}])
+    df2 = snowpark_session.createDataFrame([{"A": 1, "B": 4}, {"A": 1, "B": 5}])
+    compare = SnowflakeCompare(
+        snowpark_session, df1, df2, ["A", "B"], ignore_spaces=False
+    )
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert not compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 0
+    assert_frame_equal(
+        compare.sample_mismatch(column="A")
+        .toPandas()
+        .sort_values("A")
+        .reset_index(drop=True),
+        pd.DataFrame([{"A": 1}, {"A": 1}, {"A": 1}, {"A": 1}]),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="B")
+        .toPandas()
+        .sort_values("B")
+        .reset_index(drop=True),
+        pd.DataFrame([{"B": 2}, {"B": 3}, {"B": 4}, {"B": 5}]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch()
+        .toPandas()
+        .sort_values(["A", "B"])
+        .reset_index(drop=True),
+        pd.DataFrame(
+            [{"A": 1, "B": 2}, {"A": 1, "B": 3}, {"A": 1, "B": 4}, {"A": 1, "B": 5}]
+        ),
+    )
+
+
+def test_full_join_counts_some_matches(snowpark_session):
+    df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 3}])
+    df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 5}])
+    compare = SnowflakeCompare(
+        snowpark_session, df1, df2, ["A", "B"], ignore_spaces=False
+    )
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 1
+    assert_frame_equal(
+        compare.sample_mismatch(column="A")
+        .toPandas()
+        .sort_values("A")
+        .reset_index(drop=True),
+        pd.DataFrame([{"A": 1}, {"A": 1}]),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="B")
+        .toPandas()
+        .sort_values("B")
+        .reset_index(drop=True),
+        pd.DataFrame([{"B": 3}, {"B": 5}]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch()
+        .toPandas()
+        .sort_values(["A", "B"])
+        .reset_index(drop=True),
+        pd.DataFrame(
+            [
+                {"A": 1, "B": 3},
+                {"A": 1, "B": 5},
+            ]
+        ),
+    )
+
+
+def test_non_full_join_counts_no_matches(snowpark_session):
+    df1 = snowpark_session.createDataFrame(
+        [{"A": 1, "B": 2, "C": 4}, {"A": 1, "B": 3, "C": 4}]
+    )
+    df2 = snowpark_session.createDataFrame(
+        [{"A": 1, "B": 4, "D": 5}, {"A": 1, "B": 5, "D": 5}]
+    )
+    compare = SnowflakeCompare(
+        snowpark_session, df1, df2, ["A", "B"], ignore_spaces=False
+    )
+    assert not compare.matches()
+    assert not compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert not compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 0
+    assert_frame_equal(
+        compare.sample_mismatch(column="A")
+        .toPandas()
+        .sort_values("A")
+        .reset_index(drop=True),
+        pd.DataFrame(
+            [{"A": 1}, {"A": 1}, {"A": 1}, {"A": 1}],
+        ),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="B")
+        .toPandas()
+        .sort_values("B")
+        .reset_index(drop=True),
+        pd.DataFrame([{"B": 2}, {"B": 3}, {"B": 4}, {"B": 5}]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch()
+        .toPandas()
+        .sort_values(["A", "B"])
+        .reset_index(drop=True),
+        pd.DataFrame(
+            [
+                {"A": 1, "B": 2},
+                {"A": 1, "B": 3},
+                {"A": 1, "B": 4},
+                {"A": 1, "B": 5},
+            ]
+        ),
+    )
+
+
+def test_non_full_join_counts_some_matches(snowpark_session):
+    df1 = snowpark_session.createDataFrame(
+        [{"A": 1, "B": 2, "C": 4}, {"A": 1, "B": 3, "C": 4}]
+    )
+    df2 = snowpark_session.createDataFrame(
+        [{"A": 1, "B": 2, "D": 5}, {"A": 1, "B": 5, "D": 5}]
+    )
+    compare = SnowflakeCompare(
+        snowpark_session, df1, df2, ["A", "B"], ignore_spaces=False
+    )
+    assert not compare.matches()
+    assert not compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 1
+    assert_frame_equal(
+        compare.sample_mismatch(column="A")
+        .toPandas()
+        .sort_values("A")
+        .reset_index(drop=True),
+        pd.DataFrame([{"A": 1}, {"A": 1}]),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="B")
+        .toPandas()
+        .sort_values("B")
+        .reset_index(drop=True),
+        pd.DataFrame([{"B": 3}, {"B": 5}]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch()
+        .toPandas()
+        .sort_values(["A", "B"])
+        .reset_index(drop=True),
+        pd.DataFrame(
+            [
+                {"A": 1, "B": 3},
+                {"A": 1, "B": 5},
+            ]
+        ),
+    )
