@@ -39,6 +39,7 @@ try:
     import snowflake.snowpark as sp
     from snowflake.connector.errors import DatabaseError, ProgrammingError
     from snowflake.snowpark import Window
+    from snowflake.snowpark.exceptions import SnowparkSQLException
     from snowflake.snowpark.functions import (
         abs,
         col,
@@ -628,6 +629,13 @@ class SnowflakeCompare(BaseCompare):
         if not self.only_join_columns() and column not in self.join_columns:
             row_cnt = self.intersect_rows.count()
             col_match = self.intersect_rows.select(column + "_MATCH")
+            try:
+                col_match.collect()
+            except SnowparkSQLException:
+                LOG.error(
+                    f"Column: {column} is not an intersecting column. No mismatches can be generated."
+                )
+                return None
             match_cnt = col_match.where(
                 col(column + "_MATCH") == True  # noqa: E712
             ).count()
