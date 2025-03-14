@@ -899,13 +899,9 @@ def columns_equal(
                         | (col_1.isnull() & col_2.isnull())
                     )
             except Exception:
-                # Check for string[pyarrow] and string[python]
-                if col_1.dtype in (
-                    "string[python]",
-                    "string[pyarrow]",
-                ) and col_2.dtype in ("string[python]", "string[pyarrow]"):
+                try:
                     compare = pd.Series(col_1.astype(str) == col_2.astype(str))
-                else:  # Blanket exception should just return all False
+                except Exception:  # Blanket exception should just return all False
                     compare = pd.Series(False, index=col_1.index)
     compare.index = col_1.index
     return compare

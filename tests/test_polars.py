@@ -1437,3 +1437,23 @@ def test_non_full_join_counts_some_matches():
             ]
         ),
     )
+
+
+def test_categorical_column():
+    df = pl.DataFrame(
+        {
+            "idx": [1, 2, 3],
+            "foo": ["A", "B", np.nan],
+            "bar": ["A", "B", np.nan],
+        },
+        strict=False,
+        schema={"idx": pl.Int32, "foo": pl.Categorical, "bar": pl.Categorical},
+    )
+
+    actual_out = columns_equal(
+        df["foo"], df["bar"], ignore_spaces=True, ignore_case=True
+    )
+    assert actual_out.all()
+    compare = PolarsCompare(df, df, join_columns=["idx"])
+    assert compare.intersect_rows["foo_match"].all()
+    assert compare.intersect_rows["bar_match"].all()

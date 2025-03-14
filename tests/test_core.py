@@ -437,6 +437,27 @@ def test_mixed_column_with_ignore_spaces_and_case():
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+def test_categorical_column():
+    df = pd.DataFrame(
+        {
+            "idx": [1, 2, 3],
+            "foo": ["A", "B", np.nan],
+            "bar": ["A", "B", np.nan],
+        }
+    )
+    for col in ("foo", "bar"):
+        df[col] = df[col].astype("category")
+        df[col] = df[col].astype("category")
+
+    actual_out = datacompy.columns_equal(
+        df.foo, df.bar, ignore_spaces=True, ignore_case=True
+    )
+    assert actual_out.all()
+    compare = datacompy.Compare(df, df, join_columns=["idx"])
+    assert compare.intersect_rows["foo_match"].all()
+    assert compare.intersect_rows["bar_match"].all()
+
+
 def test_compare_df_setter_bad():
     df = pd.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
     with raises(TypeError, match="df1 must be a pandas DataFrame"):
