@@ -28,7 +28,7 @@ import datacompy
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.testing import assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -435,6 +435,27 @@ def test_mixed_column_with_ignore_spaces_and_case():
     )
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
+
+
+def test_categorical_column():
+    df = pd.DataFrame(
+        {
+            "idx": [1, 2, 3],
+            "foo": ["A", "B", np.nan],
+            "bar": ["A", "B", np.nan],
+        }
+    )
+    for col in ("foo", "bar"):
+        df[col] = df[col].astype("category")
+        df[col] = df[col].astype("category")
+
+    actual_out = datacompy.columns_equal(
+        df.foo, df.bar, ignore_spaces=True, ignore_case=True
+    )
+    assert actual_out.all()
+    compare = datacompy.Compare(df, df, join_columns=["idx"])
+    assert compare.intersect_rows["foo_match"].all()
+    assert compare.intersect_rows["bar_match"].all()
 
 
 def test_compare_df_setter_bad():
@@ -1370,3 +1391,109 @@ def test_save_html(mock_render):
         compare.report(html_file="test.html")
         assert mock_render.call_count == 4
         m.assert_called_with("test.html", "w")
+
+
+def test_full_join_counts_no_matches():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
+    df2 = pd.DataFrame([{"a": 1, "b": 4}, {"a": 1, "b": 5}])
+    compare = datacompy.Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert not compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 0
+    assert_frame_equal(
+        compare.sample_mismatch(column="a").sort_index(),
+        pd.DataFrame([1, 1, 1, 1], columns=["a"]),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="b").sort_index(),
+        pd.DataFrame([2, 3, 4, 5], columns=["b"]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch(),
+        pd.DataFrame(
+            [{"a": 1, "b": 2}, {"a": 1, "b": 3}, {"a": 1, "b": 4}, {"a": 1, "b": 5}]
+        ),
+    )
+
+
+def test_full_join_counts_some_matches():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 5}])
+    compare = datacompy.Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    assert not compare.matches()
+    assert compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 1
+    assert_frame_equal(
+        compare.sample_mismatch(column="a").sort_index().reset_index(drop=True),
+        pd.DataFrame([1, 1], columns=["a"]),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="b").sort_index().reset_index(drop=True),
+        pd.DataFrame([3, 5], columns=["b"]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch().sort_index().reset_index(drop=True),
+        pd.DataFrame(
+            [
+                {"a": 1, "b": 3},
+                {"a": 1, "b": 5},
+            ]
+        ),
+    )
+
+
+def test_non_full_join_counts_no_matches():
+    df1 = pd.DataFrame([{"a": 1, "b": 2, "c": 4}, {"a": 1, "b": 3, "c": 4}])
+    df2 = pd.DataFrame([{"a": 1, "b": 4, "d": 5}, {"a": 1, "b": 5, "d": 5}])
+    compare = datacompy.Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    assert not compare.matches()
+    assert not compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert not compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 0
+    assert_frame_equal(
+        compare.sample_mismatch(column="a").sort_index().reset_index(drop=True),
+        pd.DataFrame([1, 1, 1, 1], columns=["a"]),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="b").sort_index().reset_index(drop=True),
+        pd.DataFrame([2, 3, 4, 5], columns=["b"]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch().sort_index().reset_index(drop=True),
+        pd.DataFrame(
+            [{"a": 1, "b": 2}, {"a": 1, "b": 3}, {"a": 1, "b": 4}, {"a": 1, "b": 5}]
+        ),
+    )
+
+
+def test_non_full_join_counts_some_matches():
+    df1 = pd.DataFrame([{"a": 1, "b": 2, "c": 4}, {"a": 1, "b": 3, "c": 4}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2, "d": 5}, {"a": 1, "b": 5, "d": 5}])
+    compare = datacompy.Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    assert not compare.matches()
+    assert not compare.all_columns_match()
+    assert not compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 1
+    assert_frame_equal(
+        compare.sample_mismatch(column="a").sort_index().reset_index(drop=True),
+        pd.DataFrame([1, 1], columns=["a"]),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="b").sort_index().reset_index(drop=True),
+        pd.DataFrame([3, 5], columns=["b"]),
+    )
+    assert_frame_equal(
+        compare.all_mismatch().sort_index().reset_index(drop=True),
+        pd.DataFrame(
+            [
+                {"a": 1, "b": 3},
+                {"a": 1, "b": 5},
+            ]
+        ),
+    )
