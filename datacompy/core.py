@@ -359,13 +359,19 @@ class Compare(BaseCompare):
                 col_1 = column + "_" + self.df1_name
                 col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
-                self.intersect_rows[col_match] = columns_equal(
-                    self.intersect_rows[col_1],
-                    self.intersect_rows[col_2],
-                    self.rel_tol,
-                    self.abs_tol,
-                    ignore_spaces,
-                    ignore_case,
+                self.intersect_rows = pd.concat(
+                    [
+                        self.intersect_rows,
+                        columns_equal(
+                            self.intersect_rows[col_1],
+                            self.intersect_rows[col_2],
+                            self.rel_tol,
+                            self.abs_tol,
+                            ignore_spaces,
+                            ignore_case,
+                        ).to_frame(name=col_match),
+                    ],
+                    axis=1,
                 )
                 match_cnt = self.intersect_rows[col_match].sum()
                 max_diff = calculate_max_diff(
