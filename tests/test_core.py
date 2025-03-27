@@ -1497,3 +1497,30 @@ def test_non_full_join_counts_some_matches():
             ]
         ),
     )
+
+
+def test_string_as_numeric():
+    df1 = pd.DataFrame({"ID": [1], "REFER_NR": ["9998700990704001708177961516923014"]})
+    df2 = pd.DataFrame({"ID": [1], "REFER_NR": ["9998700990704001708177961516923015"]})
+    actual_out = datacompy.columns_equal(df1.REFER_NR, df2.REFER_NR)
+    assert not actual_out.all()
+
+
+def test_single_date_columns_equal_to_string():
+    data = """a|b|expected
+2017-01-01|2017-01-01   |True
+2017-01-02  |2017-01-02|True
+2017-10-01  |2017-10-10   |False
+2017-01-01||False
+|2017-01-01|False
+||False"""
+    df = pd.read_csv(io.StringIO(data), sep="|", keep_default_na=False)
+
+    try:
+        df["a"] = pd.to_datetime(df["a"], format="mixed")
+    except ValueError:
+        df["a"] = pd.to_datetime(df["a"])
+
+    actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
+    expect_out = df["expected"]
+    assert_series_equal(expect_out, actual_out, check_names=False)

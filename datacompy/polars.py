@@ -29,14 +29,12 @@ from typing import Any, Dict, List, cast
 import numpy as np
 import polars as pl
 from ordered_set import OrderedSet
-from polars.exceptions import ComputeError, InvalidOperationError
 
 from datacompy.base import BaseCompare, temp_column_name
 
 LOG = logging.getLogger(__name__)
 
 STRING_TYPE = ["String", "Utf8"]
-DATE_TYPE = ["Date", "Datetime"]
 
 
 class PolarsCompare(BaseCompare):
@@ -799,13 +797,13 @@ def render(filename: str, *fields: int | float | str) -> str:
 
 
 def columns_equal(
-    col_1: "pl.Series",
-    col_2: "pl.Series",
+    col_1: pl.Series,
+    col_2: pl.Series,
     rel_tol: float = 0,
     abs_tol: float = 0,
     ignore_spaces: bool = False,
     ignore_case: bool = False,
-) -> "pl.Series":
+) -> pl.Series:
     """Compare two columns from a dataframe.
 
     Returns a True/False series,
@@ -841,57 +839,54 @@ def columns_equal(
         values don't match.
     """
     compare: pl.Series
-    try:
+
+    if ignore_spaces:
+        if str(col_1.dtype) in STRING_TYPE:
+            col_1 = col_1.str.strip_chars()
+        if str(col_2.dtype) in STRING_TYPE:
+            col_2 = col_2.str.strip_chars()
+
+    if ignore_case:
+        if str(col_1.dtype) in STRING_TYPE:
+            col_1 = col_1.str.to_uppercase()
+        if str(col_2.dtype) in STRING_TYPE:
+            col_2 = col_2.str.to_uppercase()
+
+    if (str(col_1.dtype) in STRING_TYPE and str(col_2.dtype) in STRING_TYPE) or (
+        col_1.dtype.is_temporal() and col_2.dtype.is_temporal()
+    ):
         compare = pl.Series(
-            np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
+            (col_1.eq_missing(col_2)) | (col_1.is_null() & col_2.is_null())
         )
-    except TypeError:
+    elif (str(col_1.dtype) in STRING_TYPE and str(col_2.dtype).startswith("Date")) or (
+        str(col_1.dtype).startswith("Date") and str(col_2.dtype) in STRING_TYPE
+    ):
+        compare = compare_string_and_date_columns(col_1, col_2)
+    else:
         try:
-            if col_1.dtype in DATE_TYPE or col_2 in DATE_TYPE:
-                raise TypeError("Found date, moving to alternative logic")
-
             compare = pl.Series(
-                np.isclose(
-                    col_1.cast(pl.Float64, strict=True),
-                    col_2.cast(pl.Float64, strict=True),
-                    rtol=rel_tol,
-                    atol=abs_tol,
-                    equal_nan=True,
-                )
+                np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
             )
-        except (ValueError, TypeError, InvalidOperationError, ComputeError):
+        except TypeError:
             try:
-                if ignore_spaces:
-                    if str(col_1.dtype) in STRING_TYPE:
-                        col_1 = col_1.str.strip_chars()
-                    if str(col_2.dtype) in STRING_TYPE:
-                        col_2 = col_2.str.strip_chars()
-
-                if ignore_case:
-                    if str(col_1.dtype) in STRING_TYPE:
-                        col_1 = col_1.str.to_uppercase()
-                    if str(col_2.dtype) in STRING_TYPE:
-                        col_2 = col_2.str.to_uppercase()
-
-                if (
-                    str(col_1.dtype) in STRING_TYPE and str(col_2.dtype) in DATE_TYPE
-                ) or (
-                    str(col_1.dtype) in DATE_TYPE and str(col_2.dtype) in STRING_TYPE
-                ):
-                    compare = compare_string_and_date_columns(col_1, col_2)
-                else:
-                    compare = pl.Series(
-                        (col_1.eq_missing(col_2)) | (col_1.is_null() & col_2.is_null())
+                compare = pl.Series(
+                    np.isclose(
+                        col_1.cast(pl.Float64, strict=True),
+                        col_2.cast(pl.Float64, strict=True),
+                        rtol=rel_tol,
+                        atol=abs_tol,
+                        equal_nan=True,
                     )
+                )
             except Exception:
-                # Blanket exception should just return all False
-                compare = pl.Series(False * col_1.shape[0])
+                try:  # last check where we just cast to strings
+                    compare = pl.Series(col_1.cast(pl.String) == col_2.cast(pl.String))
+                except Exception:  # Blanket exception should just return all False
+                    compare = pl.Series(False * col_1.shape[0])
     return compare
 
 
-def compare_string_and_date_columns(
-    col_1: "pl.Series", col_2: "pl.Series"
-) -> "pl.Series":
+def compare_string_and_date_columns(col_1: pl.Series, col_2: pl.Series) -> pl.Series:
     """Compare a string column and date column, value-wise.
 
     This tries to
@@ -919,7 +914,7 @@ def compare_string_and_date_columns(
 
     try:  # datetime is inferred
         return pl.Series(
-            (str_column.str.to_datetime().eq_missing(date_column))
+            (str_column.str.to_datetime(strict=False).eq_missing(date_column))
             | (str_column.is_null() & date_column.is_null())
         )
     except Exception:
@@ -952,7 +947,7 @@ def get_merged_columns(
     return columns
 
 
-def calculate_max_diff(col_1: "pl.Series", col_2: "pl.Series") -> float:
+def calculate_max_diff(col_1: pl.Series, col_2: pl.Series) -> float:
     """Get a maximum difference between two columns.
 
     Parameters
@@ -977,7 +972,7 @@ def calculate_max_diff(col_1: "pl.Series", col_2: "pl.Series") -> float:
 
 def generate_id_within_group(
     dataframe: pl.DataFrame, join_columns: List[str]
-) -> "pl.Series":
+) -> pl.Series:
     """Generate an ID column that can be used to deduplicate identical rows.
 
     The series generated

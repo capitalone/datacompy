@@ -259,8 +259,13 @@ def test_bad_date_columns():
     df = pl.DataFrame(
         [{"a": "2017-01-01", "b": "2017-01-01"}, {"a": "2017-01-01", "b": "2A17-01-01"}]
     )
-    df = df.with_columns(df["a"].str.to_date(exact=True).alias("a_dt"))
-    assert not columns_equal(df["a_dt"], df["b"]).any()
+    col_a = df["a"].str.to_date()
+    col_b = df["b"]
+    assert columns_equal(col_a, col_b).to_list() == [True, False]
+
+    col_a = df["a"]
+    col_b = df["b"].str.to_date(strict=False)
+    assert columns_equal(col_a, col_b).to_list() == [True, False]
 
 
 def test_rounded_date_columns():
@@ -1457,3 +1462,59 @@ def test_categorical_column():
     compare = PolarsCompare(df, df, join_columns=["idx"])
     assert compare.intersect_rows["foo_match"].all()
     assert compare.intersect_rows["bar_match"].all()
+
+
+def test_string_as_numeric():
+    df1 = pl.DataFrame({"ID": [1], "REFER_NR": ["9998700990704001708177961516923014"]})
+    df2 = pl.DataFrame({"ID": [1], "REFER_NR": ["9998700990704001708177961516923015"]})
+    actual_out = columns_equal(df1["REFER_NR"], df2["REFER_NR"])
+    assert not actual_out.all()
+
+
+def test_single_date_columns_equal_to_string():
+    data = """a|b|expected
+2017-01-01|2017-01-01   |True
+2017-01-02  |2017-01-02|True
+2017-10-01  |2017-10-10   |False
+2017-01-01||False
+|2017-01-01|False
+||True"""
+    df = pl.read_csv(
+        io.StringIO(data),
+        separator="|",
+        null_values=["NULL"],
+        missing_utf8_is_empty_string=True,
+    )
+    col_a = df["a"].str.strip_chars().str.to_date(strict=False)
+    col_b = df["b"]
+
+    actual_out = columns_equal(col_a, col_b, rel_tol=0.2, ignore_spaces=True)
+    expect_out = df["expected"]
+    assert_series_equal(expect_out, actual_out, check_names=False)
+
+
+def test_temporal_equal():
+    data = """a|b|expected
+2017-01-01|2017-01-01|True
+2017-01-02|2017-01-02|True
+2017-10-01|2017-10-10   |False
+2017-01-01||False
+|2017-01-01|False
+||True"""
+    df = pl.read_csv(
+        io.StringIO(data),
+        separator="|",
+        null_values=["NULL"],
+        missing_utf8_is_empty_string=True,
+    )
+    expect_out = df["expected"]
+
+    col_a = df["a"].str.to_date(strict=False)
+    col_b = df["b"].str.to_date(strict=False)
+    actual_out = columns_equal(col_a, col_b)
+    assert_series_equal(expect_out, actual_out, check_names=False)
+
+    col_a = df["a"].str.to_datetime(strict=False)
+    col_b = df["b"].str.to_datetime(strict=False)
+    actual_out = columns_equal(col_a, col_b)
+    assert_series_equal(expect_out, actual_out, check_names=False)
