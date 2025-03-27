@@ -35,7 +35,6 @@ from datacompy.base import BaseCompare, temp_column_name
 LOG = logging.getLogger(__name__)
 
 STRING_TYPE = ["String", "Utf8"]
-DATE_TYPE = ["Date", "Datetime"]
 
 
 class PolarsCompare(BaseCompare):
