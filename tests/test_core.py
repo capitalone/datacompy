@@ -20,7 +20,7 @@ Testing out the datacompy functionality
 import io
 import logging
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from unittest import mock
 
@@ -1497,3 +1497,69 @@ def test_non_full_join_counts_some_matches():
             ]
         ),
     )
+
+
+def test_string_as_numeric():
+    df1 = pd.DataFrame({"ID": [1], "REFER_NR": ["9998700990704001708177961516923014"]})
+    df2 = pd.DataFrame({"ID": [1], "REFER_NR": ["9998700990704001708177961516923015"]})
+    actual_out = datacompy.columns_equal(df1.REFER_NR, df2.REFER_NR)
+    assert not actual_out.all()
+
+
+def test_single_date_columns_equal_to_string():
+    data = """a|b|expected
+2017-01-01|2017-01-01   |True
+2017-01-02  |2017-01-02|True
+2017-10-01  |2017-10-10   |False
+2017-01-01||False
+|2017-01-01|False
+||False"""
+    df = pd.read_csv(io.StringIO(data), sep="|", keep_default_na=False)
+
+    try:
+        df["a"] = pd.to_datetime(df["a"], format="mixed")
+    except ValueError:
+        df["a"] = pd.to_datetime(df["a"])
+
+    actual_out = datacompy.columns_equal(df.a, df.b, rel_tol=0.2, ignore_spaces=True)
+    expect_out = df["expected"]
+    assert_series_equal(expect_out, actual_out, check_names=False)
+
+
+def test_merge_date_ignore_spaces():
+    columns = ["text", "float", "int", "datetime"]
+
+    df1 = pd.DataFrame(
+        columns=columns,
+        data=[
+            ["A", 1.9834, 1, date(year=2025, month=1, day=1)],
+            ["B", 2.93843, 2, date(year=2025, month=1, day=2)],
+            ["C", 3.94733844, 3, date(year=2025, month=1, day=3)],
+            ["D", 462638.37472734, 4, date(year=2025, month=1, day=4)],
+        ],
+    )
+
+    df2 = pd.DataFrame(
+        columns=columns,
+        data=[
+            ["A", 1.98, 1, date(year=2025, month=1, day=1)],
+            ["B", 2.94, 2, date(year=2025, month=1, day=2)],
+            ["C", 3.95, 3, date(year=2025, month=1, day=3)],
+            ["D  ", 462638.37, 4, date(year=2025, month=1, day=4)],
+        ],
+    )
+    compare = datacompy.Compare(
+        df1=df1,
+        df2=df2,
+        df1_name="df1",
+        df2_name="df2",
+        join_columns=["text", "datetime"],
+        on_index=False,
+        abs_tol=0.005,
+        rel_tol=0,
+        ignore_spaces=True,
+        ignore_case=False,
+        cast_column_names_lower=True,
+    )
+    compare._dataframe_merge(ignore_spaces=True)
+    assert len(compare.intersect_rows) == 4

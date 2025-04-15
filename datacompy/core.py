@@ -287,9 +287,13 @@ class Compare(BaseCompare):
 
         if ignore_spaces:
             for column in self.join_columns:
-                if self.df1[column].dtype.kind == "O":
+                if self.df1[column].dtype.kind == "O" and pd.api.types.is_string_dtype(
+                    self.df1[column]
+                ):
                     self.df1[column] = self.df1[column].str.strip()
-                if self.df2[column].dtype.kind == "O":
+                if self.df2[column].dtype.kind == "O" and pd.api.types.is_string_dtype(
+                    self.df2[column]
+                ):
                     self.df2[column] = self.df2[column].str.strip()
 
         outer_join = self.df1.merge(
@@ -359,13 +363,19 @@ class Compare(BaseCompare):
                 col_1 = column + "_" + self.df1_name
                 col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
-                self.intersect_rows[col_match] = columns_equal(
-                    self.intersect_rows[col_1],
-                    self.intersect_rows[col_2],
-                    self.rel_tol,
-                    self.abs_tol,
-                    ignore_spaces,
-                    ignore_case,
+                self.intersect_rows = pd.concat(
+                    [
+                        self.intersect_rows,
+                        columns_equal(
+                            self.intersect_rows[col_1],
+                            self.intersect_rows[col_2],
+                            self.rel_tol,
+                            self.abs_tol,
+                            ignore_spaces,
+                            ignore_case,
+                        ).to_frame(name=col_match),
+                    ],
+                    axis=1,
                 )
                 match_cnt = self.intersect_rows[col_match].sum()
                 max_diff = calculate_max_diff(
@@ -853,53 +863,50 @@ def columns_equal(
     """
     default_value = "DATACOMPY_NULL"
     compare: pd.Series[bool]
+    if ignore_spaces:
+        if col_1.dtype.kind == "O" and pd.api.types.is_string_dtype(col_1):
+            col_1 = col_1.str.strip()
+        if col_2.dtype.kind == "O" and pd.api.types.is_string_dtype(col_2):
+            col_2 = col_2.str.strip()
+    if ignore_case:
+        if col_1.dtype.kind == "O" and pd.api.types.is_string_dtype(col_1):
+            col_1 = col_1.str.upper()
+        if col_2.dtype.kind == "O" and pd.api.types.is_string_dtype(col_2):
+            col_2 = col_2.str.upper()
 
     # short circuit if comparing mixed type columns. We don't want to support this moving forward.
     if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(
         col_2
     ).startswith("mixed"):
         compare = pd.Series(False, index=col_1.index)
-        compare.index = col_1.index
-        return compare
-
-    try:
-        compare = pd.Series(
-            np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
-        )
-    except TypeError:
+    elif pd.api.types.is_string_dtype(col_1) and pd.api.types.is_string_dtype(col_2):
         try:
             compare = pd.Series(
-                np.isclose(
-                    col_1.astype(float),
-                    col_2.astype(float),
-                    rtol=rel_tol,
-                    atol=abs_tol,
-                    equal_nan=True,
-                )
+                (col_1.fillna(default_value) == col_2.fillna(default_value))
+                | (col_1.isnull() & col_2.isnull())
             )
-        except (ValueError, TypeError):
+        except TypeError:
+            compare = pd.Series(col_1.astype(str) == col_2.astype(str))
+    elif {col_1.dtype.kind, col_2.dtype.kind} == {"M", "O"}:
+        compare = compare_string_and_date_columns(col_1, col_2)
+    else:
+        try:
+            compare = pd.Series(
+                np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
+            )
+        except TypeError:
             try:
-                if ignore_spaces:
-                    if col_1.dtype.kind == "O" and pd.api.types.is_string_dtype(col_1):
-                        col_1 = col_1.str.strip()
-                    if col_2.dtype.kind == "O" and pd.api.types.is_string_dtype(col_2):
-                        col_2 = col_2.str.strip()
-
-                if ignore_case:
-                    if col_1.dtype.kind == "O" and pd.api.types.is_string_dtype(col_1):
-                        col_1 = col_1.str.upper()
-                    if col_2.dtype.kind == "O" and pd.api.types.is_string_dtype(col_2):
-                        col_2 = col_2.str.upper()
-
-                if {col_1.dtype.kind, col_2.dtype.kind} == {"M", "O"}:
-                    compare = compare_string_and_date_columns(col_1, col_2)
-                else:
-                    compare = pd.Series(
-                        (col_1.fillna(default_value) == col_2.fillna(default_value))
-                        | (col_1.isnull() & col_2.isnull())
+                compare = pd.Series(
+                    np.isclose(
+                        col_1.astype(float),
+                        col_2.astype(float),
+                        rtol=rel_tol,
+                        atol=abs_tol,
+                        equal_nan=True,
                     )
+                )
             except Exception:
-                try:
+                try:  # last check where we just cast to strings
                     compare = pd.Series(col_1.astype(str) == col_2.astype(str))
                 except Exception:  # Blanket exception should just return all False
                     compare = pd.Series(False, index=col_1.index)
