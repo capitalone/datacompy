@@ -287,9 +287,13 @@ class Compare(BaseCompare):
 
         if ignore_spaces:
             for column in self.join_columns:
-                if self.df1[column].dtype.kind == "O":
+                if self.df1[column].dtype.kind == "O" and pd.api.types.is_string_dtype(
+                    self.df1[column]
+                ):
                     self.df1[column] = self.df1[column].str.strip()
-                if self.df2[column].dtype.kind == "O":
+                if self.df2[column].dtype.kind == "O" and pd.api.types.is_string_dtype(
+                    self.df2[column]
+                ):
                     self.df2[column] = self.df2[column].str.strip()
 
         outer_join = self.df1.merge(
