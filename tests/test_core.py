@@ -1625,20 +1625,20 @@ def test_columns_equal_numpy_arrays():
 
 def test_columns_equal_lists():
     # all equal
-    df1 = pd.DataFrame({"array_col": list(range(10))})
-    df2 = pd.DataFrame({"array_col": list(range(10))})
+    df1 = pd.DataFrame({"array_col": [[i] for i in range(10)]})
+    df2 = pd.DataFrame({"array_col": [[i] for i in range(10)]})
     actual = datacompy.columns_equal(df1.array_col, df2.array_col)
     assert actual.all()
 
     # all mismatch
-    df1 = pd.DataFrame({"array_col": list(range(10))})
-    df2 = pd.DataFrame({"array_col": list(range(1, 11))})
+    df1 = pd.DataFrame({"array_col": [[i] for i in range(10)]})
+    df2 = pd.DataFrame({"array_col": [[i] for i in range(1, 11)]})
     actual = datacompy.columns_equal(df1.array_col, df2.array_col)
     assert not actual.all()
 
     # some equal
-    df1 = pd.DataFrame({"array_col": list(range(10))})
-    df2 = pd.DataFrame({"array_col": list(range(10))})
+    df1 = pd.DataFrame({"array_col": [[i] for i in range(10)]})
+    df2 = pd.DataFrame({"array_col": [[i] for i in range(10)]})
     df2.iloc[1] = df2.iloc[0]  # set an item to be off
     actual = datacompy.columns_equal(df1.array_col, df2.array_col)
     assert (
