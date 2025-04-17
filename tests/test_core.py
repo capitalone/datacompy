@@ -1563,3 +1563,119 @@ def test_merge_date_ignore_spaces():
     )
     compare._dataframe_merge(ignore_spaces=True)
     assert len(compare.intersect_rows) == 4
+
+
+def test_columns_equal_numpy_arrays():
+    # all equal
+    df1 = pd.DataFrame({"array_col": [np.array([j]) for j in range(10)]})
+    df2 = pd.DataFrame({"array_col": [np.array([j]) for j in range(10)]})
+    actual = datacompy.columns_equal(df1.array_col, df2.array_col)
+    assert actual.all()
+
+    # all mismatch
+    df1 = pd.DataFrame({"array_col": [np.array([j]) for j in range(10)]})
+    df2 = pd.DataFrame({"array_col": [np.array([j]) for j in range(1, 11)]})
+    actual = datacompy.columns_equal(df1.array_col, df2.array_col)
+    assert not actual.all()
+
+    # some equal
+    df1 = pd.DataFrame({"array_col": [np.array([j]) for j in range(10)]})
+    df2 = pd.DataFrame({"array_col": [np.array([j]) for j in range(10)]})
+    df2.iloc[1] = df2.iloc[0]  # set an item to be off
+    actual = datacompy.columns_equal(df1.array_col, df2.array_col)
+    assert (
+        actual
+        == np.array([True, False, True, True, True, True, True, True, True, True])
+    ).all()
+
+    # different shapes
+    df1 = pd.DataFrame(
+        {
+            "array_col": [
+                np.array([]),
+                np.array([np.nan]),
+                np.array([1, 2]),
+                np.array([1, 3]),
+                np.array([2, 3]),
+                np.array([1, 2, 3]),
+            ]
+        }
+    )
+    df2 = pd.DataFrame(
+        {
+            "array_col": [
+                np.array([]),
+                np.array([np.nan]),
+                np.array([1, 2, 3]),
+                np.array([1, 3]),
+                np.array([2, 3]),
+                np.array([1, 2]),
+            ]
+        }
+    )
+    actual = datacompy.columns_equal(df1.array_col, df2.array_col)
+    assert (actual == np.array([True, True, False, True, True, False])).all()
+
+    # empty
+    df1 = pd.DataFrame({"array_col": [np.array([]) for _ in range(10)]})
+    df2 = pd.DataFrame({"array_col": [np.array([]) for _ in range(10)]})
+    actual = datacompy.columns_equal(df1.array_col, df2.array_col)
+    assert actual.all()
+
+
+def test_columns_equal_lists():
+    # all equal
+    df1 = pd.DataFrame({"array_col": list(range(10))})
+    df2 = pd.DataFrame({"array_col": list(range(10))})
+    actual = datacompy.columns_equal(df1.array_col, df2.array_col)
+    assert actual.all()
+
+    # all mismatch
+    df1 = pd.DataFrame({"array_col": list(range(10))})
+    df2 = pd.DataFrame({"array_col": list(range(1, 11))})
+    actual = datacompy.columns_equal(df1.array_col, df2.array_col)
+    assert not actual.all()
+
+    # some equal
+    df1 = pd.DataFrame({"array_col": list(range(10))})
+    df2 = pd.DataFrame({"array_col": list(range(10))})
+    df2.iloc[1] = df2.iloc[0]  # set an item to be off
+    actual = datacompy.columns_equal(df1.array_col, df2.array_col)
+    assert (
+        actual
+        == np.array([True, False, True, True, True, True, True, True, True, True])
+    ).all()
+
+    # different shapes
+    df1 = pd.DataFrame(
+        {
+            "array_col": [
+                [],
+                [np.nan],
+                [1, 2],
+                [1, 3],
+                [2, 3],
+                [1, 2, 3],
+            ]
+        }
+    )
+    df2 = pd.DataFrame(
+        {
+            "array_col": [
+                [],
+                [np.nan],
+                [1, 2, 3],
+                [1, 3],
+                [2, 3],
+                [1, 2],
+            ]
+        }
+    )
+    actual = datacompy.columns_equal(df1.array_col, df2.array_col)
+    assert (actual == np.array([True, True, False, True, True, False])).all()
+
+    # empty
+    df1 = pd.DataFrame({"array_col": [[] for _ in range(10)]})
+    df2 = pd.DataFrame({"array_col": [[] for _ in range(10)]})
+    actual = datacompy.columns_equal(df1.array_col, df2.array_col)
+    assert actual.all()

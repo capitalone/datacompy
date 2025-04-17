@@ -840,6 +840,12 @@ def columns_equal(
     As of version ``0.14.0`` If a column is of a mixed data type the compare will
     default to returning ``False``.
 
+    Notes
+    -----
+    ``list`` and ``np.array`` types will be compared row wise using ``np.array_equal``.
+    Please note that all the rows must be of the same type otherwise it is considered "mixed"
+    and will default to being ``False`` for everything.
+
     Parameters
     ----------
     col_1 : Pandas.Series
@@ -874,11 +880,21 @@ def columns_equal(
         if col_2.dtype.kind == "O" and pd.api.types.is_string_dtype(col_2):
             col_2 = col_2.str.upper()
 
-    # short circuit if comparing mixed type columns. We don't want to support this moving forward.
+    # short circuit if comparing mixed type columns. Check list/arrrays or just return false for everything else.
     if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(
         col_2
     ).startswith("mixed"):
-        compare = pd.Series(False, index=col_1.index)
+        if all(isinstance(item, (list, np.ndarray)) for item in col_1) and all(  # noqa: UP038
+            isinstance(item, (list, np.ndarray))  # noqa: UP038
+            for item in col_2
+        ):  # compare list like
+            # join together and apply np.array_equal
+            temp_df = pd.DataFrame({"col_1": col_1, "col_2": col_2})
+            compare = temp_df.apply(
+                lambda row: np.array_equal(row.col_1, row.col_2, equal_nan=True), axis=1
+            )
+        else:
+            compare = pd.Series(False, index=col_1.index)
     elif pd.api.types.is_string_dtype(col_1) and pd.api.types.is_string_dtype(col_2):
         try:
             compare = pd.Series(
