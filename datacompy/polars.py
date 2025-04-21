@@ -818,10 +818,6 @@ def columns_equal(
     - Non-numeric values (i.e. where np.isclose can't be used) will just
       trigger True on two nulls or exact matches.
 
-    Notes
-    -----
-    ``pl.List``, and ``pl.Array`` types will be compared row wise using ``np.array_equal``.
-
     Parameters
     ----------
     col_1 : Polars.Series

@@ -842,9 +842,10 @@ def columns_equal(
 
     Notes
     -----
-    ``list`` and ``np.array`` types will be compared row wise using ``np.array_equal``.
-    Please note that all the rows must be of the same type otherwise it is considered "mixed"
-    and will default to being ``False`` for everything.
+    - ``list`` and ``np.array`` types will be compared row wise using ``np.array_equal``.
+      Depending on the size of your data this might lead to performance issues.
+    - All the rows must be of the same type otherwise it is considered "mixed"
+      and will default to being ``False`` for everything.
 
     Parameters
     ----------
