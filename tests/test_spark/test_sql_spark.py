@@ -1620,4 +1620,7 @@ def test_columns_equal_arrays(spark_session):
 
     # different shape arrays
     diff_shapes = columns_equal(df, "g", "h", "diff_shapes")
-    assert not diff_shapes.toPandas()["none_value_all"].all()
+    assert (
+        diff_shapes.toPandas()["diff_shapes"]
+        == pd.Series([True, True, True, False, False])
+    ).all()
