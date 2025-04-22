@@ -13,7 +13,7 @@ maintainers = [
   { name="Raymond Haffar", email="raymond.haffar@capitalone.com" },
 ]
 license = {text = "Apache Software License"}
-dependencies = ["pandas<=2.2.3,>=0.25.0", "numpy<=2.2.3,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "polars[pandas]<=1.23.0,>=0.20.4"]
+dependencies = ["pandas<=2.2.3,>=0.25.0", "numpy<=2.2.5,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "polars[pandas]<=1.27.1,>=0.20.4"]
 requires-python = ">=3.10.0"
 classifiers = [
     "Intended Audience :: Developers",
