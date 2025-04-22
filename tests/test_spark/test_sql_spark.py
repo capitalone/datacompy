@@ -43,6 +43,13 @@ from datacompy.spark.sql import (
     temp_column_name,
 )
 from pandas.testing import assert_frame_equal, assert_series_equal
+from pyspark.sql.types import (
+    ArrayType,
+    IntegerType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -1507,3 +1514,113 @@ def test_non_full_join_counts_some_matches(spark_session):
             ]
         ),
     )
+
+
+def test_columns_equal_arrays(spark_session):
+    data = [
+        (
+            "1",
+            [1],
+            [1],
+            [2],
+            [1],
+            [None],
+            [None],
+            [1],
+            [1],
+        ),
+        (
+            "2",
+            [2],
+            [2],
+            [3],
+            [2],
+            [None],
+            [None],
+            [
+                1,
+                2,
+            ],
+            [
+                1,
+                2,
+            ],
+        ),
+        (
+            "3",
+            [3],
+            [3],
+            [4],
+            [3],
+            [None],
+            [None],
+            [1, 2, 3],
+            [1, 2, 3],
+        ),
+        (
+            "4",
+            [4],
+            [4],
+            [5],
+            [4],
+            [None],
+            [None],
+            [1, 2, 3, 4],
+            [4, 3, 2, 1],
+        ),
+        (
+            "5",
+            [5],
+            [5],
+            [6],
+            [9],
+            [None],
+            [None],
+            [1, 2, 3, 4, 5],
+            [5, 4, 3, 2],
+        ),
+    ]
+    schema = StructType(
+        [
+            StructField("name", StringType(), True),
+            StructField("a", ArrayType(IntegerType()), True),
+            StructField("b", ArrayType(IntegerType()), True),
+            StructField("c", ArrayType(IntegerType()), True),
+            StructField("d", ArrayType(IntegerType()), True),
+            StructField("e", ArrayType(IntegerType()), True),
+            StructField("f", ArrayType(IntegerType()), True),
+            StructField("g", ArrayType(IntegerType()), True),
+            StructField("h", ArrayType(IntegerType()), True),
+        ]
+    )
+    df = spark_session.createDataFrame(data, schema)
+
+    # all equal
+    all_equal = columns_equal(df, "a", "b", "all_equal")
+    assert all_equal.toPandas()["all_equal"].all()
+
+    # all mismatch
+    all_mismatch = columns_equal(df, "a", "c", "all_mismatch")
+    assert not all_mismatch.toPandas()["all_mismatch"].all()
+
+    # some equal
+    some_equal = columns_equal(df, "a", "d", "some_equal")
+    assert (
+        some_equal.toPandas()["some_equal"]
+        == pd.Series([True, True, True, True, False])
+    ).all()
+
+    # null all
+    null_all = columns_equal(df, "e", "f", "null_all")
+    assert null_all.toPandas()["null_all"].all()
+
+    # empty all vs value
+    none_value_all = columns_equal(df, "a", "f", "none_value_all")
+    assert not none_value_all.toPandas()["none_value_all"].all()
+
+    # different shape arrays
+    diff_shapes = columns_equal(df, "g", "h", "diff_shapes")
+    assert (
+        diff_shapes.toPandas()["diff_shapes"]
+        == pd.Series([True, True, True, False, False])
+    ).all()

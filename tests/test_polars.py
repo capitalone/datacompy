@@ -1518,3 +1518,133 @@ def test_temporal_equal():
     col_b = df["b"].str.to_datetime(strict=False)
     actual_out = columns_equal(col_a, col_b)
     assert_series_equal(expect_out, actual_out, check_names=False)
+
+
+def test_columns_equal_arrays():
+    # all equal
+    df1 = pl.DataFrame(
+        {"array_col": [[1], [2], [3], [4], [5]]},
+        schema={"array_col": pl.Array(pl.Int64, 1)},
+    )
+    df2 = pl.DataFrame(
+        {"array_col": [[1], [2], [3], [4], [5]]},
+        schema={"array_col": pl.Array(pl.Int64, 1)},
+    )
+    actual = columns_equal(df1["array_col"], df2["array_col"])
+    assert actual.explode().all()
+
+    # all mismatch
+    df1 = pl.DataFrame(
+        {"array_col": [[1], [2], [3], [4], [5]]},
+        schema={"array_col": pl.Array(pl.Int64, 1)},
+    )
+    df2 = pl.DataFrame(
+        {"array_col": [[2], [3], [4], [5], [6]]},
+        schema={"array_col": pl.Array(pl.Int64, 1)},
+    )
+    actual = columns_equal(df1["array_col"], df2["array_col"])
+    assert not actual.explode().all()
+
+    # some equal
+    df1 = pl.DataFrame(
+        {"array_col": [[1], [2], [3], [4], [5]]},
+        schema={"array_col": pl.Array(pl.Int64, 1)},
+    )
+    df2 = pl.DataFrame(
+        {"array_col": [[1], [1], [3], [4], [5]]},
+        schema={"array_col": pl.Array(pl.Int64, 1)},
+    )
+    actual = columns_equal(df1["array_col"], df2["array_col"])
+    assert (actual.explode() == pl.Series([True, False, True, True, True])).all()
+
+    # empty
+    df1 = pl.DataFrame(
+        {"array_col": [[], [], [], [], []]},
+        schema={"array_col": pl.Array(pl.Int64, 0)},
+    )
+    df2 = pl.DataFrame(
+        {"array_col": [[], [], [], [], []]},
+        schema={"array_col": pl.Array(pl.Int64, 0)},
+    )
+    actual = columns_equal(df1["array_col"], df2["array_col"])
+    assert actual.explode().all()
+
+
+def test_columns_equal_lists():
+    # all equal
+    df1 = pl.DataFrame(
+        {"array_col": [[1], [2], [3], [4], [5]]},
+        schema={"array_col": pl.List(pl.Int64)},
+    )
+    df2 = pl.DataFrame(
+        {"array_col": [[1], [2], [3], [4], [5]]},
+        schema={"array_col": pl.List(pl.Int64)},
+    )
+    actual = columns_equal(df1["array_col"], df2["array_col"])
+    assert actual.all()
+
+    # all mismatch
+    df1 = pl.DataFrame(
+        {"array_col": [[1], [2], [3], [4], [5]]},
+        schema={"array_col": pl.List(pl.Int64)},
+    )
+    df2 = pl.DataFrame(
+        {"array_col": [[2], [3], [4], [5], [6]]},
+        schema={"array_col": pl.List(pl.Int64)},
+    )
+    actual = columns_equal(df1["array_col"], df2["array_col"])
+    assert not actual.all()
+
+    # some equal
+    df1 = pl.DataFrame(
+        {"array_col": [[1], [2], [3], [4], [5]]},
+        schema={"array_col": pl.List(pl.Int64)},
+    )
+    df2 = pl.DataFrame(
+        {"array_col": [[1], [1], [3], [4], [5]]},
+        schema={"array_col": pl.List(pl.Int64)},
+    )
+    actual = columns_equal(df1["array_col"], df2["array_col"])
+    assert (actual == pl.Series([True, False, True, True, True])).all()
+
+    # different shapes
+    df1 = pl.DataFrame(
+        {
+            "array_col": [
+                [],
+                [np.nan],
+                [1, 2],
+                [1, 3],
+                [2, 3],
+                [1, 2, 3],
+            ]
+        },
+        schema={"array_col": pl.List(pl.Float64)},
+    )
+    df2 = pl.DataFrame(
+        {
+            "array_col": [
+                [],
+                [np.nan],
+                [1, 2, 3],
+                [1, 3],
+                [2, 3],
+                [1, 2],
+            ]
+        },
+        schema={"array_col": pl.List(pl.Float64)},
+    )
+    actual = columns_equal(df1["array_col"], df2["array_col"])
+    assert (actual == pl.Series([True, True, False, True, True, False])).all()
+
+    # empty
+    df1 = pl.DataFrame(
+        {"array_col": [[], [], [], [], []]},
+        schema={"array_col": pl.Array(pl.Int64, 0)},
+    )
+    df2 = pl.DataFrame(
+        {"array_col": [[], [], [], [], []]},
+        schema={"array_col": pl.Array(pl.Int64, 0)},
+    )
+    actual = columns_equal(df1["array_col"], df2["array_col"])
+    assert actual.all()

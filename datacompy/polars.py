@@ -35,6 +35,7 @@ from datacompy.base import BaseCompare, temp_column_name
 LOG = logging.getLogger(__name__)
 
 STRING_TYPE = ["String", "Utf8"]
+LIST_TYPE = ["List", "Array"]
 
 
 class PolarsCompare(BaseCompare):
@@ -852,8 +853,13 @@ def columns_equal(
         if str(col_2.dtype) in STRING_TYPE:
             col_2 = col_2.str.to_uppercase()
 
-    if (str(col_1.dtype) in STRING_TYPE and str(col_2.dtype) in STRING_TYPE) or (
-        col_1.dtype.is_temporal() and col_2.dtype.is_temporal()
+    if (
+        (str(col_1.dtype) in STRING_TYPE and str(col_2.dtype) in STRING_TYPE)
+        or (col_1.dtype.is_temporal() and col_2.dtype.is_temporal())
+        or (
+            str(col_1.dtype.base_type()) in LIST_TYPE
+            and str(col_2.dtype.base_type()) in LIST_TYPE
+        )
     ):
         compare = pl.Series(
             (col_1.eq_missing(col_2)) | (col_1.is_null() & col_2.is_null())
