@@ -1014,7 +1014,7 @@ def generate_id_within_group(
             dataframe[join_columns]
             .cast(pl.String)
             .fill_null(default_value)
-            .select(rn=pl.col(dataframe.columns[0]).cum_count().over(join_columns))
+            .select(rn=pl.col(join_columns[0]).cum_count().over(join_columns))
             .to_series()
         )
     else:
