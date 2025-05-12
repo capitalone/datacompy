@@ -63,22 +63,22 @@ try:
         TimestampType,
     )
 
+    NUMERIC_SNOWPARK_TYPES = [
+        ByteType,
+        ShortType,
+        IntegerType,
+        LongType,
+        FloatType,
+        DoubleType,
+        DecimalType,
+    ]
+
+
 except ImportError:
     LOG.warning(
         "Please note that you are missing the optional dependency: snowflake. "
         "If you need to use this functionality it must be installed."
     )
-
-
-NUMERIC_SNOWPARK_TYPES = [
-    ByteType,
-    ShortType,
-    IntegerType,
-    LongType,
-    FloatType,
-    DoubleType,
-    DecimalType,
-]
 
 
 class SnowflakeCompare(BaseCompare):
