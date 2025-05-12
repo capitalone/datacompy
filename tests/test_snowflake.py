@@ -43,6 +43,12 @@ from datacompy.snowflake import (
 )
 from pandas.testing import assert_frame_equal, assert_series_equal
 from snowflake.snowpark.exceptions import SnowparkSQLException
+from snowflake.snowpark.types import (
+    DecimalType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -187,6 +193,34 @@ def test_date_columns_equal_with_ignore_spaces(snowpark_session):
         df, "B", "A", "ACTUAL", rel_tol=0.2, ignore_spaces=True
     ).toPandas()["ACTUAL"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
+
+
+def test_columns_equal_same_type_dif_length(snowpark_session):
+    schema = StructType(
+        [
+            StructField("NAME", StringType(length=20)),
+            StructField("DECIMAL_VAL", DecimalType(precision=7, scale=5)),
+            StructField("NAME_COPY", StringType(is_max_size=True)),
+            StructField("DECIMAL_VAL_COPY", DecimalType(precision=20, scale=10)),
+        ]
+    )
+    data = [
+        ["Alice", 10.44556, "Alice", 10.44556],
+        ["Bob", 2.33445, "Bob", 2.33445],
+        ["Charlie", 5.2234, "Charlie", 5.2234],
+    ]
+
+    df = snowpark_session.create_dataframe(data, schema=schema)
+    assert (
+        columns_equal(df, "NAME", "NAME_COPY", "NAME_ACTUAL")
+        .toPandas()["NAME_ACTUAL"]
+        .all()
+    )
+    assert (
+        columns_equal(df, "DECIMAL_VAL", "DECIMAL_VAL_COPY", "DECIMAL_VAL_ACTUAL")
+        .toPandas()["DECIMAL_VAL_ACTUAL"]
+        .all()
+    )
 
 
 def test_date_columns_unequal(snowpark_session):

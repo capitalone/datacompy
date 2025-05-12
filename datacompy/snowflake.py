@@ -31,7 +31,6 @@ import pandas as pd
 from ordered_set import OrderedSet
 
 from datacompy.base import BaseCompare
-from datacompy.spark.sql import decimal_comparator
 
 LOG = logging.getLogger(__name__)
 
@@ -51,23 +50,35 @@ try:
         trim,
         when,
     )
+    from snowflake.snowpark.types import (
+        ByteType,
+        DateType,
+        DecimalType,
+        DoubleType,
+        FloatType,
+        IntegerType,
+        LongType,
+        ShortType,
+        StringType,
+        TimestampType,
+    )
+
+    NUMERIC_SNOWPARK_TYPES = [
+        ByteType,
+        ShortType,
+        IntegerType,
+        LongType,
+        FloatType,
+        DoubleType,
+        DecimalType,
+    ]
+
 
 except ImportError:
     LOG.warning(
         "Please note that you are missing the optional dependency: snowflake. "
         "If you need to use this functionality it must be installed."
     )
-
-
-NUMERIC_SNOWPARK_TYPES = [
-    "tinyint",
-    "smallint",
-    "int",
-    "bigint",
-    "float",
-    "double",
-    decimal_comparator(),
-]
 
 
 class SnowflakeCompare(BaseCompare):
@@ -490,8 +501,9 @@ class SnowflakeCompare(BaseCompare):
             match_rate = 0
         LOG.info(f"{column}: {match_cnt} / {row_cnt} ({match_rate:.2%}) match")
 
-        col1_dtype, _ = _get_column_dtypes(self.df1, column, column)
-        col2_dtype, _ = _get_column_dtypes(self.df2, column, column)
+        col1_dtype_instance, _ = _get_column_dtypes(self.df1, column, column)
+        col2_dtype_instance, _ = _get_column_dtypes(self.df2, column, column)
+        col1_dtype, col2_dtype = type(col1_dtype_instance), type(col2_dtype_instance)
 
         self.column_stats.append(
             {
@@ -499,8 +511,8 @@ class SnowflakeCompare(BaseCompare):
                 "match_column": col_match,
                 "match_cnt": match_cnt,
                 "unequal_cnt": row_cnt - match_cnt,
-                "dtype1": str(col1_dtype),
-                "dtype2": str(col2_dtype),
+                "dtype1": col1_dtype_instance.simple_string(),
+                "dtype2": col2_dtype_instance.simple_string(),
                 "all_match": all(
                     (
                         col1_dtype == col2_dtype,
@@ -995,7 +1007,10 @@ def columns_equal(
         A column of boolean values are added.  True == the values match, False == the
         values don't match.
     """
-    base_dtype, compare_dtype = _get_column_dtypes(dataframe, col_1, col_2)
+    base_dtype_instance, compare_dtype_instance = _get_column_dtypes(
+        dataframe, col_1, col_2
+    )
+    base_dtype, compare_dtype = type(base_dtype_instance), type(compare_dtype_instance)
     if _is_comparable(base_dtype, compare_dtype):
         if (base_dtype in NUMERIC_SNOWPARK_TYPES) and (
             compare_dtype in NUMERIC_SNOWPARK_TYPES
@@ -1028,7 +1043,7 @@ def columns_equal(
             )
     else:
         LOG.debug(
-            f"Skipping {col_1}({base_dtype}) and {col_2}({compare_dtype}), columns are not comparable"
+            f"Skipping {col_1}({base_dtype_instance.simple_string()}) and {col_2}({compare_dtype_instance.simple_string()}), columns are not comparable"
         )
         dataframe = dataframe.withColumn(col_match, lit(False))
     return dataframe
@@ -1217,8 +1232,14 @@ def _get_column_dtypes(
     Tuple(str, str)
         Tuple of base and compare datatype
     """
-    base_dtype = next(d[1] for d in dataframe.dtypes if d[0] == col_1)
-    compare_dtype = next(d[1] for d in dataframe.dtypes if d[0] == col_2)
+    df_raw_dtypes = [
+        (name, field.datatype)
+        for name, field in zip(
+            dataframe.schema.names, dataframe.schema.fields, strict=False
+        )
+    ]
+    base_dtype = next(d[1] for d in df_raw_dtypes if d[0] == col_1)
+    compare_dtype = next(d[1] for d in df_raw_dtypes if d[0] == col_2)
     return base_dtype, compare_dtype
 
 
@@ -1244,10 +1265,10 @@ def _is_comparable(type1: str, type2: str) -> bool:
     return (
         type1 == type2
         or (type1 in NUMERIC_SNOWPARK_TYPES and type2 in NUMERIC_SNOWPARK_TYPES)
-        or ("string" in type1 and type2 == "date")
-        or (type1 == "date" and "string" in type2)
-        or ("string" in type1 and type2 == "timestamp")
-        or (type1 == "timestamp" and "string" in type2)
+        or (type1 == StringType and type2 == DateType)
+        or (type1 == DateType and type2 == StringType)
+        or (type1 == StringType and type2 == TimestampType)
+        or (type1 == TimestampType and type2 == StringType)
     )
 
 
