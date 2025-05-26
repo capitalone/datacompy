@@ -1068,10 +1068,15 @@ def normalize_string_column(
     -------
     pd.Series
         The normalized column
+
+    Notes
+    -----
+    Will not operate on categorical columns.
     """
-    if (
-        column.dtype.kind == "O" and pd.api.types.infer_dtype(column) == "string"
-    ) or pd.api.types.is_string_dtype(column):
+    if (column.dtype.kind == "O" and pd.api.types.infer_dtype(column) == "string") or (
+        pd.api.types.is_string_dtype(column)
+        and not pd.api.types.is_categorical_dtype(column)
+    ):
         column = column.str.strip() if ignore_spaces else column
         column = column.str.upper() if ignore_case else column
     return column

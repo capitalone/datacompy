@@ -233,10 +233,19 @@ class PolarsCompare(BaseCompare):
         return OrderedSet(self.df1.columns) & OrderedSet(self.df2.columns)
 
     def _dataframe_merge(self, ignore_spaces: bool) -> None:
-        """Merge df1 to df2 on the join columns.
+        """Perform an outer join between two dataframes and categorize rows into unique and intersecting groups based on the join columns.
 
-        To get df1 - df2, df2 - df1
-        and df1 & df2.
+        Parameters
+        ----------
+        ignore_spaces : bool
+            If True, normalizes string columns by ignoring spaces during the join operation.
+
+        Notes
+        -----
+        - Temporary columns may be added to the dataframes during processing
+          and are cleaned up before final output.
+        - The method assumes that `self.df1`, `self.df2`, and `self.join_columns`
+          are properly initialized before calling this method.
         """
         params: Dict[str, Any]
         LOG.debug("Outer joining")
@@ -261,10 +270,16 @@ class PolarsCompare(BaseCompare):
 
         if ignore_spaces:
             for column in self.join_columns:
-                if str(df1[column].dtype) in STRING_TYPE:
-                    df1 = df1.with_columns(pl.col(column).str.strip_chars())
-                if str(df2[column].dtype) in STRING_TYPE:
-                    df2 = df2.with_columns(pl.col(column).str.strip_chars())
+                df1 = df1.with_columns(
+                    normalize_string_column(
+                        df1[column], ignore_spaces=ignore_spaces, ignore_case=False
+                    )
+                )
+                df2 = df2.with_columns(
+                    normalize_string_column(
+                        df2[column], ignore_spaces=ignore_spaces, ignore_case=False
+                    )
+                )
 
         df1_non_join_columns = OrderedSet(df1.columns) - OrderedSet(temp_join_columns)
         df2_non_join_columns = OrderedSet(df2.columns) - OrderedSet(temp_join_columns)
@@ -841,17 +856,8 @@ def columns_equal(
     """
     compare: pl.Series
 
-    if ignore_spaces:
-        if str(col_1.dtype) in STRING_TYPE:
-            col_1 = col_1.str.strip_chars()
-        if str(col_2.dtype) in STRING_TYPE:
-            col_2 = col_2.str.strip_chars()
-
-    if ignore_case:
-        if str(col_1.dtype) in STRING_TYPE:
-            col_1 = col_1.str.to_uppercase()
-        if str(col_2.dtype) in STRING_TYPE:
-            col_2 = col_2.str.to_uppercase()
+    col_1 = normalize_string_column(col_1, ignore_spaces, ignore_case)
+    col_2 = normalize_string_column(col_2, ignore_spaces, ignore_case)
 
     if (
         (str(col_1.dtype) in STRING_TYPE and str(col_2.dtype) in STRING_TYPE)
@@ -895,8 +901,7 @@ def columns_equal(
 def compare_string_and_date_columns(col_1: pl.Series, col_2: pl.Series) -> pl.Series:
     """Compare a string column and date column, value-wise.
 
-    This tries to
-    convert a string column to a date column and compare that way.
+    This tries to convert a string column to a date column and compare that way.
 
     Parameters
     ----------
@@ -1021,3 +1026,30 @@ def generate_id_within_group(
         return dataframe.select(
             rn=pl.col(dataframe.columns[0]).cum_count().over(join_columns)
         ).to_series()
+
+
+def normalize_string_column(
+    column: pl.Series, ignore_spaces: bool, ignore_case: bool
+) -> pl.Series:
+    """Normalize a string column by converting to upper case and stripping whitespace.
+
+    Parameters
+    ----------
+    column : pl.Series
+        The column to normalize
+    ignore_spaces : bool
+        Whether to ignore spaces when normalizing
+    ignore_case : bool
+        Whether to ignore case when normalizing
+
+    Returns
+    -------
+    pl.Series
+        The normalized column
+    """
+    if str(column.dtype.base_type()) in STRING_TYPE:
+        if ignore_spaces:
+            column = column.str.strip_chars()
+        if ignore_case:
+            column = column.str.to_uppercase()
+    return column

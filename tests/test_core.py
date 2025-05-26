@@ -443,16 +443,22 @@ def test_categorical_column():
             "idx": [1, 2, 3],
             "foo": ["A", "B", np.nan],
             "bar": ["A", "B", np.nan],
+            "foo_bad": ["    A   ", "B", np.nan],
         }
     )
-    for col in ("foo", "bar"):
-        df[col] = df[col].astype("category")
+    for col in ("foo", "bar", "foo_bad"):
         df[col] = df[col].astype("category")
 
     actual_out = datacompy.columns_equal(
         df.foo, df.bar, ignore_spaces=True, ignore_case=True
     )
     assert actual_out.all()
+
+    actual_out = datacompy.columns_equal(
+        df.foo, df.foo_bad, ignore_spaces=True, ignore_case=True
+    )
+    assert not actual_out.all()
+
     compare = datacompy.Compare(df, df, join_columns=["idx"])
     assert compare.intersect_rows["foo_match"].all()
     assert compare.intersect_rows["bar_match"].all()
@@ -1684,12 +1690,20 @@ def test_columns_equal_lists():
 @pytest.mark.parametrize(
     "data, ignore_spaces, ignore_case, expected",
     [
+        # test case for categoricals, should pass through
+        # as we don't want pandas to cast categoricals into strings.
+        (
+            pd.Series(["  cat  ", "dog", "  mouse  ", None], dtype="category"),
+            True,
+            True,
+            pd.Series(["  cat  ", "dog", "  mouse  ", None], dtype="category"),
+        ),
         # test case for mixed types
         (
             pd.Series(["1   ", 2.5, None, True]),
             True,
             True,
-            pd.Series(["1", 2.5, None, True]),
+            pd.Series(["1   ", 2.5, None, True]),
         ),
         # test case for integers
         (pd.Series([1, 2, 3, 4]), True, True, pd.Series([1, 2, 3, 4])),
