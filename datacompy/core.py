@@ -285,16 +285,13 @@ class Compare(BaseCompare):
         else:
             params = {"on": self.join_columns}
 
-        if ignore_spaces:
-            for column in self.join_columns:
-                if self.df1[column].dtype.kind == "O" and pd.api.types.is_string_dtype(
-                    self.df1[column]
-                ):
-                    self.df1[column] = self.df1[column].str.strip()
-                if self.df2[column].dtype.kind == "O" and pd.api.types.is_string_dtype(
-                    self.df2[column]
-                ):
-                    self.df2[column] = self.df2[column].str.strip()
+        for column in self.join_columns:
+            self.df1[column] = normalize_string_column(
+                self.df1[column], ignore_spaces=ignore_spaces, ignore_case=False
+            )
+            self.df2[column] = normalize_string_column(
+                self.df2[column], ignore_spaces=ignore_spaces, ignore_case=False
+            )
 
         outer_join = self.df1.merge(
             self.df2,
@@ -870,16 +867,13 @@ def columns_equal(
     """
     default_value = "DATACOMPY_NULL"
     compare: pd.Series[bool]
-    if ignore_spaces:
-        if col_1.dtype.kind == "O" and pd.api.types.is_string_dtype(col_1):
-            col_1 = col_1.str.strip()
-        if col_2.dtype.kind == "O" and pd.api.types.is_string_dtype(col_2):
-            col_2 = col_2.str.strip()
-    if ignore_case:
-        if col_1.dtype.kind == "O" and pd.api.types.is_string_dtype(col_1):
-            col_1 = col_1.str.upper()
-        if col_2.dtype.kind == "O" and pd.api.types.is_string_dtype(col_2):
-            col_2 = col_2.str.upper()
+
+    col_1 = normalize_string_column(
+        col_1, ignore_spaces=ignore_spaces, ignore_case=ignore_case
+    )
+    col_2 = normalize_string_column(
+        col_2, ignore_spaces=ignore_spaces, ignore_case=ignore_case
+    )
 
     # short circuit if comparing mixed type columns. Check list/arrrays or just return false for everything else.
     if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(
@@ -1054,3 +1048,30 @@ def generate_id_within_group(
         )
     else:
         return dataframe[join_columns].groupby(join_columns).cumcount()
+
+
+def normalize_string_column(
+    column: pd.Series, ignore_spaces: bool, ignore_case: bool
+) -> pd.Series:
+    """Normalize a string column by converting to upper case and stripping whitespace.
+
+    Parameters
+    ----------
+    column : pd.Series
+        The column to normalize
+    ignore_spaces : bool
+        Whether to ignore spaces when normalizing
+    ignore_case : bool
+        Whether to ignore case when normalizing
+
+    Returns
+    -------
+    pd.Series
+        The normalized column
+    """
+    if (
+        column.dtype.kind == "O" and pd.api.types.infer_dtype(column) == "string"
+    ) or pd.api.types.is_string_dtype(column):
+        column = column.str.strip() if ignore_spaces else column
+        column = column.str.upper() if ignore_case else column
+    return column
