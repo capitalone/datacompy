@@ -66,9 +66,9 @@ class PolarsCompare(BaseCompare):
         A string name for the second dataframe
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns (including any join
-        columns)
+        columns). Excludes categoricals.
     ignore_case : bool, optional
-        Flag to ignore the case of string columns
+        Flag to ignore the case of string columns. Excludes categoricals.
     cast_column_names_lower: bool, optional
         Boolean indicator that controls of column names will be cast into lower case
 
@@ -1046,6 +1046,10 @@ def normalize_string_column(
     -------
     pl.Series
         The normalized column
+
+    Notes
+    -----
+    Will not operate on categorical columns.
     """
     if str(column.dtype.base_type()) in STRING_TYPE:
         if ignore_spaces:

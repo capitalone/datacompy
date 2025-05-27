@@ -457,7 +457,7 @@ def test_categorical_column():
     actual_out = datacompy.columns_equal(
         df.foo, df.foo_bad, ignore_spaces=True, ignore_case=True
     )
-    assert not actual_out.all()
+    assert list(actual_out) == [False, True, True]
 
     compare = datacompy.Compare(df, df, join_columns=["idx"])
     assert compare.intersect_rows["foo_match"].all()

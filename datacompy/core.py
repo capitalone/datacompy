@@ -66,9 +66,9 @@ class Compare(BaseCompare):
         A string name for the second dataframe
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns (including any join
-        columns)
+        columns). Excludes categoricals.
     ignore_case : bool, optional
-        Flag to ignore the case of string columns
+        Flag to ignore the case of string columns. Excludes categoricals.
     cast_column_names_lower: bool, optional
         Boolean indicator that controls of column names will be cast into lower case
 
@@ -1075,7 +1075,7 @@ def normalize_string_column(
     """
     if (column.dtype.kind == "O" and pd.api.types.infer_dtype(column) == "string") or (
         pd.api.types.is_string_dtype(column)
-        and not pd.api.types.is_categorical_dtype(column)
+        and not isinstance(column.dtype, pd.CategoricalDtype)
     ):
         column = column.str.strip() if ignore_spaces else column
         column = column.str.upper() if ignore_case else column
