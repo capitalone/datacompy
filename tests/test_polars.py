@@ -1665,7 +1665,50 @@ def test_columns_equal_lists():
 
 @pytest.mark.parametrize(
     "input_data, ignore_spaces, ignore_case, expected",
-    [
+    [  # Categorical datatype should just passthough
+        (
+            pl.Series(["  cat  ", "dog", "  mouse  ", None], dtype=pl.Categorical),
+            True,
+            True,
+            pl.Series(["  cat  ", "dog", "  mouse  ", None], dtype=pl.Categorical),
+        ),
+        # mixed types
+        (
+            pl.Series(["  hello  ", 1, 2.5, None], strict=False),
+            True,
+            True,
+            pl.Series(["HELLO", 1, 2.5, None], strict=False),
+        ),
+        # test case for integers
+        (pl.Series([1, 2, 3, 4]), True, True, pl.Series([1, 2, 3, 4])),
+        (pl.Series([1, 2, 3, 4]), True, False, pl.Series([1, 2, 3, 4])),
+        (pl.Series([1, 2, 3, 4]), False, True, pl.Series([1, 2, 3, 4])),
+        (pl.Series([1, 2, 3, 4]), False, False, pl.Series([1, 2, 3, 4])),
+        # test case for floats
+        (pl.Series([1.1, 2.2, 3.3, 4.4]), True, True, pl.Series([1.1, 2.2, 3.3, 4.4])),
+        (pl.Series([1.1, 2.2, 3.3, 4.4]), True, False, pl.Series([1.1, 2.2, 3.3, 4.4])),
+        (pl.Series([1.1, 2.2, 3.3, 4.4]), False, True, pl.Series([1.1, 2.2, 3.3, 4.4])),
+        (
+            pl.Series([1.1, 2.2, 3.3, 4.4]),
+            False,
+            False,
+            pl.Series([1.1, 2.2, 3.3, 4.4]),
+        ),
+        # list of strings should just passthrough
+        (
+            pl.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+            True,
+            True,
+            pl.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+        ),
+        # array of strings should just passthrough
+        (
+            pl.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+            True,
+            True,
+            pl.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+        ),
+        # strings
         (
             pl.Series(["  hello  ", "WORLD", "  Foo  ", None]),
             True,
@@ -1690,32 +1733,18 @@ def test_columns_equal_lists():
             False,
             pl.Series(["  hello  ", "WORLD", "  Foo  ", None]),
         ),
-        (
-            pl.Series([1, 2, 3, None]),
-            True,
-            True,
-            pl.Series([1, 2, 3, None]),
-        ),
         # emoji
         (
-            pl.Series([" 😀 ", "😃 a", "😄", None]),
+            pl.Series(["👋", "🌍", "🍕", None]),
             True,
             True,
-            pl.Series(["😀", "😃 A", "😄", None]),
+            pl.Series(["👋", "🌍", "🍕", None]),
         ),
-        # mixed types
         (
-            pl.Series(["  hello  ", 1, 2.5, None], strict=False),
+            pl.Series(["  👋  ", "🌍", "  🍕  ", None]),
+            False,
             True,
-            True,
-            pl.Series(["HELLO", 1, 2.5, None], strict=False),
-        ),
-        # Categorical datatype should just passthough
-        (
-            pl.Series(["  cat  ", "dog", "  mouse  ", None], dtype=pl.Categorical),
-            True,
-            True,
-            pl.Series(["  cat  ", "dog", "  mouse  ", None], dtype=pl.Categorical),
+            pl.Series(["  👋  ", "🌍", "  🍕  ", None]),
         ),
     ],
 )

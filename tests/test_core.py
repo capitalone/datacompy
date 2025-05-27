@@ -1710,6 +1710,23 @@ def test_columns_equal_lists():
         (pd.Series([1, 2, 3, 4]), True, False, pd.Series([1, 2, 3, 4])),
         (pd.Series([1, 2, 3, 4]), False, True, pd.Series([1, 2, 3, 4])),
         (pd.Series([1, 2, 3, 4]), False, False, pd.Series([1, 2, 3, 4])),
+        # test case for floats
+        (pd.Series([1.1, 2.2, 3.3, 4.4]), True, True, pd.Series([1.1, 2.2, 3.3, 4.4])),
+        (pd.Series([1.1, 2.2, 3.3, 4.4]), True, False, pd.Series([1.1, 2.2, 3.3, 4.4])),
+        (pd.Series([1.1, 2.2, 3.3, 4.4]), False, True, pd.Series([1.1, 2.2, 3.3, 4.4])),
+        (
+            pd.Series([1.1, 2.2, 3.3, 4.4]),
+            False,
+            False,
+            pd.Series([1.1, 2.2, 3.3, 4.4]),
+        ),
+        # test case for list of strings should just passthrough
+        (
+            pd.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+            True,
+            True,
+            pd.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+        ),
         # test case for strings of object types
         (
             pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="object"),
