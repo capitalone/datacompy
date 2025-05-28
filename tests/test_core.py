@@ -443,16 +443,22 @@ def test_categorical_column():
             "idx": [1, 2, 3],
             "foo": ["A", "B", np.nan],
             "bar": ["A", "B", np.nan],
+            "foo_bad": ["    A   ", "B", np.nan],
         }
     )
-    for col in ("foo", "bar"):
-        df[col] = df[col].astype("category")
+    for col in ("foo", "bar", "foo_bad"):
         df[col] = df[col].astype("category")
 
     actual_out = datacompy.columns_equal(
         df.foo, df.bar, ignore_spaces=True, ignore_case=True
     )
     assert actual_out.all()
+
+    actual_out = datacompy.columns_equal(
+        df.foo, df.foo_bad, ignore_spaces=True, ignore_case=True
+    )
+    assert list(actual_out) == [False, True, True]
+
     compare = datacompy.Compare(df, df, join_columns=["idx"])
     assert compare.intersect_rows["foo_match"].all()
     assert compare.intersect_rows["bar_match"].all()
@@ -1679,3 +1685,151 @@ def test_columns_equal_lists():
     df2 = pd.DataFrame({"array_col": [[] for _ in range(10)]})
     actual = datacompy.columns_equal(df1.array_col, df2.array_col)
     assert actual.all()
+
+
+@pytest.mark.parametrize(
+    "data, ignore_spaces, ignore_case, expected",
+    [
+        # test case for categoricals, should pass through
+        # as we don't want pandas to cast categoricals into strings.
+        (
+            pd.Series(["  cat  ", "dog", "  mouse  ", None], dtype="category"),
+            True,
+            True,
+            pd.Series(["  cat  ", "dog", "  mouse  ", None], dtype="category"),
+        ),
+        # test case for mixed types
+        (
+            pd.Series(["1   ", 2.5, None, True]),
+            True,
+            True,
+            pd.Series(["1   ", 2.5, None, True]),
+        ),
+        # test case for integers
+        (pd.Series([1, 2, 3, 4]), True, True, pd.Series([1, 2, 3, 4])),
+        (pd.Series([1, 2, 3, 4]), True, False, pd.Series([1, 2, 3, 4])),
+        (pd.Series([1, 2, 3, 4]), False, True, pd.Series([1, 2, 3, 4])),
+        (pd.Series([1, 2, 3, 4]), False, False, pd.Series([1, 2, 3, 4])),
+        # test case for floats
+        (pd.Series([1.1, 2.2, 3.3, 4.4]), True, True, pd.Series([1.1, 2.2, 3.3, 4.4])),
+        (pd.Series([1.1, 2.2, 3.3, 4.4]), True, False, pd.Series([1.1, 2.2, 3.3, 4.4])),
+        (pd.Series([1.1, 2.2, 3.3, 4.4]), False, True, pd.Series([1.1, 2.2, 3.3, 4.4])),
+        (
+            pd.Series([1.1, 2.2, 3.3, 4.4]),
+            False,
+            False,
+            pd.Series([1.1, 2.2, 3.3, 4.4]),
+        ),
+        # test case for list of strings should just passthrough
+        (
+            pd.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+            True,
+            True,
+            pd.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+        ),
+        # test case for strings of object types
+        (
+            pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="object"),
+            True,
+            True,
+            pd.Series(["HELLO", "WORLD", "FOO", None], dtype="object"),
+        ),
+        (
+            pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="object"),
+            True,
+            False,
+            pd.Series(["hello", "WORLD", "Foo", None], dtype="object"),
+        ),
+        (
+            pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="object"),
+            False,
+            True,
+            pd.Series(["  HELLO  ", "WORLD", "  FOO  ", None], dtype="object"),
+        ),
+        (
+            pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="object"),
+            False,
+            False,
+            pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="object"),
+        ),
+        (
+            pd.Series(["👋", "🌍", "🍕", None], dtype="object"),
+            True,
+            True,
+            pd.Series(["👋", "🌍", "🍕", None], dtype="object"),
+        ),
+        (
+            pd.Series(["  👋  ", "🌍", "  🍕  ", None], dtype="object"),
+            False,
+            True,
+            pd.Series(["  👋  ", "🌍", "  🍕  ", None], dtype="object"),
+        ),
+        # tests for type string[python]
+        (
+            pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="string[python]"),
+            True,
+            True,
+            pd.Series(["HELLO", "WORLD", "FOO", None], dtype="string[python]"),
+        ),
+        (
+            pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="string[python]"),
+            True,
+            False,
+            pd.Series(["hello", "WORLD", "Foo", None], dtype="string[python]"),
+        ),
+        (
+            pd.Series(["👋", "🌍", "🍕", None], dtype="string[python]"),
+            True,
+            True,
+            pd.Series(["👋", "🌍", "🍕", None], dtype="string[python]"),
+        ),
+        (
+            pd.Series(["  👋  ", "🌍", "  🍕  ", None], dtype="string[python]"),
+            False,
+            True,
+            pd.Series(["  👋  ", "🌍", "  🍕  ", None], dtype="string[python]"),
+        ),
+        # tests for type string[pyarrow]
+        (
+            pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="string[pyarrow]"),
+            True,
+            True,
+            pd.Series(["HELLO", "WORLD", "FOO", None], dtype="string[pyarrow]"),
+        ),
+        (
+            pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="string[pyarrow]"),
+            True,
+            False,
+            pd.Series(["hello", "WORLD", "Foo", None], dtype="string[pyarrow]"),
+        ),
+        (
+            pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="string[pyarrow]"),
+            False,
+            True,
+            pd.Series(["  HELLO  ", "WORLD", "  FOO  ", None], dtype="string[pyarrow]"),
+        ),
+        (
+            pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="string[pyarrow]"),
+            False,
+            False,
+            pd.Series(["  hello  ", "WORLD", "  Foo  ", None], dtype="string[pyarrow]"),
+        ),
+        (
+            pd.Series(["👋", "🌍", "🍕", None], dtype="string[pyarrow]"),
+            True,
+            True,
+            pd.Series(["👋", "🌍", "🍕", None], dtype="string[pyarrow]"),
+        ),
+        (
+            pd.Series(["  👋  ", "🌍", "  🍕  ", None], dtype="string[pyarrow]"),
+            False,
+            True,
+            pd.Series(["  👋  ", "🌍", "  🍕  ", None], dtype="string[pyarrow]"),
+        ),
+    ],
+)
+def test_normalize_string_column(data, ignore_spaces, ignore_case, expected):
+    result = datacompy.core.normalize_string_column(
+        data, ignore_spaces=ignore_spaces, ignore_case=ignore_case
+    )
+    assert_series_equal(result, expected, check_names=False)
