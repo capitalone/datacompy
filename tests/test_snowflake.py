@@ -567,6 +567,84 @@ def test_10k_rows(snowpark_session):
     assert not compare_no_tol.intersect_rows_match()
 
 
+def test_10k_rows_abs_tol_per_column(snowpark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    df1 = snowpark_session.createDataFrame(pdf)
+    df2 = snowpark_session.createDataFrame(pdf2)
+    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], abs_tol_columns={"B": 0.2})
+    assert compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"A", "B", "C"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert compare_tol.intersect_rows_match()
+
+
+def test_10k_rows_abs_tol_per_column_default(snowpark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    pdf2["C"] = pdf2["C"] + 0.3
+    df1 = snowpark_session.createDataFrame(pdf)
+    df2 = snowpark_session.createDataFrame(pdf2)
+    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], abs_tol=0.2, abs_tol_columns={"C": 0.0})
+    assert not compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"A", "B", "C"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert not compare_tol.intersect_rows_match()
+
+
+def test_10k_rows_rel_tol_per_column(snowpark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    df1 = snowpark_session.createDataFrame(pdf)
+    df2 = snowpark_session.createDataFrame(pdf2)
+    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], rel_tol_columns={"B": 1.0})
+    assert compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"A", "B", "C"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert compare_tol.intersect_rows_match()
+
+
+def test_10k_rows_rel_tol_per_column_default(snowpark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    pdf2["C"] = pdf2["C"] + 0.1
+    df1 = snowpark_session.createDataFrame(pdf)
+    df2 = snowpark_session.createDataFrame(pdf2)
+    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], rel_tol=1, rel_tol_columns={"C": 0.0})
+    assert not compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"A", "B", "C"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert not compare_tol.intersect_rows_match()
+
+
 def test_subset(snowpark_session, caplog):
     caplog.set_level(logging.DEBUG)
     df1 = snowpark_session.createDataFrame(

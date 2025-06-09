@@ -112,6 +112,10 @@ class SnowflakeCompare(BaseCompare):
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns (including any join
         columns).
+    abs_tol_columns: Dict[str, float], optional
+        Absolute tolerance on a per-column basis
+    rel_tol_columns: Dict[str, float], optional
+        Relative tolerance on a per-column basis
 
     Attributes
     ----------
@@ -132,6 +136,8 @@ class SnowflakeCompare(BaseCompare):
         df1_name: str | None = None,
         df2_name: str | None = None,
         ignore_spaces: bool = False,
+        abs_tol_columns: Dict[str, float] | None = None,
+        rel_tol_columns: Dict[str, float] | None = None,
     ) -> None:
         if join_columns is None:
             errmsg = "join_columns cannot be None"
@@ -154,6 +160,8 @@ class SnowflakeCompare(BaseCompare):
         self.abs_tol = abs_tol
         self.rel_tol = rel_tol
         self.ignore_spaces = ignore_spaces
+        self.abs_tol_columns: Dict[str, float] = abs_tol_columns or {}
+        self.rel_tol_columns: Dict[str, float] = rel_tol_columns or {}
         self.df1_unq_rows: sp.DataFrame
         self.df2_unq_rows: sp.DataFrame
         self.intersect_rows: sp.DataFrame
@@ -432,8 +440,8 @@ class SnowflakeCompare(BaseCompare):
                     col_1,
                     col_2,
                     col_match,
-                    self.rel_tol,
-                    self.abs_tol,
+                    self.rel_tol_columns.get(col, self.rel_tol),
+                    self.abs_tol_columns.get(col, self.abs_tol),
                     ignore_spaces,
                 )
 
