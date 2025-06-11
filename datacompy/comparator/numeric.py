@@ -249,7 +249,7 @@ class PandasNumericComparator(BaseNumericComparator):
                     )
                 )
         else:
-            return pd.Series([False], index=col1.index)
+            return pd.Series(False, index=col1.index)
 
 
 class SparkNumericComparator(BaseNumericComparator):

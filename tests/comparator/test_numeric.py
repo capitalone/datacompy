@@ -1,13 +1,14 @@
 import pandas as pd
 import polars as pl
+import pyspark.sql as ps
 import pytest
+import snowflake.snowpark as sf
 from datacompy.comparator.numeric import (
     PandasNumericComparator,
     PolarsNumericComparator,
     SnowflakeNumericComparator,
     SparkNumericComparator,
 )
-from pyspark.sql import Row
 
 
 # tests for PolarsNumericComparator
@@ -114,7 +115,8 @@ def test_pandas_numeric_comparator_error_handling():
     assert result.tolist() == [False, False, False]
 
     # different lengths
-    col2 = pd.Series(["x", "y", "z", "c"])  # Invalid type for numeric comparison
+    col1 = pd.Series([1.0, 2.0, 3.0])
+    col2 = pd.Series([1.0, 2.5, 3.0, 4.0])
     result = comparator.compare(col1, col2)
     assert result.tolist() == [False, False, False]
 
@@ -129,9 +131,9 @@ def test_spark_numeric_comparator_exact_match(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=True),
-        Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
     ]
 
 
@@ -144,9 +146,9 @@ def test_spark_numeric_comparator_approximate_match(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=True),
-        Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
     ]
 
 
@@ -157,9 +159,9 @@ def test_spark_numeric_comparator_type_casting(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=True),
-        Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
     ]
 
 
@@ -172,9 +174,9 @@ def test_spark_numeric_comparator_nan_handling(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=True),
-        Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
     ]
 
 
@@ -187,9 +189,9 @@ def test_spark_numeric_comparator_mismatch(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=False),
-        Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=False),
+        ps.Row(col_match=True),
     ]
 
 
@@ -202,9 +204,9 @@ def test_spark_numeric_comparator_error_handling(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=False),
-        Row(col_match=False),
-        Row(col_match=False),
+        ps.Row(col_match=False),
+        ps.Row(col_match=False),
+        ps.Row(col_match=False),
     ]
 
 
@@ -219,9 +221,9 @@ def test_snowflake_numeric_comparator_exact_match(snowpark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=True),
-        Row(col_match=True),
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
     ]
 
 
@@ -235,9 +237,9 @@ def test_snowflake_numeric_comparator_approximate_match(snowpark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=True),
-        Row(col_match=True),
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
     ]
 
 
@@ -251,9 +253,9 @@ def test_snowflake_numeric_comparator_type_casting(snowpark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=True),
-        Row(col_match=True),
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
     ]
 
 
@@ -267,9 +269,9 @@ def test_snowflake_numeric_comparator_nan_handling(snowpark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=True),
-        Row(col_match=True),
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
     ]
 
 
@@ -283,9 +285,9 @@ def test_snowflake_numeric_comparator_mismatch(snowpark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=False),
-        Row(col_match=True),
+        sf.Row(col_match=True),
+        sf.Row(col_match=False),
+        sf.Row(col_match=True),
     ]
 
 
@@ -299,7 +301,7 @@ def test_snowflake_numeric_comparator_error_handling(snowpark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=False),
-        Row(col_match=False),
-        Row(col_match=False),
+        sf.Row(col_match=False),
+        sf.Row(col_match=False),
+        sf.Row(col_match=False),
     ]
