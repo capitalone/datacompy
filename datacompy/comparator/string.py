@@ -162,9 +162,9 @@ class PandasStringComparator(BaseStringComparator):
                 try:
                     return pd.Series(col1.astype(str) == col2.astype(str))
                 except Exception:
-                    return pd.Series(False * col1.shape[0])
+                    return pd.Series(False * col1.index)
         else:
-            return pd.Series([False] * col1.shape[0])
+            return pd.Series(False * col1.index)
 
 
 class SparkStringComparator(BaseStringComparator):

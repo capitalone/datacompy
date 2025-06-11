@@ -1,22 +1,14 @@
 import pandas as pd
 import polars as pl
+import pyspark.sql as ps
 import pytest
+import snowflake.snowpark as sf
 from datacompy.comparator.string import (
     PandasStringComparator,
     PolarsStringComparator,
+    SnowflakeStringComparator,
     SparkStringComparator,
 )
-from pyspark.sql import Row
-from snowflake.snowpark import Session
-
-pytest.importorskip("snowflake")
-pytest.importorskip("pyspark")
-
-
-@pytest.fixture
-def snowflake_session():
-    # Mock Snowflake session setup
-    return Session.builder.configs({"account": "test_account"}).create()
 
 
 # tests for PolarsStringComparator
@@ -159,9 +151,9 @@ def test_spark_string_comparator_exact_match(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=True),
-        Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
     ]
 
 
@@ -175,9 +167,9 @@ def test_spark_string_comparator_case_space_insensitivity(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=True),
-        Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
     ]
 
     comparator = SparkStringComparator(ignore_case=True, ignore_space=False)
@@ -185,9 +177,9 @@ def test_spark_string_comparator_case_space_insensitivity(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=False),
-        Row(col_match=False),
-        Row(col_match=True),
+        ps.Row(col_match=False),
+        ps.Row(col_match=False),
+        ps.Row(col_match=True),
     ]
 
     comparator = SparkStringComparator(ignore_case=False, ignore_space=True)
@@ -195,9 +187,9 @@ def test_spark_string_comparator_case_space_insensitivity(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=False),
-        Row(col_match=False),
+        ps.Row(col_match=True),
+        ps.Row(col_match=False),
+        ps.Row(col_match=False),
     ]
 
     comparator = SparkStringComparator(ignore_case=False, ignore_space=False)
@@ -205,9 +197,9 @@ def test_spark_string_comparator_case_space_insensitivity(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=False),
-        Row(col_match=False),
-        Row(col_match=False),
+        ps.Row(col_match=False),
+        ps.Row(col_match=False),
+        ps.Row(col_match=False),
     ]
 
 
@@ -220,9 +212,9 @@ def test_spark_string_comparator_nan_handling(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=True),
-        Row(col_match=True),
-        Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
+        ps.Row(col_match=True),
     ]
 
 
@@ -235,7 +227,103 @@ def test_spark_string_comparator_error_handling(spark_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        Row(col_match=False),
-        Row(col_match=False),
-        Row(col_match=False),
+        ps.Row(col_match=False),
+        ps.Row(col_match=False),
+        ps.Row(col_match=False),
+    ]
+
+
+# tests for SnowflakeStringComparator
+@pytest.mark.snowflake
+def test_snowflake_string_comparator_exact_match(snowflake_session):
+    comparator = SnowflakeStringComparator()
+    df = snowflake_session.createDataFrame(
+        [("a", "a"), ("b", "b"), ("c", "c")], ["col1", "col2"]
+    )
+    result = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+    )
+    assert result.select(["col_match"]).collect() == [
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
+    ]
+
+
+@pytest.mark.snowflake
+def test_snowflake_string_comparator_case_space_insensitivity(snowflake_session):
+    df = snowflake_session.createDataFrame(
+        [("a", " a"), ("b", "   B  "), ("c", "C")], ["col1", "col2"]
+    )
+
+    comparator = SnowflakeStringComparator(ignore_case=True, ignore_space=True)
+    result = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+    )
+    assert result.select(["col_match"]).collect() == [
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
+    ]
+
+    comparator = SnowflakeStringComparator(ignore_case=True, ignore_space=False)
+    result = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+    )
+    assert result.select(["col_match"]).collect() == [
+        sf.Row(col_match=False),
+        sf.Row(col_match=False),
+        sf.Row(col_match=True),
+    ]
+
+    comparator = SnowflakeStringComparator(ignore_case=False, ignore_space=True)
+    result = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+    )
+    assert result.select(["col_match"]).collect() == [
+        sf.Row(col_match=True),
+        sf.Row(col_match=False),
+        sf.Row(col_match=False),
+    ]
+
+    comparator = SnowflakeStringComparator(ignore_case=False, ignore_space=False)
+    result = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+    )
+    assert result.select(["col_match"]).collect() == [
+        sf.Row(col_match=False),
+        sf.Row(col_match=False),
+        sf.Row(col_match=False),
+    ]
+
+
+@pytest.mark.snowflake
+def test_snowflake_string_comparator_nan_handling(snowflake_session):
+    comparator = SnowflakeStringComparator()
+    df = snowflake_session.createDataFrame(
+        [("a", "a"), (float("nan"), float("nan")), ("c", "c")], ["col1", "col2"]
+    )
+    result = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+    )
+    assert result.select(["col_match"]).collect() == [
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
+        sf.Row(col_match=True),
+    ]
+
+
+@pytest.mark.snowflake
+def test_snowflake_string_comparator_error_handling(snowflake_session):
+    comparator = SnowflakeStringComparator()
+    df = snowflake_session.createDataFrame(
+        [(1, 2), (3, 4), (5, 6)], ["col1", "col2"]
+    )  # Invalid type for string comparison
+    result = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+    )
+    assert result.select(["col_match"]).collect() == [
+        sf.Row(col_match=False),
+        sf.Row(col_match=False),
+        sf.Row(col_match=False),
     ]
