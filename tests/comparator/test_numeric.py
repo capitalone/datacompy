@@ -59,7 +59,8 @@ def test_polars_numeric_comparator_error_handling():
     assert result.to_list() == [False, False, False]
 
     # different lengths
-    col2 = pl.Series(["x", "y", "z", "c"])  # Invalid type for numeric comparison
+    col1 = pl.Series([1, 2, 3])
+    col2 = pl.Series([1, 2, 3, 4])
     result = comparator.compare(col1, col2)
     assert result.to_list() == [False, False, False]
 
