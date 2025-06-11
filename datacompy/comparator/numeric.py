@@ -16,24 +16,19 @@
 """Numeric Comparator Class."""
 
 import logging
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
 import polars as pl
 
-from datacompy.comparator.base import BaseComparator
+from datacompy.comparator.base import BaseNumericComparator
 
 LOG = logging.getLogger(__name__)
 
 try:
     import pyspark.sql
     import pyspark.sql.functions as psf
-
-    from datacompy.spark.sql import (
-        NUMERIC_SPARK_TYPES,
-        _get_column_dtypes,
-    )
-
 except ImportError:
     LOG.warning(
         "Please note that you are missing the optional dependency: spark. "
@@ -43,24 +38,16 @@ except ImportError:
 try:
     import snowflake.snowpark as sp
     import snowflake.snowpark.functions as spf
-    from snowflake.snowpark.types import (
-        ByteType,
-        DecimalType,
-        DoubleType,
-        FloatType,
-        IntegerType,
-        LongType,
-        ShortType,
-    )
+    import snowflake.snowpark.types as spt
 
     NUMERIC_SNOWPARK_TYPES = [
-        ByteType,
-        ShortType,
-        IntegerType,
-        LongType,
-        FloatType,
-        DoubleType,
-        DecimalType,
+        spt.ByteType,
+        spt.ShortType,
+        spt.IntegerType,
+        spt.LongType,
+        spt.FloatType,
+        spt.DoubleType,
+        spt.DecimalType,
     ]
 except ImportError:
     LOG.warning(
@@ -69,7 +56,85 @@ except ImportError:
     )
 
 
-class PolarsNumericComparator(BaseComparator):
+def decimal_comparator():
+    """Check equality with decimal(X, Y) types.
+
+    Otherwise treated as the string "decimal".
+    """
+
+    class DecimalComparator(str):
+        def __eq__(self, other):
+            return len(other) >= 7 and other[0:7] == "decimal"
+
+    return DecimalComparator("decimal")
+
+
+NUMERIC_SPARK_TYPES = [
+    "tinyint",
+    "smallint",
+    "int",
+    "bigint",
+    "float",
+    "double",
+    decimal_comparator(),
+]
+
+
+def _get_spark_column_dtypes(
+    dataframe: "pyspark.sql.DataFrame", col_1: "str", col_2: "str"
+) -> Tuple[str, str]:
+    """Get the dtypes of two columns.
+
+    Parameters
+    ----------
+    dataframe: pyspark.sql.DataFrame
+        DataFrame to do comparison on
+    col_1 : str
+        The first column to look at
+    col_2 : str
+        The second column
+
+    Returns
+    -------
+    Tuple(str, str)
+        Tuple of base and compare datatype
+    """
+    base_dtype = next(d[1] for d in dataframe.dtypes if d[0] == col_1)
+    compare_dtype = next(d[1] for d in dataframe.dtypes if d[0] == col_2)
+    return base_dtype, compare_dtype
+
+
+def _get_snowflake_column_dtypes(
+    dataframe: "sp.DataFrame", col_1: "str", col_2: "str"
+) -> tuple[str, str]:
+    """Get the dtypes of two columns.
+
+    Parameters
+    ----------
+    dataframe: sp.DataFrame
+        DataFrame to do comparison on
+    col_1 : str
+        The first column to look at
+    col_2 : str
+        The second column
+
+    Returns
+    -------
+    Tuple(str, str)
+        Tuple of base and compare datatype
+    """
+    df_raw_dtypes = [
+        (name, field.datatype)
+        for name, field in zip(
+            dataframe.schema.names, dataframe.schema.fields, strict=False
+        )
+    ]
+    base_dtype = next(d[1] for d in df_raw_dtypes if d[0] == col_1)
+    compare_dtype = next(d[1] for d in df_raw_dtypes if d[0] == col_2)
+    return base_dtype, compare_dtype
+
+
+class PolarsNumericComparator(BaseNumericComparator):
     """Comparator for numeric columns in Polars.
 
     Parameters
@@ -79,10 +144,6 @@ class PolarsNumericComparator(BaseComparator):
     atol : float
         The absolute tolerance to use for comparison.
     """
-
-    def __init__(self, rtol: float = 1e-5, atol: float = 1e-8):
-        self.rtol = rtol
-        self.atol = atol
 
     def compare(self, col1: pl.Series, col2: pl.Series) -> pl.Series:
         """
@@ -132,7 +193,7 @@ class PolarsNumericComparator(BaseComparator):
             return pl.Series([False] * col1.shape[0])
 
 
-class PandasNumericComparator(BaseComparator):
+class PandasNumericComparator(BaseNumericComparator):
     """Comparator for numeric columns in Pandas.
 
     Parameters
@@ -142,10 +203,6 @@ class PandasNumericComparator(BaseComparator):
     atol : float
         The absolute tolerance to use for comparison.
     """
-
-    def __init__(self, rtol: float = 1e-5, atol: float = 1e-8):
-        self.rtol = rtol
-        self.atol = atol
 
     def compare(self, col1: pd.Series, col2: pd.Series) -> pd.Series:
         """
@@ -195,7 +252,7 @@ class PandasNumericComparator(BaseComparator):
             return pd.Series(False, index=col1.index)
 
 
-class SparkNumericComparator(BaseComparator):
+class SparkNumericComparator(BaseNumericComparator):
     """Comparator for numeric columns in PySpark.
 
     Parameters
@@ -206,14 +263,6 @@ class SparkNumericComparator(BaseComparator):
         The absolute tolerance to use for comparison.
 
     """
-
-    def __init__(
-        self,
-        rtol: float = 1e-5,
-        atol: float = 1e-8,
-    ):
-        self.rtol = rtol
-        self.atol = atol
 
     def compare(
         self, dataframe: pyspark.sql.DataFrame, col1: str, col2: str, col_match: str
@@ -246,7 +295,7 @@ class SparkNumericComparator(BaseComparator):
         - If either column contains NaN values, they are handled explicitly to avoid
           incorrect comparisons.
         """
-        base_dtype, compare_dtype = _get_column_dtypes(dataframe, col1, col2)
+        base_dtype, compare_dtype = _get_spark_column_dtypes(dataframe, col1, col2)
         if (base_dtype in NUMERIC_SPARK_TYPES) and (
             compare_dtype in NUMERIC_SPARK_TYPES
         ):
@@ -272,7 +321,7 @@ class SparkNumericComparator(BaseComparator):
         return output
 
 
-class SnowflakeNumericComparator(BaseComparator):
+class SnowflakeNumericComparator(BaseNumericComparator):
     """Comparator for numeric columns in Snowflake.
 
     Parameters
@@ -283,10 +332,6 @@ class SnowflakeNumericComparator(BaseComparator):
         The absolute tolerance to use for comparison.
 
     """
-
-    def __init__(self, rtol: float = 1e-5, atol: float = 1e-8):
-        self.rtol = rtol
-        self.atol = atol
 
     def compare(
         self,
@@ -323,21 +368,27 @@ class SnowflakeNumericComparator(BaseComparator):
         - If either column contains null values, they are handled explicitly to avoid
           incorrect comparisons.
         """
-        dataframe = dataframe.withColumn(
-            col_match,
-            spf.when(
-                (spf.col(col1).eqNullSafe(spf.col(col2)))
-                | (
-                    spf.abs(spf.col(col1) - spf.col(col2))
-                    <= spf.lit(self.atol)
-                    + (spf.lit(self.rtol) * spf.abs(spf.col(col2)))
-                ),
-                # corner case of col1 != null and col2 == null returns True incorrectly
+        base_dtype, compare_dtype = _get_snowflake_column_dtypes(dataframe, col1, col2)
+        if (base_dtype in NUMERIC_SNOWPARK_TYPES) and (
+            compare_dtype in NUMERIC_SNOWPARK_TYPES
+        ):
+            output = dataframe.withColumn(
+                col_match,
                 spf.when(
-                    (spf.is_null(spf.col(col1)) == False)  # noqa: E712
-                    & (spf.is_null(spf.col(col2)) == True),  # noqa: E712
-                    spf.lit(False),
-                ).otherwise(spf.lit(True)),
-            ).otherwise(spf.lit(False)),
-        )
-        return dataframe
+                    (spf.col(col1).eqNullSafe(spf.col(col2)))
+                    | (
+                        spf.abs(spf.col(col1) - spf.col(col2))
+                        <= spf.lit(self.atol)
+                        + (spf.lit(self.rtol) * spf.abs(spf.col(col2)))
+                    ),
+                    # corner case of col1 != null and col2 == null returns True incorrectly
+                    spf.when(
+                        (spf.is_null(spf.col(col1)) == False)  # noqa: E712
+                        & (spf.is_null(spf.col(col2)) == True),  # noqa: E712
+                        spf.lit(False),
+                    ).otherwise(spf.lit(True)),
+                ).otherwise(spf.lit(False)),
+            )
+        else:
+            output = dataframe.withColumn(col_match, psf.lit(False))
+        return output
