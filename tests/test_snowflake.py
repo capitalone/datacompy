@@ -576,7 +576,7 @@ def test_10k_rows_abs_tol_per_column(snowpark_session):
     pdf2["B"] = pdf2["B"] + 0.1
     df1 = snowpark_session.createDataFrame(pdf)
     df2 = snowpark_session.createDataFrame(pdf2)
-    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], abs_tol_columns={"B": 0.2})
+    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], abs_tol={"B": 0.2})
     assert compare_tol.matches()
     assert compare_tol.df1_unq_rows.count() == 0
     assert compare_tol.df2_unq_rows.count() == 0
@@ -596,7 +596,7 @@ def test_10k_rows_abs_tol_per_column_default(snowpark_session):
     pdf2["C"] = pdf2["C"] + 0.3
     df1 = snowpark_session.createDataFrame(pdf)
     df2 = snowpark_session.createDataFrame(pdf2)
-    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], abs_tol=0.2, abs_tol_columns={"C": 0.0})
+    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], abs_tol={"C": 0.0, "__default": 0.2})
     assert not compare_tol.matches()
     assert compare_tol.df1_unq_rows.count() == 0
     assert compare_tol.df2_unq_rows.count() == 0
@@ -615,7 +615,7 @@ def test_10k_rows_rel_tol_per_column(snowpark_session):
     pdf2["B"] = pdf2["B"] + 0.1
     df1 = snowpark_session.createDataFrame(pdf)
     df2 = snowpark_session.createDataFrame(pdf2)
-    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], rel_tol_columns={"B": 1.0})
+    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], rel_tol={"B": 1.0})
     assert compare_tol.matches()
     assert compare_tol.df1_unq_rows.count() == 0
     assert compare_tol.df2_unq_rows.count() == 0
@@ -635,7 +635,7 @@ def test_10k_rows_rel_tol_per_column_default(snowpark_session):
     pdf2["C"] = pdf2["C"] + 0.1
     df1 = snowpark_session.createDataFrame(pdf)
     df2 = snowpark_session.createDataFrame(pdf2)
-    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], rel_tol=1, rel_tol_columns={"C": 0.0})
+    compare_tol = SnowflakeCompare(snowpark_session, df1, df2, ["A"], rel_tol={"C": 0.0, "__default": 1})
     assert not compare_tol.matches()
     assert compare_tol.df1_unq_rows.count() == 0
     assert compare_tol.df2_unq_rows.count() == 0
