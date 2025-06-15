@@ -113,10 +113,6 @@ class SnowflakeCompare(BaseCompare):
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns (including any join
         columns).
-    abs_tol_columns: Dict[str, float], optional
-        Absolute tolerance on a per-column basis
-    rel_tol_columns: Dict[str, float], optional
-        Relative tolerance on a per-column basis
 
     Attributes
     ----------
