@@ -9,6 +9,18 @@ from datacompy.comparator.string import (
     SnowflakeStringComparator,
     SparkStringComparator,
 )
+from snowflake.snowpark.functions import trim
+from snowflake.snowpark.mock import ColumnEmulator, ColumnType, patch
+from snowflake.snowpark.types import StringType
+
+
+@patch(trim)
+def mock_trim(column: ColumnEmulator, trim_string=None) -> ColumnEmulator:
+    ret_column = ColumnEmulator(
+        data=[row.strip() if row is not None else row for row in column]
+    )
+    ret_column.sf_type = ColumnType(StringType(), True)
+    return ret_column
 
 
 # tests for PolarsStringComparator
@@ -67,13 +79,13 @@ def test_polars_string_comparator_error_handling():
     col1 = pl.Series([1, 2, 3])  # Invalid type for string comparison
     col2 = pl.Series([4, 5, 6])  # Invalid type for string comparison
     result = comparator.compare(col1, col2)
-    assert result.to_list() == [False, False, False]
+    assert result is None
 
     # different lengths
     col1 = pl.Series(["x", "y", "z"])
     col2 = pl.Series(["x", "y", "z", "c"])
     result = comparator.compare(col1, col2)
-    assert result.to_list() == [False, False, False]
+    assert result is None
 
 
 # tests for PandasStringComparator
@@ -132,13 +144,13 @@ def test_pandas_string_comparator_error_handling():
     col1 = pd.Series([1, 2, 3])  # Invalid type for string comparison
     col2 = pd.Series([4, 5, 6])  # Invalid type for string comparison
     result = comparator.compare(col1, col2)
-    assert result.tolist() == [False, False, False]
+    assert result is None
 
     # different lengths
     col1 = pd.Series(["x", "y", "z"])
     col2 = pd.Series(["x", "y", "z", "c"])
     result = comparator.compare(col1, col2)
-    assert result.tolist() == [False, False, False]
+    assert result is None
 
 
 # tests for SparkStringComparator
@@ -226,11 +238,7 @@ def test_spark_string_comparator_error_handling(spark_session):
     result = comparator.compare(
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
-    assert result.select(["col_match"]).collect() == [
-        ps.Row(col_match=False),
-        ps.Row(col_match=False),
-        ps.Row(col_match=False),
-    ]
+    assert result is None
 
 
 # tests for SnowflakeStringComparator
@@ -298,10 +306,10 @@ def test_snowflake_string_comparator_case_space_insensitivity(snowflake_session)
 
 
 @pytest.mark.snowflake
-def test_snowflake_string_comparator_nan_handling(snowflake_session):
+def test_snowflake_string_comparator_null_handling(snowflake_session):
     comparator = SnowflakeStringComparator()
     df = snowflake_session.createDataFrame(
-        [("a", "a"), (float("nan"), float("nan")), ("c", "c")], ["col1", "col2"]
+        [("a", "a"), (None, None), ("c", "c")], ["col1", "col2"]
     )
     result = comparator.compare(
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
@@ -322,8 +330,4 @@ def test_snowflake_string_comparator_error_handling(snowflake_session):
     result = comparator.compare(
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
-    assert result.select(["col_match"]).collect() == [
-        sf.Row(col_match=False),
-        sf.Row(col_match=False),
-        sf.Row(col_match=False),
-    ]
+    assert result is None

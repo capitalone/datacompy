@@ -19,6 +19,18 @@ CONNECTION_PARAMETERS = {
 }
 
 
+# @pytest.fixture(scope="module")
+# def snowpark_session() -> "Session":
+#     return Session.builder.configs(CONNECTION_PARAMETERS).create()
+
+
+def pytest_addoption(parser):
+    parser.addoption("--snowflake-session", action="store", default="local")
+
+
 @pytest.fixture(scope="module")
-def snowpark_session() -> "Session":
-    return Session.builder.configs(CONNECTION_PARAMETERS).create()
+def snowflake_session(request) -> Session:
+    if request.config.getoption("--snowflake-session") == "local":
+        return Session.builder.config("local_testing", True).create()
+    else:
+        return Session.builder.configs(CONNECTION_PARAMETERS).create()

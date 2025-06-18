@@ -30,6 +30,7 @@ import pandas as pd
 from ordered_set import OrderedSet
 
 from datacompy.base import BaseCompare, temp_column_name
+from datacompy.comparator import PandasNumericComparator, PandasStringComparator
 
 LOG = logging.getLogger(__name__)
 
@@ -870,16 +871,21 @@ def columns_equal(
     """
     default_value = "DATACOMPY_NULL"
     compare: pd.Series[bool]
-    if ignore_spaces:
-        if col_1.dtype.kind == "O" and pd.api.types.is_string_dtype(col_1):
-            col_1 = col_1.str.strip()
-        if col_2.dtype.kind == "O" and pd.api.types.is_string_dtype(col_2):
-            col_2 = col_2.str.strip()
-    if ignore_case:
-        if col_1.dtype.kind == "O" and pd.api.types.is_string_dtype(col_1):
-            col_1 = col_1.str.upper()
-        if col_2.dtype.kind == "O" and pd.api.types.is_string_dtype(col_2):
-            col_2 = col_2.str.upper()
+
+    # compare strings
+    if (
+        compare := PandasStringComparator(
+            ignore_case=ignore_case, ignore_space=ignore_spaces
+        ).compare(col_1, col_2)
+    ) is not None:
+        return compare
+    # compare numeric values
+    if (
+        compare := PandasNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
+            col_1, col_2
+        )
+    ) is not None:
+        return compare
 
     # short circuit if comparing mixed type columns. Check list/arrrays or just return false for everything else.
     if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(

@@ -6,6 +6,11 @@ from datacompy.comparator.base import (
 )
 
 
+class ValidComparator(BaseComparator):
+    def compare(self):
+        return True
+
+
 def test_base_comparator_abstract_method():
     """Test that BaseComparator cannot be instantiated directly."""
     with pytest.raises(TypeError):
@@ -13,17 +18,13 @@ def test_base_comparator_abstract_method():
 
 
 def test_base_comparator_compare_not_implemented():
-    """Test that the compare method raises NotImplementedError."""
+    """Test that the compare method raises TypeError."""
 
     class TestComparator(BaseComparator):
         pass
 
     with pytest.raises(TypeError):
         TestComparator()
-
-    class ValidComparator(BaseComparator):
-        def compare(self):
-            return True
 
     comparator = ValidComparator()
     assert comparator.compare() is True

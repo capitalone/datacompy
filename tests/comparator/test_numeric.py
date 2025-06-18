@@ -57,13 +57,13 @@ def test_polars_numeric_comparator_error_handling():
     col1 = pl.Series(["a", "b", "c"])  # Invalid type for numeric comparison
     col2 = pl.Series(["x", "y", "z"])  # Invalid type for numeric comparison
     result = comparator.compare(col1, col2)
-    assert result.to_list() == [False, False, False]
+    assert result is None
 
     # different lengths
     col1 = pl.Series([1, 2, 3])
     col2 = pl.Series([1, 2, 3, 4])
     result = comparator.compare(col1, col2)
-    assert result.to_list() == [False, False, False]
+    assert result is None
 
 
 # tests for PandasNumericComparator
@@ -112,13 +112,13 @@ def test_pandas_numeric_comparator_error_handling():
     col1 = pd.Series(["a", "b", "c"])  # Invalid type for numeric comparison
     col2 = pd.Series(["x", "y", "z"])  # Invalid type for numeric comparison
     result = comparator.compare(col1, col2)
-    assert result.tolist() == [False, False, False]
+    assert result is None
 
     # different lengths
     col1 = pd.Series([1.0, 2.0, 3.0])
     col2 = pd.Series([1.0, 2.5, 3.0, 4.0])
     result = comparator.compare(col1, col2)
-    assert result.tolist() == [False, False, False]
+    assert result is None
 
 
 # tests for SparkNumericComparator
@@ -203,105 +203,97 @@ def test_spark_numeric_comparator_error_handling(spark_session):
     result = comparator.compare(
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
-    assert result.select(["col_match"]).collect() == [
-        ps.Row(col_match=False),
-        ps.Row(col_match=False),
-        ps.Row(col_match=False),
-    ]
+    assert result is None
 
 
 # tests for SnowflakeNumericComparator
 @pytest.mark.snowflake
-def test_snowflake_numeric_comparator_exact_match(snowpark_session):
+def test_snowflake_numeric_comparator_exact_match(snowflake_session):
     comparator = SnowflakeNumericComparator()
-    df = snowpark_session.createDataFrame(
+    df = snowflake_session.createDataFrame(
         [(1.0, 1.0), (2.0, 2.0), (3.0, 3.0)], ["col1", "col2"]
     )
     result = comparator.compare(
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        sf.Row(col_match=True),
-        sf.Row(col_match=True),
-        sf.Row(col_match=True),
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=True),
     ]
 
 
 @pytest.mark.snowflake
-def test_snowflake_numeric_comparator_approximate_match(snowpark_session):
+def test_snowflake_numeric_comparator_approximate_match(snowflake_session):
     comparator = SnowflakeNumericComparator(rtol=1e-3, atol=1e-3)
-    df = snowpark_session.createDataFrame(
+    df = snowflake_session.createDataFrame(
         [(1.0, 1.001), (2.0, 2.002), (3.0, 3.003)], ["col1", "col2"]
     )
     result = comparator.compare(
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        sf.Row(col_match=True),
-        sf.Row(col_match=True),
-        sf.Row(col_match=True),
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=True),
     ]
 
 
 @pytest.mark.snowflake
-def test_snowflake_numeric_comparator_type_casting(snowpark_session):
+def test_snowflake_numeric_comparator_type_casting(snowflake_session):
     comparator = SnowflakeNumericComparator()
-    df = snowpark_session.createDataFrame(
+    df = snowflake_session.createDataFrame(
         [(1, 1.0), (2, 2.0), (3, 3.0)], ["col1", "col2"]
     )
     result = comparator.compare(
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        sf.Row(col_match=True),
-        sf.Row(col_match=True),
-        sf.Row(col_match=True),
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=True),
     ]
 
 
 @pytest.mark.snowflake
-def test_snowflake_numeric_comparator_nan_handling(snowpark_session):
+def test_snowflake_numeric_comparator_nan_handling(snowflake_session):
     comparator = SnowflakeNumericComparator()
-    df = snowpark_session.createDataFrame(
+    df = snowflake_session.createDataFrame(
         [(1.0, 1.0), (float("nan"), float("nan")), (3.0, 3.0)], ["col1", "col2"]
     )
     result = comparator.compare(
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        sf.Row(col_match=True),
-        sf.Row(col_match=True),
-        sf.Row(col_match=True),
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=True),
     ]
 
 
 @pytest.mark.snowflake
-def test_snowflake_numeric_comparator_mismatch(snowpark_session):
+def test_snowflake_numeric_comparator_mismatch(snowflake_session):
     comparator = SnowflakeNumericComparator()
-    df = snowpark_session.createDataFrame(
+    df = snowflake_session.createDataFrame(
         [(1.0, 1.0), (2.0, 2.5), (3.0, 3.0)], ["col1", "col2"]
     )
     result = comparator.compare(
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result.select(["col_match"]).collect() == [
-        sf.Row(col_match=True),
-        sf.Row(col_match=False),
-        sf.Row(col_match=True),
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=False),
+        sf.Row(COL_MATCH=True),
     ]
 
 
 @pytest.mark.snowflake
-def test_snowflake_numeric_comparator_error_handling(snowpark_session):
+def test_snowflake_numeric_comparator_error_handling(snowflake_session):
     comparator = SnowflakeNumericComparator()
-    df = snowpark_session.createDataFrame(
+    df = snowflake_session.createDataFrame(
         [("a", "x"), ("b", "y"), ("c", "z")], ["col1", "col2"]
     )  # Invalid type for numeric comparison
     result = comparator.compare(
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
-    assert result.select(["col_match"]).collect() == [
-        sf.Row(col_match=False),
-        sf.Row(col_match=False),
-        sf.Row(col_match=False),
-    ]
+    assert result is None
