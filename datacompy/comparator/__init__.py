@@ -14,3 +14,27 @@
 # limitations under the License.
 
 """Comparator classes."""
+
+from datacompy.comparator.numeric import (
+    PandasNumericComparator,
+    PolarsNumericComparator,
+    SnowflakeNumericComparator,
+    SparkNumericComparator,
+)
+from datacompy.comparator.string import (
+    PandasStringComparator,
+    PolarsStringComparator,
+    SnowflakeStringComparator,
+    SparkStringComparator,
+)
+
+__all__ = [
+    "PandasNumericComparator",
+    "PandasStringComparator",
+    "PolarsNumericComparator",
+    "PolarsStringComparator",
+    "SnowflakeNumericComparator",
+    "SnowflakeStringComparator",
+    "SparkNumericComparator",
+    "SparkStringComparator",
+]

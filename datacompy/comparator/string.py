@@ -20,29 +20,33 @@ import logging
 import pandas as pd
 import polars as pl
 
+from datacompy.comparator._optional_imports import (
+    ps,
+    psf,
+    sp,
+    spf,
+)
 from datacompy.comparator.base import BaseStringComparator
-from datacompy.polars import STRING_TYPE as POLARS_STRING_TYPE
+from datacompy.comparator.util import (
+    get_snowflake_column_dtypes,
+    get_spark_column_dtypes,
+)
 
 DEFAULT_VALUE = "DATACOMPY_NULL"
 LOG = logging.getLogger(__name__)
 
-try:
-    import pyspark.sql as ps
-    import pyspark.sql.functions as psf
-except ImportError:
-    LOG.warning(
-        "Please note that you are missing the optional dependency: spark. "
-        "If you need to use this functionality it must be installed."
-    )
 
 try:
-    import snowflake.snowpark as sp
-    import snowflake.snowpark.functions as spf
+    PYSPARK_STRING_TYPE = {"string"}
 except ImportError:
-    LOG.warning(
-        "Please note that you are missing the optional dependency: snowflake. "
-        "If you need to use this functionality it must be installed."
-    )
+    PYSPARK_STRING_TYPE = None
+
+try:
+    SNOWFLAKE_STRING_TYPE = {spf.StringType()}
+except ImportError:
+    SNOWFLAKE_STRING_TYPE = None
+
+POLARS_STRING_TYPE = {"String", "Utf8"}
 
 
 class PolarsStringComparator(BaseStringComparator):
@@ -56,7 +60,7 @@ class PolarsStringComparator(BaseStringComparator):
         Whether to ignore case when comparing strings.
     """
 
-    def compare(self, col1: pl.Series, col2: pl.Series) -> pl.Series:
+    def compare(self, col1: pl.Series, col2: pl.Series) -> pl.Series | None:
         """Compare two Polars Series column-wise, taking into account optional normalization for spaces and case sensitivity.
 
         Parameters
@@ -72,6 +76,8 @@ class PolarsStringComparator(BaseStringComparator):
             A Polars Series of boolean values where each element indicates
             whether the corresponding elements in `col1` and `col2` are equal.
             Handles missing values by treating nulls as equal.
+
+        None if the columns are not comparable.
 
         Raises
         ------
@@ -101,7 +107,7 @@ class PolarsStringComparator(BaseStringComparator):
                 except Exception:
                     return pl.Series([False] * col1.shape[0])
         else:
-            return pl.Series([False] * col1.shape[0])
+            return None
 
 
 class PandasStringComparator(BaseStringComparator):
@@ -115,7 +121,7 @@ class PandasStringComparator(BaseStringComparator):
         Whether to ignore case when comparing strings.
     """
 
-    def compare(self, col1: pd.Series, col2: pd.Series) -> pd.Series:
+    def compare(self, col1: pd.Series, col2: pd.Series) -> pd.Series | None:
         """Compare two Pandas Series column-wise, taking into account optional normalization for spaces and case sensitivity.
 
         Parameters
@@ -127,10 +133,12 @@ class PandasStringComparator(BaseStringComparator):
 
         Returns
         -------
-        pd.Series
+        pd.Series | None
             A Pandas Series of boolean values where each element indicates
             whether the corresponding elements in `col1` and `col2` are equal.
             Handles missing values by treating nulls as equal.
+
+            None if the columns are not comparable.
 
         Raises
         ------
@@ -164,7 +172,7 @@ class PandasStringComparator(BaseStringComparator):
                 except Exception:
                     return pd.Series(False * col1.index)
         else:
-            return pd.Series(False * col1.index)
+            return None
 
 
 class SparkStringComparator(BaseStringComparator):
@@ -179,8 +187,8 @@ class SparkStringComparator(BaseStringComparator):
     """
 
     def compare(
-        self, dataframe: ps.DataFrame, col1: str, col2: str, col_match: str
-    ) -> ps.DataFrame:
+        self, dataframe: ps.sql.DataFrame, col1: str, col2: str, col_match: str
+    ) -> ps.sql.DataFrame | None:
         """Compare two columns in a PySpark DataFrame for string equality.
 
         Parameters
@@ -199,28 +207,37 @@ class SparkStringComparator(BaseStringComparator):
         pyspark.sql.DataFrame
             The DataFrame with an additional column containing the comparison results.
 
+        None if the columns are not comparable.
+
         Raises
         ------
         Exception
             If the comparison fails due to incompatible types or other issues,
             returns a column of `False` values.
         """
-        try:
-            col1 = spark_normalize_string_column(
-                psf.col(col1), self.ignore_space, self.ignore_case
-            )
-            col2 = spark_normalize_string_column(
-                psf.col(col2), self.ignore_space, self.ignore_case
-            )
+        # if col1 and col2 of dataframe are of type string
+        base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
+        if (base_dtype in PYSPARK_STRING_TYPE) and (
+            compare_dtype in PYSPARK_STRING_TYPE
+        ):
+            try:
+                col1 = spark_normalize_string_column(
+                    psf.col(col1), self.ignore_space, self.ignore_case
+                )
+                col2 = spark_normalize_string_column(
+                    psf.col(col2), self.ignore_space, self.ignore_case
+                )
 
-            return dataframe.withColumn(
-                col_match,
-                psf.when(col1.eqNullSafe(col2), psf.lit(True)).otherwise(
-                    psf.lit(False)
-                ),
-            )
-        except Exception:
-            return dataframe.withColumn(col_match, psf.lit(False))
+                return dataframe.withColumn(
+                    col_match,
+                    psf.when(col1.eqNullSafe(col2), psf.lit(True)).otherwise(
+                        psf.lit(False)
+                    ),
+                )
+            except Exception:
+                return dataframe.withColumn(col_match, psf.lit(False))
+        else:
+            return None
 
 
 class SnowflakeStringComparator(BaseStringComparator):
@@ -261,22 +278,30 @@ class SnowflakeStringComparator(BaseStringComparator):
             If the comparison fails due to incompatible types or other issues,
             returns a column of `False` values.
         """
-        try:
-            col1 = snowpark_normalize_string_column(
-                spf.col(col1), self.ignore_space, self.ignore_case
-            )
-            col2 = snowpark_normalize_string_column(
-                spf.col(col2), self.ignore_space, self.ignore_case
-            )
+        # if col1 and col2 of dataframe are of type string
+        base_dtype, compare_dtype = get_snowflake_column_dtypes(dataframe, col1, col2)
+        if (
+            base_dtype in SNOWFLAKE_STRING_TYPE
+            and compare_dtype in SNOWFLAKE_STRING_TYPE
+        ):
+            try:
+                col1 = snowpark_normalize_string_column(
+                    spf.col(col1), self.ignore_space, self.ignore_case
+                )
+                col2 = snowpark_normalize_string_column(
+                    spf.col(col2), self.ignore_space, self.ignore_case
+                )
 
-            return dataframe.withColumn(
-                col_match,
-                spf.when(col1.eqNullSafe(col2), spf.lit(True)).otherwise(
-                    spf.lit(False)
-                ),
-            )
-        except Exception:
-            return dataframe.withColumn(col_match, spf.lit(False))
+                return dataframe.withColumn(
+                    col_match,
+                    spf.when(col1.eqNullSafe(col2), spf.lit(True)).otherwise(
+                        spf.lit(False)
+                    ),
+                )
+            except Exception:
+                return dataframe.withColumn(col_match, spf.lit(False))
+        else:
+            return None
 
 
 def pandas_normalize_string_column(
@@ -343,13 +368,13 @@ def polars_normalize_string_column(
 
 
 def spark_normalize_string_column(
-    column: ps.Column, ignore_spaces: bool, ignore_case: bool
-) -> ps.Column:
+    column: ps.sql.Column, ignore_spaces: bool, ignore_case: bool
+) -> ps.sql.Column:
     """Normalize a string column by converting to upper case and stripping whitespace.
 
     Parameters
     ----------
-    column : ps.Column
+    column : pyspark.sql.Column
         The column to normalize
     ignore_spaces : bool
         Whether to ignore spaces when normalizing
@@ -358,7 +383,7 @@ def spark_normalize_string_column(
 
     Returns
     -------
-    ps.Column
+    pyspark.sql.Column
         The normalized column
     """
     if ignore_spaces:
@@ -375,7 +400,7 @@ def snowpark_normalize_string_column(
 
     Parameters
     ----------
-    column : sp.Column
+    column : snowflake.snowpark.Column
         The column to normalize
     ignore_spaces : bool
         Whether to ignore spaces when normalizing
@@ -384,7 +409,7 @@ def snowpark_normalize_string_column(
 
     Returns
     -------
-    sp.Column
+    snowflake.snowpark.Column
         The normalized column
     """
     if ignore_spaces:
