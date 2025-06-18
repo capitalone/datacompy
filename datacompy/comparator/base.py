@@ -29,7 +29,7 @@ class BaseComparator(ABC):
     @abstractmethod
     def compare(self) -> Any:
         """Check if two columns are equal."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class BaseStringComparator(BaseComparator):
@@ -43,6 +43,9 @@ class BaseStringComparator(BaseComparator):
         self.ignore_space = ignore_space
         self.ignore_case = ignore_case
 
+    def compare(self, *args, **kwargs):  # noqa: D102
+        pass
+
 
 class BaseNumericComparator(BaseComparator):
     """Base class for all numeric comparators.
@@ -54,3 +57,6 @@ class BaseNumericComparator(BaseComparator):
     def __init__(self, rtol: float = 1e-5, atol: float = 1e-8):
         self.rtol = rtol
         self.atol = atol
+
+    def compare(self, *args, **kwargs):  # noqa: D102
+        pass

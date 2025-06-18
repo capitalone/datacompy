@@ -37,6 +37,7 @@ from datacompy.base import (
     save_html_report,
     temp_column_name,
 )
+from datacompy.comparator import PandasNumericComparator, PandasStringComparator
 
 LOG = logging.getLogger(__name__)
 
@@ -972,6 +973,21 @@ def columns_equal(
     """
     default_value = "DATACOMPY_NULL"
     compare: pd.Series[bool]
+
+    # compare strings
+    if (
+        compare := PandasStringComparator(
+            ignore_case=ignore_case, ignore_space=ignore_spaces
+        ).compare(col_1, col_2)
+    ) is not None:
+        return compare
+    # compare numeric values
+    if (
+        compare := PandasNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
+            col_1, col_2
+        )
+    ) is not None:
+        return compare
 
     col_1 = normalize_string_column(
         col_1, ignore_spaces=ignore_spaces, ignore_case=ignore_case
