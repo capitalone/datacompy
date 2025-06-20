@@ -32,12 +32,10 @@ import pandas as pd
 import pytest
 from pytest import raises
 
-pytest.importorskip("pyspark")
-
 if sys.version_info >= (3, 12):
     pytest.skip("unsupported python version", allow_module_level=True)
 
-from datacompy.spark.sql import (
+from datacompy.spark import (
     SparkSQLCompare,
     _generate_id_within_group,
     calculate_max_diff,

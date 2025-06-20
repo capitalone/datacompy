@@ -9,6 +9,7 @@ from datacompy.comparator.numeric import (
     SnowflakeNumericComparator,
     SparkNumericComparator,
 )
+from tests.comparator.snowflake_mocks import *  # noqa: F403
 
 
 # tests for PolarsNumericComparator

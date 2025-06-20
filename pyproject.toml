@@ -4,8 +4,7 @@ description = "Dataframe comparison in Python"
 readme = "README.md"
 authors = [
   { name="Faisal Dosani", email="faisal.dosani@capitalone.com" },
-  { name="Ian Robertson" },
-  { name="Dan Coates" },
+  { name="Raymond Haffar", email="raymond.haffar@capitalone.com" },
 ]
 maintainers = [
   { name="Faisal Dosani", email="faisal.dosani@capitalone.com" },
@@ -13,7 +12,15 @@ maintainers = [
   { name="Raymond Haffar", email="raymond.haffar@capitalone.com" },
 ]
 license = {text = "Apache Software License"}
-dependencies = ["pandas<=2.3.0,>=0.25.0", "numpy<=2.2.6,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "polars[pandas]<=1.31.0,>=0.20.4", "Jinja2>=3.0.0"]
+dependencies = [
+  "pandas<=2.3.0,>=2.2.3",
+  "numpy<=2.2.6,>=2.2.2",
+  "ordered-set<=4.1.0,>=4.0.2",
+  "polars[pandas]<=1.31.0,>=1.19.0",
+  "pyspark[connect]<=4.0.0,>=4.0.0",
+  "snowflake-snowpark-python<=1.33.0,>=1.26.0",
+  "Jinja2>=3.0.0"
+  ]
 requires-python = ">=3.10.0"
 classifiers = [
     "Intended Audience :: Developers",
@@ -25,6 +32,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 dynamic = ["version"]
@@ -41,7 +49,7 @@ requires = ["setuptools>=64.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["datacompy", "datacompy.spark"]
+packages = ["datacompy"]
 zip-safe = false
 include-package-data = true
 
@@ -55,19 +63,12 @@ version = {attr = "datacompy.__version__"}
 python-tag = "py3"
 
 [project.optional-dependencies]
-fugue = ["fugue[dask,duckdb,ray]<=0.9.1,>=0.8.7"]
-spark = ["pyspark[connect]>=3.1.1,<=3.5.6; python_version < \"3.11\"", "pyspark[connect]>=3.4,<=3.5.6; python_version >= \"3.11\""]
-snowflake = ["snowflake-connector-python", "snowflake-snowpark-python"]
 docs = ["sphinx", "furo", "myst-parser"]
-tests = ["pytest", "pytest-cov"]
-
-tests-spark = ["pytest", "pytest-cov", "pytest-spark"]
-tests-snowflake = ["snowflake-snowpark-python[localtest]"]
+tests = ["pytest", "pytest-cov", "pytest-spark", "snowflake-snowpark-python[localtest]"]
 qa = ["pre-commit", "ruff==0.5.7", "mypy", "pandas-stubs"]
 build = ["build", "twine", "wheel"]
 edgetest = ["edgetest", "edgetest-conda"]
-dev_no_snowflake = ["datacompy[fugue]", "datacompy[spark]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[qa]", "datacompy[build]"]
-dev = ["datacompy[fugue]", "datacompy[spark]", "datacompy[snowflake]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[tests-snowflake]", "datacompy[qa]", "datacompy[build]"]
+dev = ["datacompy[docs]", "datacompy[tests]", "datacompy[qa]", "datacompy[build]"]
 
 # Linters, formatters and type checkers
 [tool.ruff]
@@ -143,4 +144,6 @@ upgrade = [
     "numpy",
     "ordered-set",
     "polars[pandas]",
+    "pyspark[connect]",
+    "snowflake-snowpark-python"
 ]
