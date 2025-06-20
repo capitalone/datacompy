@@ -42,7 +42,7 @@ from datacompy.comparator import PandasNumericComparator, PandasStringComparator
 LOG = logging.getLogger(__name__)
 
 
-class Compare(BaseCompare):
+class PandasCompare(BaseCompare):
     """Comparison class to be used to compare whether two dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
@@ -86,9 +86,9 @@ class Compare(BaseCompare):
 
     Attributes
     ----------
-    df1_unq_rows : pandas ``DataFrame``
+    df1_unq_rows : pd.DataFrame
         All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : pandas ``DataFrame``
+    df2_unq_rows : pd.DataFrame
         All records that are only in df2 (based on a join on join_columns)
     """
 
@@ -980,6 +980,7 @@ def columns_equal(
             ignore_case=ignore_case, ignore_space=ignore_spaces
         ).compare(col_1, col_2)
     ) is not None:
+        compare.index = col_1.index
         return compare
     # compare numeric values
     if (
@@ -987,6 +988,7 @@ def columns_equal(
             col_1, col_2
         )
     ) is not None:
+        compare.index = col_1.index
         return compare
 
     col_1 = normalize_string_column(

@@ -19,34 +19,23 @@ import logging
 
 import pandas as pd
 import polars as pl
+import pyspark as ps
+import pyspark.sql.functions as psf
+import snowflake.snowpark as sp
+import snowflake.snowpark.functions as spf
 
-from datacompy.comparator._optional_imports import (
-    ps,
-    psf,
-    sp,
-    spf,
-)
 from datacompy.comparator.base import BaseStringComparator
-from datacompy.comparator.util import (
+from datacompy.comparator.utility import (
     get_snowflake_column_dtypes,
     get_spark_column_dtypes,
 )
 
-DEFAULT_VALUE = "DATACOMPY_NULL"
 LOG = logging.getLogger(__name__)
 
-
-try:
-    PYSPARK_STRING_TYPE = {"string"}
-except ImportError:
-    PYSPARK_STRING_TYPE = None
-
-try:
-    SNOWFLAKE_STRING_TYPE = {spf.StringType()}
-except ImportError:
-    SNOWFLAKE_STRING_TYPE = None
-
+DEFAULT_VALUE = "DATACOMPY_NULL"
 POLARS_STRING_TYPE = {"String", "Utf8"}
+PYSPARK_STRING_TYPE = {"string"}
+SNOWFLAKE_STRING_TYPE = {spf.StringType()}
 
 
 class PolarsStringComparator(BaseStringComparator):
@@ -253,7 +242,7 @@ class SnowflakeStringComparator(BaseStringComparator):
 
     def compare(
         self, dataframe: sp.DataFrame, col1: str, col2: str, col_match: str
-    ) -> sp.DataFrame:
+    ) -> sp.DataFrame | None:
         """Compare two columns in a Snowflake DataFrame for string equality.
 
         Parameters

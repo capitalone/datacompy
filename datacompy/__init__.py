@@ -18,63 +18,25 @@ Originally started to be something of a replacement for SAS's PROC COMPARE for P
 Then extended to carry that functionality over to Spark Dataframes.
 """
 
-__version__ = "0.18.1"
+__version__ = "1.0.0"
 
 import logging
 import platform
 
 logger = logging.getLogger(__name__)
 
-from datacompy.base import (
-    BaseCompare,
-    df_to_str,
-    render,
-    save_html_report,
-    temp_column_name,
-)
-from datacompy.core import (
-    Compare,
-    calculate_max_diff,
-    columns_equal,
-    compare_string_and_date_columns,
-    generate_id_within_group,
-    get_merged_columns,
-)
-from datacompy.fugue import (
-    all_columns_match,
-    all_rows_overlap,
-    count_matching_rows,
-    intersect_columns,
-    is_match,
-    report,
-    unq_columns,
-)
+from datacompy.base import BaseCompare
+from datacompy.pandas import PandasCompare
 from datacompy.polars import PolarsCompare
 from datacompy.snowflake import SnowflakeCompare
-from datacompy.spark.sql import SparkSQLCompare
+from datacompy.spark import SparkSQLCompare
 
 __all__ = [
     "BaseCompare",
-    "Compare",
+    "PandasCompare",
     "PolarsCompare",
     "SnowflakeCompare",
     "SparkSQLCompare",
-    "all_columns_match",
-    "all_rows_overlap",
-    "calculate_max_diff",
-    "columns_equal",
-    "compare_string_and_date_columns",
-    "count_matching_rows",
-    "df_to_str",
-    "generate_id_within_group",
-    "get_merged_columns",
-    "intersect_columns",
-    "is_match",
-    "render",
-    "report",
-    "save_html_report",
-    "temp_column_name",
-    "unq_columns",
 ]
 
 major = platform.python_version_tuple()[0]

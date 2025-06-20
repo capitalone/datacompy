@@ -26,7 +26,35 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
 from typing import Any, Dict, List, Union, cast
 
+import pandas as pd
+import snowflake.snowpark as sp
 from ordered_set import OrderedSet
+from snowflake.connector.errors import DatabaseError, ProgrammingError
+from snowflake.snowpark import Window
+from snowflake.snowpark.functions import (
+    abs,
+    col,
+    concat,
+    contains,
+    is_null,
+    lit,
+    monotonically_increasing_id,
+    row_number,
+    trim,
+    when,
+)
+from snowflake.snowpark.types import (
+    ByteType,
+    DateType,
+    DecimalType,
+    DoubleType,
+    FloatType,
+    IntegerType,
+    LongType,
+    ShortType,
+    StringType,
+    TimestampType,
+)
 
 from datacompy.base import (
     BaseCompare,
@@ -39,51 +67,16 @@ from datacompy.base import (
 
 LOG = logging.getLogger(__name__)
 
-try:
-    import snowflake.snowpark as sp
-    from snowflake.connector.errors import DatabaseError, ProgrammingError
-    from snowflake.snowpark import Window
-    from snowflake.snowpark.functions import (
-        abs,
-        col,
-        concat,
-        contains,
-        is_null,
-        lit,
-        monotonically_increasing_id,
-        row_number,
-        trim,
-        when,
-    )
-    from snowflake.snowpark.types import (
-        ByteType,
-        DateType,
-        DecimalType,
-        DoubleType,
-        FloatType,
-        IntegerType,
-        LongType,
-        ShortType,
-        StringType,
-        TimestampType,
-    )
 
-    NUMERIC_SNOWPARK_TYPES = [
-        ByteType,
-        ShortType,
-        IntegerType,
-        LongType,
-        FloatType,
-        DoubleType,
-        DecimalType,
-    ]
-
-
-except ImportError:
-    LOG.warning(
-        "Please note that you are missing the optional dependency: snowflake. "
-        "If you need to use this functionality it must be installed."
-    )
+NUMERIC_SNOWPARK_TYPES = [
+    ByteType,
+    ShortType,
+    IntegerType,
+    LongType,
+    FloatType,
+    DoubleType,
+    DecimalType,
+]
 
 
 class SnowflakeCompare(BaseCompare):
@@ -160,8 +153,7 @@ class SnowflakeCompare(BaseCompare):
             self.join_columns = [str(join_columns).replace('"', "").upper()]
         else:
             self.join_columns = [
-                str(col).replace('"', "").upper()
-                for col in cast(List[str], join_columns)
+                str(c).replace('"', "").upper() for c in cast(List[str], join_columns)
             ]
 
         self._any_dupes: bool = False
@@ -439,11 +431,11 @@ class SnowflakeCompare(BaseCompare):
         Finally calculates and stores the compare metrics for matching column pairs.
         """
         LOG.debug("Comparing intersection")
-        for col in self.intersect_columns():
-            if col not in self.join_columns:
-                col_1 = col + "_" + self.df1_name
-                col_2 = col + "_" + self.df2_name
-                col_match = col + "_MATCH"
+        for c in self.intersect_columns():
+            if c not in self.join_columns:
+                col_1 = c + "_" + self.df1_name
+                col_2 = c + "_" + self.df2_name
+                col_match = c + "_MATCH"
                 self.intersect_rows = columns_equal(
                     dataframe=self.intersect_rows,
                     col_1=col_1,

@@ -20,10 +20,14 @@ import logging
 import numpy as np
 import pandas as pd
 import polars as pl
+import pyspark as ps
+import pyspark.sql.functions as psf
+import snowflake.snowpark as sp
+import snowflake.snowpark.functions as spf
+import snowflake.snowpark.types as spt
 
-from datacompy.comparator._optional_imports import ps, psf, sp, spf, spt
 from datacompy.comparator.base import BaseNumericComparator
-from datacompy.comparator.util import (
+from datacompy.comparator.utility import (
     get_snowflake_column_dtypes,
     get_spark_column_dtypes,
 )

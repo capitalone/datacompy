@@ -26,7 +26,23 @@ from copy import deepcopy
 from typing import Any, Dict, List, Tuple
 
 import pandas as pd
+import pyspark.sql
 from ordered_set import OrderedSet
+from pyspark.sql import Window
+from pyspark.sql.functions import (
+    abs,
+    array,
+    array_contains,
+    col,
+    isnan,
+    isnull,
+    lit,
+    monotonically_increasing_id,
+    row_number,
+    trim,
+    upper,
+    when,
+)
 
 from datacompy.base import (
     BaseCompare,
@@ -39,31 +55,6 @@ from datacompy.base import (
 )
 
 LOG = logging.getLogger(__name__)
-
-try:
-    import pyspark.sql
-    import pyspark.sql.connect.dataframe
-    from pyspark.sql import Window
-    from pyspark.sql import functions as F
-    from pyspark.sql.functions import (
-        abs,
-        array,
-        array_contains,
-        col,
-        isnan,
-        isnull,
-        lit,
-        monotonically_increasing_id,
-        row_number,
-        trim,
-        upper,
-        when,
-    )
-except ImportError:
-    LOG.warning(
-        "Please note that you are missing the optional dependency: spark. "
-        "If you need to use this functionality it must be installed."
-    )
 
 
 def decimal_comparator():
@@ -174,8 +165,8 @@ class SparkSQLCompare(BaseCompare):
             ]
         else:
             self.join_columns = [
-                str(col).lower() if self.cast_column_names_lower else str(col)
-                for col in join_columns
+                str(c).lower() if self.cast_column_names_lower else str(c)
+                for c in join_columns
             ]
 
         self.spark_session = spark_session
@@ -246,13 +237,9 @@ class SparkSQLCompare(BaseCompare):
 
         if cast_column_names_lower:
             if index == "df1":
-                self._df1 = dataframe.toDF(
-                    *[str(col).lower() for col in dataframe.columns]
-                )
+                self._df1 = dataframe.toDF(*[str(c).lower() for c in dataframe.columns])
             if index == "df2":
-                self._df2 = dataframe.toDF(
-                    *[str(col).lower() for col in dataframe.columns]
-                )
+                self._df2 = dataframe.toDF(*[str(c).lower() for c in dataframe.columns])
 
         # Check if join_columns are present in the dataframe
         dataframe = getattr(self, index)  # refresh
@@ -282,13 +269,13 @@ class SparkSQLCompare(BaseCompare):
         """
         LOG.info(f"Number of columns in common: {len(self.intersect_columns())}")
         LOG.debug("Checking column overlap")
-        for col in self.df1_unq_columns():
-            LOG.info(f"Column in df1 and not in df2: {col}")
+        for c in self.df1_unq_columns():
+            LOG.info(f"Column in df1 and not in df2: {c}")
         LOG.info(
             f"Number of columns in df1 and not in df2: {len(self.df1_unq_columns())}"
         )
-        for col in self.df2_unq_columns():
-            LOG.info(f"Column in df2 and not in df1: {col}")
+        for c in self.df2_unq_columns():
+            LOG.info(f"Column in df2 and not in df1: {c}")
         LOG.info(
             f"Number of columns in df2 and not in df1: {len(self.df2_unq_columns())}"
         )
@@ -1184,13 +1171,13 @@ def get_merged_columns(
         Column list of the original dataframe pre suffix
     """
     columns = []
-    for col in original_df.columns:
-        if col in merged_df.columns:
-            columns.append(col)
-        elif col + "_" + suffix in merged_df.columns:
-            columns.append(col + "_" + suffix)
+    for c in original_df.columns:
+        if c in merged_df.columns:
+            columns.append(c)
+        elif c + "_" + suffix in merged_df.columns:
+            columns.append(c + "_" + suffix)
         else:
-            raise ValueError("Column not found: %s", col)
+            raise ValueError("Column not found: %s", c)
     return columns
 
 
