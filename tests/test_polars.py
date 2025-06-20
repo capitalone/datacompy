@@ -36,6 +36,7 @@ from datacompy.polars import (
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
+    normalize_string_column,
     temp_column_name,
 )
 from polars.exceptions import ComputeError, DuplicateError, SchemaError
@@ -1450,15 +1451,27 @@ def test_categorical_column():
             "idx": [1, 2, 3],
             "foo": ["A", "B", np.nan],
             "bar": ["A", "B", np.nan],
+            "foo_bad": ["    A   ", "B", np.nan],
         },
         strict=False,
-        schema={"idx": pl.Int32, "foo": pl.Categorical, "bar": pl.Categorical},
+        schema={
+            "idx": pl.Int32,
+            "foo": pl.Categorical,
+            "bar": pl.Categorical,
+            "foo_bad": pl.Categorical,
+        },
     )
 
     actual_out = columns_equal(
         df["foo"], df["bar"], ignore_spaces=True, ignore_case=True
     )
     assert actual_out.all()
+
+    actual_out = columns_equal(
+        df["foo"], df["foo_bad"], ignore_spaces=True, ignore_case=True
+    )
+    assert list(actual_out) == [False, True, True]
+
     compare = PolarsCompare(df, df, join_columns=["idx"])
     assert compare.intersect_rows["foo_match"].all()
     assert compare.intersect_rows["bar_match"].all()
@@ -1648,3 +1661,95 @@ def test_columns_equal_lists():
     )
     actual = columns_equal(df1["array_col"], df2["array_col"])
     assert actual.all()
+
+
+@pytest.mark.parametrize(
+    "input_data, ignore_spaces, ignore_case, expected",
+    [  # Categorical datatype should just passthough
+        (
+            pl.Series(["  cat  ", "dog", "  mouse  ", None], dtype=pl.Categorical),
+            True,
+            True,
+            pl.Series(["  cat  ", "dog", "  mouse  ", None], dtype=pl.Categorical),
+        ),
+        # mixed types
+        (
+            pl.Series(["  hello  ", 1, 2.5, None], strict=False),
+            True,
+            True,
+            pl.Series(["HELLO", 1, 2.5, None], strict=False),
+        ),
+        # test case for integers
+        (pl.Series([1, 2, 3, 4]), True, True, pl.Series([1, 2, 3, 4])),
+        (pl.Series([1, 2, 3, 4]), True, False, pl.Series([1, 2, 3, 4])),
+        (pl.Series([1, 2, 3, 4]), False, True, pl.Series([1, 2, 3, 4])),
+        (pl.Series([1, 2, 3, 4]), False, False, pl.Series([1, 2, 3, 4])),
+        # test case for floats
+        (pl.Series([1.1, 2.2, 3.3, 4.4]), True, True, pl.Series([1.1, 2.2, 3.3, 4.4])),
+        (pl.Series([1.1, 2.2, 3.3, 4.4]), True, False, pl.Series([1.1, 2.2, 3.3, 4.4])),
+        (pl.Series([1.1, 2.2, 3.3, 4.4]), False, True, pl.Series([1.1, 2.2, 3.3, 4.4])),
+        (
+            pl.Series([1.1, 2.2, 3.3, 4.4]),
+            False,
+            False,
+            pl.Series([1.1, 2.2, 3.3, 4.4]),
+        ),
+        # list of strings should just passthrough
+        (
+            pl.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+            True,
+            True,
+            pl.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+        ),
+        # array of strings should just passthrough
+        (
+            pl.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+            True,
+            True,
+            pl.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+        ),
+        # strings
+        (
+            pl.Series(["  hello  ", "WORLD", "  Foo  ", None]),
+            True,
+            True,
+            pl.Series(["HELLO", "WORLD", "FOO", None]),
+        ),
+        (
+            pl.Series(["  hello  ", "WORLD", "  Foo  ", None]),
+            True,
+            False,
+            pl.Series(["hello", "WORLD", "Foo", None]),
+        ),
+        (
+            pl.Series(["  hello  ", "WORLD", "  Foo  ", None]),
+            False,
+            True,
+            pl.Series(["  HELLO  ", "WORLD", "  FOO  ", None]),
+        ),
+        (
+            pl.Series(["  hello  ", "WORLD", "  Foo  ", None]),
+            False,
+            False,
+            pl.Series(["  hello  ", "WORLD", "  Foo  ", None]),
+        ),
+        # emoji
+        (
+            pl.Series(["👋", "🌍", "🍕", None]),
+            True,
+            True,
+            pl.Series(["👋", "🌍", "🍕", None]),
+        ),
+        (
+            pl.Series(["  👋  ", "🌍", "  🍕  ", None]),
+            False,
+            True,
+            pl.Series(["  👋  ", "🌍", "  🍕  ", None]),
+        ),
+    ],
+)
+def test_normalize_string_column(input_data, ignore_spaces, ignore_case, expected):
+    result = normalize_string_column(
+        input_data, ignore_spaces=ignore_spaces, ignore_case=ignore_case
+    )
+    assert_series_equal(result, expected, check_names=False)
