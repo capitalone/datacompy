@@ -30,12 +30,10 @@ import pandas as pd
 import pytest
 from pytest import raises
 
-pytest.importorskip("pyspark")
-
 if sys.version_info >= (3, 12):
     pytest.skip("unsupported python version", allow_module_level=True)
 
-from datacompy.spark.sql import (
+from datacompy.spark import (
     SparkSQLCompare,
     _generate_id_within_group,
     calculate_max_diff,
@@ -413,7 +411,7 @@ def test_infinity_and_beyond(spark_session):
 def test_compare_df_setter_bad(spark_session):
     pdf = pd.DataFrame([{"a": 1, "c": 2}, {"a": 2, "c": 2}])
     df = spark_session.createDataFrame(pdf)
-    with raises(TypeError, match="df1 must be a pyspark.sql.DataFrame"):
+    with raises(TypeError, match=r"df1 must be a pyspark\.sql\.DataFrame"):
         SparkSQLCompare(spark_session, "a", "a", ["a"])
     with raises(ValueError, match="df1 must have all columns from join_columns"):
         SparkSQLCompare(spark_session, df, df.select("*"), ["b"])
@@ -1319,14 +1317,14 @@ def test_integer_column_names(spark_session):
     assert compare.matches()
 
 
-@mock.patch("datacompy.spark.sql.render")
+@mock.patch("datacompy.spark.render")
 def test_save_html(mock_render, spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
 
     m = mock.mock_open()
-    with mock.patch("datacompy.spark.sql.open", m, create=True):
+    with mock.patch("datacompy.spark.open", m, create=True):
         # assert without HTML call
         compare.report()
         assert mock_render.call_count == 4
@@ -1334,7 +1332,7 @@ def test_save_html(mock_render, spark_session):
 
     mock_render.reset_mock()
     m = mock.mock_open()
-    with mock.patch("datacompy.spark.sql.open", m, create=True):
+    with mock.patch("datacompy.spark.open", m, create=True):
         # assert with HTML call
         compare.report(html_file="test.html")
         assert mock_render.call_count == 4

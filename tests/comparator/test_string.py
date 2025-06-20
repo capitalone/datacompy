@@ -9,18 +9,7 @@ from datacompy.comparator.string import (
     SnowflakeStringComparator,
     SparkStringComparator,
 )
-from snowflake.snowpark.functions import trim
-from snowflake.snowpark.mock import ColumnEmulator, ColumnType, patch
-from snowflake.snowpark.types import StringType
-
-
-@patch(trim)
-def mock_trim(column: ColumnEmulator, trim_string=None) -> ColumnEmulator:
-    ret_column = ColumnEmulator(
-        data=[row.strip() if row is not None else row for row in column]
-    )
-    ret_column.sf_type = ColumnType(StringType(), True)
-    return ret_column
+from tests.comparator.snowflake_mocks import *  # noqa: F403
 
 
 # tests for PolarsStringComparator

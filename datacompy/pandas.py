@@ -35,7 +35,7 @@ from datacompy.comparator import PandasNumericComparator, PandasStringComparator
 LOG = logging.getLogger(__name__)
 
 
-class Compare(BaseCompare):
+class PandasCompare(BaseCompare):
     """Comparison class to be used to compare whether two dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
@@ -75,9 +75,9 @@ class Compare(BaseCompare):
 
     Attributes
     ----------
-    df1_unq_rows : pandas ``DataFrame``
+    df1_unq_rows : pd.DataFrame
         All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : pandas ``DataFrame``
+    df2_unq_rows : pd.DataFrame
         All records that are only in df2 (based on a join on join_columns)
     """
 
@@ -878,6 +878,7 @@ def columns_equal(
             ignore_case=ignore_case, ignore_space=ignore_spaces
         ).compare(col_1, col_2)
     ) is not None:
+        compare.index = col_1.index
         return compare
     # compare numeric values
     if (
@@ -885,15 +886,15 @@ def columns_equal(
             col_1, col_2
         )
     ) is not None:
+        compare.index = col_1.index
         return compare
 
     # short circuit if comparing mixed type columns. Check list/arrrays or just return false for everything else.
     if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(
         col_2
     ).startswith("mixed"):
-        if all(isinstance(item, (list, np.ndarray)) for item in col_1) and all(  # noqa: UP038
-            isinstance(item, (list, np.ndarray))  # noqa: UP038
-            for item in col_2
+        if all(isinstance(item, (list, np.ndarray)) for item in col_1) and all(
+            isinstance(item, (list, np.ndarray)) for item in col_2
         ):  # compare list like
             # join together and apply np.array_equal
             temp_df = pd.DataFrame({"col_1": col_1, "col_2": col_2})

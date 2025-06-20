@@ -18,54 +18,23 @@ Originally started to be something of a replacement for SAS's PROC COMPARE for P
 Then extended to carry that functionality over to Spark Dataframes.
 """
 
-__version__ = "0.16.7"
+__version__ = "1.0.0"
 
 import platform
 from warnings import warn
 
-from datacompy.base import BaseCompare, temp_column_name
-from datacompy.core import (
-    Compare,
-    calculate_max_diff,
-    columns_equal,
-    compare_string_and_date_columns,
-    generate_id_within_group,
-    get_merged_columns,
-    render,
-)
-from datacompy.fugue import (
-    all_columns_match,
-    all_rows_overlap,
-    count_matching_rows,
-    intersect_columns,
-    is_match,
-    report,
-    unq_columns,
-)
+from datacompy.base import BaseCompare
+from datacompy.pandas import PandasCompare
 from datacompy.polars import PolarsCompare
 from datacompy.snowflake import SnowflakeCompare
-from datacompy.spark.sql import SparkSQLCompare
+from datacompy.spark import SparkSQLCompare
 
 __all__ = [
     "BaseCompare",
-    "Compare",
+    "PandasCompare",
     "PolarsCompare",
     "SnowflakeCompare",
     "SparkSQLCompare",
-    "all_columns_match",
-    "all_rows_overlap",
-    "calculate_max_diff",
-    "columns_equal",
-    "compare_string_and_date_columns",
-    "count_matching_rows",
-    "generate_id_within_group",
-    "get_merged_columns",
-    "intersect_columns",
-    "is_match",
-    "render",
-    "report",
-    "temp_column_name",
-    "unq_columns",
 ]
 
 major = platform.python_version_tuple()[0]
@@ -78,18 +47,3 @@ if major == "3" and minor >= "12":
         UserWarning,
         stacklevel=2,
     )
-
-# numpy 2.0 check
-from numpy import __version__ as np_version
-
-if np_version.split(".")[0] >= "2":
-    warn(
-        "SparkPandasCompare currently only supports Numpy < 2."
-        "Please note that the SparkPandasCompare functionality will not work and currently is not supported.",
-        UserWarning,
-        stacklevel=2,
-    )
-else:
-    from datacompy.spark.pandas import SparkPandasCompare  # noqa: F401
-
-    __all__.append("SparkPandasCompare")

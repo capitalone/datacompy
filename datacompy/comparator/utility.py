@@ -16,11 +16,8 @@
 """Utility and helper functions for data comparison."""
 
 import polars as pl
-
-from datacompy.comparator._optional_imports import (
-    ps,
-    sp,
-)
+import pyspark as ps
+import snowflake.snowpark as sp
 
 
 # function which checks 2 polars series are of the same shape and of the same type
