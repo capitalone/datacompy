@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="datacompy.spark package" href="datacompy.spark.html" /><link rel="prev" title="datacompy" href="modules.html" />
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
-        <title>datacompy package - datacompy 0.16.7 documentation</title>
+        <title>datacompy package - datacompy 0.16.8 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=302659d7" />
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 0.16.7 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 0.16.8 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.16.7 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.16.8 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -512,8 +512,8 @@ print out an actual name instead of “df1”, and allows human users to
 more easily track the dataframes.</p></li>
 <li><p><strong>df2_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the second dataframe</p></li>
 <li><p><strong>ignore_spaces</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to strip whitespace (including newlines) from string columns (including any join
-columns)</p></li>
-<li><p><strong>ignore_case</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to ignore the case of string columns</p></li>
+columns). Excludes categoricals.</p></li>
+<li><p><strong>ignore_case</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to ignore the case of string columns. Excludes categoricals.</p></li>
 <li><p><strong>cast_column_names_lower</strong> (<em>bool</em><em>, </em><em>optional</em>) – Boolean indicator that controls of column names will be cast into lower case</p></li>
 </ul>
 </dd>
@@ -828,6 +828,29 @@ overlapping with the other merged dataframe.</p></li>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="datacompy.core.normalize_string_column">
+<span class="sig-prename descclassname"><span class="pre">datacompy.core.</span></span><span class="sig-name descname"><span class="pre">normalize_string_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_spaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_case</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="headerlink" href="#datacompy.core.normalize_string_column" title="Link to this definition">¶</a></dt>
+<dd><p>Normalize a string column by converting to upper case and stripping whitespace.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>column</strong> (<em>pd.Series</em>) – The column to normalize</p></li>
+<li><p><strong>ignore_spaces</strong> (<em>bool</em>) – Whether to ignore spaces when normalizing</p></li>
+<li><p><strong>ignore_case</strong> (<em>bool</em>) – Whether to ignore case when normalizing</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The normalized column</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Will not operate on categorical columns.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="datacompy.core.render">
 <span class="sig-prename descclassname"><span class="pre">datacompy.core.</span></span><span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.core.render" title="Link to this definition">¶</a></dt>
 <dd><p>Render out an individual template.</p>
@@ -1095,8 +1118,8 @@ print out an actual name instead of “df1”, and allows human users to
 more easily track the dataframes.</p></li>
 <li><p><strong>df2_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the second dataframe</p></li>
 <li><p><strong>ignore_spaces</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to strip whitespace (including newlines) from string columns (including any join
-columns)</p></li>
-<li><p><strong>ignore_case</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to ignore the case of string columns</p></li>
+columns). Excludes categoricals.</p></li>
+<li><p><strong>ignore_case</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to ignore the case of string columns. Excludes categoricals.</p></li>
 <li><p><strong>cast_column_names_lower</strong> (<em>bool</em><em>, </em><em>optional</em>) – Boolean indicator that controls of column names will be cast into lower case</p></li>
 </ul>
 </dd>
@@ -1343,8 +1366,7 @@ values don’t match.</p>
 <dt class="sig sig-object py" id="datacompy.polars.compare_string_and_date_columns">
 <span class="sig-prename descclassname"><span class="pre">datacompy.polars.</span></span><span class="sig-name descname"><span class="pre">compare_string_and_date_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="headerlink" href="#datacompy.polars.compare_string_and_date_columns" title="Link to this definition">¶</a></dt>
 <dd><p>Compare a string column and date column, value-wise.</p>
-<p>This tries to
-convert a string column to a date column and compare that way.</p>
+<p>This tries to convert a string column to a date column and compare that way.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1398,6 +1420,29 @@ overlapping with the other merged dataframe.</p></li>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.polars.normalize_string_column">
+<span class="sig-prename descclassname"><span class="pre">datacompy.polars.</span></span><span class="sig-name descname"><span class="pre">normalize_string_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_spaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_case</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="headerlink" href="#datacompy.polars.normalize_string_column" title="Link to this definition">¶</a></dt>
+<dd><p>Normalize a string column by converting to upper case and stripping whitespace.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>column</strong> (<em>pl.Series</em>) – The column to normalize</p></li>
+<li><p><strong>ignore_spaces</strong> (<em>bool</em>) – Whether to ignore spaces when normalizing</p></li>
+<li><p><strong>ignore_case</strong> (<em>bool</em>) – Whether to ignore case when normalizing</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The normalized column</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pl.Series</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Will not operate on categorical columns.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -1915,8 +1960,8 @@ print out an actual name instead of “df1”, and allows human users to
 more easily track the dataframes.</p></li>
 <li><p><strong>df2_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the second dataframe</p></li>
 <li><p><strong>ignore_spaces</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to strip whitespace (including newlines) from string columns (including any join
-columns)</p></li>
-<li><p><strong>ignore_case</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to ignore the case of string columns</p></li>
+columns). Excludes categoricals.</p></li>
+<li><p><strong>ignore_case</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to ignore the case of string columns. Excludes categoricals.</p></li>
 <li><p><strong>cast_column_names_lower</strong> (<em>bool</em><em>, </em><em>optional</em>) – Boolean indicator that controls of column names will be cast into lower case</p></li>
 </ul>
 </dd>
@@ -2125,8 +2170,8 @@ print out an actual name instead of “df1”, and allows human users to
 more easily track the dataframes.</p></li>
 <li><p><strong>df2_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the second dataframe</p></li>
 <li><p><strong>ignore_spaces</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to strip whitespace (including newlines) from string columns (including any join
-columns)</p></li>
-<li><p><strong>ignore_case</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to ignore the case of string columns</p></li>
+columns). Excludes categoricals.</p></li>
+<li><p><strong>ignore_case</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to ignore the case of string columns. Excludes categoricals.</p></li>
 <li><p><strong>cast_column_names_lower</strong> (<em>bool</em><em>, </em><em>optional</em>) – Boolean indicator that controls of column names will be cast into lower case</p></li>
 </ul>
 </dd>
@@ -3431,6 +3476,7 @@ will force to use of Fugue over just vanilla Pandas</p></li>
 <li><a class="reference internal" href="#datacompy.core.compare_string_and_date_columns"><code class="docutils literal notranslate"><span class="pre">compare_string_and_date_columns()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.core.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.core.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.core.normalize_string_column"><code class="docutils literal notranslate"><span class="pre">normalize_string_column()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.core.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 </ul>
 </li>
@@ -3467,6 +3513,7 @@ will force to use of Fugue over just vanilla Pandas</p></li>
 <li><a class="reference internal" href="#datacompy.polars.compare_string_and_date_columns"><code class="docutils literal notranslate"><span class="pre">compare_string_and_date_columns()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.polars.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.polars.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.polars.normalize_string_column"><code class="docutils literal notranslate"><span class="pre">normalize_string_column()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.polars.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 </ul>
 </li>
@@ -3627,7 +3674,7 @@ will force to use of Fugue over just vanilla Pandas</p></li>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=b6610e19"></script>
+</div><script src="../_static/documentation_options.js?v=5e7baddb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=5fa4622c"></script>
