@@ -838,7 +838,7 @@ class SnowflakeCompare(BaseCompare):
         # Row Summary
         match_on = ", ".join(self.join_columns)
         report += render(
-            "row_summary.txt",
+            "snowflake_row_summary.txt",
             match_on,
             self.abs_tol_per_column["__default"],
             self.rel_tol_per_column["__default"],
@@ -874,6 +874,8 @@ class SnowflakeCompare(BaseCompare):
                         "# Unequal": column["unequal_cnt"],
                         "Max Diff": column["max_diff"],
                         "# Null Diff": column["null_diff"],
+                        "Abs Tol": self.abs_tol_per_column[column["column"]],
+                        "Rel Tol": self.rel_tol_per_column[column["column"]],
                     }
                 )
                 if column["unequal_cnt"] > 0:
@@ -898,6 +900,8 @@ class SnowflakeCompare(BaseCompare):
                     "# Unequal",
                     "Max Diff",
                     "# Null Diff",
+                    "Abs Tol",
+                    "Rel Tol",
                 ]
             ].to_string()
             report += "\n\n"
