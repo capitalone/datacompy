@@ -23,10 +23,10 @@ two dataframes.
 
 import logging
 import os
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
-from typing import Any, Dict, List, Union, DefaultDict, cast
-from collections import defaultdict
+from typing import Any, DefaultDict, Dict, List, Union, cast
 
 import pandas as pd
 from ordered_set import OrderedSet
@@ -162,7 +162,7 @@ class SnowflakeCompare(BaseCompare):
             self.abs_tol_per_column: DefaultDict[str, float] = defaultdict(lambda: abs_tol)
         else:
             self.abs_tol_per_column: DefaultDict[str, float] = defaultdict(
-                lambda: abs_tol.get("__default", 0), 
+                lambda: abs_tol.get("__default", 0),
                 {key: value for key, value in abs_tol.items() if key != "__default"}
             )
 
@@ -170,7 +170,7 @@ class SnowflakeCompare(BaseCompare):
             self.rel_tol_per_column: DefaultDict[str, float] = defaultdict(lambda: rel_tol)
         else:
             self.rel_tol_per_column: DefaultDict[str, float] = defaultdict(
-                lambda: rel_tol.get("__default", 0), 
+                lambda: rel_tol.get("__default", 0),
                 {key: value for key, value in rel_tol.items() if key != "__default"}
             )
 

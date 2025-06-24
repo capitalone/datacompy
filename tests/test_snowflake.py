@@ -1304,6 +1304,162 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching(snowpark_session):
     assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 0
 
 
+def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_float(snowpark_session):
+    data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+
+    data2 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.4,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1.04,2017-01-01
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Robert Loblaw,345.12,
+        10000001238,1.05,Loose Seal Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
+    df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID", 0.05)
+
+    output = compare.all_mismatch().toPandas()
+    assert output.shape[0] == 2
+    assert output.shape[1] == 9
+
+    assert (output.NAME_DF1 != output.NAME_DF2).values.sum() == 1
+    assert (~(output.NAME_DF1 != output.NAME_DF2)).values.sum() == 1
+
+    assert (output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2).values.sum() == 0
+    assert (~(output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2)).values.sum() == 2
+
+    assert (output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2).values.sum() == 1
+    assert (~(output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2)).values.sum() == 1
+
+    assert (output.DATE_FLD_DF1 != output.DATE_FLD_DF2).values.sum() == 2
+    assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 0
+
+
+def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_dict(snowpark_session):
+    data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+
+    data2 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.4,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1.05,2017-01-01
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Robert Loblaw,345.12,
+        10000001238,1.05,Loose Seal Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
+    df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID", {"DOLLAR_AMT": 0.05})
+
+    output = compare.all_mismatch().toPandas()
+    assert output.shape[0] == 3
+    assert output.shape[1] == 9
+
+    assert (output.NAME_DF1 != output.NAME_DF2).values.sum() == 1
+    assert (~(output.NAME_DF1 != output.NAME_DF2)).values.sum() == 2
+
+    assert (output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2).values.sum() == 0
+    assert (~(output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2)).values.sum() == 3
+
+    assert (output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2).values.sum() == 2
+    assert (~(output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2)).values.sum() == 1
+
+    assert (output.DATE_FLD_DF1 != output.DATE_FLD_DF2).values.sum() == 2
+    assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 1
+
+
+def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_float(snowpark_session):
+    data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+
+    data2 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.4,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1.04,2017-01-01
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Robert Loblaw,345.12,
+        10000001238,1.05,Loose Seal Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
+    df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID", rel_tol=0.1)
+
+    output = compare.all_mismatch().toPandas()
+    assert output.shape[0] == 2
+    assert output.shape[1] == 9
+
+    assert (output.NAME_DF1 != output.NAME_DF2).values.sum() == 1
+    assert (~(output.NAME_DF1 != output.NAME_DF2)).values.sum() == 1
+
+    assert (output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2).values.sum() == 0
+    assert (~(output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2)).values.sum() == 2
+
+    assert (output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2).values.sum() == 1
+    assert (~(output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2)).values.sum() == 1
+
+    assert (output.DATE_FLD_DF1 != output.DATE_FLD_DF2).values.sum() == 2
+    assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 0
+
+
+def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_dict(snowpark_session):
+    data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+
+    data2 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.4,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1.05,2017-01-01
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Robert Loblaw,345.12,
+        10000001238,1.05,Loose Seal Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
+    df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID", rel_tol={"DOLLAR_AMT": 0.10})
+
+    output = compare.all_mismatch().toPandas()
+    assert output.shape[0] == 3
+    assert output.shape[1] == 9
+
+    assert (output.NAME_DF1 != output.NAME_DF2).values.sum() == 1
+    assert (~(output.NAME_DF1 != output.NAME_DF2)).values.sum() == 2
+
+    assert (output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2).values.sum() == 0
+    assert (~(output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2)).values.sum() == 3
+
+    assert (output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2).values.sum() == 2
+    assert (~(output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2)).values.sum() == 1
+
+    assert (output.DATE_FLD_DF1 != output.DATE_FLD_DF2).values.sum() == 2
+    assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 1
+
+
 @pytest.mark.parametrize(
     "column, expected",
     [
