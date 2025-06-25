@@ -159,19 +159,23 @@ class SnowflakeCompare(BaseCompare):
         self.column_stats: List[Dict[str, Any]] = []
 
         if isinstance(abs_tol, float | int):
-            self.abs_tol_per_column: DefaultDict[str, float] = defaultdict(lambda: abs_tol)
+            self.abs_tol_per_column: DefaultDict[str, float] = defaultdict(
+                lambda: abs_tol
+            )
         else:
             self.abs_tol_per_column: DefaultDict[str, float] = defaultdict(
                 lambda: abs_tol.get("__default", 0),
-                {key: value for key, value in abs_tol.items() if key != "__default"}
+                {key: value for key, value in abs_tol.items() if key != "__default"},
             )
 
         if isinstance(rel_tol, float | int):
-            self.rel_tol_per_column: DefaultDict[str, float] = defaultdict(lambda: rel_tol)
+            self.rel_tol_per_column: DefaultDict[str, float] = defaultdict(
+                lambda: rel_tol
+            )
         else:
             self.rel_tol_per_column: DefaultDict[str, float] = defaultdict(
                 lambda: rel_tol.get("__default", 0),
-                {key: value for key, value in rel_tol.items() if key != "__default"}
+                {key: value for key, value in rel_tol.items() if key != "__default"},
             )
 
         self._compare(ignore_spaces=ignore_spaces)
