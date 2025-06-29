@@ -629,26 +629,78 @@ class Compare(BaseCompare):
         sample_count: int = 10,
         column_count: int = 10,
         html_file: str | None = None,
+        template_path: str | None = None,
     ) -> str:
         """Return a string representation of a report.
 
-        The representation can then be printed or saved to a file.
+        The representation can then be printed or saved to a file. You can customize the
+        report's appearance by providing a custom Jinja2 template.
 
         Parameters
         ----------
         sample_count : int, optional
-            The number of sample records to return.  Defaults to 10.
+            The number of sample records to return. Defaults to 10.
 
         column_count : int, optional
-            The number of columns to display in the sample records output.  Defaults to 10.
+            The number of columns to display in the sample records output. Defaults to 10.
 
         html_file : str, optional
             HTML file name to save report output to. If ``None`` the file creation will be skipped.
 
+        template_path : str, optional
+            Path to a custom Jinja2 template file to use for report generation.
+            If ``None``, the default template will be used. The template receives the
+            following context variables:
+
+            - ``column_summary``: Dict with keys 'common_columns', 'df1_unique', 'df2_unique'
+            - ``row_summary``: Dict with keys 'equal_rows', 'unequal_rows', 'only_df1_rows', 'only_df2_rows'
+            - ``mismatch_stats``: List of dicts with column mismatch statistics
+            - ``df1_shape``, ``df2_shape``: Tuples of (rows, columns) for each dataframe
+            - ``df1_name``, ``df2_name``: Names of the dataframes being compared
+            - ``join_columns``: List of columns used for joining
+            - ``df1_unq_rows``, ``df2_unq_rows``: Sample rows unique to each dataframe
+            - ``mismatch_sample``: Sample of rows with mismatched values
+
         Returns
         -------
         str
-            The report, formatted kinda nicely.
+            The report, formatted according to the template.
+
+        Examples
+        --------
+        Basic usage with default template:
+
+        >>> compare = datacompy.Compare(df1, df2, join_columns=['id'])
+        >>> report = compare.report()
+        >>> print(report)
+
+        Using a custom template file:
+
+        >>> # Create a custom template file (custom_report.j2)
+        >>> with open('custom_report.j2', 'w') as f:
+        ...     f.write('''
+        ...     Comparison Report
+        ...     ================
+        ...
+        ...     DataFrames: {{ df1_name }} vs {{ df2_name }}
+        ...
+        ...     Shape Summary:
+        ...     - {{ df1_name }}: {{ df1_shape[0] }} rows x {{ df1_shape[1] }} columns
+        ...     - {{ df2_name }}: {{ df2_shape[0] }} rows x {{ df2_shape[1] }} columns
+        ...
+        ...     {% if mismatch_stats %}
+        ...     Mismatched Columns ({{ mismatch_stats|length }}):
+        ...     {% for col in mismatch_stats %}
+        ...     - {{ col.column }} ({{ col.unequal_cnt }} mismatches)
+        ...     {% endfor %}
+        ...     {% else %}
+        ...     No mismatches found in any columns!
+        ...     {% endif %}
+        ...     ''')
+        ...
+        >>> # Generate report with custom template
+        >>> report = compare.report(template_path='custom_report.j2')
+        >>> print(report)
         """
         # Prepare data for the template
         template_data = {
@@ -794,8 +846,11 @@ class Compare(BaseCompare):
             }
         )
 
+        # Determine which template to use
+        template_name = template_path if template_path else "report_template.j2"
+
         # Render the main report
-        report = render("report_template.j2", **template_data)
+        report = render(template_name, **template_data)
 
         if html_file:
             save_html_report(report, html_file)
