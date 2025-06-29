@@ -19,6 +19,7 @@ Testing out the datacompy functionality
 
 import io
 import logging
+import re
 import sys
 from datetime import datetime
 from decimal import Decimal
@@ -379,7 +380,9 @@ def test_infinity_and_beyond(snowpark_session):
 
 def test_compare_table_setter_bad(snowpark_session):
     # Invalid table name
-    with raises(ValueError, match="invalid_table_name_1 is not a valid table name."):
+    with raises(
+        ValueError, match=re.escape("invalid_table_name_1 is not a valid table name.")
+    ):
         SnowflakeCompare(
             snowpark_session, "invalid_table_name_1", "invalid_table_name_2", ["A"]
         )
@@ -453,7 +456,7 @@ def test_compare_table_setter_good(snowpark_session):
 def test_compare_df_setter_bad(snowpark_session):
     pdf = pd.DataFrame([{"A": 1, "C": 2}, {"A": 2, "C": 2}])
     df = snowpark_session.createDataFrame(pdf)
-    with raises(TypeError, match="DF1 must be a valid sp.Dataframe"):
+    with raises(TypeError, match=r"DF1 must be a valid sp\.Dataframe"):
         SnowflakeCompare(snowpark_session, 3, 2, ["A"])
     with raises(ValueError, match="DF1 must have all columns from join_columns"):
         SnowflakeCompare(snowpark_session, df, df.select("*"), ["B"])
@@ -1383,7 +1386,7 @@ def test_save_html(mock_render, snowpark_session):
     with mock.patch("datacompy.snowflake.open", m, create=True):
         # assert without HTML call
         compare.report()
-        assert mock_render.call_count == 4
+        assert mock_render.call_count == 1
         m.assert_not_called()
 
     mock_render.reset_mock()
@@ -1391,7 +1394,7 @@ def test_save_html(mock_render, snowpark_session):
     with mock.patch("datacompy.snowflake.open", m, create=True):
         # assert with HTML call
         compare.report(html_file="test.html")
-        assert mock_render.call_count == 4
+        assert mock_render.call_count == 1
         m.assert_called_with("test.html", "w")
 
 
