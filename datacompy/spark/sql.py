@@ -27,17 +27,6 @@ from typing import Any, List, Tuple
 
 import pandas as pd
 from ordered_set import OrderedSet
-from pyspark.sql import Window
-from pyspark.sql.functions import (
-    array,
-    array_contains,
-    col,
-    isnan,
-    isnull,
-    lit,
-    row_number,
-    when,
-)
 
 from datacompy.base import (
     BaseCompare,
