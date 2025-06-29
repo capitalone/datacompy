@@ -1377,25 +1377,27 @@ def test_generate_id_within_group_single_join(snowpark_session):
 
 
 @mock.patch("datacompy.snowflake.render")
-def test_save_html(mock_render, snowpark_session):
+@mock.patch("datacompy.snowflake.save_html_report")
+def test_save_html(mock_save_html, mock_render, snowpark_session):
     df1 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
     df2 = snowpark_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
     compare = SnowflakeCompare(snowpark_session, df1, df2, join_columns=["A"])
 
-    m = mock.mock_open()
-    with mock.patch("datacompy.snowflake.open", m, create=True):
-        # assert without HTML call
-        compare.report()
-        assert mock_render.call_count == 1
-        m.assert_not_called()
+    # Test without HTML file
+    compare.report()
+    mock_render.assert_called_once()
+    mock_save_html.assert_not_called()
 
     mock_render.reset_mock()
-    m = mock.mock_open()
-    with mock.patch("datacompy.snowflake.open", m, create=True):
-        # assert with HTML call
-        compare.report(html_file="test.html")
-        assert mock_render.call_count == 1
-        m.assert_called_with("test.html", "w")
+    mock_save_html.reset_mock()
+
+    # Test with HTML file
+    compare.report(html_file="test.html")
+    mock_render.assert_called_once()
+    mock_save_html.assert_called_once()
+    args, _ = mock_save_html.call_args
+    assert len(args) == 2
+    assert args[1] == "test.html"  # The filename
 
 
 def test_full_join_counts_no_matches(snowpark_session):
