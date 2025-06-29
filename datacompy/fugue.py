@@ -20,7 +20,6 @@ import pickle
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterable, List, Tuple, cast
 
-import fugue.api as fa
 import pandas as pd
 from ordered_set import OrderedSet
 

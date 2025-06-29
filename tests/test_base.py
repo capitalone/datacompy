@@ -3,7 +3,13 @@ Tests for base.py
 """
 
 import pandas as pd
-from datacompy.base import BaseCompare, df_to_str, save_html_report, temp_column_name
+from datacompy.base import (
+    BaseCompare,
+    df_to_str,
+    render,
+    save_html_report,
+    temp_column_name,
+)
 
 
 def test_temp_column_name_no_dataframes():
@@ -65,11 +71,58 @@ def test_df_to_str_other_type():
     assert result == "[1, 2, 3]"
 
 
-def test_render_template():
+def test_render_template(tmp_path):
     """Test rendering a simple template."""
-    # Skip this test for now as it requires more complex setup
-    # with template directories
-    pass
+    # Create a test template file
+    template_dir = tmp_path / "templates"
+    template_dir.mkdir()
+    template_file = template_dir / "test_template.j2"
+
+    # Simple template with variables and a loop
+    template_content = """Hello {{ name }}!
+
+{% for item in items %}- {{ item }}
+{% endfor %}
+
+{% if show_message %}
+Message: {{ message }}
+{% endif %}"""
+
+    template_file.write_text(template_content)
+
+    # Test rendering with context
+    context = {
+        "name": "World",
+        "items": ["Apple", "Banana", "Cherry"],
+        "show_message": True,
+        "message": "This is a test message",
+    }
+
+    # Render the template
+    result = render(str(template_file), **context)
+
+    # Verify the output
+    expected_output = """Hello World!
+
+- Apple
+- Banana
+- Cherry
+
+Message: This is a test message"""
+
+    # Normalize line endings for cross-platform compatibility
+    assert (
+        result.replace("\r\n", "\n").strip()
+        == expected_output.replace("\r\n", "\n").strip()
+    )
+
+    # Test with a template in the specified templates directory
+    default_template = template_dir / "default_test.j2"
+    default_template.write_text("Default template: {{ value }}")
+
+    # Use the full path to the template file
+    result = render(str(default_template), value=42)
+    assert result == "Default template: 42"
 
 
 def test_save_html_report(tmp_path):

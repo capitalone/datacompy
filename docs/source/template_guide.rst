@@ -1,5 +1,3 @@
-.. _template_guide:
-
 Template Customization Guide
 ===========================
 

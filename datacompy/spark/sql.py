@@ -891,6 +891,10 @@ class SparkSQLCompare(BaseCompare):
             }
 
         # Add sample data to template data
+        min_sample_count_df1 = min(sample_count, df1_unq_count)
+        min_sample_count_df2 = min(sample_count, df2_unq_count)
+        min_column_count_df1 = min(column_count, len(self.df1_unq_rows.columns))
+        min_column_count_df2 = min(column_count, len(self.df2_unq_rows.columns))
         if hasattr(self, "df1_unq_rows") and hasattr(self, "df2_unq_rows"):
             # For Spark SQL, we collect a sample of the data for display
             template_data.update(
@@ -898,30 +902,30 @@ class SparkSQLCompare(BaseCompare):
                     "sample_count": sample_count,
                     "column_count": column_count,
                     "df1_unique_rows": {
-                        "has_rows": min(sample_count, df1_unq_count) > 0,
+                        "has_rows": min_sample_count_df1 > 0,
                         "rows": df_to_str(
                             self.df1_unq_rows.select(
-                                self.df1_unq_rows.columns[:column_count]
+                                self.df1_unq_rows.columns[:min_column_count_df1]
                             ),
-                            sample_count=min(sample_count, df1_unq_count),
+                            sample_count=min_sample_count_df1,
                         )
                         if df1_unq_count > 0
                         else "",
-                        "columns": self.df1_unq_rows.columns[:column_count]
+                        "columns": self.df1_unq_rows.columns[:min_column_count_df1]
                         if df1_unq_count > 0
                         else "",
                     },
                     "df2_unique_rows": {
-                        "has_rows": min(sample_count, df2_unq_count) > 0,
+                        "has_rows": min_sample_count_df2 > 0,
                         "rows": df_to_str(
                             self.df2_unq_rows.select(
-                                self.df2_unq_rows.columns[:column_count]
+                                self.df2_unq_rows.columns[:min_column_count_df2]
                             ),
-                            sample_count=min(sample_count, df2_unq_count),
+                            sample_count=min_sample_count_df2,
                         )
                         if df2_unq_count > 0
                         else "",
-                        "columns": self.df2_unq_rows.columns[:column_count]
+                        "columns": self.df2_unq_rows.columns[:min_column_count_df2]
                         if df2_unq_count > 0
                         else "",
                     },

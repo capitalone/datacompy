@@ -730,32 +730,40 @@ class PolarsCompare(BaseCompare):
             }
 
         # Add sample data to template data
+        min_sample_count_df1 = min(sample_count, self.df1_unq_rows.shape[0])
+        min_sample_count_df2 = min(sample_count, self.df2_unq_rows.shape[0])
+        min_column_count_df1 = min(column_count, self.df1_unq_rows.shape[1])
+        min_column_count_df2 = min(column_count, self.df2_unq_rows.shape[1])
         if hasattr(self, "df1_unq_rows") and hasattr(self, "df2_unq_rows"):
             template_data.update(
                 {
                     "sample_count": sample_count,
                     "column_count": column_count,
                     "df1_unique_rows": {
-                        "has_rows": min(sample_count, self.df1_unq_rows.shape[0]) > 0,
+                        "has_rows": min_sample_count_df1 > 0,
                         "rows": df_to_str(
-                            self.df1_unq_rows[:, :column_count],
-                            sample_count=min(sample_count, self.df1_unq_rows.shape[0]),
+                            self.df1_unq_rows[:, :min_column_count_df1],
+                            sample_count=min_sample_count_df1,
                         )
                         if self.df1_unq_rows.shape[0] > 0
                         else "",
-                        "columns": list(self.df1_unq_rows.columns[:column_count])
+                        "columns": list(
+                            self.df1_unq_rows.columns[:min_column_count_df1]
+                        )
                         if self.df1_unq_rows.shape[0] > 0
                         else "",
                     },
                     "df2_unique_rows": {
-                        "has_rows": min(sample_count, self.df2_unq_rows.shape[0]) > 0,
+                        "has_rows": min_sample_count_df2 > 0,
                         "rows": df_to_str(
-                            self.df2_unq_rows[:, :column_count],
-                            sample_count=min(sample_count, self.df2_unq_rows.shape[0]),
+                            self.df2_unq_rows[:, :min_column_count_df2],
+                            sample_count=min_sample_count_df2,
                         )
                         if self.df2_unq_rows.shape[0] > 0
                         else "",
-                        "columns": list(self.df2_unq_rows.columns[:column_count])
+                        "columns": list(
+                            self.df2_unq_rows.columns[:min_column_count_df2]
+                        )
                         if self.df2_unq_rows.shape[0] > 0
                         else "",
                     },
