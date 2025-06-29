@@ -624,6 +624,173 @@ class Compare(BaseCompare):
         mm_bool = self.intersect_rows[match_list].all(axis="columns")
         return self.intersect_rows[~mm_bool][self.join_columns + return_list]
 
+    def _get_column_summary(self) -> dict:
+        """Generate column summary data for the report.
+
+        Returns
+        -------
+        dict
+            Dictionary containing column summary information.
+        """
+        return {
+            "column_summary": {
+                "common_columns": len(self.intersect_columns()),
+                "df1_unique": len(self.df1_unq_columns()),
+                "df2_unique": len(self.df2_unq_columns()),
+                "df1_name": self.df1_name,
+                "df2_name": self.df2_name,
+            }
+        }
+
+    def _get_row_summary(self) -> dict:
+        """Generate row summary data for the report.
+
+        Returns
+        -------
+        dict
+            Dictionary containing row summary information.
+        """
+        return {
+            "row_summary": {
+                "match_columns": "index"
+                if self.on_index
+                else ", ".join(self.join_columns),
+                "abs_tol": self.abs_tol,
+                "rel_tol": self.rel_tol,
+                "common_rows": self.intersect_rows.shape[0],
+                "df1_unique": self.df1_unq_rows.shape[0],
+                "df2_unique": self.df2_unq_rows.shape[0],
+                "unequal_rows": self.intersect_rows.shape[0]
+                - self.count_matching_rows(),
+                "equal_rows": self.count_matching_rows(),
+                "df1_name": self.df1_name,
+                "df2_name": self.df2_name,
+                "has_duplicates": "Yes" if self._any_dupes else "No",
+            }
+        }
+
+    def _get_column_comparison(self) -> dict:
+        """Generate column comparison statistics for the report.
+
+        Returns
+        -------
+        dict
+            Dictionary containing column comparison information.
+        """
+        return {
+            "column_comparison": {
+                "unequal_columns": len(
+                    [col for col in self.column_stats if col["unequal_cnt"] > 0]
+                ),
+                "equal_columns": len(
+                    [col for col in self.column_stats if col["unequal_cnt"] == 0]
+                ),
+                "unequal_values": sum(col["unequal_cnt"] for col in self.column_stats),
+            }
+        }
+
+    def _get_mismatch_stats(self, sample_count: int) -> dict:
+        """Generate mismatch statistics for the report.
+
+        Parameters
+        ----------
+        sample_count : int
+            Number of samples to include in the report.
+
+        Returns
+        -------
+        dict
+            Dictionary containing mismatch statistics.
+        """
+        mismatch_stats = []
+        match_sample = []
+        any_mismatch = False
+
+        for column in self.column_stats:
+            if not column["all_match"]:
+                any_mismatch = True
+                mismatch_stats.append(
+                    {
+                        "column": column["column"],
+                        "dtype1": column["dtype1"],
+                        "dtype2": column["dtype2"],
+                        "unequal_cnt": column["unequal_cnt"],
+                        "max_diff": column["max_diff"],
+                        "null_diff": column["null_diff"],
+                    }
+                )
+                if column["unequal_cnt"] > 0:
+                    match_sample.append(
+                        self.sample_mismatch(
+                            column["column"], sample_count, for_display=True
+                        )
+                    )
+
+        if any_mismatch:
+            return {
+                "mismatch_stats": {
+                    "has_mismatches": True,
+                    "stats": sorted(mismatch_stats, key=lambda x: x["column"]),
+                    "df1_name": self.df1_name,
+                    "df2_name": self.df2_name,
+                    "samples": [df_to_str(sample) for sample in match_sample],
+                    "has_samples": len(match_sample) > 0 and sample_count > 0,
+                }
+            }
+        return {
+            "mismatch_stats": {
+                "has_mismatches": False,
+                "has_samples": False,
+            }
+        }
+
+    def _get_unique_rows_data(self, sample_count: int, column_count: int) -> dict:
+        """Generate data for unique rows in both dataframes.
+
+        Parameters
+        ----------
+        sample_count : int
+            Number of samples to include.
+        column_count : int
+            Number of columns to include.
+
+        Returns
+        -------
+        dict
+            Dictionary containing unique rows data for both dataframes.
+        """
+        min_sample_count_df1 = min(sample_count, self.df1_unq_rows.shape[0])
+        min_sample_count_df2 = min(sample_count, self.df2_unq_rows.shape[0])
+        min_column_count_df1 = min(column_count, self.df1_unq_rows.shape[1])
+        min_column_count_df2 = min(column_count, self.df2_unq_rows.shape[1])
+
+        return {
+            "df1_unique_rows": {
+                "has_rows": min_sample_count_df1 > 0,
+                "rows": df_to_str(
+                    self.df1_unq_rows.iloc[:, :min_column_count_df1],
+                    sample_count=min_sample_count_df1,
+                )
+                if self.df1_unq_rows.shape[0] > 0
+                else "",
+                "columns": list(self.df1_unq_rows.columns[:min_column_count_df1])
+                if self.df1_unq_rows.shape[0] > 0
+                else "",
+            },
+            "df2_unique_rows": {
+                "has_rows": min_sample_count_df2 > 0,
+                "rows": df_to_str(
+                    self.df2_unq_rows.iloc[:, :min_column_count_df2],
+                    sample_count=min_sample_count_df2,
+                )
+                if self.df2_unq_rows.shape[0] > 0
+                else "",
+                "columns": list(self.df2_unq_rows.columns[:min_column_count_df2])
+                if self.df2_unq_rows.shape[0] > 0
+                else "",
+            },
+        }
+
     def report(
         self,
         sample_count: int = 10,
@@ -702,155 +869,19 @@ class Compare(BaseCompare):
         >>> report = compare.report(template_path='custom_report.j2')
         >>> print(report)
         """
-        # Prepare data for the template
+        # Prepare the template data by combining all sections
         template_data = {
-            "column_summary": {
-                "common_columns": len(self.intersect_columns()),
-                "df1_unique": len(self.df1_unq_columns()),
-                "df2_unique": len(self.df2_unq_columns()),
-                "df1_name": self.df1_name,
-                "df2_name": self.df2_name,
-            },
-            "row_summary": {
-                "match_columns": "index"
-                if self.on_index
-                else ", ".join(self.join_columns),
-                "abs_tol": self.abs_tol,
-                "rel_tol": self.rel_tol,
-                "common_rows": self.intersect_rows.shape[0],
-                "df1_unique": self.df1_unq_rows.shape[0],
-                "df2_unique": self.df2_unq_rows.shape[0],
-                "unequal_rows": self.intersect_rows.shape[0]
-                - self.count_matching_rows(),
-                "equal_rows": self.count_matching_rows(),
-                "df1_name": self.df1_name,
-                "df2_name": self.df2_name,
-                "has_duplicates": "Yes" if self._any_dupes else "No",
-            },
-            "column_comparison": {
-                "unequal_columns": len(
-                    [col for col in self.column_stats if col["unequal_cnt"] > 0]
-                ),
-                "equal_columns": len(
-                    [col for col in self.column_stats if col["unequal_cnt"] == 0]
-                ),
-                "unequal_values": sum(col["unequal_cnt"] for col in self.column_stats),
-            },
+            **self._get_column_summary(),
+            **self._get_row_summary(),
+            **self._get_column_comparison(),
+            **self._get_mismatch_stats(sample_count),
+            **self._get_unique_rows_data(sample_count, column_count),
             "df1_name": self.df1_name,
             "df2_name": self.df2_name,
             "df1_shape": self.df1.shape,
             "df2_shape": self.df2.shape,
-            "column_stats": self.column_stats,
-            "sample_count": sample_count,
             "column_count": column_count,
-            "df_to_str": lambda x: df_to_str(x, on_index=self.on_index),
-            "mismatch_stats": {
-                "has_mismatches": any(
-                    not stat["all_match"] for stat in self.column_stats
-                ),
-                "has_samples": any(not stat["all_match"] for stat in self.column_stats)
-                and sample_count > 0,
-                "samples": [
-                    self.sample_mismatch(stat["column"], sample_count).to_string()
-                    for stat in self.column_stats
-                    if not stat["all_match"]
-                ][:sample_count],
-                "df1_name": self.df1_name,
-                "df2_name": self.df2_name,
-                "stats": [
-                    {
-                        "column": stat["column"],
-                        "dtype1": str(stat["dtype1"])
-                        .replace("dtype('", "")
-                        .replace("')", ""),
-                        "dtype2": str(stat["dtype2"])
-                        .replace("dtype('", "")
-                        .replace("')", ""),
-                        "unequal_cnt": stat["unequal_cnt"],
-                        "max_diff": stat["max_diff"],
-                        "null_diff": stat["null_diff"],
-                    }
-                    for stat in self.column_stats
-                    if not stat["all_match"]
-                ],
-            },
         }
-
-        # Prepare mismatch data for the template
-        mismatch_stats = []
-        match_sample = []
-        any_mismatch = False
-        for column in self.column_stats:
-            if not column["all_match"]:
-                any_mismatch = True
-                mismatch_stats.append(
-                    {
-                        "column": column["column"],
-                        "dtype1": column["dtype1"],
-                        "dtype2": column["dtype2"],
-                        "unequal_cnt": column["unequal_cnt"],
-                        "max_diff": column["max_diff"],
-                        "null_diff": column["null_diff"],
-                    }
-                )
-                if column["unequal_cnt"] > 0:
-                    match_sample.append(
-                        self.sample_mismatch(
-                            column["column"], sample_count, for_display=True
-                        )
-                    )
-
-        # Add mismatch data to template data
-        if any_mismatch:
-            template_data["mismatch_stats"] = {
-                "has_mismatches": True,
-                "stats": sorted(mismatch_stats, key=lambda x: x["column"]),
-                "df1_name": self.df1_name,
-                "df2_name": self.df2_name,
-                "samples": match_sample,
-                "has_samples": len(match_sample) > 0 and sample_count > 0,
-            }
-        else:
-            template_data["mismatch_stats"] = {
-                "has_mismatches": False,
-                "has_samples": False,
-            }
-
-        # Add sample data to template data
-        min_sample_count_df1 = min(sample_count, self.df1_unq_rows.shape[0])
-        min_sample_count_df2 = min(sample_count, self.df2_unq_rows.shape[0])
-        min_column_count_df1 = min(column_count, self.df1_unq_rows.shape[1])
-        min_column_count_df2 = min(column_count, self.df2_unq_rows.shape[1])
-        template_data.update(
-            {
-                "sample_count": sample_count,
-                "column_count": column_count,
-                "df1_unique_rows": {
-                    "has_rows": min_sample_count_df1 > 0,
-                    "rows": df_to_str(
-                        self.df1_unq_rows.iloc[:, :min_column_count_df1],
-                        sample_count=min_sample_count_df1,
-                    )
-                    if self.df1_unq_rows.shape[0] > 0
-                    else "",
-                    "columns": list(self.df1_unq_rows.columns[:min_column_count_df1])
-                    if self.df1_unq_rows.shape[0] > 0
-                    else "",
-                },
-                "df2_unique_rows": {
-                    "has_rows": min_sample_count_df2 > 0,
-                    "rows": df_to_str(
-                        self.df2_unq_rows.iloc[:, :min_column_count_df2],
-                        sample_count=min_sample_count_df2,
-                    )
-                    if self.df2_unq_rows.shape[0] > 0
-                    else "",
-                    "columns": list(self.df2_unq_rows.columns[:min_column_count_df2])
-                    if self.df2_unq_rows.shape[0] > 0
-                    else "",
-                },
-            }
-        )
 
         # Determine which template to use
         template_name = template_path if template_path else "report_template.j2"
