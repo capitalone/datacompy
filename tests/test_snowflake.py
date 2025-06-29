@@ -19,8 +19,10 @@ Testing out the datacompy functionality
 
 import io
 import logging
+import os
 import re
 import sys
+import tempfile
 from datetime import datetime
 from decimal import Decimal
 from io import StringIO
@@ -1563,3 +1565,133 @@ def test_non_full_join_counts_some_matches(snowpark_session):
             ]
         ),
     )
+
+
+def test_custom_template_usage(snowpark_session):
+    """Test using a custom template with template_path parameter."""
+    df1 = snowpark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = snowpark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, ["id"])
+
+    # Create a simple test template
+    with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
+        tmp.write("Custom Template\n")
+        tmp.write(
+            "Columns: {{ mismatch_stats.stats|map(attribute='column')|join(', ') if mismatch_stats.has_mismatches else '' }}\n"
+        )
+        tmp.write(
+            "Matches: "
+            "{% if mismatch_stats.has_mismatches %}"
+            "{% for col in mismatch_stats.stats %}"
+            "{% if col.unequal_cnt > 0 %}False{% else %}True{% endif %}"
+            "{% endfor %}"
+            "{% else %}All match{% endif %}"
+        )
+        template_path = tmp.name
+
+    try:
+        # Test with custom template
+        result = compare.report(template_path=template_path)
+        assert "Custom Template" in result
+        # Should list the column with mismatches (value)
+        assert "value" in result
+        # Should show False for column value (has mismatches)
+        assert "False" in result
+    finally:
+        # Clean up the temporary file
+        if os.path.exists(template_path):
+            os.unlink(template_path)
+
+
+def test_template_without_extension(snowpark_session):
+    """Test that template_path works without .j2 extension."""
+    df1 = snowpark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = snowpark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, ["id"])
+
+    # Create a test template without .j2 extension
+    with tempfile.NamedTemporaryFile(delete=False, mode="w") as tmp:
+        tmp.write("Test Template")
+        template_path = tmp.name
+
+    try:
+        result = compare.report(template_path=template_path)
+        assert "Test Template" in result
+    finally:
+        if os.path.exists(template_path):
+            os.unlink(template_path)
+
+
+def test_nonexistent_template(snowpark_session):
+    """Test that a clear error is raised when template file doesn't exist."""
+    df1 = snowpark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = snowpark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, ["id"])
+
+    with pytest.raises(Exception) as exc_info:
+        compare.report(template_path="nonexistent_template.j2")
+    # Check that the error message is helpful
+    assert "Template not found" in str(
+        exc_info.value
+    ) or "nonexistent_template.j2" in str(exc_info.value)
+
+
+def test_template_context_variables(snowpark_session):
+    """Test that all expected context variables are available in the template."""
+    df1 = snowpark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = snowpark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, ["id"])
+
+    # Create a test template that checks for expected variables
+    with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
+        tmp.write(
+            "{% if mismatch_stats is defined and df1_name is defined and df2_name is defined %}"
+        )
+        tmp.write("All required variables present\n")
+        tmp.write("{% else %}")
+        tmp.write("Missing required variables\n")
+        tmp.write("{% endif %}")
+        tmp.write(
+            "Columns: {{ mismatch_stats.stats|map(attribute='column')|join(', ') if mismatch_stats.has_mismatches else '' }}"
+        )
+        template_path = tmp.name
+
+    try:
+        result = compare.report(template_path=template_path)
+        assert "All required variables present" in result
+        # Should list the column with mismatches (value)
+        assert "value" in result
+    finally:
+        if os.path.exists(template_path):
+            os.unlink(template_path)
+
+
+@mock.patch("datacompy.snowflake.save_html_report")
+@mock.patch("datacompy.snowflake.render")
+def test_html_report_generation(mock_render, mock_save_html, snowpark_session):
+    """Test that HTML reports can be generated and saved to a file."""
+    df1 = snowpark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = snowpark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SnowflakeCompare(snowpark_session, df1, df2, ["id"])
+
+    # Mock the render function to return a test string
+    mock_render.return_value = "<html><body>Test Report</body></html>"
+
+    # Create a temporary file for the HTML output
+    with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as tmp:
+        html_file = tmp.name
+
+    try:
+        # Call report with html_file parameter
+        result = compare.report(html_file=html_file)
+
+        # Check that save_html_report was called with the correct arguments
+        mock_save_html.assert_called_once_with(
+            "<html><body>Test Report</body></html>", html_file
+        )
+        # Check that the result is the rendered template
+        assert result == "<html><body>Test Report</body></html>"
+    finally:
+        # Clean up the temporary file
+        if os.path.exists(html_file):
+            os.unlink(html_file)

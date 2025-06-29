@@ -19,7 +19,9 @@ Testing out the datacompy functionality
 
 import io
 import logging
+import os
 import sys
+import tempfile
 from datetime import datetime
 from decimal import Decimal
 from unittest import mock
@@ -1755,3 +1757,132 @@ def test_normalize_string_column(input_data, ignore_spaces, ignore_case, expecte
         input_data, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
     assert_series_equal(result, expected, check_names=False)
+
+
+def test_custom_template_usage():
+    """Test using a custom template with template_path parameter."""
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
+    compare = PolarsCompare(df1, df2, ["a"])
+
+    # Create a simple test template
+    with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
+        tmp.write("Custom Template\n")
+        tmp.write(
+            "Columns: {{ mismatch_stats.stats|map(attribute='column')|join(', ') if mismatch_stats.has_mismatches else '' }}\n"
+        )
+        tmp.write(
+            "Matches: "
+            "{% if mismatch_stats.has_mismatches %}"
+            "{% for col in mismatch_stats.stats %}"
+            "{% if col.unequal_cnt > 0 %}False{% else %}True{% endif %}"
+            "{% endfor %}"
+            "{% else %}All match{% endif %}"
+        )
+        template_path = tmp.name
+
+    try:
+        # Test with custom template
+        result = compare.report(template_path=template_path)
+        assert "Custom Template" in result
+        # Should list the column with mismatches (b)
+        assert "b" in result
+        # Should show False for column b (has mismatches)
+        assert "False" in result
+    finally:
+        # Clean up the temporary file
+        if os.path.exists(template_path):
+            os.unlink(template_path)
+
+
+def test_template_without_extension():
+    """Test that template files without .j2 extension still work."""
+    df1 = pl.DataFrame([{"a": 1, "b": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}])
+    compare = PolarsCompare(df1, df2, ["a"])
+
+    # Create a test template without extension
+    with tempfile.NamedTemporaryFile(delete=False, mode="w") as tmp:
+        tmp.write("Template without extension\n")
+        tmp.write(
+            "Match status: {% if column_stats|selectattr('all_match', 'equalto', False)|list|length == 0 %}Match{% else %}No match{% endif %}"
+        )
+        template_path = tmp.name
+
+    try:
+        # Test with template that doesn't have .j2 extension
+        result = compare.report(template_path=template_path)
+        assert "Template without extension" in result
+        assert "Match status: Match" in result
+    finally:
+        if os.path.exists(template_path):
+            os.unlink(template_path)
+
+
+def test_nonexistent_template():
+    """Test that a clear error is raised when template file doesn't exist."""
+    df1 = pl.DataFrame([{"a": 1, "b": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}])
+    compare = PolarsCompare(df1, df2, ["a"])
+
+    with pytest.raises(FileNotFoundError):
+        compare.report(template_path="/nonexistent/path/template.j2")
+
+
+def test_template_context_variables():
+    """Test that all expected context variables are available in the template."""
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
+    compare = PolarsCompare(df1, df2, ["a"])
+
+    # Create a test template that checks for expected variables
+    with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
+        tmp.write(
+            "{% if mismatch_stats is defined and df1_name is defined and df2_name is defined %}"
+        )
+        tmp.write("All required variables present\n")
+        tmp.write("{% else %}")
+        tmp.write("Missing required variables\n")
+        tmp.write("{% endif %}")
+        tmp.write(
+            "Columns: {{ mismatch_stats.stats|map(attribute='column')|join(', ') if mismatch_stats.has_mismatches else '' }}"
+        )
+        template_path = tmp.name
+
+    try:
+        result = compare.report(template_path=template_path)
+        assert "All required variables present" in result
+        # Should list the column with mismatches (b)
+        assert "b" in result
+    finally:
+        if os.path.exists(template_path):
+            os.unlink(template_path)
+
+
+def test_html_report_generation():
+    """Test that HTML report is properly generated and saved."""
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
+    compare = PolarsCompare(df1, df2, ["a"])
+
+    # Create a temporary directory for the test
+    with tempfile.TemporaryDirectory() as temp_dir:
+        html_file = os.path.join(temp_dir, "test_report.html")
+
+        # Generate the report
+        result = compare.report(html_file=html_file)
+
+        # Check that the file was created
+        assert os.path.exists(html_file)
+
+        # Check that the file has content
+        with open(html_file) as f:
+            content = f.read()
+            assert len(content) > 0
+            # Should contain some HTML tags
+            assert "<html" in content.lower()
+            assert "</html>" in content.lower()
+
+        # The result should be the same as the rendered HTML content
+        assert isinstance(result, str)
+        assert len(result) > 0
