@@ -20,10 +20,12 @@ import pickle
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterable, List, Tuple, cast
 
+import fugue.api as fa
 import pandas as pd
 from ordered_set import OrderedSet
 
-from datacompy.core import Compare, render
+from datacompy.base import df_to_str, render, save_html_report
+from datacompy.core import Compare
 
 LOG = logging.getLogger(__name__)
 HASH_COL = "__datacompy__hash__"
@@ -518,129 +520,143 @@ def report(
     def _any(col: str) -> int:
         return any(x[col] for x in res)
 
-    # Header
-    rpt = render("header.txt")
-    df_header = pd.DataFrame(
-        {
-            "DataFrame": [df1_name, df2_name],
-            "Columns": [shape1("df1_shape"), shape1("df2_shape")],
-            "Rows": [shape0("df1_shape"), shape0("df2_shape")],
-        }
-    )
-    rpt += df_header[["DataFrame", "Columns", "Rows"]].to_string()
-    rpt += "\n\n"
+    # Fugue implementation doesn't support joining on index
+    on_index = False
 
-    # Column Summary
-    rpt += render(
-        "column_summary.txt",
-        len(first["intersect_columns"]),
-        f"{len(first['df1_unq_columns'])} {first['df1_unq_columns'].items}",
-        f"{len(first['df2_unq_columns'])} {first['df2_unq_columns'].items}",
-        df1_name,
-        df2_name,
-    )
-
-    # Row Summary
-    match_on = ", ".join(join_columns)
-    rpt += render(
-        "row_summary.txt",
-        match_on,
-        abs_tol,
-        rel_tol,
-        shape0("intersect_rows_shape"),
-        shape0("df1_unq_rows_shape"),
-        shape0("df2_unq_rows_shape"),
-        shape0("intersect_rows_shape") - _sum("count_matching_rows"),
-        _sum("count_matching_rows"),
-        df1_name,
-        df2_name,
-        "Yes" if _any("_any_dupes") else "No",
-    )
-
+    # Prepare template data
     column_stats: List[Dict[str, Any]]
     match_sample: List[pd.DataFrame]
     column_stats, match_sample = _aggregate_stats(res, sample_count=sample_count)
     any_mismatch = len(match_sample) > 0
 
-    # Column Matching
-    rpt += render(
-        "column_comparison.txt",
-        len([col for col in column_stats if col["unequal_cnt"] > 0]),
-        len([col for col in column_stats if col["unequal_cnt"] == 0]),
-        sum(col["unequal_cnt"] for col in column_stats),
-    )
-
+    # Prepare column comparison stats
     match_stats = []
     for column in column_stats:
         if not column["all_match"]:
-            any_mismatch = True
             match_stats.append(
                 {
-                    "Column": column["column"],
-                    f"{df1_name} dtype": column["dtype1"],
-                    f"{df2_name} dtype": column["dtype2"],
-                    "# Unequal": column["unequal_cnt"],
-                    "Max Diff": column["max_diff"],
-                    "# Null Diff": column["null_diff"],
+                    "column": column["column"],
+                    "dtype1": str(column["dtype1"])
+                    .replace("dtype('", "")
+                    .replace("')", ""),
+                    "dtype2": str(column["dtype2"])
+                    .replace("dtype('", "")
+                    .replace("')", ""),
+                    "unequal_cnt": column["unequal_cnt"],
+                    "max_diff": column["max_diff"],
+                    "null_diff": column["null_diff"],
                 }
             )
 
-    if any_mismatch:
-        rpt += "Columns with Unequal Values or Types\n"
-        rpt += "------------------------------------\n"
-        rpt += "\n"
-        df_match_stats = pd.DataFrame(match_stats)
-        df_match_stats.sort_values("Column", inplace=True)
-        # Have to specify again for sorting
-        rpt += df_match_stats[
-            [
-                "Column",
-                f"{df1_name} dtype",
-                f"{df2_name} dtype",
-                "# Unequal",
-                "Max Diff",
-                "# Null Diff",
-            ]
-        ].to_string()
-        rpt += "\n\n"
-
-        if sample_count > 0:
-            rpt += "Sample Rows with Unequal Values\n"
-            rpt += "-------------------------------\n"
-            rpt += "\n"
-            for sample in match_sample:
-                rpt += sample.to_string()
-                rpt += "\n\n"
-
+    # Get unique rows samples
     df1_unq_rows_samples = [
         r["df1_unq_rows_sample"] for r in res if r["df1_unq_rows_sample"] is not None
     ]
-    if len(df1_unq_rows_samples) > 0:
-        rpt += f"Sample Rows Only in {df1_name} (First {column_count} Columns)\n"
-        rpt += f"---------------------------------------{'-' * len(df1_name)}\n"
-        rpt += "\n"
-        rpt += _sample(
-            pd.concat(df1_unq_rows_samples), sample_count=sample_count
-        ).to_string()
-        rpt += "\n\n"
-
     df2_unq_rows_samples = [
         r["df2_unq_rows_sample"] for r in res if r["df2_unq_rows_sample"] is not None
     ]
-    if len(df2_unq_rows_samples) > 0:
-        rpt += f"Sample Rows Only in {df2_name} (First {column_count} Columns)\n"
-        rpt += f"---------------------------------------{'-' * len(df2_name)}\n"
-        rpt += "\n"
-        rpt += _sample(
-            pd.concat(df2_unq_rows_samples), sample_count=sample_count
-        ).to_string()
-        rpt += "\n\n"
 
+    df1_unq_sample = None
+    if df1_unq_rows_samples:
+        df1_unq_sample = _sample(
+            pd.concat(df1_unq_rows_samples), sample_count=sample_count
+        )
+        if not df1_unq_sample.empty:
+            df1_unq_sample = df1_unq_sample.to_dict("records")
+
+    df2_unq_sample = None
+    if df2_unq_rows_samples:
+        df2_unq_sample = _sample(
+            pd.concat(df2_unq_rows_samples), sample_count=sample_count
+        )
+        if not df2_unq_sample.empty:
+            df2_unq_sample = df2_unq_sample.to_dict("records")
+
+    # Prepare template data
+    template_data = {
+        "column_summary": {
+            "common_columns": len(first["intersect_columns"]),
+            "df1_unique": len(first["df1_unq_columns"]),
+            "df2_unique": len(first["df2_unq_columns"]),
+            "df1_name": df1_name,
+            "df2_name": df2_name,
+        },
+        "row_summary": {
+            "match_columns": ", ".join(join_columns),
+            "abs_tol": abs_tol,
+            "rel_tol": rel_tol,
+            "common_rows": shape0("intersect_rows_shape"),
+            "df1_unique": shape0("df1_unq_rows_shape"),
+            "df2_unique": shape0("df2_unq_rows_shape"),
+            "unequal_rows": shape0("intersect_rows_shape")
+            - _sum("count_matching_rows"),
+            "equal_rows": _sum("count_matching_rows"),
+            "df1_name": df1_name,
+            "df2_name": df2_name,
+            "has_duplicates": "Yes" if _any("_any_dupes") else "No",
+        },
+        "column_comparison": {
+            "unequal_columns": len(
+                [col for col in column_stats if col["unequal_cnt"] > 0]
+            ),
+            "equal_columns": len(
+                [col for col in column_stats if col["unequal_cnt"] == 0]
+            ),
+            "unequal_values": sum(col["unequal_cnt"] for col in column_stats),
+        },
+        "df1_name": df1_name,
+        "df2_name": df2_name,
+        "df1_shape": (shape0("df1_shape"), shape1("df1_shape")),  # (rows, columns)
+        "df2_shape": (shape0("df2_shape"), shape1("df2_shape")),  # (rows, columns)
+        "column_stats": match_stats,
+        "sample_count": sample_count,
+        "column_count": column_count,
+        "df_to_str": lambda x: df_to_str(
+            x, sample_count=sample_count, on_index=on_index
+        ),
+        "mismatch_stats": {
+            "has_mismatches": any_mismatch,
+            "has_samples": len(match_sample) > 0 and sample_count > 0,
+            "samples": [s.to_string() for s in match_sample]
+            if sample_count > 0
+            else [],
+            "df1_name": df1_name,
+            "df2_name": df2_name,
+            "stats": [
+                {
+                    "column": col["column"],
+                    "dtype1": col["dtype1"],
+                    "dtype2": col["dtype2"],
+                    "unequal_cnt": col["unequal_cnt"],
+                    "max_diff": col["max_diff"],
+                    "null_diff": col["null_diff"],
+                }
+                for col in column_stats
+                if not col["all_match"]
+            ],
+        },
+        "df1_unique_rows": {
+            "has_rows": df1_unq_sample is not None and len(df1_unq_sample) > 0,
+            "rows": df1_unq_sample,
+            "columns": list(df1_unq_rows_samples[0].columns)
+            if df1_unq_rows_samples
+            else [],
+        },
+        "df2_unique_rows": {
+            "has_rows": df2_unq_sample is not None and len(df2_unq_sample) > 0,
+            "rows": df2_unq_sample,
+            "columns": list(df2_unq_rows_samples[0].columns)
+            if df2_unq_rows_samples
+            else [],
+        },
+    }
+
+    # Render the report
+    rpt = render("report_template.j2", **template_data)
+
+    # Handle HTML output if requested
     if html_file:
-        html_report = rpt.replace("\n", "<br>").replace(" ", "&nbsp;")
-        html_report = f"<pre>{html_report}</pre>"
-        with open(html_file, "w") as f:
-            f.write(html_report)
+        save_html_report(rpt, html_file)
 
     return rpt
 

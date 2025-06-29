@@ -1378,25 +1378,27 @@ def test_integer_column_names():
 
 
 @mock.patch("datacompy.core.render")
-def test_save_html(mock_render):
+@mock.patch("datacompy.core.save_html_report")
+def test_save_html(mock_save_html, mock_render):
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     compare = datacompy.Compare(df1, df2, join_columns=["a"])
 
-    m = mock.mock_open()
-    with mock.patch("datacompy.core.open", m, create=True):
-        # assert without HTML call
-        compare.report()
-        assert mock_render.call_count == 4
-        m.assert_not_called()
+    # Test without HTML file
+    compare.report()
+    mock_render.assert_called_once()
+    mock_save_html.assert_not_called()
 
     mock_render.reset_mock()
-    m = mock.mock_open()
-    with mock.patch("datacompy.core.open", m, create=True):
-        # assert with HTML call
-        compare.report(html_file="test.html")
-        assert mock_render.call_count == 4
-        m.assert_called_with("test.html", "w")
+    mock_save_html.reset_mock()
+
+    # Test with HTML file
+    compare.report(html_file="test.html")
+    mock_render.assert_called_once()
+    mock_save_html.assert_called_once()
+    args, _ = mock_save_html.call_args
+    assert len(args) == 2
+    assert args[1] == "test.html"  # The filename
 
 
 def test_full_join_counts_no_matches():

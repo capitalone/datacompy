@@ -22,14 +22,19 @@ two dataframes.
 """
 
 import logging
-import os
 from typing import Any, Dict, List, cast
 
 import numpy as np
 import pandas as pd
 from ordered_set import OrderedSet
 
-from datacompy.base import BaseCompare, temp_column_name
+from datacompy.base import (
+    BaseCompare,
+    df_to_str,
+    render,
+    save_html_report,
+    temp_column_name,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -627,8 +632,7 @@ class Compare(BaseCompare):
     ) -> str:
         """Return a string representation of a report.
 
-        The representation can
-        then be printed or saved to a file.
+        The representation can then be printed or saved to a file.
 
         Parameters
         ----------
@@ -646,76 +650,120 @@ class Compare(BaseCompare):
         str
             The report, formatted kinda nicely.
         """
+        # Prepare data for the template
+        template_data = {
+            "column_summary": {
+                "common_columns": len(self.intersect_columns()),
+                "df1_unique": len(self.df1_unq_columns()),
+                "df2_unique": len(self.df2_unq_columns()),
+                "df1_name": self.df1_name,
+                "df2_name": self.df2_name,
+            },
+            "row_summary": {
+                "match_columns": "index"
+                if self.on_index
+                else ", ".join(self.join_columns),
+                "abs_tol": self.abs_tol,
+                "rel_tol": self.rel_tol,
+                "common_rows": self.intersect_rows.shape[0],
+                "df1_unique": self.df1_unq_rows.shape[0],
+                "df2_unique": self.df2_unq_rows.shape[0],
+                "unequal_rows": self.intersect_rows.shape[0]
+                - self.count_matching_rows(),
+                "equal_rows": self.count_matching_rows(),
+                "df1_name": self.df1_name,
+                "df2_name": self.df2_name,
+                "has_duplicates": "Yes" if self._any_dupes else "No",
+            },
+            "column_comparison": {
+                "unequal_columns": len(
+                    [col for col in self.column_stats if col["unequal_cnt"] > 0]
+                ),
+                "equal_columns": len(
+                    [col for col in self.column_stats if col["unequal_cnt"] == 0]
+                ),
+                "unequal_values": sum(col["unequal_cnt"] for col in self.column_stats),
+            },
+            "df1_name": self.df1_name,
+            "df2_name": self.df2_name,
+            "df1_shape": self.df1.shape,
+            "df2_shape": self.df2.shape,
+            "column_stats": self.column_stats,
+            "sample_count": sample_count,
+            "column_count": column_count,
+            "df_to_str": lambda x: df_to_str(x, on_index=self.on_index),
+            "mismatch_stats": {
+                "has_mismatches": any(
+                    not stat["all_match"] for stat in self.column_stats
+                ),
+                "has_samples": any(not stat["all_match"] for stat in self.column_stats)
+                and sample_count > 0,
+                "samples": [
+                    self.sample_mismatch(stat["column"], sample_count).to_string()
+                    for stat in self.column_stats
+                    if not stat["all_match"]
+                ][:sample_count],
+                "df1_name": self.df1_name,
+                "df2_name": self.df2_name,
+                "stats": [
+                    {
+                        "column": stat["column"],
+                        "dtype1": str(stat["dtype1"])
+                        .replace("dtype('", "")
+                        .replace("')", ""),
+                        "dtype2": str(stat["dtype2"])
+                        .replace("dtype('", "")
+                        .replace("')", ""),
+                        "unequal_cnt": stat["unequal_cnt"],
+                        "max_diff": stat["max_diff"],
+                        "null_diff": stat["null_diff"],
+                    }
+                    for stat in self.column_stats
+                    if not stat["all_match"]
+                ],
+            },
+        }
 
-        def df_to_str(pdf: pd.DataFrame) -> str:
-            if not self.on_index:
-                pdf = pdf.reset_index(drop=True)
-            return pdf.to_string()
-
-        # Header
-        report = render("header.txt")
-        df_header = pd.DataFrame(
-            {
-                "DataFrame": [self.df1_name, self.df2_name],
-                "Columns": [self.df1.shape[1], self.df2.shape[1]],
-                "Rows": [self.df1.shape[0], self.df2.shape[0]],
+        # Add favored summary if available
+        if hasattr(self, "favored_summary"):
+            template_data["favored_summary"] = {
+                "common_columns": len(self.intersect_columns()),
+                "df1_unique": len(self.df1_unq_columns()),
+                "df2_unique": len(self.df2_unq_columns()),
+                "df1_name": self.df1_name,
+                "df2_name": self.df2_name,
+                "df1_higher_count": sum(
+                    1
+                    for col in self.column_stats
+                    if col.get("df1_count", 0) > col.get("df2_count", 0)
+                ),
+                "df2_higher_count": sum(
+                    1
+                    for col in self.column_stats
+                    if col.get("df2_count", 0) > col.get("df1_count", 0)
+                ),
+                "equal_count": sum(
+                    1
+                    for col in self.column_stats
+                    if col.get("df1_count", 0) == col.get("df2_count", 0)
+                ),
             }
-        )
-        report += df_header[["DataFrame", "Columns", "Rows"]].to_string()
-        report += "\n\n"
 
-        # Column Summary
-        report += render(
-            "column_summary.txt",
-            len(self.intersect_columns()),
-            f"{len(self.df1_unq_columns())} {self.df1_unq_columns().items}",
-            f"{len(self.df2_unq_columns())} {self.df2_unq_columns().items}",
-            self.df1_name,
-            self.df2_name,
-        )
-
-        # Row Summary
-        if self.on_index:
-            match_on = "index"
-        else:
-            match_on = ", ".join(self.join_columns)
-        report += render(
-            "row_summary.txt",
-            match_on,
-            self.abs_tol,
-            self.rel_tol,
-            self.intersect_rows.shape[0],
-            self.df1_unq_rows.shape[0],
-            self.df2_unq_rows.shape[0],
-            self.intersect_rows.shape[0] - self.count_matching_rows(),
-            self.count_matching_rows(),
-            self.df1_name,
-            self.df2_name,
-            "Yes" if self._any_dupes else "No",
-        )
-
-        # Column Matching
-        report += render(
-            "column_comparison.txt",
-            len([col for col in self.column_stats if col["unequal_cnt"] > 0]),
-            len([col for col in self.column_stats if col["unequal_cnt"] == 0]),
-            sum(col["unequal_cnt"] for col in self.column_stats),
-        )
-
-        match_stats = []
+        # Prepare mismatch data for the template
+        mismatch_stats = []
         match_sample = []
         any_mismatch = False
         for column in self.column_stats:
             if not column["all_match"]:
                 any_mismatch = True
-                match_stats.append(
+                mismatch_stats.append(
                     {
-                        "Column": column["column"],
-                        f"{self.df1_name} dtype": column["dtype1"],
-                        f"{self.df2_name} dtype": column["dtype2"],
-                        "# Unequal": column["unequal_cnt"],
-                        "Max Diff": column["max_diff"],
-                        "# Null Diff": column["null_diff"],
+                        "column": column["column"],
+                        "dtype1": column["dtype1"],
+                        "dtype2": column["dtype2"],
+                        "unequal_cnt": column["unequal_cnt"],
+                        "max_diff": column["max_diff"],
+                        "null_diff": column["null_diff"],
                     }
                 )
                 if column["unequal_cnt"] > 0:
@@ -725,90 +773,59 @@ class Compare(BaseCompare):
                         )
                     )
 
+        # Add mismatch data to template data
         if any_mismatch:
-            report += "Columns with Unequal Values or Types\n"
-            report += "------------------------------------\n"
-            report += "\n"
-            df_match_stats = pd.DataFrame(match_stats)
-            df_match_stats.sort_values("Column", inplace=True)
-            # Have to specify again for sorting
-            report += df_match_stats[
-                [
-                    "Column",
-                    f"{self.df1_name} dtype",
-                    f"{self.df2_name} dtype",
-                    "# Unequal",
-                    "Max Diff",
-                    "# Null Diff",
-                ]
-            ].to_string()
-            report += "\n\n"
+            template_data["mismatch_stats"] = {
+                "has_mismatches": True,
+                "stats": sorted(mismatch_stats, key=lambda x: x["column"]),
+                "df1_name": self.df1_name,
+                "df2_name": self.df2_name,
+                "samples": match_sample,
+                "has_samples": len(match_sample) > 0 and sample_count > 0,
+            }
+        else:
+            template_data["mismatch_stats"] = {
+                "has_mismatches": False,
+                "has_samples": False,
+            }
 
-            if sample_count > 0:
-                report += "Sample Rows with Unequal Values\n"
-                report += "-------------------------------\n"
-                report += "\n"
-                for sample in match_sample:
-                    report += df_to_str(sample)
-                    report += "\n\n"
+        # Add sample data to template data
+        template_data.update(
+            {
+                "sample_count": sample_count,
+                "column_count": column_count,
+                "df1_unique_rows": {
+                    "has_rows": min(sample_count, self.df1_unq_rows.shape[0]) > 0,
+                    "rows": self.df1_unq_rows.sample(
+                        min(sample_count, self.df1_unq_rows.shape[0])
+                    ).to_dict("records")
+                    if self.df1_unq_rows.shape[0] > 0
+                    else [],
+                    "columns": list(self.df1_unq_rows.columns[:column_count])
+                    if self.df1_unq_rows.shape[0] > 0
+                    else [],
+                },
+                "df2_unique_rows": {
+                    "has_rows": min(sample_count, self.df2_unq_rows.shape[0]) > 0,
+                    "rows": self.df2_unq_rows.sample(
+                        min(sample_count, self.df2_unq_rows.shape[0])
+                    ).to_dict("records")
+                    if self.df2_unq_rows.shape[0] > 0
+                    else [],
+                    "columns": list(self.df2_unq_rows.columns[:column_count])
+                    if self.df2_unq_rows.shape[0] > 0
+                    else [],
+                },
+            }
+        )
 
-        if min(sample_count, self.df1_unq_rows.shape[0]) > 0:
-            report += (
-                f"Sample Rows Only in {self.df1_name} (First {column_count} Columns)\n"
-            )
-            report += (
-                f"---------------------------------------{'-' * len(self.df1_name)}\n"
-            )
-            report += "\n"
-            columns = self.df1_unq_rows.columns[:column_count]
-            unq_count = min(sample_count, self.df1_unq_rows.shape[0])
-            report += df_to_str(self.df1_unq_rows.sample(unq_count)[columns])
-            report += "\n\n"
-
-        if min(sample_count, self.df2_unq_rows.shape[0]) > 0:
-            report += (
-                f"Sample Rows Only in {self.df2_name} (First {column_count} Columns)\n"
-            )
-            report += (
-                f"---------------------------------------{'-' * len(self.df2_name)}\n"
-            )
-            report += "\n"
-            columns = self.df2_unq_rows.columns[:column_count]
-            unq_count = min(sample_count, self.df2_unq_rows.shape[0])
-            report += df_to_str(self.df2_unq_rows.sample(unq_count)[columns])
-            report += "\n\n"
+        # Render the main report
+        report = render("report_template.j2", **template_data)
 
         if html_file:
-            html_report = report.replace("\n", "<br>").replace(" ", "&nbsp;")
-            html_report = f"<pre>{html_report}</pre>"
-            with open(html_file, "w") as f:
-                f.write(html_report)
+            save_html_report(report, html_file)
 
         return report
-
-
-def render(filename: str, *fields: int | float | str) -> str:
-    """Render out an individual template.
-
-    This basically just reads in a
-    template file, and applies ``.format()`` on the fields.
-
-    Parameters
-    ----------
-    filename : str
-        The file that contains the template.  Will automagically prepend the
-        templates directory before opening
-    fields : list
-        Fields to be rendered out in the template
-
-    Returns
-    -------
-    str
-        The fully rendered out file.
-    """
-    this_dir = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(this_dir, "templates", filename)) as file_open:
-        return file_open.read().format(*fields)
 
 
 def columns_equal(
@@ -879,9 +896,8 @@ def columns_equal(
     if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(
         col_2
     ).startswith("mixed"):
-        if all(isinstance(item, (list, np.ndarray)) for item in col_1) and all(  # noqa: UP038
-            isinstance(item, (list, np.ndarray))  # noqa: UP038
-            for item in col_2
+        if all(isinstance(item, list | np.ndarray) for item in col_1) and all(
+            isinstance(item, list | np.ndarray) for item in col_2
         ):  # compare list like
             # join together and apply np.array_equal
             temp_df = pd.DataFrame({"col_1": col_1, "col_2": col_2})

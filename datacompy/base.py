@@ -23,8 +23,10 @@ two dataframes.
 
 import logging
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any
 
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ordered_set import OrderedSet
 
 LOG = logging.getLogger(__name__)
@@ -163,6 +165,40 @@ class BaseCompare(ABC):
         return set(self.join_columns) == set(self.df1.columns) == set(self.df2.columns)
 
 
+def render(template_name: str, **context: Any) -> str:
+    """Render a template using Jinja2.
+
+    Parameters
+    ----------
+    template_name : str
+        The name of the template file to render (with or without .j2 extension)
+    **context : dict
+        The context variables to pass to the template
+
+    Returns
+    -------
+    str
+        The rendered template
+    """
+    # Initialize Jinja2 environment
+    template_path = Path(__file__).parent / "templates"
+
+    # Create Jinja2 environment
+    env = Environment(
+        loader=FileSystemLoader(template_path),
+        autoescape=select_autoescape(),
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+
+    # Ensure template has .j2 extension
+    if not template_name.endswith(".j2"):
+        template_name = f"{template_name}.j2"
+
+    template = env.get_template(template_name)
+    return template.render(**context).strip()
+
+
 def temp_column_name(*dataframes) -> str:
     """Get a temp column name that isn't included in columns of any dataframes.
 
@@ -178,16 +214,70 @@ def temp_column_name(*dataframes) -> str:
     """
     i = 0
     columns = []
-    for dataframe in dataframes:
-        columns = columns + list(dataframe.columns)
-    columns = set(columns)
-
+    for df in dataframes:
+        if df is not None:
+            columns.extend(df.columns)
     while True:
-        temp_column = f"_temp_{i}"
-        unique = True
+        tmp = f"_temp_{i}"
+        if tmp not in columns:
+            return tmp
+        i += 1
 
-        if temp_column in columns:
-            i += 1
-            unique = False
-        if unique:
-            return temp_column
+
+def save_html_report(report: str, html_file: str | Path) -> None:
+    """Save a text report as an HTML file.
+
+    Parameters
+    ----------
+    report : str
+        The text report to convert to HTML
+    html_file : str or Path
+        The path where the HTML file should be saved
+    """
+    html_file = Path(html_file)
+    html_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # Create a simple HTML template with the report in a pre tag
+    html_content = f"""<html><head><title>DataComPy Report</title></head><body><pre>{report}</pre></body></html>"""
+    # Save the HTML file
+    html_file.write_text(html_content, encoding="utf-8")
+
+
+def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) -> str:
+    """Convert a DataFrame to a string representation.
+
+    This is a centralized function to handle DataFrame to string conversion for different
+    DataFrame types (pandas, Spark, Polars, etc.)
+
+    Parameters
+    ----------
+    df : Any
+        The DataFrame to convert to string. Can be pandas, Spark, or Polars DataFrame.
+    sample_count : int, optional
+        For distributed DataFrames (like Spark), limit the number of rows to convert.
+    on_index : bool, default False
+        If True, include the index in the output.
+
+    Returns
+    -------
+    str
+        String representation of the DataFrame
+    """
+    # Handle pandas DataFrame
+    if hasattr(df, "to_string"):
+        if not on_index and hasattr(df, "reset_index"):
+            df = df.reset_index(drop=True)
+        return df.to_string()
+
+    # Handle Spark DataFrame
+    if hasattr(df, "toPandas"):
+        if sample_count is not None:
+            df = df.limit(sample_count)
+        return df.toPandas().to_string()
+
+    # Handle Polars DataFrame
+    if hasattr(df, "to_pandas"):
+        return df.to_pandas().to_string()
+
+    # Fallback to str() if we can't determine the type
+    return str(df)

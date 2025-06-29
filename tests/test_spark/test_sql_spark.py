@@ -1320,25 +1320,27 @@ def test_integer_column_names(spark_session):
 
 
 @mock.patch("datacompy.spark.sql.render")
-def test_save_html(mock_render, spark_session):
+@mock.patch("datacompy.spark.sql.save_html_report")
+def test_save_html(mock_save_html, mock_render, spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
 
-    m = mock.mock_open()
-    with mock.patch("datacompy.spark.sql.open", m, create=True):
-        # assert without HTML call
-        compare.report()
-        assert mock_render.call_count == 4
-        m.assert_not_called()
+    # Test without HTML file
+    compare.report()
+    mock_render.assert_called_once()
+    mock_save_html.assert_not_called()
 
     mock_render.reset_mock()
-    m = mock.mock_open()
-    with mock.patch("datacompy.spark.sql.open", m, create=True):
-        # assert with HTML call
-        compare.report(html_file="test.html")
-        assert mock_render.call_count == 4
-        m.assert_called_with("test.html", "w")
+    mock_save_html.reset_mock()
+
+    # Test with HTML file
+    compare.report(html_file="test.html")
+    mock_render.assert_called_once()
+    mock_save_html.assert_called_once()
+    args, _ = mock_save_html.call_args
+    assert len(args) == 2
+    assert args[1] == "test.html"  # The filename
 
 
 def test_unicode_columns(spark_session):
