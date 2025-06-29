@@ -737,25 +737,27 @@ class PolarsCompare(BaseCompare):
                     "column_count": column_count,
                     "df1_unique_rows": {
                         "has_rows": min(sample_count, self.df1_unq_rows.shape[0]) > 0,
-                        "rows": self.df1_unq_rows.sample(
-                            min(sample_count, self.df1_unq_rows.shape[0])
-                        ).to_dicts()
+                        "rows": df_to_str(
+                            self.df1_unq_rows[:, :column_count],
+                            sample_count=min(sample_count, self.df1_unq_rows.shape[0]),
+                        )
                         if self.df1_unq_rows.shape[0] > 0
-                        else [],
+                        else "",
                         "columns": list(self.df1_unq_rows.columns[:column_count])
                         if self.df1_unq_rows.shape[0] > 0
-                        else [],
+                        else "",
                     },
                     "df2_unique_rows": {
                         "has_rows": min(sample_count, self.df2_unq_rows.shape[0]) > 0,
-                        "rows": self.df2_unq_rows.sample(
-                            min(sample_count, self.df2_unq_rows.shape[0])
-                        ).to_dicts()
+                        "rows": df_to_str(
+                            self.df2_unq_rows[:, :column_count],
+                            sample_count=min(sample_count, self.df2_unq_rows.shape[0]),
+                        )
                         if self.df2_unq_rows.shape[0] > 0
-                        else [],
+                        else "",
                         "columns": list(self.df2_unq_rows.columns[:column_count])
                         if self.df2_unq_rows.shape[0] > 0
-                        else [],
+                        else "",
                     },
                 }
             )

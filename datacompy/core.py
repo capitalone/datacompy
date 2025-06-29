@@ -817,31 +817,38 @@ class Compare(BaseCompare):
             }
 
         # Add sample data to template data
+        min_sample_count_df1 = min(sample_count, self.df1_unq_rows.shape[0])
+        min_sample_count_df2 = min(sample_count, self.df2_unq_rows.shape[0])
+        column_count_df1 = min(column_count, self.df1_unq_rows.shape[1])
+        column_count_df2 = min(column_count, self.df2_unq_rows.shape[1])
+
         template_data.update(
             {
                 "sample_count": sample_count,
                 "column_count": column_count,
                 "df1_unique_rows": {
-                    "has_rows": min(sample_count, self.df1_unq_rows.shape[0]) > 0,
-                    "rows": self.df1_unq_rows.sample(
-                        min(sample_count, self.df1_unq_rows.shape[0])
-                    ).to_dict("records")
+                    "has_rows": min_sample_count_df1 > 0,
+                    "rows": df_to_str(
+                        self.df1_unq_rows.iloc[:, :column_count_df1],
+                        sample_count=min_sample_count_df1,
+                    )
                     if self.df1_unq_rows.shape[0] > 0
-                    else [],
-                    "columns": list(self.df1_unq_rows.columns[:column_count])
+                    else "",
+                    "columns": list(self.df1_unq_rows.columns[:column_count_df1])
                     if self.df1_unq_rows.shape[0] > 0
-                    else [],
+                    else "",
                 },
                 "df2_unique_rows": {
-                    "has_rows": min(sample_count, self.df2_unq_rows.shape[0]) > 0,
-                    "rows": self.df2_unq_rows.sample(
-                        min(sample_count, self.df2_unq_rows.shape[0])
-                    ).to_dict("records")
+                    "has_rows": min_sample_count_df2 > 0,
+                    "rows": df_to_str(
+                        self.df2_unq_rows.iloc[:, :column_count_df2],
+                        sample_count=min_sample_count_df2,
+                    )
                     if self.df2_unq_rows.shape[0] > 0
-                    else [],
-                    "columns": list(self.df2_unq_rows.columns[:column_count])
+                    else "",
+                    "columns": list(self.df2_unq_rows.columns[:column_count_df2])
                     if self.df2_unq_rows.shape[0] > 0
-                    else [],
+                    else "",
                 },
             }
         )

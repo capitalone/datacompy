@@ -899,27 +899,31 @@ class SparkSQLCompare(BaseCompare):
                     "column_count": column_count,
                     "df1_unique_rows": {
                         "has_rows": min(sample_count, df1_unq_count) > 0,
-                        "rows": [
-                            row.asDict()
-                            for row in self.df1_unq_rows.limit(sample_count).collect()
-                        ]
+                        "rows": df_to_str(
+                            self.df1_unq_rows.select(
+                                self.df1_unq_rows.columns[:column_count]
+                            ),
+                            sample_count=min(sample_count, df1_unq_count),
+                        )
                         if df1_unq_count > 0
-                        else [],
+                        else "",
                         "columns": self.df1_unq_rows.columns[:column_count]
                         if df1_unq_count > 0
-                        else [],
+                        else "",
                     },
                     "df2_unique_rows": {
                         "has_rows": min(sample_count, df2_unq_count) > 0,
-                        "rows": [
-                            row.asDict()
-                            for row in self.df2_unq_rows.limit(sample_count).collect()
-                        ]
+                        "rows": df_to_str(
+                            self.df2_unq_rows.select(
+                                self.df2_unq_rows.columns[:column_count]
+                            ),
+                            sample_count=min(sample_count, df2_unq_count),
+                        )
                         if df2_unq_count > 0
-                        else [],
+                        else "",
                         "columns": self.df2_unq_rows.columns[:column_count]
                         if df2_unq_count > 0
-                        else [],
+                        else "",
                     },
                 }
             )

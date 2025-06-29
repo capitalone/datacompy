@@ -561,16 +561,12 @@ def report(
         df1_unq_sample = _sample(
             pd.concat(df1_unq_rows_samples), sample_count=sample_count
         )
-        if not df1_unq_sample.empty:
-            df1_unq_sample = df1_unq_sample.to_dict("records")
 
     df2_unq_sample = None
     if df2_unq_rows_samples:
         df2_unq_sample = _sample(
             pd.concat(df2_unq_rows_samples), sample_count=sample_count
         )
-        if not df2_unq_sample.empty:
-            df2_unq_sample = df2_unq_sample.to_dict("records")
 
     # Prepare template data
     template_data = {
@@ -637,14 +633,14 @@ def report(
         },
         "df1_unique_rows": {
             "has_rows": df1_unq_sample is not None and len(df1_unq_sample) > 0,
-            "rows": df1_unq_sample,
+            "rows": df_to_str(df1_unq_sample, sample_count=sample_count),
             "columns": list(df1_unq_rows_samples[0].columns)
             if df1_unq_rows_samples
             else [],
         },
         "df2_unique_rows": {
             "has_rows": df2_unq_sample is not None and len(df2_unq_sample) > 0,
-            "rows": df2_unq_sample,
+            "rows": df_to_str(df2_unq_sample, sample_count=sample_count),
             "columns": list(df2_unq_rows_samples[0].columns)
             if df2_unq_rows_samples
             else [],

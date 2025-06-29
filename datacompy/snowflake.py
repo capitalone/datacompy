@@ -881,25 +881,38 @@ class SnowflakeCompare(BaseCompare):
 
         # Add sample data to template data
         if hasattr(self, "df1_unq_rows") and hasattr(self, "df2_unq_rows"):
-            # For Snowflake, we'll just include the column names and let the template handle display
-            # since we can't easily convert Snowflake DataFrames to Python objects
+            # Convert Snowflake DataFrames to pandas for string representation
             template_data.update(
                 {
                     "sample_count": sample_count,
                     "column_count": column_count,
                     "df1_unique_rows": {
                         "has_rows": min(sample_count, df1_unq_count) > 0,
-                        "rows": [],
-                        "columns": self.df1_unq_rows.columns[:column_count]
+                        "rows": df_to_str(
+                            self.df1_unq_rows.select(
+                                self.df1_unq_rows.columns[:column_count]
+                            ),
+                            sample_count=min(sample_count, df1_unq_count),
+                        )
                         if df1_unq_count > 0
-                        else [],
+                        else "",
+                        "columns": list(self.df1_unq_rows.columns[:column_count])
+                        if df1_unq_count > 0
+                        else "",
                     },
                     "df2_unique_rows": {
                         "has_rows": min(sample_count, df2_unq_count) > 0,
-                        "rows": [],
-                        "columns": self.df2_unq_rows.columns[:column_count]
+                        "rows": df_to_str(
+                            self.df2_unq_rows.select(
+                                self.df2_unq_rows.columns[:column_count]
+                            ),
+                            sample_count=min(sample_count, df2_unq_count),
+                        )
                         if df2_unq_count > 0
-                        else [],
+                        else "",
+                        "columns": list(self.df2_unq_rows.columns[:column_count])
+                        if df2_unq_count > 0
+                        else "",
                     },
                 }
             )

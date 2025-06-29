@@ -73,51 +73,18 @@ Sample Rows with Unequal Values
 
 {% endif %}
 
-{% macro format_columns(columns, row=None) %}
-    {%- if row is none -%}
-        {%- for col in columns -%}
-            {{ '%10s'|format(col) }}
-            {%- if not loop.last %} {% endif -%}
-        {%- endfor -%}
-    {%- else -%}
-        {%- for col in columns -%}
-            {{ '%10s'|format(row[col]) }}
-            {%- if not loop.last %} {% endif -%}
-        {%- endfor -%}
-    {%- endif -%}
-{% endmacro %}
-
-{% macro format_underline(columns) %}
-    {%- for _ in columns -%}
-        {{ '----------' }}
-        {%- if not loop.last %} {% endif -%}
-    {%- endfor -%}
-{% endmacro %}
-
 {% if df1_unique_rows.has_rows %}
 Sample Rows Only in {{ df1_name }} (First {{ column_count }} Columns)
 {{ '---------------------------------------' + '-' * df1_name|length }}
 
-{% set df = df1_unique_rows %}
-{% set columns = df.columns %}
-{{ format_columns(columns) }}
-{{ format_underline(columns) }}
-{% for row in df.rows %}
-{{ format_columns(columns, row) }}
-{% endfor %}
-
+{% set rows = df1_unique_rows.rows %}
+{{ rows }}
 {% endif %}
 
 {% if df2_unique_rows.has_rows %}
 Sample Rows Only in {{ df2_name }} (First {{ column_count }} Columns)
 {{ '---------------------------------------' + '-' * df2_name|length }}
 
-{% set df = df2_unique_rows %}
-{% set columns = df.columns %}
-{{ format_columns(columns) }}
-{{ format_underline(columns) }}
-{% for row in df.rows %}
-{{ format_columns(columns, row) }}
-{% endfor %}
-
+{% set rows = df2_unique_rows.rows %}
+{{ rows }}
 {% endif %}
