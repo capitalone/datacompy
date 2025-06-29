@@ -724,31 +724,6 @@ class Compare(BaseCompare):
             },
         }
 
-        # Add favored summary if available
-        if hasattr(self, "favored_summary"):
-            template_data["favored_summary"] = {
-                "common_columns": len(self.intersect_columns()),
-                "df1_unique": len(self.df1_unq_columns()),
-                "df2_unique": len(self.df2_unq_columns()),
-                "df1_name": self.df1_name,
-                "df2_name": self.df2_name,
-                "df1_higher_count": sum(
-                    1
-                    for col in self.column_stats
-                    if col.get("df1_count", 0) > col.get("df2_count", 0)
-                ),
-                "df2_higher_count": sum(
-                    1
-                    for col in self.column_stats
-                    if col.get("df2_count", 0) > col.get("df1_count", 0)
-                ),
-                "equal_count": sum(
-                    1
-                    for col in self.column_stats
-                    if col.get("df1_count", 0) == col.get("df2_count", 0)
-                ),
-            }
-
         # Prepare mismatch data for the template
         mismatch_stats = []
         match_sample = []

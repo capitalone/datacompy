@@ -17,18 +17,6 @@ Number of columns in common: {{ column_summary.common_columns }}
 Number of columns in {{ column_summary.df1_name }} but not in {{ column_summary.df2_name }}: {{ column_summary.df1_unique }}
 Number of columns in {{ column_summary.df2_name }} but not in {{ column_summary.df1_name }}: {{ column_summary.df2_unique }}
 
-{% if favored_summary is defined %}
-Favored Column Summary
-----------------------
-
-Number of columns in common: {{ favored_summary.common_columns }}
-Number of columns in {{ favored_summary.df1_name }} but not in {{ favored_summary.df2_name }}: {{ favored_summary.df1_unique }}
-Number of columns in {{ favored_summary.df2_name }} but not in {{ favored_summary.df1_name }}: {{ favored_summary.df2_unique }}
-Number of columns with higher {{ favored_summary.df1_name }} count than {{ favored_summary.df2_name }} count: {{ favored_summary.df1_higher_count }}
-Number of columns with higher {{ favored_summary.df2_name }} count than {{ favored_summary.df1_name }} count: {{ favored_summary.df2_higher_count }}
-Number of columns with equal counts: {{ favored_summary.equal_count }}
-{% endif %}
-
 Row Summary
 -----------
 

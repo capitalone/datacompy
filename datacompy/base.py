@@ -269,7 +269,7 @@ def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) 
             df = df.reset_index(drop=True)
         return df.to_string()
 
-    # Handle Spark DataFrame
+    # Handle Spark DataFrame and Snowflake DataFrame
     if hasattr(df, "toPandas"):
         if sample_count is not None:
             df = df.limit(sample_count)
