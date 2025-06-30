@@ -2,9 +2,18 @@
 Tests for base.py
 """
 
+import sys
+from pathlib import Path
+
 import pandas as pd
+import pytest
+
+# Add parent directory to path to allow importing from datacompy
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from datacompy.base import (
     BaseCompare,
+    _resolve_template_path,
     df_to_str,
     render,
     save_html_report,
@@ -240,3 +249,105 @@ def test_base_compare_implementation():
 
     test.df2 = pd.DataFrame({"id": [1, 2], "name": ["a", "b"]})
     assert not test.only_join_columns()
+
+
+def test_resolve_absolute_path(tmp_path):
+    """Test resolving an absolute path to a template file."""
+    # Create a test template file
+    template_file = tmp_path / "test_template.txt"
+    template_file.write_text("Test template")
+
+    # Test resolving the absolute path
+    template_dir, resolved_name = _resolve_template_path(str(template_file))
+
+    assert template_dir == str(template_file.parent)
+    assert resolved_name == template_file.name
+
+
+def test_resolve_relative_path(tmp_path, monkeypatch):
+    """Test resolving a relative path to a template file."""
+    # Create a test templates directory and file
+    templates_dir = tmp_path / "templates"
+    templates_dir.mkdir()
+    template_file = templates_dir / "test_template.j2"
+    template_file.write_text("Test template")
+
+    # Mock the __file__ to point to our test directory
+    monkeypatch.setattr("datacompy.base.__file__", str(tmp_path / "base.py"))
+
+    # Test resolving the relative path
+    template_dir, resolved_name = _resolve_template_path("test_template.j2")
+
+    assert template_dir == str(templates_dir)
+    assert resolved_name == "test_template.j2"
+
+
+def test_resolve_with_j2_extension(tmp_path, monkeypatch):
+    """Test resolving a template without .j2 extension."""
+    # Create a test templates directory and file with .j2 extension
+    templates_dir = tmp_path / "templates"
+    templates_dir.mkdir()
+    template_file = templates_dir / "test_template.j2"
+    template_file.write_text("Test template")
+
+    # Mock the __file__ to point to our test directory
+    monkeypatch.setattr("datacompy.base.__file__", str(tmp_path / "base.py"))
+
+    # Test resolving without .j2 extension
+    template_dir, resolved_name = _resolve_template_path("test_template")
+
+    assert template_dir == str(templates_dir)
+    assert resolved_name == "test_template.j2"
+
+
+def test_resolve_without_j2_extension(tmp_path, monkeypatch):
+    """Test resolving a template that doesn't have .j2 extension."""
+    # Create a test templates directory and file without .j2 extension
+    templates_dir = tmp_path / "templates"
+    templates_dir.mkdir()
+    template_file = templates_dir / "test_template"
+    template_file.write_text("Test template")
+
+    # Mock the __file__ to point to our test directory
+    monkeypatch.setattr("datacompy.base.__file__", str(tmp_path / "base.py"))
+
+    # Test resolving with .j2 extension
+    template_dir, resolved_name = _resolve_template_path("test_template.j2")
+
+    assert template_dir == str(templates_dir)
+    assert resolved_name == "test_template"
+
+
+def test_resolve_nonexistent_file(tmp_path, monkeypatch):
+    """Test resolving a non-existent template file raises FileNotFoundError."""
+    # Mock the __file__ to point to our test directory
+    monkeypatch.setattr("datacompy.base.__file__", str(tmp_path / "base.py"))
+
+    # Test with a non-existent file
+    with pytest.raises(FileNotFoundError) as excinfo:
+        _resolve_template_path("nonexistent_template.j2")
+
+    # Check that the error message contains the expected paths
+    error_msg = str(excinfo.value)
+    assert "nonexistent_template.j2" in error_msg
+    assert "tried:" in error_msg
+
+
+def test_resolve_with_subdirectories(tmp_path, monkeypatch):
+    """Test resolving a template in a subdirectory."""
+    # Create a test templates directory with subdirectories
+    templates_dir = tmp_path / "templates"
+    sub_dir = templates_dir / "subdir"
+    sub_dir.mkdir(parents=True)
+
+    template_file = sub_dir / "test_template.j2"
+    template_file.write_text("Test template")
+
+    # Mock the __file__ to point to our test directory
+    monkeypatch.setattr("datacompy.base.__file__", str(tmp_path / "base.py"))
+
+    # Test resolving with a relative path
+    template_dir, resolved_name = _resolve_template_path("subdir/test_template.j2")
+
+    assert template_dir == str(templates_dir)
+    assert resolved_name == "subdir/test_template.j2"
