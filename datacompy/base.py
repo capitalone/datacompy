@@ -187,6 +187,49 @@ class BaseCompare(ABC):
         return set(self.join_columns) == set(self.df1.columns) == set(self.df2.columns)
 
 
+def _resolve_template_path(template_name: str) -> tuple[str, str]:
+    """Resolve template path and return (template_dir, template_file).
+
+    Handles both absolute and relative paths, and manages .j2 extension automatically.
+    """
+    template_path = Path(template_name)
+
+    # Handle absolute paths
+    if template_path.is_absolute():
+        if not template_path.exists():
+            raise FileNotFoundError(f"Template file not found: {template_path}")
+        return str(template_path.parent), template_path.name
+
+    # Handle relative paths in templates directory
+    template_dir = str(Path(__file__).parent / "templates")
+    template_file = str(template_path)
+    full_path = Path(template_dir) / template_file
+
+    # Try different file variations in order:
+    # 1. As given
+    # 2. With .j2 extension
+    # 3. Without .j2 extension (if input had it)
+    if full_path.exists():
+        return template_dir, template_file
+
+    j2_path = full_path.with_suffix(".j2")
+    if j2_path.exists():
+        return template_dir, j2_path.name
+
+    if template_file.endswith(".j2"):
+        base_path = full_path.with_suffix("")
+        if base_path.exists():
+            return template_dir, base_path.name
+
+    # If we get here, no variation exists
+    raise FileNotFoundError(
+        f"Template file not found: {template_name} "
+        f"(tried: {full_path}, {j2_path}"
+        + (f", {full_path.with_suffix('')}" if template_file.endswith(".j2") else "")
+        + ")"
+    )
+
+
 def render(template_name: str, **context: Any) -> str:
     """Render a template using Jinja2.
 
@@ -204,30 +247,13 @@ def render(template_name: str, **context: Any) -> str:
     -------
     str
         The rendered template
+
+    Raises
+    ------
+    FileNotFoundError
+        If the template file cannot be found in any of the expected locations
     """
-    # Convert to Path object
-    template_path = Path(template_name)
-
-    # Check if this is an absolute path to a template file
-    if template_path.is_absolute():
-        if not template_path.exists():
-            raise FileNotFoundError(f"Template file not found: {template_path}")
-        template_dir = str(template_path.parent)
-        template_file = template_path.name
-    else:
-        # Default templates directory
-        template_dir = str(Path(__file__).parent / "templates")
-        template_file = str(template_path)
-
-        # Check if template exists in the default location
-        full_path = Path(template_dir) / template_file
-        # Try without adding .j2 extension if it's already there and file doesn't exist
-        if (
-            not full_path.exists()
-            and not full_path.with_suffix(".j2").exists()
-            and template_file.endswith(".j2")
-        ):
-            template_file = template_file[:-3]
+    template_dir, template_file = _resolve_template_path(template_name)
 
     # Create Jinja2 environment
     env = Environment(
@@ -236,14 +262,6 @@ def render(template_name: str, **context: Any) -> str:
         trim_blocks=True,
         lstrip_blocks=True,
     )
-
-    # Ensure template has .j2 extension if needed
-    if (
-        not template_file.endswith(".j2")
-        and not (Path(template_dir) / template_file).exists()
-    ):
-        template_file = f"{template_file}.j2"
-
     template = env.get_template(template_file)
     return template.render(**context).strip()
 
