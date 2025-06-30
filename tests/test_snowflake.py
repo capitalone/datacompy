@@ -1594,7 +1594,7 @@ def test_custom_template_usage(snowpark_session):
         result = compare.report(template_path=template_path)
         assert "Custom Template" in result
         # Should list the column with mismatches (value)
-        assert "value" in result
+        assert "VALUE" in result
         # Should show False for column value (has mismatches)
         assert "False" in result
     finally:
@@ -1660,7 +1660,7 @@ def test_template_context_variables(snowpark_session):
         result = compare.report(template_path=template_path)
         assert "All required variables present" in result
         # Should list the column with mismatches (value)
-        assert "value" in result
+        assert "VALUE" in result
     finally:
         if os.path.exists(template_path):
             os.unlink(template_path)
