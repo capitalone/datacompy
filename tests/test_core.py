@@ -1398,10 +1398,15 @@ def test_save_html(mock_save_html, mock_render):
     render_kwargs = mock_render.call_args[1]
 
     # Verify important context variables are present
-    assert "sample_count" in render_kwargs
     assert "column_count" in render_kwargs
-    assert "column_stats" in render_kwargs
     assert "column_comparison" in render_kwargs
+    assert "column_summary" in render_kwargs
+    assert "df1_name" in render_kwargs
+    assert "df2_name" in render_kwargs
+    assert "df1_unique_rows" in render_kwargs
+    assert "df2_unique_rows" in render_kwargs
+    assert "mismatch_stats" in render_kwargs
+    assert "row_summary" in render_kwargs
 
     # Verify save_html_report was called with the correct arguments
     mock_save_html.assert_called_once_with("<html>test</html>", "test.html")
@@ -1420,9 +1425,11 @@ def test_custom_template_usage():
     # Create a simple test template
     with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
         tmp.write("Custom Template\n")
-        tmp.write("Columns: {{ column_stats|map(attribute='column')|join(', ') }}\n")
         tmp.write(
-            "Matches: {% for col in column_stats %}{% if not col.all_match %}False{% else %}True{% endif %}{% endfor %}"
+            "Columns: {{ mismatch_stats.stats|map(attribute='column')|join(', ') }}\n"
+        )
+        tmp.write(
+            "Matches: {% for col in mismatch_stats.stats %}{% if not col.unequal_cnt == 0 %}False{% else %}True{% endif %}{% endfor %}"
         )
         template_path = tmp.name
 
@@ -1430,8 +1437,9 @@ def test_custom_template_usage():
         # Test with custom template
         result = compare.report(template_path=template_path)
         assert "Custom Template" in result
-        assert "Columns: a, b" in result  # Columns should be listed
-        assert "Matches: TrueFalse" in result  # 'a' matches, 'b' doesn't
+        # 'a' is the join column, 'b' is the compared column
+        assert "Columns: b" in result  # Only mismatched columns are listed in stats
+        assert "Matches: False" in result  # 'b' doesn't match
     finally:
         # Clean up the temporary file
         if os.path.exists(template_path):
@@ -1481,19 +1489,22 @@ def test_template_context_variables():
     # Create a test template that checks for expected variables
     with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
         tmp.write(
-            "{% if column_stats is defined and df1_name is defined and df2_name is defined %}"
+            "{% if mismatch_stats is defined and df1_name is defined and df2_name is defined %}"
         )
         tmp.write("All required variables present\n")
         tmp.write("{% else %}")
         tmp.write("Missing required variables\n")
         tmp.write("{% endif %}")
-        tmp.write("Columns: {{ column_stats|map(attribute='column')|join(', ') }}")
+        tmp.write(
+            "Columns: {{ mismatch_stats.stats|map(attribute='column')|join(', ') }}"
+        )
         template_path = tmp.name
 
     try:
         result = compare.report(template_path=template_path)
         assert "All required variables present" in result
-        assert "Columns: a, b" in result
+        # Only column 'b' should be in the mismatch stats (since 'a' is the join column)
+        assert "Columns: b" in result
     finally:
         if os.path.exists(template_path):
             os.unlink(template_path)
