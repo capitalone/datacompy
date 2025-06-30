@@ -15,28 +15,66 @@ Available Template Variables
 
 The following variables are available in the template context:
 
-.. list-table:: Template Context Variables
-   :header-rows: 1
-   :widths: 30 70
+   +------------------------+--------------------------------------------------------------------------------+
+   | Variable               | Description                                                                    |
+   +========================+================================================================================+
+   | ``column_summary``     | Dict with column statistics including:                                         |
+   |                        |                                                                                |
+   |                        | - ``common_columns``: List of columns common to both dataframes                |
+   |                        | - ``df1_unique``: List of columns unique to df1                                |
+   |                        | - ``df2_unique``: List of columns unique to df2                                |
+   |                        | - ``df1_name``: Name of the first dataframe                                    |
+   |                        | - ``df2_name``: Name of the second dataframe                                   |
+   +------------------------+--------------------------------------------------------------------------------+
+   | ``row_summary``        | Dict with row statistics including:                                            |
+   |                        |                                                                                |
+   |                        | - ``match_columns``: List of columns used for matching                         |
+   |                        | - ``abs_tol``: Absolute tolerance between two values                           |
+   |                        | - ``rel_tol``: Relative tolerance between two values                           |
+   |                        | - ``common_rows``: Number of rows in common                                    |
+   |                        | - ``df1_unique``: Number of rows unique to df1                                 |
+   |                        | - ``df2_unique``: Number of rows unique to df2                                 |
+   |                        | - ``unequal_rows``: Number of rows with differences                            |
+   |                        | - ``df1_name``: Name of the first dataframe                                    |
+   |                        | - ``df2_name``: Name of the second dataframe                                   |
+   +------------------------+--------------------------------------------------------------------------------+
+   | ``column_comparison``  | Dict with column comparison stats:                                             |
+   |                        |                                                                                |
+   |                        | - ``unequal_columns``: List of columns with mismatches                         |
+   |                        | - ``equal_columns``: List of columns that match exactly                        |
+   |                        | - ``unequal_values``: Count of unequal values across all columns               |
+   +------------------------+--------------------------------------------------------------------------------+
+   | ``mismatch_stats``     | Dict containing:                                                               |
+   |                        |                                                                                |
+   |                        | - ``stats``: List of dicts with per-column mismatch statistics:                |
+   |                        |   - ``column``: Column name                                                    |
+   |                        |   - ``match``: Number of matching values                                       |
+   |                        |   - ``mismatch``: Number of mismatched values                                  |
+   |                        |   - ``null_diff``: Number of null value differences                            |
+   |                        |   - ``total``: Total number of comparisons                                     |
+   |                        | - ``samples``: Sample rows with mismatched values                              |
+   |                        | - ``has_samples``: Boolean indicating if there are any samples                 |
+   |                        | - ``has_mismatches``: Boolean indicating if there are any mismatches           |
+   +------------------------+--------------------------------------------------------------------------------+
+   | ``df1_unique_rows``    | Dict with unique rows in df1:                                                  |
+   |                        |                                                                                |
+   |                        | - ``has_rows``: Boolean indicating if there are unique rows                    |
+   |                        | - ``rows``: Sample of unique rows (as strings)                                 |
+   |                        | - ``columns``: List of column names                                            |
+   +------------------------+--------------------------------------------------------------------------------+
+   | ``df2_unique_rows``    | Dict with unique rows in df2:                                                  |
+   |                        |                                                                                |
+   |                        | - ``has_rows``: Boolean indicating if there are unique rows                    |
+   |                        | - ``rows``: Sample of unique rows (as strings)                                 |
+   |                        | - ``columns``: List of column names                                            |
+   +------------------------+--------------------------------------------------------------------------------+
+   | ``df1_shape``,         | Tuples of (rows, columns) for each dataframe                                   |
+   | ``df2_shape``          |                                                                                |
+   +------------------------+--------------------------------------------------------------------------------+
+   | ``df1_name``,          | Names of the dataframes being compared                                         |
+   | ``df2_name``           |                                                                                |
+   +------------------------+--------------------------------------------------------------------------------+
 
-   * - Variable
-     - Description
-   * - ``column_summary``
-     - Dict with keys ``common_columns``, ``df1_unique``, ``df2_unique``
-   * - ``row_summary``
-     - Dict with keys ``equal_rows``, ``unequal_rows``, ``only_df1_rows``, ``only_df2_rows``
-   * - ``mismatch_stats``
-     - List of dicts with column mismatch statistics
-   * - ``df1_shape``, ``df2_shape``
-     - Tuples of (rows, columns) for each dataframe
-   * - ``df1_name``, ``df2_name``
-     - Names of the dataframes being compared
-   * - ``join_columns``
-     - List of columns used for joining
-   * - ``df1_unq_rows``, ``df2_unq_rows``
-     - Sample rows unique to each dataframe
-   * - ``mismatch_sample``
-     - Sample of rows with mismatched values
 
 Creating a Custom Template
 --------------------------

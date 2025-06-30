@@ -972,14 +972,16 @@ class SnowflakeCompare(BaseCompare):
             If ``None``, the default template will be used. The template receives the
             following context variables:
 
-            - ``column_summary``: Dict with keys 'common_columns', 'df1_unique', 'df2_unique'
-            - ``row_summary``: Dict with keys 'equal_rows', 'unequal_rows', 'only_df1_rows', 'only_df2_rows'
-            - ``mismatch_stats``: List of dicts with column mismatch statistics
-            - ``df1_shape``, ``df2_shape``: Tuples of (rows, columns) for each dataframe
-            - ``df1_name``, ``df2_name``: Names of the dataframes being compared
-            - ``join_columns``: List of columns used for joining
-            - ``df1_unq_rows``, ``df2_unq_rows``: Sample rows unique to each dataframe
-            - ``mismatch_sample``: Sample of rows with mismatched values
+            - ``column_summary``: Dict with column statistics including: ``common_columns``, ``df1_unique``, ``df2_unique``, ``df1_name``, ``df2_name``
+            - ``row_summary``: Dict with row statistics including: ``match_columns``, ``equal_rows``, ``unequal_rows``
+            - ``column_comparison``: Dict with column comparison statistics including: ``unequal_columns``, ``equal_columns``, ``unequal_values``
+            - ``mismatch_stats``: Dict containing:
+                - ``stats``: List of dicts with column mismatch statistics (column, match, mismatch, null_diff, etc.)
+                - ``samples``: Sample rows with mismatched values
+                - ``has_samples``: Boolean indicating if there are any mismatch samples
+                - ``has_mismatches``: Boolean indicating if there are any mismatches
+            - ``df1_unique_rows``: Dict with unique rows in df1 including: ``has_rows``, ``rows``, ``columns``
+            - ``df2_unique_rows``: Dict with unique rows in df2 including: ``has_rows``, ``rows``, ``columns``
 
         Returns
         -------
