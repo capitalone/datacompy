@@ -18,12 +18,18 @@ Originally started to be something of a replacement for SAS's PROC COMPARE for P
 Then extended to carry that functionality over to Spark Dataframes.
 """
 
-__version__ = "0.16.8"
+__version__ = "0.17.0"
 
 import platform
 from warnings import warn
 
-from datacompy.base import BaseCompare, temp_column_name
+from datacompy.base import (
+    BaseCompare,
+    df_to_str,
+    render,
+    save_html_report,
+    temp_column_name,
+)
 from datacompy.core import (
     Compare,
     calculate_max_diff,
@@ -31,7 +37,6 @@ from datacompy.core import (
     compare_string_and_date_columns,
     generate_id_within_group,
     get_merged_columns,
-    render,
 )
 from datacompy.fugue import (
     all_columns_match,
@@ -58,12 +63,14 @@ __all__ = [
     "columns_equal",
     "compare_string_and_date_columns",
     "count_matching_rows",
+    "df_to_str",
     "generate_id_within_group",
     "get_merged_columns",
     "intersect_columns",
     "is_match",
     "render",
     "report",
+    "save_html_report",
     "temp_column_name",
     "unq_columns",
 ]
@@ -78,18 +85,3 @@ if major == "3" and minor >= "12":
         UserWarning,
         stacklevel=2,
     )
-
-# numpy 2.0 check
-from numpy import __version__ as np_version
-
-if np_version.split(".")[0] >= "2":
-    warn(
-        "SparkPandasCompare currently only supports Numpy < 2."
-        "Please note that the SparkPandasCompare functionality will not work and currently is not supported.",
-        UserWarning,
-        stacklevel=2,
-    )
-else:
-    from datacompy.spark.pandas import SparkPandasCompare  # noqa: F401
-
-    __all__.append("SparkPandasCompare")
