@@ -1470,7 +1470,6 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_dict(
 
     output = compare.all_mismatch().toPandas()
     r = compare.report()
-    breakpoint()
 
     assert output.shape[0] == 3
     assert output.shape[1] == 9
