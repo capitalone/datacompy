@@ -747,8 +747,8 @@ class SnowflakeCompare(BaseCompare):
                     orig_col_name + "_" + self.df1_name,
                     orig_col_name + "_" + self.df2_name,
                     c,
-                    self.rel_tol_per_column[c],
-                    self.abs_tol_per_column[c],
+                    self.rel_tol_per_column[orig_col_name],
+                    self.abs_tol_per_column[orig_col_name],
                     self.ignore_spaces,
                 )
 
