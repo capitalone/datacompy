@@ -13,7 +13,7 @@ maintainers = [
   { name="Raymond Haffar", email="raymond.haffar@capitalone.com" },
 ]
 license = {text = "Apache Software License"}
-dependencies = ["pandas<=2.3.0,>=0.25.0", "numpy<=2.2.6,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2", "polars[pandas]<=1.31.0,>=0.20.4"]
+dependencies = ["pandas<=2.3.0,>=0.25.0", "numpy<=2.2.6,>=1.22.0", "ordered-set<=4.1.0,>=4.0.2"]
 requires-python = ">=3.10.0"
 classifiers = [
     "Intended Audience :: Developers",
@@ -58,6 +58,7 @@ python-tag = "py3"
 fugue = ["fugue[dask,duckdb,ray]<=0.9.1,>=0.8.7"]
 spark = ["pyspark[connect]>=3.1.1,<=3.5.6; python_version < \"3.11\"", "pyspark[connect]>=3.4,<=3.5.6; python_version >= \"3.11\""]
 snowflake = ["snowflake-connector-python", "snowflake-snowpark-python"]
+polars = ["polars[pandas]<=1.31.0,>=0.20.4"]
 docs = ["sphinx", "furo", "myst-parser"]
 tests = ["pytest", "pytest-cov"]
 
@@ -66,8 +67,8 @@ tests-snowflake = ["snowflake-snowpark-python[localtest]"]
 qa = ["pre-commit", "ruff==0.5.7", "mypy", "pandas-stubs"]
 build = ["build", "twine", "wheel"]
 edgetest = ["edgetest", "edgetest-conda"]
-dev_no_snowflake = ["datacompy[fugue]", "datacompy[spark]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[qa]", "datacompy[build]"]
-dev = ["datacompy[fugue]", "datacompy[spark]", "datacompy[snowflake]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[tests-snowflake]", "datacompy[qa]", "datacompy[build]"]
+dev_no_snowflake = ["datacompy[fugue]", "datacompy[spark]", "datacompy[polars]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[qa]", "datacompy[build]"]
+dev = ["datacompy[fugue]", "datacompy[spark]", "datacompy[polars]", "datacompy[snowflake]", "datacompy[docs]", "datacompy[tests]", "datacompy[tests-spark]", "datacompy[tests-snowflake]", "datacompy[qa]", "datacompy[build]"]
 
 # Linters, formatters and type checkers
 [tool.ruff]
@@ -142,5 +143,4 @@ upgrade = [
     "pandas",
     "numpy",
     "ordered-set",
-    "polars[pandas]",
 ]
