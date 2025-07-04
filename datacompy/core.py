@@ -30,6 +30,7 @@ from ordered_set import OrderedSet
 
 from datacompy.base import (
     BaseCompare,
+    _validate_tolerance_parameter,
     df_to_str,
     render,
     save_html_report,
@@ -91,8 +92,8 @@ class Compare(BaseCompare):
         df2: pd.DataFrame,
         join_columns: List[str] | str | None = None,
         on_index: bool = False,
-        abs_tol: float = 0,
-        rel_tol: float = 0,
+        abs_tol: float | Dict[str, float] = 0,
+        rel_tol: float | Dict[str, float] = 0,
         df1_name: str = "df1",
         df2_name: str = "df2",
         ignore_spaces: bool = False,
@@ -100,6 +101,15 @@ class Compare(BaseCompare):
         cast_column_names_lower: bool = True,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
+
+        # Validate tolerance parameters first
+        self._abs_tol_dict = _validate_tolerance_parameter(
+            abs_tol, "abs_tol", cast_column_names_lower
+        )
+        self._rel_tol_dict = _validate_tolerance_parameter(
+            rel_tol, "rel_tol", cast_column_names_lower
+        )
+
         if on_index and join_columns is not None:
             raise Exception("Only provide on_index or join_columns")
         elif on_index:
@@ -371,10 +381,11 @@ class Compare(BaseCompare):
                         columns_equal(
                             self.intersect_rows[col_1],
                             self.intersect_rows[col_2],
-                            self.rel_tol,
-                            self.abs_tol,
+                            self._rel_tol_dict,
+                            self._abs_tol_dict,
                             ignore_spaces,
                             ignore_case,
+                            column,
                         ).to_frame(name=col_match),
                     ],
                     axis=1,
@@ -591,10 +602,11 @@ class Compare(BaseCompare):
                 col_comparison = columns_equal(
                     self.intersect_rows[orig_col_name + "_" + self.df1_name],
                     self.intersect_rows[orig_col_name + "_" + self.df2_name],
-                    self.rel_tol,
-                    self.abs_tol,
+                    self._rel_tol_dict,
+                    self._abs_tol_dict,
                     self.ignore_spaces,
                     self.ignore_case,
+                    orig_col_name,
                 )
 
                 if not ignore_matching_cols or (
@@ -900,10 +912,11 @@ class Compare(BaseCompare):
 def columns_equal(
     col_1: "pd.Series[Any]",
     col_2: "pd.Series[Any]",
-    rel_tol: float = 0,
-    abs_tol: float = 0,
+    rel_tol: float | Dict[str, float] = 0,
+    abs_tol: float | Dict[str, float] = 0,
     ignore_spaces: bool = False,
     ignore_case: bool = False,
+    column_name: str | None = None,
 ) -> "pd.Series[bool]":
     """Compare two columns from a dataframe.
 
@@ -936,14 +949,18 @@ def columns_equal(
         The first column to look at
     col_2 : Pandas.Series
         The second column
-    rel_tol : float, optional
-        Relative tolerance
-    abs_tol : float, optional
-        Absolute tolerance
+    rel_tol : float or dict, optional
+        Relative tolerance - can be a float value or dictionary mapping column names
+        to tolerance values
+    abs_tol : float or dict, optional
+        Absolute tolerance - can be a float value or dictionary mapping column names
+        to tolerance values
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns
     ignore_case : bool, optional
         Flag to ignore the case of string columns
+    column_name : str, optional
+        Name of the column being compared, used for looking up tolerance values
 
     Returns
     -------
@@ -954,6 +971,25 @@ def columns_equal(
     default_value = "DATACOMPY_NULL"
     compare: pd.Series[bool]
 
+    # Get tolerance values for this column
+    if isinstance(rel_tol, dict):
+        rel_tol_value = (
+            rel_tol.get(column_name, rel_tol.get("default", 0))
+            if column_name
+            else rel_tol.get("default", 0)
+        )
+    else:
+        rel_tol_value = rel_tol
+
+    if isinstance(abs_tol, dict):
+        abs_tol_value = (
+            abs_tol.get(column_name, abs_tol.get("default", 0))
+            if column_name
+            else abs_tol.get("default", 0)
+        )
+    else:
+        abs_tol_value = abs_tol
+
     col_1 = normalize_string_column(
         col_1, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
@@ -961,6 +997,7 @@ def columns_equal(
         col_2, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
 
+    # Rest of comparison logic using rel_tol_value and abs_tol_value
     # short circuit if comparing mixed type columns. Check list/arrrays or just return false for everything else.
     if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(
         col_2
@@ -988,7 +1025,9 @@ def columns_equal(
     else:
         try:
             compare = pd.Series(
-                np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
+                np.isclose(
+                    col_1, col_2, rtol=rel_tol_value, atol=abs_tol_value, equal_nan=True
+                )
             )
         except TypeError:
             try:
@@ -996,8 +1035,8 @@ def columns_equal(
                     np.isclose(
                         col_1.astype(float),
                         col_2.astype(float),
-                        rtol=rel_tol,
-                        atol=abs_tol,
+                        rtol=rel_tol_value,
+                        atol=abs_tol_value,
                         equal_nan=True,
                     )
                 )

@@ -24,12 +24,74 @@ two dataframes.
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ordered_set import OrderedSet
 
 LOG = logging.getLogger(__name__)
+
+
+def _validate_tolerance_parameter(
+    param_value: float | Dict[str, float],
+    param_name: str,
+    cast_column_names_lower: bool = True,
+) -> Dict[str, float]:
+    """Validate and normalize tolerance parameter input.
+
+    Parameters
+    ----------
+    param_value : float or dict
+        The tolerance value to validate. Can be either a float or a dictionary mapping
+        column names to float values.
+    param_name : str
+        Name of the parameter being validated ('abs_tol' or 'rel_tol')
+    cast_column_names_lower: bool
+        Whether to convert column names to lowercase
+
+    Returns
+    -------
+    dict
+        Normalized dictionary of tolerance values
+
+    Raises
+    ------
+    TypeError
+        If param_value is not a float or dict
+    ValueError
+        If any tolerance values are not numeric or negative
+    """
+    # If float, convert to dict with default value
+    if isinstance(param_value, int | float):
+        if param_value < 0:
+            raise ValueError(f"{param_name} cannot be negative")
+        return {"default": float(param_value)}
+
+    # If dict, validate values and format
+    if isinstance(param_value, dict):
+        result = {}
+
+        # Convert all values to float and validate
+        for col, value in param_value.items():
+            if not isinstance(value, int | float):
+                raise ValueError(
+                    f"Value for column '{col}' in {param_name} must be numeric"
+                )
+            if value < 0:
+                raise ValueError(
+                    f"Value for column '{col}' in {param_name} cannot be negative"
+                )
+            # Convert column name to lowercase if needed
+            col_key = str(col).lower() if cast_column_names_lower else str(col)
+            result[col_key] = float(value)
+
+        # If no default provided, add 0.0
+        if "default" not in result:
+            result["default"] = 0.0
+
+        return result
+
+    raise TypeError(f"{param_name} must be a float or dictionary")
 
 
 class BaseCompare(ABC):
