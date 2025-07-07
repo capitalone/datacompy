@@ -572,6 +572,92 @@ def test_10k_rows(snowpark_session):
     assert not compare_no_tol.intersect_rows_match()
 
 
+def test_10k_rows_abs_tol_per_column(snowpark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    df1 = snowpark_session.createDataFrame(pdf)
+    df2 = snowpark_session.createDataFrame(pdf2)
+    compare_tol = SnowflakeCompare(
+        snowpark_session, df1, df2, ["A"], abs_tol={"B": 0.2}
+    )
+    assert compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"A", "B", "C"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert compare_tol.intersect_rows_match()
+
+
+def test_10k_rows_abs_tol_per_column_default(snowpark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    pdf2["C"] = pdf2["C"] + 0.3
+    df1 = snowpark_session.createDataFrame(pdf)
+    df2 = snowpark_session.createDataFrame(pdf2)
+    compare_tol = SnowflakeCompare(
+        snowpark_session, df1, df2, ["A"], abs_tol={"C": 0.0, "__default": 0.2}
+    )
+    assert not compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"A", "B", "C"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert not compare_tol.intersect_rows_match()
+
+
+def test_10k_rows_rel_tol_per_column(snowpark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    df1 = snowpark_session.createDataFrame(pdf)
+    df2 = snowpark_session.createDataFrame(pdf2)
+    compare_tol = SnowflakeCompare(
+        snowpark_session, df1, df2, ["A"], rel_tol={"B": 1.0}
+    )
+    assert compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"A", "B", "C"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert compare_tol.intersect_rows_match()
+
+
+def test_10k_rows_rel_tol_per_column_default(snowpark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    pdf2["C"] = pdf2["C"] + 0.1
+    df1 = snowpark_session.createDataFrame(pdf)
+    df2 = snowpark_session.createDataFrame(pdf2)
+    compare_tol = SnowflakeCompare(
+        snowpark_session, df1, df2, ["A"], rel_tol={"C": 0.0, "__default": 1}
+    )
+    assert not compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"A", "B", "C"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert not compare_tol.intersect_rows_match()
+
+
 def test_subset(snowpark_session, caplog):
     caplog.set_level(logging.DEBUG)
     df1 = snowpark_session.createDataFrame(
@@ -1229,6 +1315,181 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching(snowpark_session):
 
     assert (output.DATE_FLD_DF1 != output.DATE_FLD_DF2).values.sum() == 4
     assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 0
+
+
+def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_float(
+    snowpark_session,
+):
+    data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+
+    data2 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.4,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1.04,2017-01-01
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Robert Loblaw,345.12,
+        10000001238,1.05,Loose Seal Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
+    df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID", 0.05)
+
+    output = compare.all_mismatch().toPandas()
+    assert output.shape[0] == 2
+    assert output.shape[1] == 9
+
+    assert (output.NAME_DF1 != output.NAME_DF2).values.sum() == 1
+    assert (~(output.NAME_DF1 != output.NAME_DF2)).values.sum() == 1
+
+    assert (output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2).values.sum() == 0
+    assert (~(output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2)).values.sum() == 2
+
+    assert (output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2).values.sum() == 1
+    assert (~(output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2)).values.sum() == 1
+
+    assert (output.DATE_FLD_DF1 != output.DATE_FLD_DF2).values.sum() == 2
+    assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 0
+
+
+def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_dict(
+    snowpark_session,
+):
+    data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+
+    data2 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.4,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1.05,2017-01-01
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Robert Loblaw,345.12,
+        10000001238,1.05,Loose Seal Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
+    df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
+    compare = SnowflakeCompare(
+        snowpark_session, df1, df2, "ACCT_ID", {"DOLLAR_AMT": 0.05}
+    )
+
+    output = compare.all_mismatch().toPandas()
+    assert output.shape[0] == 3
+    assert output.shape[1] == 9
+
+    assert (output.NAME_DF1 != output.NAME_DF2).values.sum() == 1
+    assert (~(output.NAME_DF1 != output.NAME_DF2)).values.sum() == 2
+
+    assert (output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2).values.sum() == 0
+    assert (~(output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2)).values.sum() == 3
+
+    assert (output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2).values.sum() == 2
+    assert (~(output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2)).values.sum() == 1
+
+    assert (output.DATE_FLD_DF1 != output.DATE_FLD_DF2).values.sum() == 2
+    assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 1
+
+
+def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_float(
+    snowpark_session,
+):
+    data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+
+    data2 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.4,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1.04,2017-01-01
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Robert Loblaw,345.12,
+        10000001238,1.05,Loose Seal Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
+    df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
+    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID", rel_tol=0.1)
+
+    output = compare.all_mismatch().toPandas()
+    assert output.shape[0] == 2
+    assert output.shape[1] == 9
+
+    assert (output.NAME_DF1 != output.NAME_DF2).values.sum() == 1
+    assert (~(output.NAME_DF1 != output.NAME_DF2)).values.sum() == 1
+
+    assert (output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2).values.sum() == 0
+    assert (~(output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2)).values.sum() == 2
+
+    assert (output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2).values.sum() == 1
+    assert (~(output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2)).values.sum() == 1
+
+    assert (output.DATE_FLD_DF1 != output.DATE_FLD_DF2).values.sum() == 2
+    assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 0
+
+
+def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_dict(
+    snowpark_session,
+):
+    data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+
+    data2 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
+        10000001234,123.4,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1.05,2017-01-01
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Robert Loblaw,345.12,
+        10000001238,1.05,Loose Seal Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
+    df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
+    compare = SnowflakeCompare(
+        snowpark_session,
+        df1,
+        df2,
+        "ACCT_ID",
+        abs_tol={"FLOAT_FLD": 0.01},
+        rel_tol={"DOLLAR_AMT": 0.10, "FLOAT_FLD": 0.02},
+    )
+
+    output = compare.all_mismatch().toPandas()
+    r = compare.report()
+
+    assert output.shape[0] == 3
+    assert output.shape[1] == 9
+
+    assert (output.NAME_DF1 != output.NAME_DF2).values.sum() == 1
+    assert (~(output.NAME_DF1 != output.NAME_DF2)).values.sum() == 2
+
+    assert (output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2).values.sum() == 0
+    assert (~(output.DOLLAR_AMT_DF1 != output.DOLLAR_AMT_DF2)).values.sum() == 3
+
+    assert (output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2).values.sum() == 2
+    assert (~(output.FLOAT_FLD_DF1 != output.FLOAT_FLD_DF2)).values.sum() == 1
+
+    assert (output.DATE_FLD_DF1 != output.DATE_FLD_DF2).values.sum() == 2
+    assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 1
 
 
 @pytest.mark.parametrize(

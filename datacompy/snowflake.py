@@ -22,9 +22,11 @@ two dataframes.
 """
 
 import logging
+import os
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
-from typing import Any, Dict, List, Union, cast
+from typing import Any, DefaultDict, Dict, List, Union, cast
 
 from ordered_set import OrderedSet
 
@@ -98,10 +100,10 @@ class SnowflakeCompare(BaseCompare):
     join_columns : list or str, optional
         Column(s) to join dataframes on.  If a string is passed in, that one
         column will be used.
-    abs_tol : float, optional
-        Absolute tolerance between two values.
-    rel_tol : float, optional
-        Relative tolerance between two values.
+    abs_tol : float or Dict[str, float], optional
+        Absolute tolerance between two values, single value for all columns or specified per-column with a __default key.
+    rel_tol : float or Dict[str, float], optional
+        Relative tolerance between two values, single value for all columns or specified per-column with a __default key.
     df1_name : str, optional
         A string name for the first dataframe. If used alongside a snowflake table,
         overrides the default convention of naming the dataframe after the table.
@@ -125,8 +127,8 @@ class SnowflakeCompare(BaseCompare):
         df1: Union[str, "sp.DataFrame"],
         df2: Union[str, "sp.DataFrame"],
         join_columns: List[str] | str | None,
-        abs_tol: float = 0,
-        rel_tol: float = 0,
+        abs_tol: float | Dict[str, float] = 0,
+        rel_tol: float | Dict[str, float] = 0,
         df1_name: str | None = None,
         df2_name: str | None = None,
         ignore_spaces: bool = False,
@@ -149,13 +151,32 @@ class SnowflakeCompare(BaseCompare):
         self.session = session
         self.df1 = (df1, df1_name)
         self.df2 = (df2, df2_name)
-        self.abs_tol = abs_tol
-        self.rel_tol = rel_tol
         self.ignore_spaces = ignore_spaces
         self.df1_unq_rows: sp.DataFrame
         self.df2_unq_rows: sp.DataFrame
         self.intersect_rows: sp.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
+
+        if isinstance(abs_tol, float | int):
+            self.abs_tol_per_column: DefaultDict[str, float] = defaultdict(
+                lambda: abs_tol
+            )
+        else:
+            self.abs_tol_per_column: DefaultDict[str, float] = defaultdict(
+                lambda: abs_tol.get("__default", 0),
+                {key: value for key, value in abs_tol.items() if key != "__default"},
+            )
+
+        if isinstance(rel_tol, float | int):
+            self.rel_tol_per_column: DefaultDict[str, float] = defaultdict(
+                lambda: rel_tol
+            )
+        else:
+            self.rel_tol_per_column: DefaultDict[str, float] = defaultdict(
+                lambda: rel_tol.get("__default", 0),
+                {key: value for key, value in rel_tol.items() if key != "__default"},
+            )
+
         self._compare(ignore_spaces=ignore_spaces)
 
     @property
@@ -430,8 +451,8 @@ class SnowflakeCompare(BaseCompare):
                     col_1,
                     col_2,
                     col_match,
-                    self.rel_tol,
-                    self.abs_tol,
+                    self.rel_tol_per_column[col],
+                    self.abs_tol_per_column[col],
                     ignore_spaces,
                 )
 
@@ -725,8 +746,8 @@ class SnowflakeCompare(BaseCompare):
                     orig_col_name + "_" + self.df1_name,
                     orig_col_name + "_" + self.df2_name,
                     c,
-                    self.rel_tol,
-                    self.abs_tol,
+                    self.rel_tol_per_column[orig_col_name],
+                    self.abs_tol_per_column[orig_col_name],
                     self.ignore_spaces,
                 )
 
