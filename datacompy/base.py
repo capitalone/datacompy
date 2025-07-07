@@ -23,8 +23,10 @@ two dataframes.
 
 import logging
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any
 
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ordered_set import OrderedSet
 
 LOG = logging.getLogger(__name__)
@@ -154,13 +156,114 @@ class BaseCompare(ABC):
         sample_count: int = 10,
         column_count: int = 10,
         html_file: str | None = None,
+        template_path: str | None = None,
     ) -> str:
-        """Return a string representation of a report."""
+        """Return a string representation of a report.
+
+        Parameters
+        ----------
+        sample_count : int, optional
+            The number of sample records to return. Defaults to 10.
+
+        column_count : int, optional
+            The number of columns to display in the sample records output. Defaults to 10.
+
+        html_file : str, optional
+            HTML file name to save report output to. If ``None`` the file creation will be skipped.
+
+        template_path : str, optional
+            Path to a custom Jinja2 template file to use for report generation.
+            If ``None``, the default template will be used.
+
+        Returns
+        -------
+        str
+            The report, formatted according to the template.
+        """
         pass
 
     def only_join_columns(self) -> bool:
         """Boolean on if the only columns are the join columns."""
         return set(self.join_columns) == set(self.df1.columns) == set(self.df2.columns)
+
+
+def _resolve_template_path(template_name: str) -> tuple[str, str]:
+    """Resolve template path and return (template_dir, template_file).
+
+    Handles both absolute and relative paths, and manages .j2 extension automatically.
+    """
+    template_path = Path(template_name)
+
+    # Handle absolute paths
+    if template_path.is_absolute():
+        if not template_path.exists():
+            raise FileNotFoundError(f"Template file not found: {template_path}")
+        return str(template_path.parent), template_path.name
+
+    # Handle relative paths in templates directory
+    template_dir = str(Path(__file__).parent / "templates")
+    template_file = str(template_path)
+    full_path = Path(template_dir) / template_file
+
+    # Try different file variations in order:
+    # 1. As given
+    # 2. With .j2 extension
+    # 3. Without .j2 extension (if input had it)
+    if full_path.exists():
+        return template_dir, template_file
+
+    j2_path = full_path.with_suffix(".j2")
+    if j2_path.exists():
+        return template_dir, j2_path.name
+
+    if template_file.endswith(".j2"):
+        base_path = full_path.with_suffix("")
+        if base_path.exists():
+            return template_dir, base_path.name
+
+    # If we get here, no variation exists
+    raise FileNotFoundError(
+        f"Template file not found: {template_name} "
+        f"(tried: {full_path}, {j2_path}"
+        + (f", {full_path.with_suffix('')}" if template_file.endswith(".j2") else "")
+        + ")"
+    )
+
+
+def render(template_name: str, **context: Any) -> str:
+    """Render a template using Jinja2.
+
+    Parameters
+    ----------
+    template_name : str
+        The name of the template file to render. This can be:
+        - A filename in the default templates directory (with or without .j2 extension)
+        - A relative path from the default templates directory
+        - An absolute path to a template file
+    **context : dict
+        The context variables to pass to the template
+
+    Returns
+    -------
+    str
+        The rendered template
+
+    Raises
+    ------
+    FileNotFoundError
+        If the template file cannot be found in any of the expected locations
+    """
+    template_dir, template_file = _resolve_template_path(template_name)
+
+    # Create Jinja2 environment
+    env = Environment(
+        loader=FileSystemLoader(template_dir),
+        autoescape=select_autoescape(),
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+    template = env.get_template(template_file)
+    return template.render(**context).strip()
 
 
 def temp_column_name(*dataframes) -> str:
@@ -178,16 +281,70 @@ def temp_column_name(*dataframes) -> str:
     """
     i = 0
     columns = []
-    for dataframe in dataframes:
-        columns = columns + list(dataframe.columns)
-    columns = set(columns)
-
+    for df in dataframes:
+        if df is not None:
+            columns.extend(df.columns)
     while True:
-        temp_column = f"_temp_{i}"
-        unique = True
+        tmp = f"_temp_{i}"
+        if tmp not in columns:
+            return tmp
+        i += 1
 
-        if temp_column in columns:
-            i += 1
-            unique = False
-        if unique:
-            return temp_column
+
+def save_html_report(report: str, html_file: str | Path) -> None:
+    """Save a text report as an HTML file.
+
+    Parameters
+    ----------
+    report : str
+        The text report to convert to HTML
+    html_file : str or Path
+        The path where the HTML file should be saved
+    """
+    html_file = Path(html_file)
+    html_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # Create a simple HTML template with the report in a pre tag
+    html_content = f"""<html><head><title>DataComPy Report</title></head><body><pre>{report}</pre></body></html>"""
+    # Save the HTML file
+    html_file.write_text(html_content, encoding="utf-8")
+
+
+def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) -> str:
+    """Convert a DataFrame to a string representation.
+
+    This is a centralized function to handle DataFrame to string conversion for different
+    DataFrame types (pandas, Spark, Polars, etc.)
+
+    Parameters
+    ----------
+    df : Any
+        The DataFrame to convert to string. Can be pandas, Spark, or Polars DataFrame.
+    sample_count : int, optional
+        For distributed DataFrames (like Spark), limit the number of rows to convert.
+    on_index : bool, default False
+        If True, include the index in the output.
+
+    Returns
+    -------
+    str
+        String representation of the DataFrame
+    """
+    # Handle pandas DataFrame
+    if hasattr(df, "to_string"):
+        if not on_index and hasattr(df, "reset_index"):
+            df = df.reset_index(drop=True)
+        return df.to_string()
+
+    # Handle Spark DataFrame and Snowflake DataFrame
+    if hasattr(df, "toPandas"):
+        if sample_count is not None:
+            df = df.limit(sample_count)
+        return df.toPandas().to_string()
+
+    # Handle Polars DataFrame
+    if hasattr(df, "to_pandas"):
+        return df.to_pandas().to_string()
+
+    # Fallback to str() if we can't determine the type
+    return str(df)
