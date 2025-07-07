@@ -31,7 +31,9 @@ from ordered_set import OrderedSet
 
 from datacompy.base import (
     BaseCompare,
+    _validate_tolerance_parameter,
     df_to_str,
+    get_column_tolerance,
     render,
     save_html_report,
     temp_column_name,
@@ -59,10 +61,13 @@ class PolarsCompare(BaseCompare):
     join_columns : list or str
         Column(s) to join dataframes on.  If a string is passed in, that one
         column will be used.
-    abs_tol : float, optional
-        Absolute tolerance between two values.
-    rel_tol : float, optional
-        Relative tolerance between two values.
+    abs_tol : float or dict, optional
+        Absolute tolerance between two values. Can be either a float value applied to all columns,
+        or a dictionary mapping column names to specific tolerance values. The special key "default"
+        in the dictionary specifies the tolerance for columns not explicitly listed.
+    rel_tol : float or dict, optional
+        Relative tolerance between two values. Can be either a float value applied to all columns,
+        or a dictionary mapping column names to specific tolerance values. The special key "default"
     df1_name : str, optional
         A string name for the first dataframe.  This allows the reporting to
         print out an actual name instead of "df1", and allows human users to
@@ -90,8 +95,8 @@ class PolarsCompare(BaseCompare):
         df1: pl.DataFrame,
         df2: pl.DataFrame,
         join_columns: List[str] | str,
-        abs_tol: float = 0,
-        rel_tol: float = 0,
+        abs_tol: float | Dict[str, float] = 0,
+        rel_tol: float | Dict[str, float] = 0,
         df1_name: str = "df1",
         df2_name: str = "df2",
         ignore_spaces: bool = False,
@@ -99,6 +104,14 @@ class PolarsCompare(BaseCompare):
         cast_column_names_lower: bool = True,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
+
+        # Validate tolerance parameters first
+        self._abs_tol_dict = _validate_tolerance_parameter(
+            abs_tol, "abs_tol", "lower" if cast_column_names_lower else "preserve"
+        )
+        self._rel_tol_dict = _validate_tolerance_parameter(
+            rel_tol, "rel_tol", "lower" if cast_column_names_lower else "preserve"
+        )
 
         if isinstance(join_columns, str):
             self.join_columns = [
@@ -371,12 +384,12 @@ class PolarsCompare(BaseCompare):
                 col_match = column + "_match"
                 self.intersect_rows = self.intersect_rows.with_columns(
                     columns_equal(
-                        self.intersect_rows[col_1],
-                        self.intersect_rows[col_2],
-                        self.rel_tol,
-                        self.abs_tol,
-                        ignore_spaces,
-                        ignore_case,
+                        col_1=self.intersect_rows[col_1],
+                        col_2=self.intersect_rows[col_2],
+                        rel_tol=get_column_tolerance(column, self._rel_tol_dict),
+                        abs_tol=get_column_tolerance(column, self._abs_tol_dict),
+                        ignore_spaces=ignore_spaces,
+                        ignore_case=ignore_case,
                     ).alias(col_match)
                 )
                 match_cnt = self.intersect_rows[col_match].sum()
@@ -409,6 +422,8 @@ class PolarsCompare(BaseCompare):
                     ),
                     "max_diff": max_diff,
                     "null_diff": null_diff,
+                    "rel_tol": get_column_tolerance(column, self._rel_tol_dict),
+                    "abs_tol": get_column_tolerance(column, self._abs_tol_dict),
                 }
             )
 
@@ -588,12 +603,12 @@ class PolarsCompare(BaseCompare):
                 orig_col_name = col[:-6]
 
                 col_comparison = columns_equal(
-                    self.intersect_rows[orig_col_name + "_" + self.df1_name],
-                    self.intersect_rows[orig_col_name + "_" + self.df2_name],
-                    self.rel_tol,
-                    self.abs_tol,
-                    self.ignore_spaces,
-                    self.ignore_case,
+                    col_1=self.intersect_rows[orig_col_name + "_" + self.df1_name],
+                    col_2=self.intersect_rows[orig_col_name + "_" + self.df2_name],
+                    rel_tol=get_column_tolerance(orig_col_name, self._rel_tol_dict),
+                    abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
+                    ignore_spaces=self.ignore_spaces,
+                    ignore_case=self.ignore_case,
                 )
 
                 if not ignore_matching_cols or (
@@ -717,6 +732,8 @@ class PolarsCompare(BaseCompare):
                         "unequal_cnt": column["unequal_cnt"],
                         "max_diff": column["max_diff"],
                         "null_diff": column["null_diff"],
+                        "rel_tol": column["rel_tol"],
+                        "abs_tol": column["abs_tol"],
                     }
                 )
                 if column["unequal_cnt"] > 0:

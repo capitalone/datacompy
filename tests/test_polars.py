@@ -1886,3 +1886,87 @@ def test_html_report_generation():
         # The result should be the same as the rendered HTML content
         assert isinstance(result, str)
         assert len(result) > 0
+
+
+def test_per_column_tolerances() -> None:
+    """Test comparison with per-column tolerances."""
+    df1 = pl.DataFrame(
+        {"id": [1, 2, 3], "col1": [1.0, 2.0, 3.0], "col2": [1.0, 2.0, 3.0]}
+    )
+    df2 = pl.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "col1": [1.1, 2.2, 3.3],  # Larger differences
+            "col2": [1.01, 2.01, 3.01],  # Smaller differences
+        }
+    )
+
+    compare = PolarsCompare(
+        df1,
+        df2,
+        join_columns=["id"],
+        abs_tol={"col1": 0.5, "col2": 0.00001},  # col1 should match, col2 should not
+    )
+
+    col1_stats = next(stat for stat in compare.column_stats if stat["column"] == "col1")
+    col2_stats = next(stat for stat in compare.column_stats if stat["column"] == "col2")
+    assert col1_stats["unequal_cnt"] == 0
+    assert col2_stats["unequal_cnt"] > 0
+    assert compare._rel_tol_dict == {"default": 0.0}
+
+
+def test_default_tolerance() -> None:
+    """Test default tolerance behavior."""
+    df1 = pl.DataFrame({"id": [1, 2], "col1": [1.0, 2.0], "col2": [1.0, 2.0]})
+    df2 = pl.DataFrame({"id": [1, 2], "col1": [1.1, 2.1], "col2": [1.1, 2.1]})
+
+    compare = PolarsCompare(
+        df1, df2, join_columns=["id"], abs_tol={"col1": 0.05, "default": 0.2}
+    )
+
+    col1_stats = next(stat for stat in compare.column_stats if stat["column"] == "col1")
+    col2_stats = next(stat for stat in compare.column_stats if stat["column"] == "col2")
+    assert col1_stats["unequal_cnt"] > 0  # col1 should not match (tolerance 0.05)
+    assert col2_stats["unequal_cnt"] == 0  # col2 should match (default tolerance 0.2)
+    assert compare._rel_tol_dict == {"default": 0.0}
+
+
+def test_mixed_tolerances() -> None:
+    """Test mixing absolute and relative tolerances."""
+    df1 = pl.DataFrame(
+        {
+            "id": [1, 2],
+            "small_vals": [
+                1.0,
+                2.0,
+            ],  # Small values where absolute tolerance matters more
+            "large_vals": [
+                1000.0,
+                2000.0,
+            ],  # Large values where relative tolerance matters more
+        }
+    )
+    df2 = pl.DataFrame(
+        {"id": [1, 2], "small_vals": [1.1, 2.1], "large_vals": [1001.0, 2002.0]}
+    )
+
+    compare = PolarsCompare(
+        df1,
+        df2,
+        join_columns=["id"],
+        abs_tol={"small_vals": 0.2, "default": 0.0},
+        rel_tol={"large_vals": 0.001, "default": 0.0},
+    )
+
+    small_vals_stats = next(
+        stat for stat in compare.column_stats if stat["column"] == "small_vals"
+    )
+    large_vals_stats = next(
+        stat for stat in compare.column_stats if stat["column"] == "large_vals"
+    )
+    assert small_vals_stats["unequal_cnt"] == 0  # small_vals should match (abs_tol 0.2)
+    assert (
+        large_vals_stats["unequal_cnt"] == 0
+    )  # large_vals should match (rel_tol 0.001 = 0.1%)
+    assert compare._rel_tol_dict == {"large_vals": 0.001, "default": 0.0}
+    assert compare._abs_tol_dict == {"small_vals": 0.2, "default": 0.0}
