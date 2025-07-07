@@ -386,14 +386,14 @@ def test_case_sensitivity() -> None:
     """Test case sensitivity handling."""
     tol_dict = {"COL1": 0.1, "Col2": 0.2}
 
-    # Test with case sensitivity enabled
-    result = _validate_tolerance_parameter(
-        tol_dict, "abs_tol", cast_column_names_lower=True
-    )
+    # Test with case sensitivity lower
+    result = _validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="lower")
     assert result == {"col1": 0.1, "col2": 0.2, "default": 0.0}
 
     # Test with case sensitivity disabled
-    result = _validate_tolerance_parameter(
-        tol_dict, "abs_tol", cast_column_names_lower=False
-    )
+    result = _validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="preserve")
     assert result == {"COL1": 0.1, "Col2": 0.2, "default": 0.0}
+
+    # Test with case sensitivity upper
+    result = _validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="upper")
+    assert result == {"COL1": 0.1, "COL2": 0.2, "default": 0.0}

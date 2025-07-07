@@ -32,68 +32,6 @@ from ordered_set import OrderedSet
 LOG = logging.getLogger(__name__)
 
 
-def _validate_tolerance_parameter(
-    param_value: float | Dict[str, float],
-    param_name: str,
-    cast_column_names_lower: bool = True,
-) -> Dict[str, float]:
-    """Validate and normalize tolerance parameter input.
-
-    Parameters
-    ----------
-    param_value : float or dict
-        The tolerance value to validate. Can be either a float or a dictionary mapping
-        column names to float values.
-    param_name : str
-        Name of the parameter being validated ('abs_tol' or 'rel_tol')
-    cast_column_names_lower: bool
-        Whether to convert column names to lowercase
-
-    Returns
-    -------
-    dict
-        Normalized dictionary of tolerance values
-
-    Raises
-    ------
-    TypeError
-        If param_value is not a float or dict
-    ValueError
-        If any tolerance values are not numeric or negative
-    """
-    # If float, convert to dict with default value
-    if isinstance(param_value, int | float):
-        if param_value < 0:
-            raise ValueError(f"{param_name} cannot be negative")
-        return {"default": float(param_value)}
-
-    # If dict, validate values and format
-    if isinstance(param_value, dict):
-        result = {}
-
-        # Convert all values to float and validate
-        for col, value in param_value.items():
-            if not isinstance(value, int | float):
-                raise ValueError(
-                    f"Value for column '{col}' in {param_name} must be numeric"
-                )
-            if value < 0:
-                raise ValueError(
-                    f"Value for column '{col}' in {param_name} cannot be negative"
-                )
-            # Convert column name to lowercase if needed
-            col_key = str(col).lower() if cast_column_names_lower else str(col)
-            result[col_key] = float(value)
-
-        # If no default provided, add 0.0
-        if "default" not in result:
-            result["default"] = 0.0
-
-        return result
-
-    raise TypeError(f"{param_name} must be a float or dictionary")
-
-
 class BaseCompare(ABC):
     """Base comparison class."""
 
@@ -410,3 +348,98 @@ def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) 
 
     # Fallback to str() if we can't determine the type
     return str(df)
+
+
+def get_column_tolerance(column: str, tol_dict: Dict[str, float]) -> float:
+    """
+    Return the tolerance value for a given column from a dictionary of tolerances.
+
+    Parameters
+    ----------
+    column : str
+        The name of the column for which to retrieve the tolerance.
+    tol_dict : dict of str to float
+        Dictionary mapping column names to their tolerance values.
+        May contain a "default" key for columns not explicitly listed.
+
+    Returns
+    -------
+    float
+        The tolerance value for the specified column, or the "default" tolerance if the column is not found.
+        Returns 0 if neither the column nor "default" is present in the dictionary.
+    """
+    return tol_dict.get(column, tol_dict.get("default", 0.0))
+
+
+def _validate_tolerance_parameter(
+    param_value: float | Dict[str, float],
+    param_name: str,
+    case_mode: str = "lower",
+) -> Dict[str, float]:
+    """Validate and normalize tolerance parameter input.
+
+    Parameters
+    ----------
+    param_value : float or dict
+        The tolerance value to validate. Can be either a float or a dictionary mapping
+        column names to float values.
+    param_name : str
+        Name of the parameter being validated ('abs_tol' or 'rel_tol')
+    case_mode : str
+        How to handle column name case. Options are:
+        - "lower": convert to lowercase
+        - "upper": convert to uppercase
+        - "preserve": keep original case
+
+    Returns
+    -------
+    dict
+        Normalized dictionary of tolerance values
+
+    Raises
+    ------
+    TypeError
+        If param_value is not a float or dict
+    ValueError
+        If any tolerance values are not numeric or negative or if case_mode is invalid
+    """
+    if case_mode not in ["lower", "upper", "preserve"]:
+        raise ValueError("case_mode must be 'lower', 'upper', or 'preserve'")
+
+    # If float, convert to dict with default value
+    if isinstance(param_value, int | float):
+        if param_value < 0:
+            raise ValueError(f"{param_name} cannot be negative")
+        return {"default": float(param_value)}
+
+    # If dict, validate values and format
+    if isinstance(param_value, dict):
+        result = {}
+
+        # Convert all values to float and validate
+        for col, value in param_value.items():
+            if not isinstance(value, int | float):
+                raise ValueError(
+                    f"Value for column '{col}' in {param_name} must be numeric"
+                )
+            if value < 0:
+                raise ValueError(
+                    f"Value for column '{col}' in {param_name} cannot be negative"
+                )
+
+            # Handle column name case according to case_mode
+            col_key = str(col)
+            if case_mode == "lower":
+                col_key = col_key.lower()
+            elif case_mode == "upper":
+                col_key = col_key.upper()
+
+            result[col_key] = float(value)
+
+        # If no default provided, add 0.0
+        if "default" not in result:
+            result["default"] = 0.0
+
+        return result
+
+    raise TypeError(f"{param_name} must be a float or dictionary")

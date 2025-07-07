@@ -604,7 +604,7 @@ def test_10k_rows_abs_tol_per_column_default(snowpark_session):
     df1 = snowpark_session.createDataFrame(pdf)
     df2 = snowpark_session.createDataFrame(pdf2)
     compare_tol = SnowflakeCompare(
-        snowpark_session, df1, df2, ["A"], abs_tol={"C": 0.0, "__default": 0.2}
+        snowpark_session, df1, df2, ["A"], abs_tol={"c": 0.0, "default": 0.2}
     )
     assert not compare_tol.matches()
     assert compare_tol.df1_unq_rows.count() == 0
@@ -647,7 +647,7 @@ def test_10k_rows_rel_tol_per_column_default(snowpark_session):
     df1 = snowpark_session.createDataFrame(pdf)
     df2 = snowpark_session.createDataFrame(pdf2)
     compare_tol = SnowflakeCompare(
-        snowpark_session, df1, df2, ["A"], rel_tol={"C": 0.0, "__default": 1}
+        snowpark_session, df1, df2, ["A"], rel_tol={"c": 0.0, "default": 1}
     )
     assert not compare_tol.matches()
     assert compare_tol.df1_unq_rows.count() == 0
