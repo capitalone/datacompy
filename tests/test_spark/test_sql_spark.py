@@ -1691,7 +1691,7 @@ def test_nonexistent_template(spark_session):
     df2 = spark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
     compare = SparkSQLCompare(spark_session, df1, df2, ["id"])
 
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(FileNotFoundError) as exc_info:
         compare.report(template_path="nonexistent_template.j2")
     # Check that the error message is helpful
     assert "Template not found" in str(

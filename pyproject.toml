@@ -46,7 +46,7 @@ zip-safe = false
 include-package-data = true
 
 [tool.setuptools.package-data]
-"*" = ["templates/*.txt"]
+"*" = ["templates/*.j2", "templates/*.txt"]
 
 [tool.setuptools.dynamic]
 version = {attr = "datacompy.__version__"}

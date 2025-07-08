@@ -1011,7 +1011,7 @@ class SparkSQLCompare(BaseCompare):
         df2_count = self.df2.count()
 
         # Prepare template data
-        template_data: dict[str, Any] = {
+        template_data: Dict[str, Any] = {
             **self._get_column_summary(),
             **self._get_row_summary(),
             **self._get_column_comparison(),

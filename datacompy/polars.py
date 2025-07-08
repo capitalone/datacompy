@@ -785,7 +785,9 @@ class PolarsCompare(BaseCompare):
             "df1_unique_rows": {
                 "has_rows": min_sample_count_df1 > 0,
                 "rows": df_to_str(
-                    self.df1_unq_rows[:, :min_column_count_df1],
+                    self.df1_unq_rows.select(
+                        self.df1_unq_rows.columns[:min_column_count_df1]
+                    ),
                     sample_count=min_sample_count_df1,
                 )
                 if self.df1_unq_rows.shape[0] > 0
@@ -797,7 +799,9 @@ class PolarsCompare(BaseCompare):
             "df2_unique_rows": {
                 "has_rows": min_sample_count_df2 > 0,
                 "rows": df_to_str(
-                    self.df2_unq_rows[:, :min_column_count_df2],
+                    self.df2_unq_rows.select(
+                        self.df2_unq_rows.columns[:min_column_count_df2]
+                    ),
                     sample_count=min_sample_count_df2,
                 )
                 if self.df2_unq_rows.shape[0] > 0
