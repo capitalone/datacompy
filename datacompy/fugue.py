@@ -625,6 +625,8 @@ def report(
                     "unequal_cnt": col["unequal_cnt"],
                     "max_diff": col["max_diff"],
                     "null_diff": col["null_diff"],
+                    "rel_tol": rel_tol,
+                    "abs_tol": abs_tol,
                 }
                 for col in column_stats
                 if not col["all_match"]
