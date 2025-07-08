@@ -28,7 +28,14 @@ from typing import Any, Dict, List, Union, cast
 
 from ordered_set import OrderedSet
 
-from datacompy.base import BaseCompare, df_to_str, render, save_html_report
+from datacompy.base import (
+    BaseCompare,
+    _validate_tolerance_parameter,
+    df_to_str,
+    get_column_tolerance,
+    render,
+    save_html_report,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -98,10 +105,14 @@ class SnowflakeCompare(BaseCompare):
     join_columns : list or str, optional
         Column(s) to join dataframes on.  If a string is passed in, that one
         column will be used.
-    abs_tol : float, optional
-        Absolute tolerance between two values.
-    rel_tol : float, optional
-        Relative tolerance between two values.
+    abs_tol : float or dict, optional
+        Absolute tolerance between two values. Can be either a float value applied to all columns,
+        or a dictionary mapping column names to specific tolerance values. The special key "default"
+        in the dictionary specifies the tolerance for columns not explicitly listed.
+    rel_tol : float or dict, optional
+        Relative tolerance between two values. Can be either a float value applied to all columns,
+        or a dictionary mapping column names to specific tolerance values. The special key "default"
+        in the dictionary specifies the tolerance for columns not explicitly listed.
     df1_name : str, optional
         A string name for the first dataframe. If used alongside a snowflake table,
         overrides the default convention of naming the dataframe after the table.
@@ -125,12 +136,20 @@ class SnowflakeCompare(BaseCompare):
         df1: Union[str, "sp.DataFrame"],
         df2: Union[str, "sp.DataFrame"],
         join_columns: List[str] | str | None,
-        abs_tol: float = 0,
-        rel_tol: float = 0,
+        abs_tol: float | Dict[str, float] = 0,
+        rel_tol: float | Dict[str, float] = 0,
         df1_name: str | None = None,
         df2_name: str | None = None,
         ignore_spaces: bool = False,
     ) -> None:
+        # Validate tolerance parameters first
+        self._abs_tol_dict = _validate_tolerance_parameter(
+            abs_tol, "abs_tol", case_mode="upper"
+        )
+        self._rel_tol_dict = _validate_tolerance_parameter(
+            rel_tol, "rel_tol", case_mode="upper"
+        )
+
         if join_columns is None:
             errmsg = "join_columns cannot be None"
             raise ValueError(errmsg)
@@ -426,13 +445,13 @@ class SnowflakeCompare(BaseCompare):
                 col_2 = col + "_" + self.df2_name
                 col_match = col + "_MATCH"
                 self.intersect_rows = columns_equal(
-                    self.intersect_rows,
-                    col_1,
-                    col_2,
-                    col_match,
-                    self.rel_tol,
-                    self.abs_tol,
-                    ignore_spaces,
+                    dataframe=self.intersect_rows,
+                    col_1=col_1,
+                    col_2=col_2,
+                    col_match=col_match,
+                    rel_tol=get_column_tolerance(col, self._rel_tol_dict),
+                    abs_tol=get_column_tolerance(col, self._abs_tol_dict),
+                    ignore_spaces=ignore_spaces,
                 )
 
         with ThreadPoolExecutor() as executor:
@@ -519,6 +538,8 @@ class SnowflakeCompare(BaseCompare):
                 ),
                 "max_diff": max_diff,
                 "null_diff": null_diff,
+                "rel_tol": get_column_tolerance(column, self._rel_tol_dict),
+                "abs_tol": get_column_tolerance(column, self._abs_tol_dict),
             }
         )
 
@@ -721,13 +742,13 @@ class SnowflakeCompare(BaseCompare):
                 orig_col_name = c[:-6]
 
                 col_comparison = columns_equal(
-                    self.intersect_rows,
-                    orig_col_name + "_" + self.df1_name,
-                    orig_col_name + "_" + self.df2_name,
-                    c,
-                    self.rel_tol,
-                    self.abs_tol,
-                    self.ignore_spaces,
+                    dataframe=self.intersect_rows,
+                    col_1=orig_col_name + "_" + self.df1_name,
+                    col_2=orig_col_name + "_" + self.df2_name,
+                    col_match=c,
+                    rel_tol=get_column_tolerance(orig_col_name, self._rel_tol_dict),
+                    abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
+                    ignore_spaces=self.ignore_spaces,
                 )
 
                 if not ignore_matching_cols or (
@@ -863,6 +884,8 @@ class SnowflakeCompare(BaseCompare):
                         "unequal_cnt": column["unequal_cnt"],
                         "max_diff": column["max_diff"],
                         "null_diff": column["null_diff"],
+                        "rel_tol": column["rel_tol"],
+                        "abs_tol": column["abs_tol"],
                     }
                 )
                 if column["unequal_cnt"] > 0:

@@ -30,7 +30,9 @@ from ordered_set import OrderedSet
 
 from datacompy.base import (
     BaseCompare,
+    _validate_tolerance_parameter,
     df_to_str,
+    get_column_tolerance,
     render,
     save_html_report,
     temp_column_name,
@@ -59,10 +61,14 @@ class Compare(BaseCompare):
         If True, the index will be used to join the two dataframes.  If both
         ``join_columns`` and ``on_index`` are provided, an exception will be
         raised.
-    abs_tol : float, optional
-        Absolute tolerance between two values.
-    rel_tol : float, optional
-        Relative tolerance between two values.
+    abs_tol : float or dict, optional
+        Absolute tolerance between two values. Can be either a float value applied to all columns,
+        or a dictionary mapping column names to specific tolerance values. The special key "default"
+        in the dictionary specifies the tolerance for columns not explicitly listed.
+    rel_tol : float or dict, optional
+        Relative tolerance between two values. Can be either a float value applied to all columns,
+        or a dictionary mapping column names to specific tolerance values. The special key "default"
+        in the dictionary specifies the tolerance for columns not explicitly listed.
     df1_name : str, optional
         A string name for the first dataframe.  This allows the reporting to
         print out an actual name instead of "df1", and allows human users to
@@ -91,8 +97,8 @@ class Compare(BaseCompare):
         df2: pd.DataFrame,
         join_columns: List[str] | str | None = None,
         on_index: bool = False,
-        abs_tol: float = 0,
-        rel_tol: float = 0,
+        abs_tol: float | Dict[str, float] = 0,
+        rel_tol: float | Dict[str, float] = 0,
         df1_name: str = "df1",
         df2_name: str = "df2",
         ignore_spaces: bool = False,
@@ -100,6 +106,15 @@ class Compare(BaseCompare):
         cast_column_names_lower: bool = True,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
+
+        # Validate tolerance parameters first
+        self._abs_tol_dict = _validate_tolerance_parameter(
+            abs_tol, "abs_tol", "lower" if cast_column_names_lower else "preserve"
+        )
+        self._rel_tol_dict = _validate_tolerance_parameter(
+            rel_tol, "rel_tol", "lower" if cast_column_names_lower else "preserve"
+        )
+
         if on_index and join_columns is not None:
             raise Exception("Only provide on_index or join_columns")
         elif on_index:
@@ -369,12 +384,12 @@ class Compare(BaseCompare):
                     [
                         self.intersect_rows,
                         columns_equal(
-                            self.intersect_rows[col_1],
-                            self.intersect_rows[col_2],
-                            self.rel_tol,
-                            self.abs_tol,
-                            ignore_spaces,
-                            ignore_case,
+                            col_1=self.intersect_rows[col_1],
+                            col_2=self.intersect_rows[col_2],
+                            rel_tol=get_column_tolerance(column, self._rel_tol_dict),
+                            abs_tol=get_column_tolerance(column, self._abs_tol_dict),
+                            ignore_spaces=ignore_spaces,
+                            ignore_case=ignore_case,
                         ).to_frame(name=col_match),
                     ],
                     axis=1,
@@ -414,6 +429,8 @@ class Compare(BaseCompare):
                     ),
                     "max_diff": max_diff,
                     "null_diff": null_diff,
+                    "rel_tol": get_column_tolerance(column, self._rel_tol_dict),
+                    "abs_tol": get_column_tolerance(column, self._abs_tol_dict),
                 }
             )
 
@@ -589,12 +606,12 @@ class Compare(BaseCompare):
                 orig_col_name = col[:-6]
 
                 col_comparison = columns_equal(
-                    self.intersect_rows[orig_col_name + "_" + self.df1_name],
-                    self.intersect_rows[orig_col_name + "_" + self.df2_name],
-                    self.rel_tol,
-                    self.abs_tol,
-                    self.ignore_spaces,
-                    self.ignore_case,
+                    col_1=self.intersect_rows[orig_col_name + "_" + self.df1_name],
+                    col_2=self.intersect_rows[orig_col_name + "_" + self.df2_name],
+                    rel_tol=get_column_tolerance(orig_col_name, self._rel_tol_dict),
+                    abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
+                    ignore_spaces=self.ignore_spaces,
+                    ignore_case=self.ignore_case,
                 )
 
                 if not ignore_matching_cols or (
@@ -717,6 +734,8 @@ class Compare(BaseCompare):
                         "unequal_cnt": column["unequal_cnt"],
                         "max_diff": column["max_diff"],
                         "null_diff": column["null_diff"],
+                        "rel_tol": column["rel_tol"],
+                        "abs_tol": column["abs_tol"],
                     }
                 )
                 if column["unequal_cnt"] > 0:
@@ -961,6 +980,7 @@ def columns_equal(
         col_2, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
 
+    # Rest of comparison logic using rel_tol and abs_tol
     # short circuit if comparing mixed type columns. Check list/arrrays or just return false for everything else.
     if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(
         col_2

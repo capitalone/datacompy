@@ -11,10 +11,14 @@ import pytest
 # Add parent directory to path to allow importing from datacompy
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from typing import Dict
+
 from datacompy.base import (
     BaseCompare,
     _resolve_template_path,
+    _validate_tolerance_parameter,
     df_to_str,
+    get_column_tolerance,
     render,
     save_html_report,
     temp_column_name,
@@ -351,3 +355,77 @@ def test_resolve_with_subdirectories(tmp_path, monkeypatch):
 
     assert template_dir == str(templates_dir)
     assert resolved_name == "subdir/test_template.j2"
+
+
+def test_validate_tolerance_float() -> None:
+    """Test validation of float tolerance values."""
+    assert _validate_tolerance_parameter(0.1, "abs_tol") == {"default": 0.1}
+    assert _validate_tolerance_parameter(0, "abs_tol") == {"default": 0.0}
+    with pytest.raises(ValueError, match="abs_tol cannot be negative"):
+        _validate_tolerance_parameter(-0.1, "abs_tol")
+
+
+def test_validate_tolerance_dict() -> None:
+    """Test validation of dictionary tolerance values."""
+    tol_dict: Dict[str, float] = {"col1": 0.1, "col2": 0.2, "default": 0.05}
+    result = _validate_tolerance_parameter(tol_dict, "abs_tol")
+    assert result == {"col1": 0.1, "col2": 0.2, "default": 0.05}
+
+    # Test dictionary without default value
+    tol_dict = {"col1": 0.1, "col2": 0.2}
+    result = _validate_tolerance_parameter(tol_dict, "abs_tol")
+    assert result == {"col1": 0.1, "col2": 0.2, "default": 0.0}
+
+    # Test invalid values
+    with pytest.raises(ValueError, match="must be numeric"):
+        _validate_tolerance_parameter({"col1": "invalid"}, "abs_tol")  # type: ignore
+    with pytest.raises(ValueError, match="cannot be negative"):
+        _validate_tolerance_parameter({"col1": -0.1}, "abs_tol")
+
+
+def test_case_sensitivity() -> None:
+    """Test case sensitivity handling."""
+    tol_dict = {"COL1": 0.1, "Col2": 0.2}
+
+    # Test with case sensitivity lower
+    result = _validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="lower")
+    assert result == {"col1": 0.1, "col2": 0.2, "default": 0.0}
+
+    # Test with case sensitivity disabled
+    result = _validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="preserve")
+    assert result == {"COL1": 0.1, "Col2": 0.2, "default": 0.0}
+
+    # Test with case sensitivity upper
+    result = _validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="upper")
+    assert result == {"COL1": 0.1, "COL2": 0.2, "default": 0.0}
+
+
+def test_get_column_tolerance_exact_match():
+    """Test get_column_tolerance returns the value for an exact column match."""
+    tol_dict = {"col1": 0.1, "col2": 0.2, "default": 0.05}
+    assert get_column_tolerance("col1", tol_dict) == 0.1
+    assert get_column_tolerance("col2", tol_dict) == 0.2
+
+
+def test_get_column_tolerance_default():
+    """Test get_column_tolerance returns the default value if column not found."""
+    tol_dict = {"col1": 0.1, "default": 0.05}
+    assert get_column_tolerance("colX", tol_dict) == 0.05
+
+
+def test_get_column_tolerance_no_default():
+    """Test get_column_tolerance returns 0.0 if column and default not found."""
+    tol_dict = {"col1": 0.1}
+    assert get_column_tolerance("colX", tol_dict) == 0.0
+
+
+def test_get_column_tolerance_empty_dict():
+    """Test get_column_tolerance returns 0.0 if tol_dict is empty."""
+    tol_dict = {}
+    assert get_column_tolerance("col1", tol_dict) == 0.0
+
+
+def test_get_column_tolerance_column_is_default():
+    """Test get_column_tolerance returns the value for 'default' if column is literally 'default'."""
+    tol_dict = {"default": 0.07}
+    assert get_column_tolerance("default", tol_dict) == 0.07

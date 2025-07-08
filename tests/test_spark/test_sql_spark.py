@@ -1691,7 +1691,7 @@ def test_nonexistent_template(spark_session):
     df2 = spark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
     compare = SparkSQLCompare(spark_session, df1, df2, ["id"])
 
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(FileNotFoundError) as exc_info:
         compare.report(template_path="nonexistent_template.j2")
     # Check that the error message is helpful
     assert "Template not found" in str(
@@ -1758,3 +1758,145 @@ def test_html_report_generation(mock_render, mock_save_html, spark_session):
         # Clean up the temporary file
         if os.path.exists(html_file):
             os.unlink(html_file)
+
+
+def test_10k_rows_default_tol(spark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["a", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    df1 = spark_session.createDataFrame(pdf)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare_tol = SparkSQLCompare(spark_session, df1, df2, ["A"], abs_tol=0.2)
+    assert compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {
+        "a",
+        "b",
+        "c",
+    }  # cast_column_names_lower is True by default
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert compare_tol.intersect_rows_match()
+
+    compare_no_tol = SparkSQLCompare(spark_session, df1, df2, ["A"])
+    assert not compare_no_tol.matches()
+    assert compare_no_tol.df1_unq_rows.count() == 0
+    assert compare_no_tol.df2_unq_rows.count() == 0
+    assert compare_no_tol.intersect_columns() == {"a", "b", "c"}
+    assert compare_no_tol.all_columns_match()
+    assert compare_no_tol.all_rows_overlap()
+    assert not compare_no_tol.intersect_rows_match()
+
+
+def test_10k_rows_abs_tol_per_column(spark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    df1 = spark_session.createDataFrame(pdf)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare_tol = SparkSQLCompare(spark_session, df1, df2, ["A"], abs_tol={"b": 0.2})
+    assert compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {
+        "a",
+        "b",
+        "c",
+    }  # cast_column_names_lower is True by default
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert compare_tol.intersect_rows_match()
+
+    compare_tol = SparkSQLCompare(
+        spark_session,
+        df1,
+        df2,
+        ["A"],
+        abs_tol={"b": 0.2},
+        cast_column_names_lower=False,  # b != B
+    )
+    assert not compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {
+        "A",
+        "B",
+        "C",
+    }  # cast_column_names_lower is False
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert not compare_tol.intersect_rows_match()
+
+
+def test_10k_rows_abs_tol_per_column_default(spark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    pdf2["C"] = pdf2["C"] + 0.3
+    df1 = spark_session.createDataFrame(pdf)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare_tol = SparkSQLCompare(
+        spark_session, df1, df2, ["A"], abs_tol={"c": 0.0, "default": 0.2}
+    )
+    assert not compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {
+        "a",
+        "b",
+        "c",
+    }  # cast_column_names_lower is True by default
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert not compare_tol.intersect_rows_match()
+
+
+def test_10k_rows_rel_tol_per_column(spark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    df1 = spark_session.createDataFrame(pdf)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare_tol = SparkSQLCompare(spark_session, df1, df2, ["A"], rel_tol={"B": 1.0})
+    assert compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"a", "b", "c"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert compare_tol.intersect_rows_match()
+
+
+def test_10k_rows_rel_tol_per_column_default(spark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    pdf2["C"] = pdf2["C"] + 0.1
+    df1 = spark_session.createDataFrame(pdf)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare_tol = SparkSQLCompare(
+        spark_session, df1, df2, ["A"], rel_tol={"c": 0.0, "default": 1}
+    )
+    assert not compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"a", "b", "c"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert not compare_tol.intersect_rows_match()

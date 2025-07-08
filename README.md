@@ -46,10 +46,10 @@ pip install datacompy[snowflake]
 
 ### LegacySparkCompare and SparkPandasCompare removal
 
-With version ``v0.17.0`` the ``LegacySparkCompare`` and ``SparkPandasCompare`` have been removed.
+Starting with v0.17.0, both `LegacySparkCompare` and `SparkPandasCompare` have been removed.
 
 
-#### Supported versions and dependncies
+#### Supported versions and dependencies
 
 Different versions of Spark, Pandas, and Python interact differently. Below is a matrix of what we test with.
 With the move to Pandas on Spark API and compatability issues with Pandas 2+ we will for the mean time note support Pandas 2

@@ -23,14 +23,16 @@ two dataframes.
 
 import logging
 from copy import deepcopy
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 from ordered_set import OrderedSet
 
 from datacompy.base import (
     BaseCompare,
+    _validate_tolerance_parameter,
     df_to_str,
+    get_column_tolerance,
     render,
     save_html_report,
     temp_column_name,
@@ -104,10 +106,14 @@ class SparkSQLCompare(BaseCompare):
     join_columns : list or str, optional
         Column(s) to join dataframes on.  If a string is passed in, that one
         column will be used.
-    abs_tol : float, optional
-        Absolute tolerance between two values.
-    rel_tol : float, optional
-        Relative tolerance between two values.
+    abs_tol : float or dict, optional
+        Absolute tolerance between two values. Can be either a float value applied to all columns,
+        or a dictionary mapping column names to specific tolerance values. The special key "default"
+        in the dictionary specifies the tolerance for columns not explicitly listed.
+    rel_tol : float or dict, optional
+        Relative tolerance between two values. Can be either a float value applied to all columns,
+        or a dictionary mapping column names to specific tolerance values. The special key "default"
+        in the dictionary specifies the tolerance for columns not explicitly listed.
     df1_name : str, optional
         A string name for the first dataframe.  This allows the reporting to
         print out an actual name instead of "df1", and allows human users to
@@ -138,8 +144,8 @@ class SparkSQLCompare(BaseCompare):
         df1: "pyspark.sql.DataFrame",
         df2: "pyspark.sql.DataFrame",
         join_columns: List[str] | str,
-        abs_tol: float = 0,
-        rel_tol: float = 0,
+        abs_tol: float | Dict[str, float] = 0,
+        rel_tol: float | Dict[str, float] = 0,
         df1_name: str = "df1",
         df2_name: str = "df2",
         ignore_spaces: bool = False,
@@ -147,6 +153,15 @@ class SparkSQLCompare(BaseCompare):
         cast_column_names_lower: bool = True,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
+
+        # Validate tolerance parameters first
+        self._abs_tol_dict = _validate_tolerance_parameter(
+            abs_tol, "abs_tol", "lower" if cast_column_names_lower else "preserve"
+        )
+        self._rel_tol_dict = _validate_tolerance_parameter(
+            rel_tol, "rel_tol", "lower" if cast_column_names_lower else "preserve"
+        )
+
         if isinstance(join_columns, str | int | float):
             self.join_columns = [
                 (
@@ -484,14 +499,14 @@ class SparkSQLCompare(BaseCompare):
                 col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
                 self.intersect_rows = columns_equal(
-                    self.intersect_rows,
-                    col_1,
-                    col_2,
-                    col_match,
-                    self.rel_tol,
-                    self.abs_tol,
-                    ignore_spaces,
-                    ignore_case,
+                    dataframe=self.intersect_rows,
+                    col_1=col_1,
+                    col_2=col_2,
+                    col_match=col_match,
+                    rel_tol=get_column_tolerance(column, self._rel_tol_dict),
+                    abs_tol=get_column_tolerance(column, self._abs_tol_dict),
+                    ignore_spaces=ignore_spaces,
+                    ignore_case=ignore_case,
                 )
                 match_cnt = (
                     self.intersect_rows.select(col_match)
@@ -526,6 +541,8 @@ class SparkSQLCompare(BaseCompare):
                     ),
                     "max_diff": max_diff,
                     "null_diff": null_diff,
+                    "rel_tol": get_column_tolerance(column, self._rel_tol_dict),
+                    "abs_tol": get_column_tolerance(column, self._abs_tol_dict),
                 }
             )
 
@@ -718,14 +735,14 @@ class SparkSQLCompare(BaseCompare):
                 orig_col_name = c[:-6]
 
                 col_comparison = columns_equal(
-                    self.intersect_rows,
-                    orig_col_name + "_" + self.df1_name,
-                    orig_col_name + "_" + self.df2_name,
-                    c,
-                    self.rel_tol,
-                    self.abs_tol,
-                    self.ignore_spaces,
-                    self.ignore_case,
+                    dataframe=self.intersect_rows,
+                    col_1=orig_col_name + "_" + self.df1_name,
+                    col_2=orig_col_name + "_" + self.df2_name,
+                    col_match=c,
+                    rel_tol=get_column_tolerance(orig_col_name, self._rel_tol_dict),
+                    abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
+                    ignore_spaces=self.ignore_spaces,
+                    ignore_case=self.ignore_case,
                 )
 
                 if not ignore_matching_cols or (
@@ -860,6 +877,8 @@ class SparkSQLCompare(BaseCompare):
                         "unequal_cnt": column["unequal_cnt"],
                         "max_diff": column["max_diff"],
                         "null_diff": column["null_diff"],
+                        "rel_tol": column["rel_tol"],
+                        "abs_tol": column["abs_tol"],
                     }
                 )
                 if column["unequal_cnt"] > 0:
@@ -992,7 +1011,7 @@ class SparkSQLCompare(BaseCompare):
         df2_count = self.df2.count()
 
         # Prepare template data
-        template_data: dict[str, Any] = {
+        template_data: Dict[str, Any] = {
             **self._get_column_summary(),
             **self._get_row_summary(),
             **self._get_column_comparison(),
