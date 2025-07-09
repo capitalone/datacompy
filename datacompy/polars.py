@@ -22,7 +22,6 @@ two dataframes.
 """
 
 import logging
-import os
 from copy import deepcopy
 from typing import Any, Dict, List, cast
 
@@ -30,7 +29,15 @@ import numpy as np
 import polars as pl
 from ordered_set import OrderedSet
 
-from datacompy.base import BaseCompare, temp_column_name
+from datacompy.base import (
+    BaseCompare,
+    _validate_tolerance_parameter,
+    df_to_str,
+    get_column_tolerance,
+    render,
+    save_html_report,
+    temp_column_name,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -54,10 +61,13 @@ class PolarsCompare(BaseCompare):
     join_columns : list or str
         Column(s) to join dataframes on.  If a string is passed in, that one
         column will be used.
-    abs_tol : float, optional
-        Absolute tolerance between two values.
-    rel_tol : float, optional
-        Relative tolerance between two values.
+    abs_tol : float or dict, optional
+        Absolute tolerance between two values. Can be either a float value applied to all columns,
+        or a dictionary mapping column names to specific tolerance values. The special key "default"
+        in the dictionary specifies the tolerance for columns not explicitly listed.
+    rel_tol : float or dict, optional
+        Relative tolerance between two values. Can be either a float value applied to all columns,
+        or a dictionary mapping column names to specific tolerance values. The special key "default"
     df1_name : str, optional
         A string name for the first dataframe.  This allows the reporting to
         print out an actual name instead of "df1", and allows human users to
@@ -85,8 +95,8 @@ class PolarsCompare(BaseCompare):
         df1: pl.DataFrame,
         df2: pl.DataFrame,
         join_columns: List[str] | str,
-        abs_tol: float = 0,
-        rel_tol: float = 0,
+        abs_tol: float | Dict[str, float] = 0,
+        rel_tol: float | Dict[str, float] = 0,
         df1_name: str = "df1",
         df2_name: str = "df2",
         ignore_spaces: bool = False,
@@ -94,6 +104,14 @@ class PolarsCompare(BaseCompare):
         cast_column_names_lower: bool = True,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
+
+        # Validate tolerance parameters first
+        self._abs_tol_dict = _validate_tolerance_parameter(
+            abs_tol, "abs_tol", "lower" if cast_column_names_lower else "preserve"
+        )
+        self._rel_tol_dict = _validate_tolerance_parameter(
+            rel_tol, "rel_tol", "lower" if cast_column_names_lower else "preserve"
+        )
 
         if isinstance(join_columns, str):
             self.join_columns = [
@@ -366,12 +384,12 @@ class PolarsCompare(BaseCompare):
                 col_match = column + "_match"
                 self.intersect_rows = self.intersect_rows.with_columns(
                     columns_equal(
-                        self.intersect_rows[col_1],
-                        self.intersect_rows[col_2],
-                        self.rel_tol,
-                        self.abs_tol,
-                        ignore_spaces,
-                        ignore_case,
+                        col_1=self.intersect_rows[col_1],
+                        col_2=self.intersect_rows[col_2],
+                        rel_tol=get_column_tolerance(column, self._rel_tol_dict),
+                        abs_tol=get_column_tolerance(column, self._abs_tol_dict),
+                        ignore_spaces=ignore_spaces,
+                        ignore_case=ignore_case,
                     ).alias(col_match)
                 )
                 match_cnt = self.intersect_rows[col_match].sum()
@@ -404,6 +422,8 @@ class PolarsCompare(BaseCompare):
                     ),
                     "max_diff": max_diff,
                     "null_diff": null_diff,
+                    "rel_tol": get_column_tolerance(column, self._rel_tol_dict),
+                    "abs_tol": get_column_tolerance(column, self._abs_tol_dict),
                 }
             )
 
@@ -583,12 +603,12 @@ class PolarsCompare(BaseCompare):
                 orig_col_name = col[:-6]
 
                 col_comparison = columns_equal(
-                    self.intersect_rows[orig_col_name + "_" + self.df1_name],
-                    self.intersect_rows[orig_col_name + "_" + self.df2_name],
-                    self.rel_tol,
-                    self.abs_tol,
-                    self.ignore_spaces,
-                    self.ignore_case,
+                    col_1=self.intersect_rows[orig_col_name + "_" + self.df1_name],
+                    col_2=self.intersect_rows[orig_col_name + "_" + self.df2_name],
+                    rel_tol=get_column_tolerance(orig_col_name, self._rel_tol_dict),
+                    abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
+                    ignore_spaces=self.ignore_spaces,
+                    ignore_case=self.ignore_case,
                 )
 
                 if not ignore_matching_cols or (
@@ -621,16 +641,188 @@ class PolarsCompare(BaseCompare):
             .select(self.join_columns + return_list)
         )
 
+    def _get_column_summary(self) -> dict:
+        """Generate column summary data for the report.
+
+        Returns
+        -------
+        dict
+            Dictionary containing column summary information.
+        """
+        return {
+            "column_summary": {
+                "common_columns": len(self.intersect_columns()),
+                "df1_unique": f"{len(self.df1_unq_columns())} {self.df1_unq_columns().items}",
+                "df2_unique": f"{len(self.df2_unq_columns())} {self.df2_unq_columns().items}",
+                "df1_name": self.df1_name,
+                "df2_name": self.df2_name,
+            }
+        }
+
+    def _get_row_summary(self) -> dict:
+        """Generate row summary data for the report.
+
+        Returns
+        -------
+        dict
+            Dictionary containing row summary information.
+        """
+        return {
+            "row_summary": {
+                "match_columns": ", ".join(self.join_columns),
+                "abs_tol": self.abs_tol,
+                "rel_tol": self.rel_tol,
+                "common_rows": self.intersect_rows.shape[0],
+                "df1_unique": self.df1_unq_rows.shape[0],
+                "df2_unique": self.df2_unq_rows.shape[0],
+                "unequal_rows": self.intersect_rows.shape[0]
+                - self.count_matching_rows(),
+                "equal_rows": self.count_matching_rows(),
+                "df1_name": self.df1_name,
+                "df2_name": self.df2_name,
+                "has_duplicates": "Yes" if self._any_dupes else "No",
+            }
+        }
+
+    def _get_column_comparison(self) -> dict:
+        """Generate column comparison statistics for the report.
+
+        Returns
+        -------
+        dict
+            Dictionary containing column comparison information.
+        """
+        return {
+            "column_comparison": {
+                "unequal_columns": len(
+                    [col for col in self.column_stats if col["unequal_cnt"] > 0]
+                ),
+                "equal_columns": len(
+                    [col for col in self.column_stats if col["unequal_cnt"] == 0]
+                ),
+                "unequal_values": sum(col["unequal_cnt"] for col in self.column_stats),
+            }
+        }
+
+    def _get_mismatch_stats(self, sample_count: int) -> dict:
+        """Generate mismatch statistics for the report.
+
+        Parameters
+        ----------
+        sample_count : int
+            Number of samples to include in the report.
+
+        Returns
+        -------
+        dict
+            Dictionary containing mismatch statistics.
+        """
+        match_stats = []
+        match_sample = []
+        any_mismatch = False
+
+        for column in self.column_stats:
+            if not column["all_match"]:
+                any_mismatch = True
+                match_stats.append(
+                    {
+                        "column": column["column"],
+                        "dtype1": column["dtype1"],
+                        "dtype2": column["dtype2"],
+                        "unequal_cnt": column["unequal_cnt"],
+                        "max_diff": column["max_diff"],
+                        "null_diff": column["null_diff"],
+                        "rel_tol": column["rel_tol"],
+                        "abs_tol": column["abs_tol"],
+                    }
+                )
+                if column["unequal_cnt"] > 0:
+                    match_sample.append(
+                        self.sample_mismatch(
+                            column["column"], sample_count, for_display=True
+                        )
+                    )
+
+        if any_mismatch:
+            return {
+                "mismatch_stats": {
+                    "has_mismatches": True,
+                    "stats": match_stats,
+                    "df1_name": self.df1_name,
+                    "df2_name": self.df2_name,
+                    "samples": [df_to_str(sample) for sample in match_sample],
+                    "has_samples": len(match_sample) > 0 and sample_count > 0,
+                }
+            }
+        return {
+            "mismatch_stats": {
+                "has_mismatches": False,
+                "has_samples": False,
+            }
+        }
+
+    def _get_unique_rows_data(self, sample_count: int, column_count: int) -> dict:
+        """Generate data for unique rows in both dataframes.
+
+        Parameters
+        ----------
+        sample_count : int
+            Number of samples to include.
+        column_count : int
+            Number of columns to include.
+
+        Returns
+        -------
+        dict
+            Dictionary containing unique rows data for both dataframes.
+        """
+        min_sample_count_df1 = min(sample_count, self.df1_unq_rows.shape[0])
+        min_sample_count_df2 = min(sample_count, self.df2_unq_rows.shape[0])
+        min_column_count_df1 = min(column_count, self.df1_unq_rows.shape[1])
+        min_column_count_df2 = min(column_count, self.df2_unq_rows.shape[1])
+
+        return {
+            "df1_unique_rows": {
+                "has_rows": min_sample_count_df1 > 0,
+                "rows": df_to_str(
+                    self.df1_unq_rows.select(
+                        self.df1_unq_rows.columns[:min_column_count_df1]
+                    ),
+                    sample_count=min_sample_count_df1,
+                )
+                if self.df1_unq_rows.shape[0] > 0
+                else "",
+                "columns": list(self.df1_unq_rows.columns[:min_column_count_df1])
+                if self.df1_unq_rows.shape[0] > 0
+                else "",
+            },
+            "df2_unique_rows": {
+                "has_rows": min_sample_count_df2 > 0,
+                "rows": df_to_str(
+                    self.df2_unq_rows.select(
+                        self.df2_unq_rows.columns[:min_column_count_df2]
+                    ),
+                    sample_count=min_sample_count_df2,
+                )
+                if self.df2_unq_rows.shape[0] > 0
+                else "",
+                "columns": list(self.df2_unq_rows.columns[:min_column_count_df2])
+                if self.df2_unq_rows.shape[0] > 0
+                else "",
+            },
+        }
+
     def report(
         self,
         sample_count: int = 10,
         column_count: int = 10,
         html_file: str | None = None,
+        template_path: str | None = None,
     ) -> str:
         """Return a string representation of a report.
 
-        The representation can
-        then be printed or saved to a file.
+        The representation can then be printed or saved to a file. You can customize the
+        report's appearance by providing a custom Jinja2 template.
 
         Parameters
         ----------
@@ -643,173 +835,51 @@ class PolarsCompare(BaseCompare):
         html_file : str, optional
             HTML file name to save report output to. If ``None`` the file creation will be skipped.
 
+        template_path : str, optional
+            Path to a custom Jinja2 template file to use for report generation.
+            If ``None``, the default template will be used. The template receives the
+            following context variables:
+
+            - ``column_summary``: Dict with column statistics including: ``common_columns``, ``df1_unique``, ``df2_unique``, ``df1_name``, ``df2_name``
+            - ``row_summary``: Dict with row statistics including: ``match_columns``, ``equal_rows``, ``unequal_rows``
+            - ``column_comparison``: Dict with column comparison statistics including: ``unequal_columns``, ``equal_columns``, ``unequal_values``
+            - ``mismatch_stats``: Dict containing:
+                - ``stats``: List of dicts with column mismatch statistics (column, match, mismatch, null_diff, etc.)
+                - ``samples``: Sample rows with mismatched values
+                - ``has_samples``: Boolean indicating if there are any mismatch samples
+                - ``has_mismatches``: Boolean indicating if there are any mismatches
+            - ``df1_unique_rows``: Dict with unique rows in df1 including: ``has_rows``, ``rows``, ``columns``
+            - ``df2_unique_rows``: Dict with unique rows in df2 including: ``has_rows``, ``rows``, ``columns``
+
         Returns
         -------
         str
-            The report, formatted kinda nicely.
+            The report, formatted according to the template.
         """
+        # Prepare template data
+        template_data = {
+            **self._get_column_summary(),
+            **self._get_row_summary(),
+            **self._get_column_comparison(),
+            **self._get_mismatch_stats(sample_count),
+            **self._get_unique_rows_data(sample_count, column_count),
+            "df1_name": self.df1_name,
+            "df2_name": self.df2_name,
+            "df1_shape": (self.df1.shape[0], self.df1.shape[1]),
+            "df2_shape": (self.df2.shape[0], self.df2.shape[1]),
+            "column_count": column_count,
+        }
 
-        def df_to_str(pdf: pl.DataFrame) -> str:
-            return pdf.to_pandas().to_string()
+        # Determine which template to use
+        template_name = template_path if template_path else "report_template.j2"
 
-        # Header
-        report = render("header.txt")
-        df_header = pl.DataFrame(
-            {
-                "DataFrame": [self.df1_name, self.df2_name],
-                "Columns": [self.df1.shape[1], self.df2.shape[1]],
-                "Rows": [self.df1.shape[0], self.df2.shape[0]],
-            }
-        )
-        report += df_to_str(df_header[["DataFrame", "Columns", "Rows"]])
-        report += "\n\n"
-
-        # Column Summary
-        report += render(
-            "column_summary.txt",
-            len(self.intersect_columns()),
-            f"{len(self.df1_unq_columns())} {self.df1_unq_columns().items}",
-            f"{len(self.df2_unq_columns())} {self.df2_unq_columns().items}",
-            self.df1_name,
-            self.df2_name,
-        )
-
-        # Row Summary
-        match_on = ", ".join(self.join_columns)
-        report += render(
-            "row_summary.txt",
-            match_on,
-            self.abs_tol,
-            self.rel_tol,
-            self.intersect_rows.shape[0],
-            self.df1_unq_rows.shape[0],
-            self.df2_unq_rows.shape[0],
-            self.intersect_rows.shape[0] - self.count_matching_rows(),
-            self.count_matching_rows(),
-            self.df1_name,
-            self.df2_name,
-            "Yes" if self._any_dupes else "No",
-        )
-
-        # Column Matching
-        report += render(
-            "column_comparison.txt",
-            len([col for col in self.column_stats if col["unequal_cnt"] > 0]),
-            len([col for col in self.column_stats if col["unequal_cnt"] == 0]),
-            sum(col["unequal_cnt"] for col in self.column_stats),
-        )
-
-        match_stats = []
-        match_sample = []
-        any_mismatch = False
-        for column in self.column_stats:
-            if not column["all_match"]:
-                any_mismatch = True
-                match_stats.append(
-                    {
-                        "Column": column["column"],
-                        f"{self.df1_name} dtype": column["dtype1"],
-                        f"{self.df2_name} dtype": column["dtype2"],
-                        "# Unequal": column["unequal_cnt"],
-                        "Max Diff": column["max_diff"],
-                        "# Null Diff": column["null_diff"],
-                    }
-                )
-                if column["unequal_cnt"] > 0:
-                    match_sample.append(
-                        self.sample_mismatch(
-                            column["column"], sample_count, for_display=True
-                        )
-                    )
-
-        if any_mismatch:
-            report += "Columns with Unequal Values or Types\n"
-            report += "------------------------------------\n"
-            report += "\n"
-            df_match_stats = pl.DataFrame(match_stats)
-            df_match_stats = df_match_stats.sort("Column")
-            # Have to specify again for sorting
-            report += (
-                df_match_stats[
-                    [
-                        "Column",
-                        f"{self.df1_name} dtype",
-                        f"{self.df2_name} dtype",
-                        "# Unequal",
-                        "Max Diff",
-                        "# Null Diff",
-                    ]
-                ]
-                .to_pandas()
-                .to_string()
-            )
-            report += "\n\n"
-
-            if sample_count > 0:
-                report += "Sample Rows with Unequal Values\n"
-                report += "-------------------------------\n"
-                report += "\n"
-                for sample in match_sample:
-                    report += df_to_str(sample)
-                    report += "\n\n"
-
-        if min(sample_count, self.df1_unq_rows.shape[0]) > 0:
-            report += (
-                f"Sample Rows Only in {self.df1_name} (First {column_count} Columns)\n"
-            )
-            report += (
-                f"---------------------------------------{'-' * len(self.df1_name)}\n"
-            )
-            report += "\n"
-            columns = self.df1_unq_rows.columns[:column_count]
-            unq_count = min(sample_count, self.df1_unq_rows.shape[0])
-            report += df_to_str(self.df1_unq_rows.sample(unq_count)[columns])
-            report += "\n\n"
-
-        if min(sample_count, self.df2_unq_rows.shape[0]) > 0:
-            report += (
-                f"Sample Rows Only in {self.df2_name} (First {column_count} Columns)\n"
-            )
-            report += (
-                f"---------------------------------------{'-' * len(self.df2_name)}\n"
-            )
-            report += "\n"
-            columns = self.df2_unq_rows.columns[:column_count]
-            unq_count = min(sample_count, self.df2_unq_rows.shape[0])
-            report += df_to_str(self.df2_unq_rows.sample(unq_count)[columns])
-            report += "\n\n"
+        # Render the main report
+        report = render(template_name, **template_data)
 
         if html_file:
-            html_report = report.replace("\n", "<br>").replace(" ", "&nbsp;")
-            html_report = f"<pre>{html_report}</pre>"
-            with open(html_file, "w") as f:
-                f.write(html_report)
+            save_html_report(report, html_file)
 
         return report
-
-
-def render(filename: str, *fields: int | float | str) -> str:
-    """Render out an individual template.
-
-    This basically just reads in a
-    template file, and applies ``.format()`` on the fields.
-
-    Parameters
-    ----------
-    filename : str
-        The file that contains the template.  Will automagically prepend the
-        templates directory before opening
-    fields : list
-        Fields to be rendered out in the template
-
-    Returns
-    -------
-    str
-        The fully rendered out file.
-    """
-    this_dir = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(this_dir, "templates", filename)) as file_open:
-        return file_open.read().format(*fields)
 
 
 def columns_equal(

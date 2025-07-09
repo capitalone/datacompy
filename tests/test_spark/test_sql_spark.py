@@ -19,7 +19,9 @@ Testing out the datacompy functionality
 
 import io
 import logging
+import os
 import sys
+import tempfile
 from datetime import datetime
 from decimal import Decimal
 from io import StringIO
@@ -413,9 +415,9 @@ def test_infinity_and_beyond(spark_session):
 def test_compare_df_setter_bad(spark_session):
     pdf = pd.DataFrame([{"a": 1, "c": 2}, {"a": 2, "c": 2}])
     df = spark_session.createDataFrame(pdf)
-    with raises(TypeError, match="df1 must be a pyspark.sql.DataFrame"):
+    with raises(TypeError, match=r"df1 must be a pyspark.sql.DataFrame"):
         SparkSQLCompare(spark_session, "a", "a", ["a"])
-    with raises(ValueError, match="df1 must have all columns from join_columns"):
+    with raises(ValueError, match=r"df1 must have all columns from join_columns"):
         SparkSQLCompare(spark_session, df, df.select("*"), ["b"])
     pdf = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
     df_dupe = spark_session.createDataFrame(pdf)
@@ -1320,25 +1322,27 @@ def test_integer_column_names(spark_session):
 
 
 @mock.patch("datacompy.spark.sql.render")
-def test_save_html(mock_render, spark_session):
+@mock.patch("datacompy.spark.sql.save_html_report")
+def test_save_html(mock_save_html, mock_render, spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
 
-    m = mock.mock_open()
-    with mock.patch("datacompy.spark.sql.open", m, create=True):
-        # assert without HTML call
-        compare.report()
-        assert mock_render.call_count == 4
-        m.assert_not_called()
+    # Test without HTML file
+    compare.report()
+    mock_render.assert_called_once()
+    mock_save_html.assert_not_called()
 
     mock_render.reset_mock()
-    m = mock.mock_open()
-    with mock.patch("datacompy.spark.sql.open", m, create=True):
-        # assert with HTML call
-        compare.report(html_file="test.html")
-        assert mock_render.call_count == 4
-        m.assert_called_with("test.html", "w")
+    mock_save_html.reset_mock()
+
+    # Test with HTML file
+    compare.report(html_file="test.html")
+    mock_render.assert_called_once()
+    mock_save_html.assert_called_once()
+    args, _ = mock_save_html.call_args
+    assert len(args) == 2
+    assert args[1] == "test.html"  # The filename
 
 
 def test_unicode_columns(spark_session):
@@ -1624,3 +1628,275 @@ def test_columns_equal_arrays(spark_session):
         diff_shapes.toPandas()["diff_shapes"]
         == pd.Series([True, True, True, False, False])
     ).all()
+
+
+def test_custom_template_usage(spark_session):
+    """Test using a custom template with template_path parameter."""
+    df1 = spark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = spark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["id"])
+
+    # Create a simple test template
+    with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
+        tmp.write("Custom Template\n")
+        tmp.write(
+            "Columns: {{ mismatch_stats.stats|map(attribute='column')|join(', ') if mismatch_stats.has_mismatches else '' }}\n"
+        )
+        tmp.write(
+            "Matches: "
+            "{% if mismatch_stats.has_mismatches %}"
+            "{% for col in mismatch_stats.stats %}"
+            "{% if col.unequal_cnt > 0 %}False{% else %}True{% endif %}"
+            "{% endfor %}"
+            "{% else %}All match{% endif %}"
+        )
+        template_path = tmp.name
+
+    try:
+        # Test with custom template
+        result = compare.report(template_path=template_path)
+        assert "Custom Template" in result
+        # Should list the column with mismatches (value)
+        assert "value" in result
+        # Should show False for column value (has mismatches)
+        assert "False" in result
+    finally:
+        # Clean up the temporary file
+        if os.path.exists(template_path):
+            os.unlink(template_path)
+
+
+def test_template_without_extension(spark_session):
+    """Test that template_path works without .j2 extension."""
+    df1 = spark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = spark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["id"])
+
+    # Create a test template without .j2 extension
+    with tempfile.NamedTemporaryFile(delete=False, mode="w") as tmp:
+        tmp.write("Test Template")
+        template_path = tmp.name
+
+    try:
+        result = compare.report(template_path=template_path)
+        assert "Test Template" in result
+    finally:
+        if os.path.exists(template_path):
+            os.unlink(template_path)
+
+
+def test_nonexistent_template(spark_session):
+    """Test that a clear error is raised when template file doesn't exist."""
+    df1 = spark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = spark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["id"])
+
+    with pytest.raises(FileNotFoundError) as exc_info:
+        compare.report(template_path="nonexistent_template.j2")
+    # Check that the error message is helpful
+    assert "Template not found" in str(
+        exc_info.value
+    ) or "nonexistent_template.j2" in str(exc_info.value)
+
+
+def test_template_context_variables(spark_session):
+    """Test that all expected context variables are available in the template."""
+    df1 = spark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = spark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["id"])
+
+    # Create a test template that checks for expected variables
+    with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
+        tmp.write(
+            "{% if mismatch_stats is defined and df1_name is defined and df2_name is defined %}"
+        )
+        tmp.write("All required variables present\n")
+        tmp.write("{% else %}")
+        tmp.write("Missing required variables\n")
+        tmp.write("{% endif %}")
+        tmp.write(
+            "Columns: {{ mismatch_stats.stats|map(attribute='column')|join(', ') if mismatch_stats.has_mismatches else '' }}"
+        )
+        template_path = tmp.name
+
+    try:
+        result = compare.report(template_path=template_path)
+        assert "All required variables present" in result
+        # Should list the column with mismatches (value)
+        assert "value" in result
+    finally:
+        if os.path.exists(template_path):
+            os.unlink(template_path)
+
+
+@mock.patch("datacompy.spark.sql.save_html_report")
+@mock.patch("datacompy.spark.sql.render")
+def test_html_report_generation(mock_render, mock_save_html, spark_session):
+    """Test that HTML reports can be generated and saved to a file."""
+    df1 = spark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = spark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SparkSQLCompare(spark_session, df1, df2, ["id"])
+
+    # Mock the render function to return a test string
+    mock_render.return_value = "<html><body>Test Report</body></html>"
+
+    # Create a temporary file for the HTML output
+    with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as tmp:
+        html_file = tmp.name
+
+    try:
+        # Call report with html_file parameter
+        result = compare.report(html_file=html_file)
+
+        # Check that save_html_report was called with the correct arguments
+        mock_save_html.assert_called_once_with(
+            "<html><body>Test Report</body></html>", html_file
+        )
+        # Check that the result is the rendered template
+        assert result == "<html><body>Test Report</body></html>"
+    finally:
+        # Clean up the temporary file
+        if os.path.exists(html_file):
+            os.unlink(html_file)
+
+
+def test_10k_rows_default_tol(spark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["a", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    df1 = spark_session.createDataFrame(pdf)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare_tol = SparkSQLCompare(spark_session, df1, df2, ["A"], abs_tol=0.2)
+    assert compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {
+        "a",
+        "b",
+        "c",
+    }  # cast_column_names_lower is True by default
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert compare_tol.intersect_rows_match()
+
+    compare_no_tol = SparkSQLCompare(spark_session, df1, df2, ["A"])
+    assert not compare_no_tol.matches()
+    assert compare_no_tol.df1_unq_rows.count() == 0
+    assert compare_no_tol.df2_unq_rows.count() == 0
+    assert compare_no_tol.intersect_columns() == {"a", "b", "c"}
+    assert compare_no_tol.all_columns_match()
+    assert compare_no_tol.all_rows_overlap()
+    assert not compare_no_tol.intersect_rows_match()
+
+
+def test_10k_rows_abs_tol_per_column(spark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    df1 = spark_session.createDataFrame(pdf)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare_tol = SparkSQLCompare(spark_session, df1, df2, ["A"], abs_tol={"b": 0.2})
+    assert compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {
+        "a",
+        "b",
+        "c",
+    }  # cast_column_names_lower is True by default
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert compare_tol.intersect_rows_match()
+
+    compare_tol = SparkSQLCompare(
+        spark_session,
+        df1,
+        df2,
+        ["A"],
+        abs_tol={"b": 0.2},
+        cast_column_names_lower=False,  # b != B
+    )
+    assert not compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {
+        "A",
+        "B",
+        "C",
+    }  # cast_column_names_lower is False
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert not compare_tol.intersect_rows_match()
+
+
+def test_10k_rows_abs_tol_per_column_default(spark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    pdf2["C"] = pdf2["C"] + 0.3
+    df1 = spark_session.createDataFrame(pdf)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare_tol = SparkSQLCompare(
+        spark_session, df1, df2, ["A"], abs_tol={"c": 0.0, "default": 0.2}
+    )
+    assert not compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {
+        "a",
+        "b",
+        "c",
+    }  # cast_column_names_lower is True by default
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert not compare_tol.intersect_rows_match()
+
+
+def test_10k_rows_rel_tol_per_column(spark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    df1 = spark_session.createDataFrame(pdf)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare_tol = SparkSQLCompare(spark_session, df1, df2, ["A"], rel_tol={"B": 1.0})
+    assert compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"a", "b", "c"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert compare_tol.intersect_rows_match()
+
+
+def test_10k_rows_rel_tol_per_column_default(spark_session):
+    rng = np.random.default_rng()
+    pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
+    pdf.reset_index(inplace=True)
+    pdf.columns = ["A", "B", "C"]
+    pdf2 = pdf.copy()
+    pdf2["B"] = pdf2["B"] + 0.1
+    pdf2["C"] = pdf2["C"] + 0.1
+    df1 = spark_session.createDataFrame(pdf)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare_tol = SparkSQLCompare(
+        spark_session, df1, df2, ["A"], rel_tol={"c": 0.0, "default": 1}
+    )
+    assert not compare_tol.matches()
+    assert compare_tol.df1_unq_rows.count() == 0
+    assert compare_tol.df2_unq_rows.count() == 0
+    assert compare_tol.intersect_columns() == {"a", "b", "c"}
+    assert compare_tol.all_columns_match()
+    assert compare_tol.all_rows_overlap()
+    assert not compare_tol.intersect_rows_match()

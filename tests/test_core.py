@@ -19,7 +19,9 @@ Testing out the datacompy functionality
 
 import io
 import logging
+import os
 import sys
+import tempfile
 from datetime import date, datetime
 from decimal import Decimal
 from unittest import mock
@@ -1378,25 +1380,163 @@ def test_integer_column_names():
 
 
 @mock.patch("datacompy.core.render")
-def test_save_html(mock_render):
-    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    compare = datacompy.Compare(df1, df2, join_columns=["a"])
+@mock.patch("datacompy.core.save_html_report")
+def test_save_html(mock_save_html, mock_render):
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
+    compare = datacompy.Compare(df1, df2, ["a"])
+    mock_render.return_value = "<html>test</html>"
+    result = compare.report(html_file="test.html")
 
-    m = mock.mock_open()
-    with mock.patch("datacompy.core.open", m, create=True):
-        # assert without HTML call
-        compare.report()
-        assert mock_render.call_count == 4
-        m.assert_not_called()
+    # Verify the result is the rendered HTML
+    assert result == "<html>test</html>"
 
-    mock_render.reset_mock()
-    m = mock.mock_open()
-    with mock.patch("datacompy.core.open", m, create=True):
-        # assert with HTML call
-        compare.report(html_file="test.html")
-        assert mock_render.call_count == 4
-        m.assert_called_with("test.html", "w")
+    # Verify render was called once
+    mock_render.assert_called_once()
+
+    # Get the context passed to render
+    render_kwargs = mock_render.call_args[1]
+
+    # Verify important context variables are present
+    assert "column_count" in render_kwargs
+    assert "column_comparison" in render_kwargs
+    assert "column_summary" in render_kwargs
+    assert "df1_name" in render_kwargs
+    assert "df2_name" in render_kwargs
+    assert "df1_unique_rows" in render_kwargs
+    assert "df2_unique_rows" in render_kwargs
+    assert "mismatch_stats" in render_kwargs
+    assert "row_summary" in render_kwargs
+
+    # Verify save_html_report was called with the correct arguments
+    mock_save_html.assert_called_once_with("<html>test</html>", "test.html")
+    args, _ = mock_save_html.call_args
+    assert len(args) == 2
+    assert args[0] == "<html>test</html>"
+    assert args[1] == "test.html"
+
+
+def test_custom_template_usage():
+    """Test using a custom template with template_path parameter."""
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
+    compare = datacompy.Compare(df1, df2, ["a"])
+
+    # Create a simple test template
+    with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
+        tmp.write("Custom Template\n")
+        tmp.write(
+            "Columns: {{ mismatch_stats.stats|map(attribute='column')|join(', ') }}\n"
+        )
+        tmp.write(
+            "Matches: {% for col in mismatch_stats.stats %}{% if not col.unequal_cnt == 0 %}False{% else %}True{% endif %}{% endfor %}"
+        )
+        template_path = tmp.name
+
+    try:
+        # Test with custom template
+        result = compare.report(template_path=template_path)
+        assert "Custom Template" in result
+        # 'a' is the join column, 'b' is the compared column
+        assert "Columns: b" in result  # Only mismatched columns are listed in stats
+        assert "Matches: False" in result  # 'b' doesn't match
+    finally:
+        # Clean up the temporary file
+        if os.path.exists(template_path):
+            os.unlink(template_path)
+
+
+def test_template_without_extension():
+    """Test that template files without .j2 extension still work."""
+    df1 = pd.DataFrame([{"a": 1, "b": 2}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}])
+    compare = datacompy.Compare(df1, df2, ["a"])
+
+    # Create a test template without extension
+    with tempfile.NamedTemporaryFile(delete=False, mode="w") as tmp:
+        tmp.write("Template without extension\n")
+        tmp.write(
+            "Match status: {% if column_stats|selectattr('all_match', 'equalto', False)|list|length == 0 %}Match{% else %}No match{% endif %}"
+        )
+        template_path = tmp.name
+
+    try:
+        # Test with template that doesn't have .j2 extension
+        result = compare.report(template_path=template_path)
+        assert "Template without extension" in result
+        assert "Match status: Match" in result
+    finally:
+        if os.path.exists(template_path):
+            os.unlink(template_path)
+
+
+def test_nonexistent_template():
+    """Test that a clear error is raised when template file doesn't exist."""
+    df1 = pd.DataFrame([{"a": 1, "b": 2}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}])
+    compare = datacompy.Compare(df1, df2, ["a"])
+
+    with pytest.raises(FileNotFoundError):
+        compare.report(template_path="/nonexistent/path/template.j2")
+
+
+def test_template_context_variables():
+    """Test that all expected context variables are available in the template."""
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
+    compare = datacompy.Compare(df1, df2, ["a"])
+
+    # Create a test template that checks for expected variables
+    with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
+        tmp.write(
+            "{% if mismatch_stats is defined and df1_name is defined and df2_name is defined %}"
+        )
+        tmp.write("All required variables present\n")
+        tmp.write("{% else %}")
+        tmp.write("Missing required variables\n")
+        tmp.write("{% endif %}")
+        tmp.write(
+            "Columns: {{ mismatch_stats.stats|map(attribute='column')|join(', ') }}"
+        )
+        template_path = tmp.name
+
+    try:
+        result = compare.report(template_path=template_path)
+        assert "All required variables present" in result
+        # Only column 'b' should be in the mismatch stats (since 'a' is the join column)
+        assert "Columns: b" in result
+    finally:
+        if os.path.exists(template_path):
+            os.unlink(template_path)
+
+
+def test_html_report_generation():
+    """Test that HTML report is properly generated and saved."""
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
+    compare = datacompy.Compare(df1, df2, ["a"])
+
+    # Create a temporary directory for the test
+    with tempfile.TemporaryDirectory() as temp_dir:
+        html_file = os.path.join(temp_dir, "test_report.html")
+
+        # Generate the report
+        result = compare.report(html_file=html_file)
+
+        # Check that the file was created
+        assert os.path.exists(html_file)
+
+        # Check that the file has content
+        with open(html_file) as f:
+            content = f.read()
+            assert len(content) > 0
+            # Should contain some HTML tags
+            assert "<html" in content.lower()
+            assert "</html>" in content.lower()
+
+        # The result should be the same as the rendered HTML content
+        assert isinstance(result, str)
+        assert len(result) > 0
 
 
 def test_full_join_counts_no_matches():
@@ -1833,3 +1973,87 @@ def test_normalize_string_column(data, ignore_spaces, ignore_case, expected):
         data, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
     assert_series_equal(result, expected, check_names=False)
+
+
+def test_per_column_tolerances() -> None:
+    """Test comparison with per-column tolerances."""
+    df1 = pd.DataFrame(
+        {"id": [1, 2, 3], "col1": [1.0, 2.0, 3.0], "col2": [1.0, 2.0, 3.0]}
+    )
+    df2 = pd.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "col1": [1.1, 2.2, 3.3],  # Larger differences
+            "col2": [1.01, 2.01, 3.01],  # Smaller differences
+        }
+    )
+
+    compare = datacompy.core.Compare(
+        df1,
+        df2,
+        join_columns=["id"],
+        abs_tol={"col1": 0.5, "col2": 0.00001},  # col1 should match, col2 should not
+    )
+
+    col1_stats = next(stat for stat in compare.column_stats if stat["column"] == "col1")
+    col2_stats = next(stat for stat in compare.column_stats if stat["column"] == "col2")
+    assert col1_stats["unequal_cnt"] == 0
+    assert col2_stats["unequal_cnt"] > 0
+    assert compare._rel_tol_dict == {"default": 0.0}
+
+
+def test_default_tolerance() -> None:
+    """Test default tolerance behavior."""
+    df1 = pd.DataFrame({"id": [1, 2], "col1": [1.0, 2.0], "col2": [1.0, 2.0]})
+    df2 = pd.DataFrame({"id": [1, 2], "col1": [1.1, 2.1], "col2": [1.1, 2.1]})
+
+    compare = datacompy.core.Compare(
+        df1, df2, join_columns=["id"], abs_tol={"col1": 0.05, "default": 0.2}
+    )
+
+    col1_stats = next(stat for stat in compare.column_stats if stat["column"] == "col1")
+    col2_stats = next(stat for stat in compare.column_stats if stat["column"] == "col2")
+    assert col1_stats["unequal_cnt"] > 0  # col1 should not match (tolerance 0.05)
+    assert col2_stats["unequal_cnt"] == 0  # col2 should match (default tolerance 0.2)
+    assert compare._rel_tol_dict == {"default": 0.0}
+
+
+def test_mixed_tolerances() -> None:
+    """Test mixing absolute and relative tolerances."""
+    df1 = pd.DataFrame(
+        {
+            "id": [1, 2],
+            "small_vals": [
+                1.0,
+                2.0,
+            ],  # Small values where absolute tolerance matters more
+            "large_vals": [
+                1000.0,
+                2000.0,
+            ],  # Large values where relative tolerance matters more
+        }
+    )
+    df2 = pd.DataFrame(
+        {"id": [1, 2], "small_vals": [1.1, 2.1], "large_vals": [1001.0, 2002.0]}
+    )
+
+    compare = datacompy.core.Compare(
+        df1,
+        df2,
+        join_columns=["id"],
+        abs_tol={"small_vals": 0.2, "default": 0.0},
+        rel_tol={"large_vals": 0.001, "default": 0.0},
+    )
+
+    small_vals_stats = next(
+        stat for stat in compare.column_stats if stat["column"] == "small_vals"
+    )
+    large_vals_stats = next(
+        stat for stat in compare.column_stats if stat["column"] == "large_vals"
+    )
+    assert small_vals_stats["unequal_cnt"] == 0  # small_vals should match (abs_tol 0.2)
+    assert (
+        large_vals_stats["unequal_cnt"] == 0
+    )  # large_vals should match (rel_tol 0.001 = 0.1%)
+    assert compare._rel_tol_dict == {"large_vals": 0.001, "default": 0.0}
+    assert compare._abs_tol_dict == {"small_vals": 0.2, "default": 0.0}
