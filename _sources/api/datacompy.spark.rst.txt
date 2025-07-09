@@ -12,22 +12,6 @@ datacompy.spark.helper module
    :undoc-members:
    :show-inheritance:
 
-datacompy.spark.legacy module
------------------------------
-
-.. automodule:: datacompy.spark.legacy
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-datacompy.spark.pandas module
------------------------------
-
-.. automodule:: datacompy.spark.pandas
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 datacompy.spark.sql module
 --------------------------
 

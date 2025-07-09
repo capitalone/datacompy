@@ -3,11 +3,11 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Benchmarks" href="benchmark.html" /><link rel="prev" title="Polars Usage" href="polars_usage.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Template Customization Guide" href="template_guide.html" /><link rel="prev" title="Polars Usage" href="polars_usage.html" />
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
-        <title>Fugue Detail - datacompy 0.16.8 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+        <title>Fugue Detail - datacompy 0.17.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
     
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.16.8 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.17.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.16.8 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.17.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -205,6 +205,7 @@
 <li class="toctree-l1"><a class="reference internal" href="snowflake_usage.html">Snowflake Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Fugue Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="template_guide.html">Template Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmarks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
 </ul>
@@ -283,9 +284,9 @@ DataComPy integrates with Fugue to provide a simple way to compare data across t
 <p>Please note this is different than the native Pandas implementation which can be accessed via the <code class="docutils literal notranslate"><span class="pre">Compare</span></code> class,
 the Fugue implementation is using the <code class="docutils literal notranslate"><span class="pre">Compare</span></code> class in the background though.</p>
 <p>The following usage example compares two Pandas dataframes, it is equivalent to the Pandas usage example.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">datacompy</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">datacompy</span>
 
 <span class="n">data1</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld,date_fld</span>
 <span class="s2">10000001234,123.45,George Maharis,14530.1555,2017-01-01</span>
@@ -336,7 +337,7 @@ the Fugue implementation is using the <code class="docutils literal notranslate"
 dataframes of different backends. Just pass in Dataframes such as Pandas dataframes, DuckDB relations,
 Polars dataframes, Arrow tables, Spark dataframes, Dask dataframes or Ray datasets. For example,
 to compare a Pandas dataframe with a Spark dataframe:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyspark.sql</span><span class="w"> </span><span class="kn">import</span> <span class="n">SparkSession</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
 
 <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
 <span class="n">spark_df2</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">df2</span><span class="p">)</span>
@@ -363,12 +364,12 @@ guarantees full data comparison with consistent result compared to Pandas-based 
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="benchmark.html">
+          <a class="next-page" href="template_guide.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Benchmarks</div>
+                <div class="title">Template Customization Guide</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -429,7 +430,7 @@ guarantees full data comparison with consistent result compared to Pandas-based 
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=5e7baddb"></script>
+</div><script src="_static/documentation_options.js?v=0c3dd48d"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=5fa4622c"></script>

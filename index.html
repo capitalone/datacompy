@@ -6,8 +6,8 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Installation" href="install.html" />
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
-        <title>datacompy 0.16.8 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+        <title>datacompy 0.17.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
     
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="#"><div class="brand">datacompy 0.16.8 documentation</div></a>
+      <a href="#"><div class="brand">datacompy 0.17.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
   
   
-  <span class="sidebar-brand-text">datacompy 0.16.8 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.17.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -205,6 +205,7 @@
 <li class="toctree-l1"><a class="reference internal" href="snowflake_usage.html">Snowflake Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="template_guide.html">Template Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmarks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
 </ul>
@@ -296,27 +297,11 @@ pip<span class="w"> </span>install<span class="w"> </span>datacompy<span class="
 </pre></div>
 </div>
 </section>
-<section id="legacy-spark-deprecation">
-<h3>Legacy Spark Deprecation<a class="headerlink" href="#legacy-spark-deprecation" title="Link to this heading">¶</a></h3>
-<p>With version <code class="docutils literal notranslate"><span class="pre">v0.12.0</span></code> the original <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> was replaced with a
-Pandas on Spark implementation. The original <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> implementation differs
-from all the other native implementations. To align the API better,  and keep behaviour
-consistent we are deprecating the original <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> into a new module <code class="docutils literal notranslate"><span class="pre">LegacySparkCompare</span></code></p>
-<p>Subsequently in <code class="docutils literal notranslate"><span class="pre">v0.13.0</span></code> a PySpark DataFrame class has been introduced (<code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code>)
-which accepts <code class="docutils literal notranslate"><span class="pre">pyspark.sql.DataFrame</span></code> and should provide better performance. With this version
-the Pandas on Spark implementation has been renamed to <code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code> and all the spark
-logic is now under the <code class="docutils literal notranslate"><span class="pre">spark</span></code> submodule.</p>
-<p>If you wish to use the old SparkCompare moving forward you can import it like so:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datacompy.spark.legacy</span><span class="w"> </span><span class="kn">import</span> <span class="n">LegacySparkCompare</span>
-</pre></div>
-</div>
-</section>
-<section id="sparkpandascompare-deprecation">
-<h3>SparkPandasCompare Deprecation<a class="headerlink" href="#sparkpandascompare-deprecation" title="Link to this heading">¶</a></h3>
-<p>Starting with <code class="docutils literal notranslate"><span class="pre">v0.14.1</span></code>, <code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code> is slated for deprecation. <code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code> is the prefered and much more performant.
-It should be noted that if you continue to use <code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code> that <code class="docutils literal notranslate"><span class="pre">numpy</span></code> 2+ is not supported due to dependency issues.</p>
-<section id="supported-versions-and-dependncies">
-<h4>Supported versions and dependncies<a class="headerlink" href="#supported-versions-and-dependncies" title="Link to this heading">¶</a></h4>
+<section id="legacysparkcompare-and-sparkpandascompare-removal">
+<h3>LegacySparkCompare and SparkPandasCompare removal<a class="headerlink" href="#legacysparkcompare-and-sparkpandascompare-removal" title="Link to this heading">¶</a></h3>
+<p>Starting with v0.17.0, both <code class="docutils literal notranslate"><span class="pre">LegacySparkCompare</span></code> and <code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code> have been removed.</p>
+<section id="supported-versions-and-dependencies">
+<h4>Supported versions and dependencies<a class="headerlink" href="#supported-versions-and-dependencies" title="Link to this heading">¶</a></h4>
 <p>Different versions of Spark, Pandas, and Python interact differently. Below is a matrix of what we test with.
 With the move to Pandas on Spark API and compatability issues with Pandas 2+ we will for the mean time note support Pandas 2
 with the Pandas on Spark implementation. Spark plans to support Pandas 2 in <a class="reference external" href="https://issues.apache.org/jira/browse/SPARK-44101">Spark 4</a></p>
@@ -365,15 +350,11 @@ with the Pandas on Spark implementation. Spark plans to support Pandas 2 in <a c
 <td><p>✅</p></td>
 <td><p>✅</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code></p></td>
-<td><p>✅</p></td>
-<td><p>❌</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code></p></td>
 <td><p>✅</p></td>
 <td><p>✅</p></td>
 </tr>
-<tr class="row-odd"><td><p>Fugue</p></td>
+<tr class="row-even"><td><p>Fugue</p></td>
 <td><p>✅</p></td>
 <td><p>✅</p></td>
 </tr>
@@ -465,6 +446,17 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l2"><a class="reference internal" href="fugue_usage.html#how-it-works">How it works</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="template_guide.html">Template Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="template_guide.html#template-basics">Template Basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="template_guide.html#available-template-variables">Available Template Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="template_guide.html#creating-a-custom-template">Creating a Custom Template</a></li>
+<li class="toctree-l2"><a class="reference internal" href="template_guide.html#example-template">Example Template</a></li>
+<li class="toctree-l2"><a class="reference internal" href="template_guide.html#using-a-custom-template">Using a Custom Template</a></li>
+<li class="toctree-l2"><a class="reference internal" href="template_guide.html#template-path-resolution">Template Path Resolution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="template_guide.html#jinja2-template-features">Jinja2 Template Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="template_guide.html#default-template-reference">Default Template Reference</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmarks</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="benchmark.html#setup-used">Setup used</a></li>
 <li class="toctree-l2"><a class="reference internal" href="benchmark.html#the-data">The Data</a></li>
@@ -496,6 +488,10 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#submodules">Submodules</a></li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.base">datacompy.base module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.BaseCompare"><code class="docutils literal notranslate"><span class="pre">BaseCompare</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.df_to_str"><code class="docutils literal notranslate"><span class="pre">df_to_str()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.get_column_tolerance"><code class="docutils literal notranslate"><span class="pre">get_column_tolerance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.save_html_report"><code class="docutils literal notranslate"><span class="pre">save_html_report()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
 </ul>
 </li>
@@ -507,7 +503,6 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.normalize_string_column"><code class="docutils literal notranslate"><span class="pre">normalize_string_column()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.core.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.fugue">datacompy.fugue module</a><ul>
@@ -528,7 +523,6 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.polars.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.polars.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.polars.normalize_string_column"><code class="docutils literal notranslate"><span class="pre">normalize_string_column()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.polars.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.snowflake">datacompy.snowflake module</a><ul>
@@ -537,7 +531,6 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.snowflake.calculate_null_diff"><code class="docutils literal notranslate"><span class="pre">calculate_null_diff()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.snowflake.columns_equal"><code class="docutils literal notranslate"><span class="pre">columns_equal()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.snowflake.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.snowflake.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.snowflake.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
 </ul>
 </li>
@@ -546,7 +539,6 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.Compare"><code class="docutils literal notranslate"><span class="pre">Compare</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.PolarsCompare"><code class="docutils literal notranslate"><span class="pre">PolarsCompare</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.SnowflakeCompare"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.SparkPandasCompare"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.SparkSQLCompare"><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.all_columns_match"><code class="docutils literal notranslate"><span class="pre">all_columns_match()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.all_rows_overlap"><code class="docutils literal notranslate"><span class="pre">all_rows_overlap()</span></code></a></li>
@@ -554,12 +546,14 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.columns_equal"><code class="docutils literal notranslate"><span class="pre">columns_equal()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.compare_string_and_date_columns"><code class="docutils literal notranslate"><span class="pre">compare_string_and_date_columns()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.count_matching_rows"><code class="docutils literal notranslate"><span class="pre">count_matching_rows()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.df_to_str"><code class="docutils literal notranslate"><span class="pre">df_to_str()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.intersect_columns"><code class="docutils literal notranslate"><span class="pre">intersect_columns()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.is_match"><code class="docutils literal notranslate"><span class="pre">is_match()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.report"><code class="docutils literal notranslate"><span class="pre">report()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.save_html_report"><code class="docutils literal notranslate"><span class="pre">save_html_report()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.unq_columns"><code class="docutils literal notranslate"><span class="pre">unq_columns()</span></code></a></li>
 </ul>
@@ -629,9 +623,8 @@ By participating, you are expected to honor this code.</p>
 <li><a class="reference internal" href="#">DataComPy</a><ul>
 <li><a class="reference internal" href="#quick-installation">Quick Installation</a><ul>
 <li><a class="reference internal" href="#installing-extras">Installing extras</a></li>
-<li><a class="reference internal" href="#legacy-spark-deprecation">Legacy Spark Deprecation</a></li>
-<li><a class="reference internal" href="#sparkpandascompare-deprecation">SparkPandasCompare Deprecation</a><ul>
-<li><a class="reference internal" href="#supported-versions-and-dependncies">Supported versions and dependncies</a></li>
+<li><a class="reference internal" href="#legacysparkcompare-and-sparkpandascompare-removal">LegacySparkCompare and SparkPandasCompare removal</a><ul>
+<li><a class="reference internal" href="#supported-versions-and-dependencies">Supported versions and dependencies</a></li>
 </ul>
 </li>
 </ul>
@@ -654,7 +647,7 @@ By participating, you are expected to honor this code.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=5e7baddb"></script>
+</div><script src="_static/documentation_options.js?v=0c3dd48d"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=5fa4622c"></script>

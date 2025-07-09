@@ -6,8 +6,8 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="prev" title="datacompy package" href="datacompy.html" />
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
-        <title>datacompy.spark package - datacompy 0.16.8 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+        <title>datacompy.spark package - datacompy 0.17.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=302659d7" />
     
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 0.16.8 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 0.17.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.16.8 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.17.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -205,6 +205,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../snowflake_usage.html">Snowflake Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../fugue_usage.html">Fugue Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../template_guide.html">Template Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../benchmark.html">Benchmarks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_instructions.html">Developer Instructions</a></li>
 </ul>
@@ -365,603 +366,6 @@ columns)</p></li>
 </dd></dl>
 
 </section>
-<section id="module-datacompy.spark.legacy">
-<span id="datacompy-spark-legacy-module"></span><h2>datacompy.spark.legacy module<a class="headerlink" href="#module-datacompy.spark.legacy" title="Link to this heading">¶</a></h2>
-<p>Legacy spark comparison.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">datacompy.spark.legacy.</span></span><span class="sig-name descname"><span class="pre">LegacySparkCompare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SparkSession</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compare_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_intermediates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">known_differences</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_all_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_rates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Comparison class used to compare two Spark Dataframes.</p>
-<p>Extends the <code class="docutils literal notranslate"><span class="pre">Compare</span></code> functionality to the wide world of Spark and
-out-of-memory data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>spark_session</strong> (<code class="docutils literal notranslate"><span class="pre">pyspark.sql.SparkSession</span></code>) – A <code class="docutils literal notranslate"><span class="pre">SparkSession</span></code> to be used to execute Spark commands in the
-comparison.</p></li>
-<li><p><strong>base_df</strong> (<code class="docutils literal notranslate"><span class="pre">pyspark.sql.DataFrame</span></code>) – The dataframe to serve as a basis for comparison. While you will
-ultimately get the same results comparing A to B as you will comparing
-B to A, by convention <code class="docutils literal notranslate"><span class="pre">base_df</span></code> should be the canonical, gold
-standard reference dataframe in the comparison.</p></li>
-<li><p><strong>compare_df</strong> (<code class="docutils literal notranslate"><span class="pre">pyspark.sql.DataFrame</span></code>) – The dataframe to be compared against <code class="docutils literal notranslate"><span class="pre">base_df</span></code>.</p></li>
-<li><p><strong>join_columns</strong> (<em>list</em>) – A list of columns comprising the join key(s) of the two dataframes.
-If the column names are the same in the two dataframes, the names of
-the columns can be given as strings. If the names differ, the
-<code class="docutils literal notranslate"><span class="pre">join_columns</span></code> list should include tuples of the form
-(base_column_name, compare_column_name).</p></li>
-<li><p><strong>column_mapping</strong> (<em>list</em><em>[</em><em>tuple</em><em>]</em><em>, </em><em>optional</em>) – If columns to be compared have different names in the base and compare
-dataframes, a list should be provided in <code class="docutils literal notranslate"><span class="pre">columns_mapping</span></code> consisting
-of tuples of the form (base_column_name, compare_column_name) for each
-set of differently-named columns to be compared against each other.</p></li>
-<li><p><strong>cache_intermediates</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> will cache intermediate dataframes
-(such as the deduplicated version of dataframes, or the joined
-comparison). This will take a large amount of cache, proportional to
-the size of your dataframes, but will significantly speed up
-performance, as multiple steps will not have to recompute
-transformations. False by default.</p></li>
-<li><p><strong>known_differences</strong> (<em>list</em><em>[</em><em>dict</em><em>]</em><em>, </em><em>optional</em>) – <p>A list of dictionaries that define transformations to apply to the
-compare dataframe to match values when there are known differences
-between base and compare. The dictionaries should contain:</p>
-<blockquote>
-<div><ul>
-<li><p>name: A name that describes the transformation</p></li>
-<li><dl class="simple">
-<dt>types: The types that the transformation should be applied to.</dt><dd><p>This prevents certain transformations from being applied to
-types that don’t make sense and would cause exceptions.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt>transformation: A Spark SQL statement to apply to the column</dt><dd><p>in the compare dataset. The string “{input}” will be replaced
-by the variable in question.</p>
-</dd>
-</dl>
-</li>
-</ul>
-</div></blockquote>
-</p></li>
-<li><p><strong>abs_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Absolute tolerance between two values.</p></li>
-<li><p><strong>rel_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative tolerance between two values.</p></li>
-<li><p><strong>show_all_columns</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, all columns will be shown in the report including columns
-with a 100% match rate.</p></li>
-<li><p><strong>match_rates</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, match rates by column will be shown in the column summary.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Instance of a <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code> object, ready to do some comparin’.
-Note that if <code class="docutils literal notranslate"><span class="pre">cache_intermediates=True</span></code>, this instance will already
-have done some work deduping the input dataframes. If
-<code class="docutils literal notranslate"><span class="pre">cache_intermediates=False</span></code>, the instantiation of this object is lazy.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>SparkCompare</p>
-</dd>
-</dl>
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare.base_row_count">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">base_row_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare.base_row_count" title="Link to this definition">¶</a></dt>
-<dd><p>Get the count of rows in the de-duped base dataframe.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare.columns_compared">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">columns_compared</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare.columns_compared" title="Link to this definition">¶</a></dt>
-<dd><p>Get columns to be compared in both dataframes.</p>
-<p>All columns in both excluding the join key(s).</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare.columns_in_both">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">columns_in_both</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare.columns_in_both" title="Link to this definition">¶</a></dt>
-<dd><p>Get columns in both dataframes.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>set[str]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare.columns_only_base">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">columns_only_base</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare.columns_only_base" title="Link to this definition">¶</a></dt>
-<dd><p>Get columns that are unique to the base dataframe.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>set[str]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare.columns_only_compare">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">columns_only_compare</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare.columns_only_compare" title="Link to this definition">¶</a></dt>
-<dd><p>Get columns that are unique to the compare dataframe.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>set[str]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare.common_row_count">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">common_row_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare.common_row_count" title="Link to this definition">¶</a></dt>
-<dd><p>Get the count of rows in common between base and compare dataframes.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare.compare_row_count">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compare_row_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare.compare_row_count" title="Link to this definition">¶</a></dt>
-<dd><p>Get the count of rows in the de-duped compare dataframe.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare.report">
-<span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file:</span> <span class="pre">~typing.TextIO</span> <span class="pre">=</span> <span class="pre">&lt;_io.TextIOWrapper</span> <span class="pre">name='&lt;stdout&gt;'</span> <span class="pre">mode='w'</span> <span class="pre">encoding='utf-8'&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare.report" title="Link to this definition">¶</a></dt>
-<dd><p>Create a comparison report and print it to the file specified.</p>
-<p>Prints to stdout by default.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>file</strong> (<code class="docutils literal notranslate"><span class="pre">file</span></code>, optional) – A filehandle to write the report to. By default, this is
-sys.stdout, printing the report to stdout. You can also redirect
-this to an output file, as in the example.</p>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;my_report.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">report_file</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">comparison</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">report_file</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare.rows_both_all">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rows_both_all</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare.rows_both_all" title="Link to this definition">¶</a></dt>
-<dd><p>Returns all rows in both dataframes.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyspark.sql.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare.rows_both_mismatch">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rows_both_mismatch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare.rows_both_mismatch" title="Link to this definition">¶</a></dt>
-<dd><p>Returns all rows in both dataframes that have mismatches.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyspark.sql.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare.rows_only_base">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rows_only_base</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare.rows_only_base" title="Link to this definition">¶</a></dt>
-<dd><p>Returns rows only in the base dataframe.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyspark.sql.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.LegacySparkCompare.rows_only_compare">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rows_only_compare</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#datacompy.spark.legacy.LegacySparkCompare.rows_only_compare" title="Link to this definition">¶</a></dt>
-<dd><p>Returns rows only in the compare dataframe.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyspark.sql.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.MatchType">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">datacompy.spark.legacy.</span></span><span class="sig-name descname"><span class="pre">MatchType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.spark.legacy.MatchType" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
-<p>Types of matches.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.MatchType.KNOWN_DIFFERENCE">
-<span class="sig-name descname"><span class="pre">KNOWN_DIFFERENCE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#datacompy.spark.legacy.MatchType.KNOWN_DIFFERENCE" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.MatchType.MATCH">
-<span class="sig-name descname"><span class="pre">MATCH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#datacompy.spark.legacy.MatchType.MATCH" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.MatchType.MISMATCH">
-<span class="sig-name descname"><span class="pre">MISMATCH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#datacompy.spark.legacy.MatchType.MISMATCH" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="datacompy.spark.legacy.decimal_comparator">
-<span class="sig-prename descclassname"><span class="pre">datacompy.spark.legacy.</span></span><span class="sig-name descname"><span class="pre">decimal_comparator</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.spark.legacy.decimal_comparator" title="Link to this definition">¶</a></dt>
-<dd><p>Check equality with decimal(X, Y) types.</p>
-<p>Otherwise treated as the string “decimal”.</p>
-</dd></dl>
-
-</section>
-<section id="module-datacompy.spark.pandas">
-<span id="datacompy-spark-pandas-module"></span><h2>datacompy.spark.pandas module<a class="headerlink" href="#module-datacompy.spark.pandas" title="Link to this heading">¶</a></h2>
-<p>Compare two Pandas on Spark DataFrames.</p>
-<p>Originally this package was meant to provide similar functionality to
-PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
-two dataframes.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">datacompy.spark.pandas.</span></span><span class="sig-name descname"><span class="pre">SparkPandasCompare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df1_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'df1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'df2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_spaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_case</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cast_column_names_lower</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare" title="datacompy.base.BaseCompare"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCompare</span></code></a></p>
-<p>Comparison class to be used to compare whether two Pandas on Spark dataframes are equal.</p>
-<p>Both df1 and df2 should be dataframes containing all of the join_columns,
-with unique column names. Differences between values are compared to
-abs_tol + rel_tol * abs(df2[‘value’]).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df1</strong> (<em>pyspark.pandas.frame.DataFrame</em>) – First dataframe to check</p></li>
-<li><p><strong>df2</strong> (<em>pyspark.pandas.frame.DataFrame</em>) – Second dataframe to check</p></li>
-<li><p><strong>join_columns</strong> (<em>list</em><em> or </em><em>str</em><em>, </em><em>optional</em>) – Column(s) to join dataframes on.  If a string is passed in, that one
-column will be used.</p></li>
-<li><p><strong>abs_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Absolute tolerance between two values.</p></li>
-<li><p><strong>rel_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative tolerance between two values.</p></li>
-<li><p><strong>df1_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the first dataframe.  This allows the reporting to
-print out an actual name instead of “df1”, and allows human users to
-more easily track the dataframes.</p></li>
-<li><p><strong>df2_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the second dataframe</p></li>
-<li><p><strong>ignore_spaces</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to strip whitespace (including newlines) from string columns (including any join
-columns)</p></li>
-<li><p><strong>ignore_case</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to ignore the case of string columns</p></li>
-<li><p><strong>cast_column_names_lower</strong> (<em>bool</em><em>, </em><em>optional</em>) – Boolean indicator that controls of column names will be cast into lower case</p></li>
-</ul>
-</dd>
-<dt class="field-even">Variables<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>df1_unq_rows</strong> (<em>pyspark.pandas.frame.DataFrame</em>) – All records that are only in df1 (based on a join on join_columns)</p></li>
-<li><p><strong>df2_unq_rows</strong> (<em>pyspark.pandas.frame.DataFrame</em>) – All records that are only in df2 (based on a join on join_columns)</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.all_columns_match">
-<span class="sig-name descname"><span class="pre">all_columns_match</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.all_columns_match" title="Link to this definition">¶</a></dt>
-<dd><p>Whether the columns all match in the dataframes.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.all_mismatch">
-<span class="sig-name descname"><span class="pre">all_mismatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_matching_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.all_mismatch" title="Link to this definition">¶</a></dt>
-<dd><p>Get all rows with any columns that have a mismatch.</p>
-<p>Returns all df1 and df2 versions of the columns and join
-columns.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ignore_matching_cols</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether showing the matching columns in the output or not. The default is False.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>All rows of the intersection dataframe, containing any columns, that don’t match.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyspark.pandas.frame.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.all_rows_overlap">
-<span class="sig-name descname"><span class="pre">all_rows_overlap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.all_rows_overlap" title="Link to this definition">¶</a></dt>
-<dd><p>Whether the rows are all present in both dataframes.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>True if all rows in df1 are in df2 and vice versa (based on
-existence for join option)</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.count_matching_rows">
-<span class="sig-name descname"><span class="pre">count_matching_rows</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.count_matching_rows" title="Link to this definition">¶</a></dt>
-<dd><p>Count the number of rows match (on overlapping fields).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Number of matching rows</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.df1">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">df1</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.df1" title="Link to this definition">¶</a></dt>
-<dd><p>Get the first dataframe.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.df1_unq_columns">
-<span class="sig-name descname"><span class="pre">df1_unq_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedSet</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.df1_unq_columns" title="Link to this definition">¶</a></dt>
-<dd><p>Get columns that are unique to df1.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.df2">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">df2</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.df2" title="Link to this definition">¶</a></dt>
-<dd><p>Get the second dataframe.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.df2_unq_columns">
-<span class="sig-name descname"><span class="pre">df2_unq_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedSet</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.df2_unq_columns" title="Link to this definition">¶</a></dt>
-<dd><p>Get columns that are unique to df2.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.intersect_columns">
-<span class="sig-name descname"><span class="pre">intersect_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedSet</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.intersect_columns" title="Link to this definition">¶</a></dt>
-<dd><p>Get columns that are shared between the two dataframes.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.intersect_rows_match">
-<span class="sig-name descname"><span class="pre">intersect_rows_match</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.intersect_rows_match" title="Link to this definition">¶</a></dt>
-<dd><p>Check whether the intersect rows all match.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.matches">
-<span class="sig-name descname"><span class="pre">matches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_extra_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.matches" title="Link to this definition">¶</a></dt>
-<dd><p>Return True or False if the dataframes match.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ignore_extra_columns</strong> (<em>bool</em>) – Ignores any columns in one dataframe and not in the other.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.report">
-<span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">html_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.report" title="Link to this definition">¶</a></dt>
-<dd><p>Return a string representation of a report.</p>
-<p>The representation can
-then be printed or saved to a file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>sample_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sample records to return.  Defaults to 10.</p></li>
-<li><p><strong>column_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of columns to display in the sample records output.  Defaults to 10.</p></li>
-<li><p><strong>html_file</strong> (<em>str</em><em>, </em><em>optional</em>) – HTML file name to save report output to. If <code class="docutils literal notranslate"><span class="pre">None</span></code> the file creation will be skipped.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The report, formatted kinda nicely.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.sample_mismatch">
-<span class="sig-name descname"><span class="pre">sample_mismatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">for_display</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.sample_mismatch" title="Link to this definition">¶</a></dt>
-<dd><p>Return sample mismatches.</p>
-<p>Gets a sub-dataframe which contains the identifying
-columns, and df1 and df2 versions of the column.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>column</strong> (<em>str</em>) – The raw column name (i.e. without <code class="docutils literal notranslate"><span class="pre">_df1</span></code> appended)</p></li>
-<li><p><strong>sample_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sample records to return.  Defaults to 10.</p></li>
-<li><p><strong>for_display</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether this is just going to be used for display (overwrite the
-column names)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A sample of the intersection dataframe, containing only the
-“pertinent” columns, for rows that don’t match on the provided
-column.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyspark.pandas.frame.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.SparkPandasCompare.subset">
-<span class="sig-name descname"><span class="pre">subset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.SparkPandasCompare.subset" title="Link to this definition">¶</a></dt>
-<dd><p>Return True if dataframe 2 is a subset of dataframe 1.</p>
-<p>Dataframe 2 is considered a subset if all of its columns are in
-dataframe 1, and all of its rows match rows in dataframe 1 for the
-shared columns.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>True if dataframe 2 is a subset of dataframe 1.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.calculate_max_diff">
-<span class="sig-prename descclassname"><span class="pre">datacompy.spark.pandas.</span></span><span class="sig-name descname"><span class="pre">calculate_max_diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.calculate_max_diff" title="Link to this definition">¶</a></dt>
-<dd><p>Get a maximum difference between two columns.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>col_1</strong> (<em>pyspark.pandas.series.Series</em>) – The first column</p></li>
-<li><p><strong>col_2</strong> (<em>pyspark.pandas.series.Series</em>) – The second column</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>max diff</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.columns_equal">
-<span class="sig-prename descclassname"><span class="pre">datacompy.spark.pandas.</span></span><span class="sig-name descname"><span class="pre">columns_equal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_spaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_case</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.columns_equal" title="Link to this definition">¶</a></dt>
-<dd><p>Compare two columns from a dataframe.</p>
-<p>Returns a True/False series,
-with the same index as column 1.</p>
-<ul class="simple">
-<li><p>Two nulls (np.nan) will evaluate to True.</p></li>
-<li><p>A null and a non-null value will evaluate to False.</p></li>
-<li><p>Numeric values will use the relative and absolute tolerances.</p></li>
-<li><p>Decimal values (decimal.Decimal) will attempt to be converted to floats
-before comparing</p></li>
-<li><p>Non-numeric values (i.e. where np.isclose can’t be used) will just
-trigger True on two nulls or exact matches.</p></li>
-</ul>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>col_1</strong> (<em>pyspark.pandas.series.Series</em>) – The first column to look at</p></li>
-<li><p><strong>col_2</strong> (<em>pyspark.pandas.series.Series</em>) – The second column</p></li>
-<li><p><strong>rel_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative tolerance</p></li>
-<li><p><strong>abs_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Absolute tolerance</p></li>
-<li><p><strong>ignore_spaces</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to strip whitespace (including newlines) from string columns</p></li>
-<li><p><strong>ignore_case</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to ignore the case of string columns</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A series of Boolean values.  True == the values match, False == the
-values don’t match.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyspark.pandas.series.Series</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.compare_string_and_date_columns">
-<span class="sig-prename descclassname"><span class="pre">datacompy.spark.pandas.</span></span><span class="sig-name descname"><span class="pre">compare_string_and_date_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.compare_string_and_date_columns" title="Link to this definition">¶</a></dt>
-<dd><p>Compare a string column and date column, value-wise.</p>
-<p>This tries to
-convert a string column to a date column and compare that way.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>col_1</strong> (<em>pyspark.pandas.series.Series</em>) – The first column to look at</p></li>
-<li><p><strong>col_2</strong> (<em>pyspark.pandas.series.Series</em>) – The second column</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A series of Boolean values.  True == the values match, False == the
-values don’t match.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyspark.pandas.series.Series</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.generate_id_within_group">
-<span class="sig-prename descclassname"><span class="pre">datacompy.spark.pandas.</span></span><span class="sig-name descname"><span class="pre">generate_id_within_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.generate_id_within_group" title="Link to this definition">¶</a></dt>
-<dd><p>Generate an ID column that can be used to deduplicate identical rows.</p>
-<p>The series generated
-is the order within a unique group, and it handles nulls.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dataframe</strong> (<em>pyspark.pandas.frame.DataFrame</em>) – The dataframe to operate on</p></li>
-<li><p><strong>join_columns</strong> (<em>list</em>) – List of strings which are the join columns</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The ID column that’s unique in each group.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyspark.pandas.series.Series</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.get_merged_columns">
-<span class="sig-prename descclassname"><span class="pre">datacompy.spark.pandas.</span></span><span class="sig-name descname"><span class="pre">get_merged_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">original_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merged_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.spark.pandas.get_merged_columns" title="Link to this definition">¶</a></dt>
-<dd><p>Get the columns from an original dataframe in the new merged dataframe.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>original_df</strong> (<em>pyspark.pandas.frame.DataFrame</em>) – The original, pre-merge dataframe</p></li>
-<li><p><strong>merged_df</strong> (<em>pyspark.pandas.frame.DataFrame</em>) – Post-merge with another dataframe, with suffixes added in.</p></li>
-<li><p><strong>suffix</strong> (<em>str</em>) – What suffix was used to distinguish when the original dataframe was
-overlapping with the other merged dataframe.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Column list of the original dataframe pre suffix</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>List[str]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="datacompy.spark.pandas.render">
-<span class="sig-prename descclassname"><span class="pre">datacompy.spark.pandas.</span></span><span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.spark.pandas.render" title="Link to this definition">¶</a></dt>
-<dd><p>Render out an individual template.</p>
-<p>This basically just reads in a
-template file, and applies <code class="docutils literal notranslate"><span class="pre">.format()</span></code> on the fields.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> (<em>str</em>) – The file that contains the template.  Will automagically prepend the
-templates directory before opening</p></li>
-<li><p><strong>fields</strong> (<em>list</em>) – Fields to be rendered out in the template</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The fully rendered out file.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-</section>
 <section id="module-datacompy.spark.sql">
 <span id="datacompy-spark-sql-module"></span><h2>datacompy.spark.sql module<a class="headerlink" href="#module-datacompy.spark.sql" title="Link to this heading">¶</a></h2>
 <p>Compare two PySpark SQL DataFrames.</p>
@@ -970,7 +374,7 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="datacompy.spark.sql.SparkSQLCompare">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">datacompy.spark.sql.</span></span><span class="sig-name descname"><span class="pre">SparkSQLCompare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SparkSession</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df1_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'df1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'df2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_spaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_case</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cast_column_names_lower</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.spark.sql.SparkSQLCompare" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">datacompy.spark.sql.</span></span><span class="sig-name descname"><span class="pre">SparkSQLCompare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SparkSession</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df1_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'df1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df2_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'df2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_spaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_case</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cast_column_names_lower</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.spark.sql.SparkSQLCompare" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare" title="datacompy.base.BaseCompare"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCompare</span></code></a></p>
 <p>Comparison class to be used to compare whether two Spark SQL dataframes are equal.</p>
 <p>Both df1 and df2 should be dataframes containing all of the join_columns,
@@ -984,8 +388,12 @@ abs_tol + rel_tol * abs(df2[‘value’]).</p>
 <li><p><strong>df2</strong> (<em>pyspark.sql.DataFrame</em>) – Second dataframe to check</p></li>
 <li><p><strong>join_columns</strong> (<em>list</em><em> or </em><em>str</em><em>, </em><em>optional</em>) – Column(s) to join dataframes on.  If a string is passed in, that one
 column will be used.</p></li>
-<li><p><strong>abs_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Absolute tolerance between two values.</p></li>
-<li><p><strong>rel_tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative tolerance between two values.</p></li>
+<li><p><strong>abs_tol</strong> (<em>float</em><em> or </em><em>dict</em><em>, </em><em>optional</em>) – Absolute tolerance between two values. Can be either a float value applied to all columns,
+or a dictionary mapping column names to specific tolerance values. The special key “default”
+in the dictionary specifies the tolerance for columns not explicitly listed.</p></li>
+<li><p><strong>rel_tol</strong> (<em>float</em><em> or </em><em>dict</em><em>, </em><em>optional</em>) – Relative tolerance between two values. Can be either a float value applied to all columns,
+or a dictionary mapping column names to specific tolerance values. The special key “default”
+in the dictionary specifies the tolerance for columns not explicitly listed.</p></li>
 <li><p><strong>df1_name</strong> (<em>str</em><em>, </em><em>optional</em>) – A string name for the first dataframe.  This allows the reporting to
 print out an actual name instead of “df1”, and allows human users to
 more easily track the dataframes.</p></li>
@@ -1115,20 +523,41 @@ existence for join option)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="datacompy.spark.sql.SparkSQLCompare.report">
-<span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">html_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.spark.sql.SparkSQLCompare.report" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">html_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.spark.sql.SparkSQLCompare.report" title="Link to this definition">¶</a></dt>
 <dd><p>Return a string representation of a report.</p>
-<p>The representation can
-then be printed or saved to a file.</p>
+<p>The representation can then be printed or saved to a file. You can customize the
+report’s appearance by providing a custom Jinja2 template.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>sample_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sample records to return.  Defaults to 10.</p></li>
-<li><p><strong>column_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of columns to display in the sample records output.  Defaults to 10.</p></li>
+<li><p><strong>sample_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of sample records to return. Defaults to 10.</p></li>
+<li><p><strong>column_count</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of columns to display in the sample records output. Defaults to 10.</p></li>
 <li><p><strong>html_file</strong> (<em>str</em><em>, </em><em>optional</em>) – HTML file name to save report output to. If <code class="docutils literal notranslate"><span class="pre">None</span></code> the file creation will be skipped.</p></li>
+<li><p><strong>template_path</strong> (<em>str</em><em>, </em><em>optional</em>) – <p>Path to a custom Jinja2 template file to use for report generation.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the default template will be used. The template receives the
+following context variables:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">column_summary</span></code>: Dict with column statistics including: <code class="docutils literal notranslate"><span class="pre">common_columns</span></code>, <code class="docutils literal notranslate"><span class="pre">df1_unique</span></code>, <code class="docutils literal notranslate"><span class="pre">df2_unique</span></code>, <code class="docutils literal notranslate"><span class="pre">df1_name</span></code>, <code class="docutils literal notranslate"><span class="pre">df2_name</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">row_summary</span></code>: Dict with row statistics including: <code class="docutils literal notranslate"><span class="pre">match_columns</span></code>, <code class="docutils literal notranslate"><span class="pre">equal_rows</span></code>, <code class="docutils literal notranslate"><span class="pre">unequal_rows</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">column_comparison</span></code>: Dict with column comparison statistics including: <code class="docutils literal notranslate"><span class="pre">unequal_columns</span></code>, <code class="docutils literal notranslate"><span class="pre">equal_columns</span></code>, <code class="docutils literal notranslate"><span class="pre">unequal_values</span></code></p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">mismatch_stats</span></code>: Dict containing:</dt><dd><ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">stats</span></code>: List of dicts with column mismatch statistics (column, match, mismatch, null_diff, etc.)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">samples</span></code>: Sample rows with mismatched values</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">has_samples</span></code>: Boolean indicating if there are any mismatch samples</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">has_mismatches</span></code>: Boolean indicating if there are any mismatches</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">df1_unique_rows</span></code>: Dict with unique rows in df1 including: <code class="docutils literal notranslate"><span class="pre">has_rows</span></code>, <code class="docutils literal notranslate"><span class="pre">rows</span></code>, <code class="docutils literal notranslate"><span class="pre">columns</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">df2_unique_rows</span></code>: Dict with unique rows in df2 including: <code class="docutils literal notranslate"><span class="pre">has_rows</span></code>, <code class="docutils literal notranslate"><span class="pre">rows</span></code>, <code class="docutils literal notranslate"><span class="pre">columns</span></code></p></li>
+</ul>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The report, formatted kinda nicely.</p>
+<dd class="field-even"><p>The report, formatted according to the template.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
@@ -1289,29 +718,6 @@ overlapping with the other merged dataframe.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="datacompy.spark.sql.render">
-<span class="sig-prename descclassname"><span class="pre">datacompy.spark.sql.</span></span><span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.spark.sql.render" title="Link to this definition">¶</a></dt>
-<dd><p>Render out an individual template.</p>
-<p>This basically just reads in a
-template file, and applies <code class="docutils literal notranslate"><span class="pre">.format()</span></code> on the fields.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> (<em>str</em>) – The file that contains the template.  Will automagically prepend the
-templates directory before opening</p></li>
-<li><p><strong>fields</strong> (<em>list</em>) – Fields to be rendered out in the template</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The fully rendered out file.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 <section id="module-datacompy.spark">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-datacompy.spark" title="Link to this heading">¶</a></h2>
@@ -1376,57 +782,6 @@ templates directory before opening</p></li>
 <li><a class="reference internal" href="#datacompy.spark.helper.sort_rows"><code class="docutils literal notranslate"><span class="pre">sort_rows()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-datacompy.spark.legacy">datacompy.spark.legacy module</a><ul>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare</span></code></a><ul>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.base_row_count"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.base_row_count</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.columns_compared"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.columns_compared</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.columns_in_both"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.columns_in_both</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.columns_only_base"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.columns_only_base</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.columns_only_compare"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.columns_only_compare</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.common_row_count"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.common_row_count</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.compare_row_count"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.compare_row_count</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.report"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.report()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.rows_both_all"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.rows_both_all</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.rows_both_mismatch"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.rows_both_mismatch</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.rows_only_base"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.rows_only_base</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.LegacySparkCompare.rows_only_compare"><code class="docutils literal notranslate"><span class="pre">LegacySparkCompare.rows_only_compare</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.MatchType"><code class="docutils literal notranslate"><span class="pre">MatchType</span></code></a><ul>
-<li><a class="reference internal" href="#datacompy.spark.legacy.MatchType.KNOWN_DIFFERENCE"><code class="docutils literal notranslate"><span class="pre">MatchType.KNOWN_DIFFERENCE</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.MatchType.MATCH"><code class="docutils literal notranslate"><span class="pre">MatchType.MATCH</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.MatchType.MISMATCH"><code class="docutils literal notranslate"><span class="pre">MatchType.MISMATCH</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#datacompy.spark.legacy.decimal_comparator"><code class="docutils literal notranslate"><span class="pre">decimal_comparator()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-datacompy.spark.pandas">datacompy.spark.pandas module</a><ul>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code></a><ul>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.all_columns_match()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.all_mismatch"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.all_mismatch()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.all_rows_overlap"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.all_rows_overlap()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.count_matching_rows"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.count_matching_rows()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.df1"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.df1</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.df1_unq_columns"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.df1_unq_columns()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.df2"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.df2</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.df2_unq_columns"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.df2_unq_columns()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.intersect_columns"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.intersect_columns()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.intersect_rows_match"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.intersect_rows_match()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.matches"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.matches()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.report"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.report()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.sample_mismatch"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.sample_mismatch()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.SparkPandasCompare.subset"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.subset()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.calculate_max_diff"><code class="docutils literal notranslate"><span class="pre">calculate_max_diff()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.columns_equal"><code class="docutils literal notranslate"><span class="pre">columns_equal()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.compare_string_and_date_columns"><code class="docutils literal notranslate"><span class="pre">compare_string_and_date_columns()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.pandas.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
-</ul>
-</li>
 <li><a class="reference internal" href="#module-datacompy.spark.sql">datacompy.spark.sql module</a><ul>
 <li><a class="reference internal" href="#datacompy.spark.sql.SparkSQLCompare"><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code></a><ul>
 <li><a class="reference internal" href="#datacompy.spark.sql.SparkSQLCompare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare.all_columns_match()</span></code></a></li>
@@ -1450,7 +805,6 @@ templates directory before opening</p></li>
 <li><a class="reference internal" href="#datacompy.spark.sql.columns_equal"><code class="docutils literal notranslate"><span class="pre">columns_equal()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.spark.sql.decimal_comparator"><code class="docutils literal notranslate"><span class="pre">decimal_comparator()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.spark.sql.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
-<li><a class="reference internal" href="#datacompy.spark.sql.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-datacompy.spark">Module contents</a></li>
@@ -1465,7 +819,7 @@ templates directory before opening</p></li>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=5e7baddb"></script>
+</div><script src="../_static/documentation_options.js?v=0c3dd48d"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=5fa4622c"></script>

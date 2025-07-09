@@ -6,8 +6,8 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="datacompy package" href="datacompy.html" /><link rel="prev" title="Developer Instructions" href="../developer_instructions.html" />
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
-        <title>datacompy - datacompy 0.16.8 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+        <title>datacompy - datacompy 0.17.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=302659d7" />
     
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 0.16.8 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 0.17.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
   
-  <span class="sidebar-brand-text">datacompy 0.16.8 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.17.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -205,6 +205,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../snowflake_usage.html">Snowflake Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../fugue_usage.html">Fugue Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../template_guide.html">Template Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../benchmark.html">Benchmarks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_instructions.html">Developer Instructions</a></li>
 </ul>
@@ -267,8 +268,6 @@
 <li class="toctree-l3"><a class="reference internal" href="datacompy.spark.html">datacompy.spark package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="datacompy.spark.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="datacompy.spark.html#module-datacompy.spark.helper">datacompy.spark.helper module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.spark.html#module-datacompy.spark.legacy">datacompy.spark.legacy module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.spark.html#module-datacompy.spark.pandas">datacompy.spark.pandas module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="datacompy.spark.html#module-datacompy.spark.sql">datacompy.spark.sql module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="datacompy.spark.html#module-datacompy.spark">Module contents</a></li>
 </ul>
@@ -295,6 +294,10 @@
 <li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.subset"><code class="docutils literal notranslate"><span class="pre">BaseCompare.subset()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.base.df_to_str"><code class="docutils literal notranslate"><span class="pre">df_to_str()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.base.get_column_tolerance"><code class="docutils literal notranslate"><span class="pre">get_column_tolerance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.base.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.base.save_html_report"><code class="docutils literal notranslate"><span class="pre">save_html_report()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.base.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
 </ul>
 </li>
@@ -322,7 +325,6 @@
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.core.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.core.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.core.normalize_string_column"><code class="docutils literal notranslate"><span class="pre">normalize_string_column()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.core.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="datacompy.html#module-datacompy.fugue">datacompy.fugue module</a><ul>
@@ -359,7 +361,6 @@
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.normalize_string_column"><code class="docutils literal notranslate"><span class="pre">normalize_string_column()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.polars.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="datacompy.html#module-datacompy.snowflake">datacompy.snowflake module</a><ul>
@@ -384,7 +385,6 @@
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.snowflake.calculate_null_diff"><code class="docutils literal notranslate"><span class="pre">calculate_null_diff()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.snowflake.columns_equal"><code class="docutils literal notranslate"><span class="pre">columns_equal()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.snowflake.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.snowflake.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.snowflake.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
 </ul>
 </li>
@@ -458,23 +458,6 @@
 <li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SnowflakeCompare.subset"><code class="docutils literal notranslate"><span class="pre">SnowflakeCompare.subset()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.all_columns_match()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.all_mismatch"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.all_mismatch()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.all_rows_overlap"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.all_rows_overlap()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.count_matching_rows"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.count_matching_rows()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.df1"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.df1</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.df1_unq_columns"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.df1_unq_columns()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.df2"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.df2</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.df2_unq_columns"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.df2_unq_columns()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.intersect_columns"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.intersect_columns()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.intersect_rows_match"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.intersect_rows_match()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.matches"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.matches()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.report"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.report()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.sample_mismatch"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.sample_mismatch()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkPandasCompare.subset"><code class="docutils literal notranslate"><span class="pre">SparkPandasCompare.subset()</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.SparkSQLCompare"><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkSQLCompare.all_columns_match"><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare.all_columns_match()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.SparkSQLCompare.all_mismatch"><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare.all_mismatch()</span></code></a></li>
@@ -498,12 +481,14 @@
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.columns_equal"><code class="docutils literal notranslate"><span class="pre">columns_equal()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.compare_string_and_date_columns"><code class="docutils literal notranslate"><span class="pre">compare_string_and_date_columns()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.count_matching_rows"><code class="docutils literal notranslate"><span class="pre">count_matching_rows()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.df_to_str"><code class="docutils literal notranslate"><span class="pre">df_to_str()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.generate_id_within_group"><code class="docutils literal notranslate"><span class="pre">generate_id_within_group()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.get_merged_columns"><code class="docutils literal notranslate"><span class="pre">get_merged_columns()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.intersect_columns"><code class="docutils literal notranslate"><span class="pre">intersect_columns()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.is_match"><code class="docutils literal notranslate"><span class="pre">is_match()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.report"><code class="docutils literal notranslate"><span class="pre">report()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.save_html_report"><code class="docutils literal notranslate"><span class="pre">save_html_report()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.unq_columns"><code class="docutils literal notranslate"><span class="pre">unq_columns()</span></code></a></li>
 </ul>
@@ -563,7 +548,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=5e7baddb"></script>
+</div><script src="../_static/documentation_options.js?v=0c3dd48d"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=5fa4622c"></script>
