@@ -1,0 +1,27 @@
+.cache
+build/
+dist/
+*.egg-info/
+*/__pycache__/
+.idea/
+.vscode/
+*.pyc
+.DS_Store
+.pytest_cache/
+
+# Spark junk
+metastore_db/
+spark-warehouse/
+derby.log
+
+*.ipynb*
+
+# Sphinx documentation
+docs/_build/
+docs/source/api/
+
+#edgetest
+.edgetest/
+.tmp/
+
+test.html
