@@ -1,5 +1,5 @@
 Template Customization Guide
-===========================
+============================
 
 DataComPy allows you to customize the report output by providing your own Jinja2 templates.
 This guide explains how to create and use custom templates for comparison reports.
