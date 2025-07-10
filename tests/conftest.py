@@ -28,4 +28,4 @@ def snowflake_session(request) -> Session:
 
 
 def pytest_addoption(parser):
-    parser.addoption("--snowflake-session", action="store", default="local")
+    parser.addoption("--snowflake-session", action="store", default="integration")
