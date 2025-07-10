@@ -36,6 +36,7 @@ from datacompy.pandas import (
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
+    normalize_string_column,
     temp_column_name,
 )
 from pandas.testing import assert_frame_equal, assert_series_equal

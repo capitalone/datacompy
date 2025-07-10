@@ -20,7 +20,6 @@ Testing out the datacompy functionality
 import io
 import logging
 import os
-import re
 import sys
 import tempfile
 from datetime import datetime
@@ -31,11 +30,6 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
-from pytest import raises
-
-pytest.importorskip("snowflake")
-pytest.importorskip("pyspark")
-
 from datacompy.snowflake import (
     SnowflakeCompare,
     _generate_id_within_group,
@@ -44,6 +38,7 @@ from datacompy.snowflake import (
     temp_column_name,
 )
 from pandas.testing import assert_frame_equal, assert_series_equal
+from pytest import raises
 from snowflake.snowpark.exceptions import SnowparkSQLException
 from snowflake.snowpark.types import (
     DecimalType,
@@ -569,17 +564,17 @@ def test_10k_rows(snowflake_session):
     assert not compare_no_tol.intersect_rows_match()
 
 
-def test_10k_rows_abs_tol_per_column(snowpark_session):
+def test_10k_rows_abs_tol_per_column(snowflake_session):
     rng = np.random.default_rng()
     pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
     pdf.reset_index(inplace=True)
     pdf.columns = ["A", "B", "C"]
     pdf2 = pdf.copy()
     pdf2["B"] = pdf2["B"] + 0.1
-    df1 = snowpark_session.createDataFrame(pdf)
-    df2 = snowpark_session.createDataFrame(pdf2)
+    df1 = snowflake_session.createDataFrame(pdf)
+    df2 = snowflake_session.createDataFrame(pdf2)
     compare_tol = SnowflakeCompare(
-        snowpark_session, df1, df2, ["A"], abs_tol={"B": 0.2}
+        snowflake_session, df1, df2, ["A"], abs_tol={"B": 0.2}
     )
     assert compare_tol.matches()
     assert compare_tol.df1_unq_rows.count() == 0
@@ -590,7 +585,7 @@ def test_10k_rows_abs_tol_per_column(snowpark_session):
     assert compare_tol.intersect_rows_match()
 
 
-def test_10k_rows_abs_tol_per_column_default(snowpark_session):
+def test_10k_rows_abs_tol_per_column_default(snowflake_session):
     rng = np.random.default_rng()
     pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
     pdf.reset_index(inplace=True)
@@ -598,10 +593,10 @@ def test_10k_rows_abs_tol_per_column_default(snowpark_session):
     pdf2 = pdf.copy()
     pdf2["B"] = pdf2["B"] + 0.1
     pdf2["C"] = pdf2["C"] + 0.3
-    df1 = snowpark_session.createDataFrame(pdf)
-    df2 = snowpark_session.createDataFrame(pdf2)
+    df1 = snowflake_session.createDataFrame(pdf)
+    df2 = snowflake_session.createDataFrame(pdf2)
     compare_tol = SnowflakeCompare(
-        snowpark_session, df1, df2, ["A"], abs_tol={"c": 0.0, "default": 0.2}
+        snowflake_session, df1, df2, ["A"], abs_tol={"c": 0.0, "default": 0.2}
     )
     assert not compare_tol.matches()
     assert compare_tol.df1_unq_rows.count() == 0
@@ -612,17 +607,17 @@ def test_10k_rows_abs_tol_per_column_default(snowpark_session):
     assert not compare_tol.intersect_rows_match()
 
 
-def test_10k_rows_rel_tol_per_column(snowpark_session):
+def test_10k_rows_rel_tol_per_column(snowflake_session):
     rng = np.random.default_rng()
     pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
     pdf.reset_index(inplace=True)
     pdf.columns = ["A", "B", "C"]
     pdf2 = pdf.copy()
     pdf2["B"] = pdf2["B"] + 0.1
-    df1 = snowpark_session.createDataFrame(pdf)
-    df2 = snowpark_session.createDataFrame(pdf2)
+    df1 = snowflake_session.createDataFrame(pdf)
+    df2 = snowflake_session.createDataFrame(pdf2)
     compare_tol = SnowflakeCompare(
-        snowpark_session, df1, df2, ["A"], rel_tol={"B": 1.0}
+        snowflake_session, df1, df2, ["A"], rel_tol={"B": 1.0}
     )
     assert compare_tol.matches()
     assert compare_tol.df1_unq_rows.count() == 0
@@ -633,7 +628,7 @@ def test_10k_rows_rel_tol_per_column(snowpark_session):
     assert compare_tol.intersect_rows_match()
 
 
-def test_10k_rows_rel_tol_per_column_default(snowpark_session):
+def test_10k_rows_rel_tol_per_column_default(snowflake_session):
     rng = np.random.default_rng()
     pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
     pdf.reset_index(inplace=True)
@@ -641,10 +636,10 @@ def test_10k_rows_rel_tol_per_column_default(snowpark_session):
     pdf2 = pdf.copy()
     pdf2["B"] = pdf2["B"] + 0.1
     pdf2["C"] = pdf2["C"] + 0.1
-    df1 = snowpark_session.createDataFrame(pdf)
-    df2 = snowpark_session.createDataFrame(pdf2)
+    df1 = snowflake_session.createDataFrame(pdf)
+    df2 = snowflake_session.createDataFrame(pdf2)
     compare_tol = SnowflakeCompare(
-        snowpark_session, df1, df2, ["A"], rel_tol={"c": 0.0, "default": 1}
+        snowflake_session, df1, df2, ["A"], rel_tol={"c": 0.0, "default": 1}
     )
     assert not compare_tol.matches()
     assert compare_tol.df1_unq_rows.count() == 0
@@ -1323,7 +1318,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching(snowflake_session):
 
 
 def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_float(
-    snowpark_session,
+    snowflake_session,
 ):
     data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
         10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -1342,9 +1337,9 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_float(
         10000001238,1.05,Loose Seal Bluth,111,
         10000001240,123.45,George Maharis,14530.1555,2017-01-02
         """
-    df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
-    df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
-    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID", 0.05)
+    df1 = snowflake_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
+    df2 = snowflake_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
+    compare = SnowflakeCompare(snowflake_session, df1, df2, "ACCT_ID", 0.05)
 
     output = compare.all_mismatch().toPandas()
     assert output.shape[0] == 2
@@ -1364,7 +1359,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_float(
 
 
 def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_dict(
-    snowpark_session,
+    snowflake_session,
 ):
     data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
         10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -1383,10 +1378,10 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_dict(
         10000001238,1.05,Loose Seal Bluth,111,
         10000001240,123.45,George Maharis,14530.1555,2017-01-02
         """
-    df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
-    df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
+    df1 = snowflake_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
+    df2 = snowflake_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
     compare = SnowflakeCompare(
-        snowpark_session, df1, df2, "ACCT_ID", {"DOLLAR_AMT": 0.05}
+        snowflake_session, df1, df2, "ACCT_ID", {"DOLLAR_AMT": 0.05}
     )
 
     output = compare.all_mismatch().toPandas()
@@ -1407,7 +1402,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_dict(
 
 
 def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_float(
-    snowpark_session,
+    snowflake_session,
 ):
     data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
         10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -1426,9 +1421,9 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_float(
         10000001238,1.05,Loose Seal Bluth,111,
         10000001240,123.45,George Maharis,14530.1555,2017-01-02
         """
-    df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
-    df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
-    compare = SnowflakeCompare(snowpark_session, df1, df2, "ACCT_ID", rel_tol=0.1)
+    df1 = snowflake_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
+    df2 = snowflake_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
+    compare = SnowflakeCompare(snowflake_session, df1, df2, "ACCT_ID", rel_tol=0.1)
 
     output = compare.all_mismatch().toPandas()
     assert output.shape[0] == 2
@@ -1448,7 +1443,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_float(
 
 
 def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_dict(
-    snowpark_session,
+    snowflake_session,
 ):
     data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
         10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -1467,10 +1462,10 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_dict(
         10000001238,1.05,Loose Seal Bluth,111,
         10000001240,123.45,George Maharis,14530.1555,2017-01-02
         """
-    df1 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
-    df2 = snowpark_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
+    df1 = snowflake_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
+    df2 = snowflake_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
     compare = SnowflakeCompare(
-        snowpark_session,
+        snowflake_session,
         df1,
         df2,
         "ACCT_ID",
@@ -1837,11 +1832,11 @@ def test_non_full_join_counts_some_matches(snowflake_session):
     )
 
 
-def test_custom_template_usage(snowpark_session):
+def test_custom_template_usage(snowflake_session):
     """Test using a custom template with template_path parameter."""
-    df1 = snowpark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
-    df2 = snowpark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
-    compare = SnowflakeCompare(snowpark_session, df1, df2, ["id"])
+    df1 = snowflake_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = snowflake_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SnowflakeCompare(snowflake_session, df1, df2, ["id"])
 
     # Create a simple test template
     with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
@@ -1873,11 +1868,11 @@ def test_custom_template_usage(snowpark_session):
             os.unlink(template_path)
 
 
-def test_template_without_extension(snowpark_session):
+def test_template_without_extension(snowflake_session):
     """Test that template_path works without .j2 extension."""
-    df1 = snowpark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
-    df2 = snowpark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
-    compare = SnowflakeCompare(snowpark_session, df1, df2, ["id"])
+    df1 = snowflake_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = snowflake_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SnowflakeCompare(snowflake_session, df1, df2, ["id"])
 
     # Create a test template without .j2 extension
     with tempfile.NamedTemporaryFile(delete=False, mode="w") as tmp:
@@ -1892,11 +1887,11 @@ def test_template_without_extension(snowpark_session):
             os.unlink(template_path)
 
 
-def test_nonexistent_template(snowpark_session):
+def test_nonexistent_template(snowflake_session):
     """Test that a clear error is raised when template file doesn't exist."""
-    df1 = snowpark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
-    df2 = snowpark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
-    compare = SnowflakeCompare(snowpark_session, df1, df2, ["id"])
+    df1 = snowflake_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = snowflake_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SnowflakeCompare(snowflake_session, df1, df2, ["id"])
 
     with pytest.raises(Exception) as exc_info:
         compare.report(template_path="nonexistent_template.j2")
@@ -1906,11 +1901,11 @@ def test_nonexistent_template(snowpark_session):
     ) or "nonexistent_template.j2" in str(exc_info.value)
 
 
-def test_template_context_variables(snowpark_session):
+def test_template_context_variables(snowflake_session):
     """Test that all expected context variables are available in the template."""
-    df1 = snowpark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
-    df2 = snowpark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
-    compare = SnowflakeCompare(snowpark_session, df1, df2, ["id"])
+    df1 = snowflake_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = snowflake_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SnowflakeCompare(snowflake_session, df1, df2, ["id"])
 
     # Create a test template that checks for expected variables
     with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
@@ -1938,11 +1933,11 @@ def test_template_context_variables(snowpark_session):
 
 @mock.patch("datacompy.snowflake.save_html_report")
 @mock.patch("datacompy.snowflake.render")
-def test_html_report_generation(mock_render, mock_save_html, snowpark_session):
+def test_html_report_generation(mock_render, mock_save_html, snowflake_session):
     """Test that HTML reports can be generated and saved to a file."""
-    df1 = snowpark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
-    df2 = snowpark_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
-    compare = SnowflakeCompare(snowpark_session, df1, df2, ["id"])
+    df1 = snowflake_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
+    df2 = snowflake_session.createDataFrame([("a", 1), ("b", 3)], ["id", "value"])
+    compare = SnowflakeCompare(snowflake_session, df1, df2, ["id"])
 
     # Mock the render function to return a test string
     mock_render.return_value = "<html><body>Test Report</body></html>"

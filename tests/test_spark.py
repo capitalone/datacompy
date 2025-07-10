@@ -30,11 +30,6 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
-from pytest import raises
-
-if sys.version_info >= (3, 12):
-    pytest.skip("unsupported python version", allow_module_level=True)
-
 from datacompy.spark import (
     SparkSQLCompare,
     _generate_id_within_group,
@@ -50,6 +45,7 @@ from pyspark.sql.types import (
     StructField,
     StructType,
 )
+from pytest import raises
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -1381,8 +1377,8 @@ def test_integer_column_names(spark_session):
     assert compare.matches()
 
 
-@mock.patch("datacompy.spark.sql.render")
-@mock.patch("datacompy.spark.sql.save_html_report")
+@mock.patch("datacompy.spark.render")
+@mock.patch("datacompy.spark.save_html_report")
 def test_save_html(mock_save_html, mock_render, spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
@@ -1789,8 +1785,8 @@ def test_template_context_variables(spark_session):
             os.unlink(template_path)
 
 
-@mock.patch("datacompy.spark.sql.save_html_report")
-@mock.patch("datacompy.spark.sql.render")
+@mock.patch("datacompy.spark.save_html_report")
+@mock.patch("datacompy.spark.render")
 def test_html_report_generation(mock_render, mock_save_html, spark_session):
     """Test that HTML reports can be generated and saved to a file."""
     df1 = spark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
