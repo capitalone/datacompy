@@ -46,12 +46,12 @@ from pyspark.sql.functions import (
 
 from datacompy.base import (
     BaseCompare,
-    _validate_tolerance_parameter,
     df_to_str,
     get_column_tolerance,
     render,
     save_html_report,
     temp_column_name,
+    validate_tolerance_parameter,
 )
 
 LOG = logging.getLogger(__name__)
@@ -148,10 +148,10 @@ class SparkSQLCompare(BaseCompare):
         self.cast_column_names_lower = cast_column_names_lower
 
         # Validate tolerance parameters first
-        self._abs_tol_dict = _validate_tolerance_parameter(
+        self._abs_tol_dict = validate_tolerance_parameter(
             abs_tol, "abs_tol", "lower" if cast_column_names_lower else "preserve"
         )
-        self._rel_tol_dict = _validate_tolerance_parameter(
+        self._rel_tol_dict = validate_tolerance_parameter(
             rel_tol, "rel_tol", "lower" if cast_column_names_lower else "preserve"
         )
 
