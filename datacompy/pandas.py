@@ -37,7 +37,12 @@ from datacompy.base import (
     temp_column_name,
     validate_tolerance_parameter,
 )
-from datacompy.comparator import PandasNumericComparator, PandasStringComparator
+from datacompy.comparator import (
+    PandasArrayLikeComparator,
+    PandasNumericComparator,
+    PandasStringComparator,
+)
+from datacompy.comparator.string import pandas_normalize_string_column
 
 LOG = logging.getLogger(__name__)
 
@@ -307,10 +312,10 @@ class PandasCompare(BaseCompare):
             params = {"on": self.join_columns}
 
         for column in self.join_columns:
-            self.df1[column] = normalize_string_column(
+            self.df1[column] = pandas_normalize_string_column(
                 self.df1[column], ignore_spaces=ignore_spaces, ignore_case=False
             )
-            self.df2[column] = normalize_string_column(
+            self.df2[column] = pandas_normalize_string_column(
                 self.df2[column], ignore_spaces=ignore_spaces, ignore_case=False
             )
 
@@ -974,6 +979,14 @@ def columns_equal(
     default_value = "DATACOMPY_NULL"
     compare: pd.Series[bool]
 
+    # order of comparators is important here, as we want to
+    # check for mixed types first, then arrays, then strings, then numeric
+
+    # compare arrays or lists
+    if (compare := PandasArrayLikeComparator().compare(col_1, col_2)) is not None:
+        compare.index = col_1.index
+        return compare
+
     # compare strings
     if (
         compare := PandasStringComparator(
@@ -982,6 +995,7 @@ def columns_equal(
     ) is not None:
         compare.index = col_1.index
         return compare
+
     # compare numeric values
     if (
         compare := PandasNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
@@ -991,10 +1005,10 @@ def columns_equal(
         compare.index = col_1.index
         return compare
 
-    col_1 = normalize_string_column(
+    col_1 = pandas_normalize_string_column(
         col_1, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
-    col_2 = normalize_string_column(
+    col_2 = pandas_normalize_string_column(
         col_2, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
 
@@ -1171,35 +1185,3 @@ def generate_id_within_group(
         )
     else:
         return dataframe[join_columns].groupby(join_columns).cumcount()
-
-
-def normalize_string_column(
-    column: pd.Series, ignore_spaces: bool, ignore_case: bool
-) -> pd.Series:
-    """Normalize a string column by converting to upper case and stripping whitespace.
-
-    Parameters
-    ----------
-    column : pd.Series
-        The column to normalize
-    ignore_spaces : bool
-        Whether to ignore spaces when normalizing
-    ignore_case : bool
-        Whether to ignore case when normalizing
-
-    Returns
-    -------
-    pd.Series
-        The normalized column
-
-    Notes
-    -----
-    Will not operate on categorical columns.
-    """
-    if (column.dtype.kind == "O" and pd.api.types.infer_dtype(column) == "string") or (
-        pd.api.types.is_string_dtype(column)
-        and not isinstance(column.dtype, pd.CategoricalDtype)
-    ):
-        column = column.str.strip() if ignore_spaces else column
-        column = column.str.upper() if ignore_case else column
-    return column
