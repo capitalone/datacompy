@@ -26,7 +26,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
 from typing import Any, Dict, List, Union, cast
 
-import pandas as pd
 import snowflake.snowpark as sp
 from ordered_set import OrderedSet
 from snowflake.connector.errors import DatabaseError, ProgrammingError
@@ -441,8 +440,8 @@ class SnowflakeCompare(BaseCompare):
                     col_1=col_1,
                     col_2=col_2,
                     col_match=col_match,
-                    rel_tol=get_column_tolerance(col, self._rel_tol_dict),
-                    abs_tol=get_column_tolerance(col, self._abs_tol_dict),
+                    rel_tol=get_column_tolerance(c, self._rel_tol_dict),
+                    abs_tol=get_column_tolerance(c, self._abs_tol_dict),
                     ignore_spaces=ignore_spaces,
                 )
 

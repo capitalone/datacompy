@@ -31,9 +31,11 @@ import numpy as np
 import pandas as pd
 import pytest
 from datacompy.pandas import (
+    PandasCompare,
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
+    normalize_string_column,
     temp_column_name,
 )
 from pandas.testing import assert_frame_equal, assert_series_equal
@@ -1358,7 +1360,7 @@ def test_lower():
     df2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
     expected_message = "df2 must have all columns from join_columns"
     with raises(ValueError, match=expected_message):
-        compare = datacompy.PandasCompare(
+        compare = PandasCompare(
             df1, df2, join_columns=["a"], cast_column_names_lower=False
         )
 
@@ -1367,16 +1369,16 @@ def test_integer_column_names():
     """This function tests that integer column names would also work"""
     df1 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
     df2 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
-    compare = datacompy.PandasCompare(df1, df2, join_columns=[1])
+    compare = PandasCompare(df1, df2, join_columns=[1])
     assert compare.matches()
 
 
-@mock.patch("datacompy.core.render")
-@mock.patch("datacompy.core.save_html_report")
+@mock.patch("datacompy.pandas.render")
+@mock.patch("datacompy.pandas.save_html_report")
 def test_save_html(mock_save_html, mock_render):
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
-    compare = datacompy.Compare(df1, df2, ["a"])
+    compare = PandasCompare(df1, df2, ["a"])
     mock_render.return_value = "<html>test</html>"
     result = compare.report(html_file="test.html")
 
@@ -1412,7 +1414,7 @@ def test_custom_template_usage():
     """Test using a custom template with template_path parameter."""
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
-    compare = datacompy.Compare(df1, df2, ["a"])
+    compare = PandasCompare(df1, df2, ["a"])
 
     # Create a simple test template
     with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
@@ -1442,7 +1444,7 @@ def test_template_without_extension():
     """Test that template files without .j2 extension still work."""
     df1 = pd.DataFrame([{"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}])
-    compare = datacompy.Compare(df1, df2, ["a"])
+    compare = PandasCompare(df1, df2, ["a"])
 
     # Create a test template without extension
     with tempfile.NamedTemporaryFile(delete=False, mode="w") as tmp:
@@ -1466,7 +1468,7 @@ def test_nonexistent_template():
     """Test that a clear error is raised when template file doesn't exist."""
     df1 = pd.DataFrame([{"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}])
-    compare = datacompy.Compare(df1, df2, ["a"])
+    compare = PandasCompare(df1, df2, ["a"])
 
     with pytest.raises(FileNotFoundError):
         compare.report(template_path="/nonexistent/path/template.j2")
@@ -1476,7 +1478,7 @@ def test_template_context_variables():
     """Test that all expected context variables are available in the template."""
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
-    compare = datacompy.Compare(df1, df2, ["a"])
+    compare = PandasCompare(df1, df2, ["a"])
 
     # Create a test template that checks for expected variables
     with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
@@ -1506,7 +1508,7 @@ def test_html_report_generation():
     """Test that HTML report is properly generated and saved."""
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
-    compare = datacompy.Compare(df1, df2, ["a"])
+    compare = PandasCompare(df1, df2, ["a"])
 
     # Create a temporary directory for the test
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -1961,7 +1963,7 @@ def test_columns_equal_lists():
     ],
 )
 def test_normalize_string_column(data, ignore_spaces, ignore_case, expected):
-    result = datacompy.core.normalize_string_column(
+    result = normalize_string_column(
         data, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
     assert_series_equal(result, expected, check_names=False)
@@ -1980,7 +1982,7 @@ def test_per_column_tolerances() -> None:
         }
     )
 
-    compare = datacompy.core.Compare(
+    compare = datacompy.pandas.PandasCompare(
         df1,
         df2,
         join_columns=["id"],
@@ -1999,7 +2001,7 @@ def test_default_tolerance() -> None:
     df1 = pd.DataFrame({"id": [1, 2], "col1": [1.0, 2.0], "col2": [1.0, 2.0]})
     df2 = pd.DataFrame({"id": [1, 2], "col1": [1.1, 2.1], "col2": [1.1, 2.1]})
 
-    compare = datacompy.core.Compare(
+    compare = datacompy.pandas.PandasCompare(
         df1, df2, join_columns=["id"], abs_tol={"col1": 0.05, "default": 0.2}
     )
 
@@ -2029,7 +2031,7 @@ def test_mixed_tolerances() -> None:
         {"id": [1, 2], "small_vals": [1.1, 2.1], "large_vals": [1001.0, 2002.0]}
     )
 
-    compare = datacompy.core.Compare(
+    compare = datacompy.pandas.PandasCompare(
         df1,
         df2,
         join_columns=["id"],

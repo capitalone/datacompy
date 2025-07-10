@@ -1,6 +1,6 @@
 [project]
 name = "datacompy"
-description = "Dataframe comparison in Python"
+description = "Dataframe comparisons in Python"
 readme = "README.md"
 authors = [
   { name="Faisal Dosani", email="faisal.dosani@capitalone.com" },
