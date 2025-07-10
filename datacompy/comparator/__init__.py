@@ -15,6 +15,12 @@
 
 """Comparator classes."""
 
+from datacompy.comparator.array import (
+    PandasArrayLikeComparator,
+    PolarsArrayLikeComparator,
+    # SnowflakeArrayLikeComparator,
+    SparkArrayLikeComparator,
+)
 from datacompy.comparator.numeric import (
     PandasNumericComparator,
     PolarsNumericComparator,
@@ -29,12 +35,16 @@ from datacompy.comparator.string import (
 )
 
 __all__ = [
+    "PandasArrayLikeComparator",
     "PandasNumericComparator",
     "PandasStringComparator",
+    "PolarsArrayLikeComparator",
     "PolarsNumericComparator",
     "PolarsStringComparator",
     "SnowflakeNumericComparator",
     "SnowflakeStringComparator",
+    "SparkArrayLikeComparator",
     "SparkNumericComparator",
     "SparkStringComparator",
+    # "SnowflakeArrayLikeComparator",
 ]
