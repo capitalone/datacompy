@@ -1,6 +1,0 @@
-DataComPy Comparison
---------------------
-
-DataFrame Summary
------------------
-
