@@ -263,14 +263,12 @@ def test_date_columns_unequal():
 
 
 def test_bad_date_columns():
-    """If strings can't be coerced into dates then it should be false for the
-    whole column.
-    """
+    """If strings can't be coerced into dates then fall back to just checking the string version as a last resort."""
     df = pd.DataFrame(
         [{"a": "2017-01-01", "b": "2017-01-01"}, {"a": "2017-01-01", "b": "217-01-01"}]
     )
     df["a_dt"] = pd.to_datetime(df["a"])
-    assert not columns_equal(df.a_dt, df.b).any()
+    assert columns_equal(df.a_dt, df.b).tolist() == [True, False]
 
 
 def test_rounded_date_columns():

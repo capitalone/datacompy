@@ -8,6 +8,7 @@ from datacompy.comparator.string import (
     PolarsStringComparator,
     SnowflakeStringComparator,
     SparkStringComparator,
+    pandas_compare_string_and_date_columns,
 )
 from tests.comparator.snowflake_mocks import *  # noqa: F403
 
@@ -320,3 +321,35 @@ def test_snowflake_string_comparator_error_handling(snowflake_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result is None
+
+
+def test_pandas_compare_string_and_date_columns():
+    # Test matching string and date columns
+    str_col = pd.Series(["2023-01-01", "2023-02-01", "2023-03-01"])
+    date_col = pd.to_datetime(["2023-01-01", "2023-02-01", "2023-03-01"])
+    result = pandas_compare_string_and_date_columns(str_col, date_col)
+    assert result.tolist() == [True, True, True]
+
+    # Test mismatched values
+    str_col = pd.Series(["2023-01-01", "2023-02-02", "2023-03-01"])
+    date_col = pd.to_datetime(["2023-01-01", "2023-02-01", "2023-03-01"])
+    result = pandas_compare_string_and_date_columns(str_col, date_col)
+    assert result.tolist() == [True, False, True]
+
+    # Test null handling
+    str_col = pd.Series(["2023-01-01", None, "2023-03-01"])
+    date_col = pd.to_datetime(["2023-01-01", pd.NaT, "2023-03-01"])
+    result = pandas_compare_string_and_date_columns(str_col, date_col)
+    assert result.tolist() == [True, True, True]
+
+    # Test mixed format dates
+    str_col = pd.Series(["Jan 1 2023", "02-01-2023", "March 1, 2023"])
+    date_col = pd.to_datetime(["2023-01-01", "2023-02-01", "2023-03-01"])
+    result = pandas_compare_string_and_date_columns(str_col, date_col)
+    assert result.tolist() == [True, True, True]
+
+    # Test invalid date strings
+    str_col = pd.Series(["not a date", "also not a date", "2023-03-01"])
+    date_col = pd.to_datetime(["2023-01-01", "2023-02-01", "2023-03-01"])
+    result = pandas_compare_string_and_date_columns(str_col, date_col)
+    assert result.tolist() == [False, False, True]
