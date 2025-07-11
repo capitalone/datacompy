@@ -976,23 +976,13 @@ def columns_equal(
         A series of Boolean values.  True == the values match, False == the
         values don't match.
     """
-    default_value = "DATACOMPY_NULL"
     compare: pd.Series[bool]
 
     # order of comparators is important here, as we want to
-    # check for mixed types first, then arrays, then strings, then numeric
+    # check for mixed types first, then arrays,  then numeric, and finally then strings as a catch all
 
     # compare arrays or lists
     if (compare := PandasArrayLikeComparator().compare(col_1, col_2)) is not None:
-        compare.index = col_1.index
-        return compare
-
-    # compare strings
-    if (
-        compare := PandasStringComparator(
-            ignore_case=ignore_case, ignore_space=ignore_spaces
-        ).compare(col_1, col_2)
-    ) is not None:
         compare.index = col_1.index
         return compare
 
@@ -1001,6 +991,15 @@ def columns_equal(
         compare := PandasNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
             col_1, col_2
         )
+    ) is not None:
+        compare.index = col_1.index
+        return compare
+
+    # compare strings
+    if (
+        compare := PandasStringComparator(
+            ignore_case=ignore_case, ignore_space=ignore_spaces
+        ).compare(col_1, col_2)
     ) is not None:
         compare.index = col_1.index
         return compare
@@ -1014,28 +1013,7 @@ def columns_equal(
 
     # Rest of comparison logic using rel_tol and abs_tol
     # short circuit if comparing mixed type columns. Check list/arrrays or just return false for everything else.
-    if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(
-        col_2
-    ).startswith("mixed"):
-        if all(isinstance(item, list | np.ndarray) for item in col_1) and all(
-            isinstance(item, list | np.ndarray) for item in col_2
-        ):  # compare list like
-            # join together and apply np.array_equal
-            temp_df = pd.DataFrame({"col_1": col_1, "col_2": col_2})
-            compare = temp_df.apply(
-                lambda row: np.array_equal(row.col_1, row.col_2, equal_nan=True), axis=1
-            )
-        else:
-            compare = pd.Series(False, index=col_1.index)
-    elif pd.api.types.is_string_dtype(col_1) and pd.api.types.is_string_dtype(col_2):
-        try:
-            compare = pd.Series(
-                (col_1.fillna(default_value) == col_2.fillna(default_value))
-                | (col_1.isnull() & col_2.isnull())
-            )
-        except TypeError:
-            compare = pd.Series(col_1.astype(str) == col_2.astype(str))
-    elif {col_1.dtype.kind, col_2.dtype.kind} == {"M", "O"}:
+    if {col_1.dtype.kind, col_2.dtype.kind} == {"M", "O"}:
         compare = compare_string_and_date_columns(col_1, col_2)
     else:
         try:

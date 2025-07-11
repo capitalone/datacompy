@@ -22,10 +22,13 @@ import pandas as pd
 import polars as pl
 import pyspark as ps
 import pyspark.sql.functions as psf
+import snowflake.snowpark as sp
 import snowflake.snowpark.functions as spf
+import snowflake.snowpark.types as spt
 
 from datacompy.comparator.base import BaseComparator
 from datacompy.comparator.utility import (
+    get_snowflake_column_dtypes,
     get_spark_column_dtypes,
 )
 
@@ -34,7 +37,7 @@ LOG = logging.getLogger(__name__)
 
 POLARS_ARRAY_TYPE = ["List", "Array"]
 PYSPARK_ARRAY_TYPE = ["array"]
-SNOWFLAKE_STRING_TYPE = {spf.StringType()}
+SNOWFLAKE_ARRAY_TYPE = {spt.ArrayType()}
 
 
 class PandasArrayLikeComparator(BaseComparator):
@@ -56,6 +59,8 @@ class PandasArrayLikeComparator(BaseComparator):
         pd.Series
             A Pandas Series of booleans indicating whether the values in `col1` and `col2`
             are equal.
+        None
+            if the columns are not comparable.
         """
         if (
             (col1.shape == col2.shape)
@@ -96,6 +101,8 @@ class PolarsArrayLikeComparator(BaseComparator):
         pl.Series
             A Polars Series of booleans indicating whether the values in `col1` and `col2`
             are equal.
+        None
+            if the columns are not comparable.
         """
         if (col1.shape == col2.shape) and (
             str(col1.dtype.base_type()) in POLARS_ARRAY_TYPE
@@ -113,7 +120,7 @@ class SparkArrayLikeComparator(BaseComparator):
 
     def compare(
         self, dataframe: ps.sql.DataFrame, col1: str, col2: str, col_match: str
-    ) -> ps.sql.Column | None:
+    ) -> ps.sql.DataFrame | None:
         """
         Compare two array like columns for equality.
 
@@ -134,6 +141,8 @@ class SparkArrayLikeComparator(BaseComparator):
             A PySpark DataFrame with an additional column (`col_match`) containing
             boolean values indicating whether the values in `col_1` and `col_2` are
             equal.
+        None
+            if the columns are not comparable.
         """
         base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
         if base_dtype.startswith("array") and compare_dtype.startswith("array"):
@@ -141,6 +150,48 @@ class SparkArrayLikeComparator(BaseComparator):
             return dataframe.withColumn(
                 col_match,
                 psf.when(when_clause, psf.lit(True)).otherwise(psf.lit(False)),
+            )
+        else:
+            return None
+
+
+class SnowflakeArrayLikeComparator(BaseComparator):
+    """Comparator for array-like columns in Snowflake."""
+
+    def compare(
+        self, dataframe: sp.DataFrame, col1: str, col2: str, col_match: str
+    ) -> sp.DataFrame | None:
+        """
+        Compare two array like columns for equality.
+
+        Parameters
+        ----------
+        dataframe: snowflake.snowpark.DataFrame
+            DataFrame to do comparison on
+        col1 : str
+            The first column to look at
+        col2 : str
+            The second column
+        col_match : str
+            The matching column denoting if the compare was a match or not
+
+        Returns
+        -------
+        snowflake.snowpark.DataFrame
+            A PySpark DataFrame with an additional column (`col_match`) containing
+            boolean values indicating whether the values in `col1` and `col2` are
+            equal.
+        None
+            if the columns are not comparable.
+        """
+        base_dtype, compare_dtype = get_snowflake_column_dtypes(dataframe, col1, col2)
+        if (base_dtype in SNOWFLAKE_ARRAY_TYPE) and (
+            compare_dtype in SNOWFLAKE_ARRAY_TYPE
+        ):
+            when_clause = spf.col(col1).eqNullSafe(spf.col(col2))
+            return dataframe.withColumn(
+                col_match,
+                spf.when(when_clause, spf.lit(True)).otherwise(spf.lit(False)),
             )
         else:
             return None

@@ -65,8 +65,8 @@ class PolarsStringComparator(BaseStringComparator):
             A Polars Series of boolean values where each element indicates
             whether the corresponding elements in `col1` and `col2` are equal.
             Handles missing values by treating nulls as equal.
-
-        None if the columns are not comparable.
+        None
+            if the columns are not comparable.
 
         Raises
         ------
@@ -126,8 +126,12 @@ class PandasStringComparator(BaseStringComparator):
             A Pandas Series of boolean values where each element indicates
             whether the corresponding elements in `col1` and `col2` are equal.
             Handles missing values by treating nulls as equal.
+        None
+            if the columns are not comparable.
 
-            None if the columns are not comparable.
+        Note
+        ----
+        Pandas dataframes allow for mixed typing which is unique and is also handled here.
 
         Raises
         ------
@@ -160,6 +164,16 @@ class PandasStringComparator(BaseStringComparator):
                     return pd.Series(col1.astype(str) == col2.astype(str))
                 except Exception:
                     return pd.Series(False * col1.index)
+        elif (
+            (col1.shape == col2.shape)
+            and pd.api.types.infer_dtype(col1).startswith("mixed")
+            and pd.api.types.infer_dtype(col2).startswith("mixed")
+        ):
+            # Handle mixed type columns by casting to a string and comparing
+            try:
+                return pd.Series(col1.astype(str) == col2.astype(str))
+            except Exception:
+                return pd.Series(False * col1.index)
         else:
             return None
 
@@ -195,8 +209,8 @@ class SparkStringComparator(BaseStringComparator):
         -------
         pyspark.sql.DataFrame
             The DataFrame with an additional column containing the comparison results.
-
-        None if the columns are not comparable.
+        None
+            if the columns are not comparable.
 
         Raises
         ------
@@ -260,6 +274,9 @@ class SnowflakeStringComparator(BaseStringComparator):
         -------
         snowflake.snowpark.DataFrame
             The DataFrame with an additional column containing the comparison results.
+
+        None
+            if the columns are not comparable.
 
         Raises
         ------
