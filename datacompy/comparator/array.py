@@ -62,17 +62,16 @@ class PandasArrayLikeComparator(BaseComparator):
         None
             if the columns are not comparable.
         """
+        if col1.shape != col2.shape:
+            return None
+
         if (
-            (col1.shape == col2.shape)
-            and (
-                pd.api.types.infer_dtype(col1).startswith("mixed")
-                or pd.api.types.infer_dtype(col2).startswith("mixed")
-            )
-            and (
-                # Using any() instead of all() for early termination
-                not any(not isinstance(item, (list, np.ndarray)) for item in col1)
-                and not any(not isinstance(item, (list, np.ndarray)) for item in col2)
-            )
+            pd.api.types.infer_dtype(col1).startswith("mixed")
+            or pd.api.types.infer_dtype(col2).startswith("mixed")
+        ) and (
+            # Using any() instead of all() for early termination
+            not any(not isinstance(item, (list, np.ndarray)) for item in col1)
+            and not any(not isinstance(item, (list, np.ndarray)) for item in col2)
         ):
             temp_df = pd.DataFrame({"col1": col1, "col2": col2})
             return temp_df.apply(
@@ -104,7 +103,10 @@ class PolarsArrayLikeComparator(BaseComparator):
         None
             if the columns are not comparable.
         """
-        if (col1.shape == col2.shape) and (
+        if col1.shape != col2.shape:
+            return None
+
+        if (
             str(col1.dtype.base_type()) in POLARS_ARRAY_TYPE
             and str(col2.dtype.base_type()) in POLARS_ARRAY_TYPE
         ):

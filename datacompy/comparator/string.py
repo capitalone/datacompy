@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""String Comparator Class."""
+"""String / Dates / Mixed Comparator Class."""
 
 import logging
+from typing import Any
 
 import pandas as pd
 import polars as pl
@@ -36,6 +37,16 @@ DEFAULT_VALUE = "DATACOMPY_NULL"
 POLARS_STRING_TYPE = {"String", "Utf8"}
 PYSPARK_STRING_TYPE = {"string"}
 SNOWFLAKE_STRING_TYPE = {spf.StringType()}
+PANDAS_STRING_TYPE = {"string", "categorical"}
+PANDAS_DATE_TYPES = {
+    "datetime64",
+    "datetime",
+    "date",
+    "timedelta64",
+    "timedelta",
+    "time",
+    "period",
+}
 
 
 class PolarsStringComparator(BaseStringComparator):
@@ -76,7 +87,10 @@ class PolarsStringComparator(BaseStringComparator):
             also fails, returns a Series of `False` values with the same length
             as `col1`.
         """
-        if (col1.shape == col2.shape) and (
+        if col1.shape != col2.shape:
+            return None
+
+        if (
             str(col1.dtype.base_type()) in POLARS_STRING_TYPE
             and str(col2.dtype.base_type()) in POLARS_STRING_TYPE
         ):
@@ -100,7 +114,7 @@ class PolarsStringComparator(BaseStringComparator):
 
 
 class PandasStringComparator(BaseStringComparator):
-    """Comparator for string columns in Pandas.
+    """Comparator for string / date / mixed columns in Pandas.
 
     Parameters
     ----------
@@ -141,13 +155,20 @@ class PandasStringComparator(BaseStringComparator):
             also fails, returns a Series of `False` values with the same length
             as `col1`.
         """
-        if (col1.shape == col2.shape) and (
-            (pd.api.types.is_string_dtype(col1) and pd.api.types.is_string_dtype(col2))
-            or (  # infer_dtype is also a string
-                pd.api.types.infer_dtype(col1) == "string"
-                and pd.api.types.infer_dtype(col2) == "string"
-            )
+        # check the shape first and short circuit
+        if col1.shape != col2.shape:
+            return None
+
+        col1_type = pd.api.types.infer_dtype(col1, skipna=True)
+        col2_type = pd.api.types.infer_dtype(col2, skipna=True)
+
+        # if one is a string and another is a date
+        if (col1_type in PANDAS_DATE_TYPES and col2_type in PANDAS_STRING_TYPE) or (
+            col2_type in PANDAS_DATE_TYPES and col1_type in PANDAS_STRING_TYPE
         ):
+            return pandas_compare_string_and_date_columns(col1, col2)
+        # if both are strings
+        elif col1_type in PANDAS_STRING_TYPE and col2_type in PANDAS_STRING_TYPE:
             col1 = pandas_normalize_string_column(
                 col1, self.ignore_space, self.ignore_case
             )
@@ -164,17 +185,17 @@ class PandasStringComparator(BaseStringComparator):
                     return pd.Series(col1.astype(str) == col2.astype(str))
                 except Exception:
                     return pd.Series(False * col1.index)
+        # if both are mixed or dates
         elif (
-            (col1.shape == col2.shape)
-            and pd.api.types.infer_dtype(col1).startswith("mixed")
+            pd.api.types.infer_dtype(col1).startswith("mixed")
             and pd.api.types.infer_dtype(col2).startswith("mixed")
-        ):
+        ) or (col1_type in PANDAS_DATE_TYPES and col2_type in PANDAS_DATE_TYPES):
             # Handle mixed type columns by casting to a string and comparing
             try:
                 return pd.Series(col1.astype(str) == col2.astype(str))
             except Exception:
                 return pd.Series(False * col1.index)
-        else:
+        else:  # if not one of the supported type usecases
             return None
 
 
@@ -423,3 +444,51 @@ def snowpark_normalize_string_column(
     if ignore_case:
         column = spf.upper(column)
     return column
+
+
+def pandas_compare_string_and_date_columns(
+    col_1: "pd.Series[Any]", col_2: "pd.Series[Any]"
+) -> "pd.Series[bool]":
+    """Compare a string column and date column, value-wise.
+
+    This tries to:
+    - convert a string column to a date column and compare
+    - try with format=mixed
+    - finally cast as strings and then compare
+
+    Parameters
+    ----------
+    col_1 : Pandas.Series
+        The first column to look at
+    col_2 : Pandas.Series
+        The second column
+
+    Returns
+    -------
+    pandas.Series
+        A series of Boolean values.  True == the values match, False == the
+        values don't match.
+    """
+    if col_1.dtype.kind == "O":
+        obj_column = col_1
+        date_column = col_2
+    else:
+        obj_column = col_2
+        date_column = col_1
+
+    try:
+        return pd.Series(
+            (pd.to_datetime(obj_column) == date_column)
+            | (obj_column.isnull() & date_column.isnull())
+        )
+    except Exception:
+        try:
+            return pd.Series(
+                (pd.to_datetime(obj_column, format="mixed") == date_column)
+                | (obj_column.isnull() & date_column.isnull())
+            )
+        except Exception:
+            try:
+                return pd.Series(obj_column.astype(str) == date_column.astype(str))
+            except Exception:
+                return pd.Series(False, index=col_1.index)
