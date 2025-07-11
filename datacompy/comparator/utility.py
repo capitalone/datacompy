@@ -15,38 +15,8 @@
 
 """Utility and helper functions for data comparison."""
 
-import polars as pl
 import pyspark as ps
 import snowflake.snowpark as sp
-
-
-# function which checks 2 polars series are of the same shape and of the same type
-def validate_polars_series(col1: pl.Series, col2: pl.Series, type_check: str) -> bool:
-    """Validate two Polars Series objects based on their shape, data type, and a specified type check.
-
-    Parameters
-    ----------
-    col1 : pl.Series
-        The first Polars Series to validate.
-    col2 : pl.Series
-        The second Polars Series to validate.
-    type_check : str
-        The type check to perform. Currently supports "numeric" to validate
-        if both series are numeric.
-
-    Returns
-    -------
-    bool
-        True if the series pass the validation based on the specified type check,
-        otherwise False.
-    """
-    if type_check == "numeric":
-        return (
-            col1.shape == col2.shape
-            and col1.dtype == col2.dtype
-            and pl.Series.is_numeric(col1)
-        )
-    return False
 
 
 def get_spark_column_dtypes(

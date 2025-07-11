@@ -102,6 +102,8 @@ class PolarsNumericComparator(BaseNumericComparator):
         pl.Series
             A Polars Series of booleans indicating whether the values in `col1` and `col2`
             are approximately equal within the given tolerances.
+        None
+            if the columns are not comparable.
 
         Notes
         -----
@@ -164,6 +166,8 @@ class PandasNumericComparator(BaseNumericComparator):
         pd.Series
             A Pandas Series of booleans indicating whether the values in `col1` and `col2`
             are approximately equal within the given tolerances.
+        None
+            if the columns are not comparable.
 
         Notes
         -----
@@ -234,6 +238,8 @@ class SparkNumericComparator(BaseNumericComparator):
             A PySpark DataFrame with an additional column (`col_match`) containing
             boolean values indicating whether the values in `col_1` and `col_2` are
             approximately equal within the given tolerances.
+        None
+            if the columns are not comparable.
 
         Notes
         -----
@@ -309,6 +315,8 @@ class SnowflakeNumericComparator(BaseNumericComparator):
             A Snowpark DataFrame with an additional column (`col_match`) containing
             boolean values indicating whether the values in `col1` and `col2` are
             approximately equal within the given tolerances.
+        None
+            If the type conditions are not met.
 
         Notes
         -----
