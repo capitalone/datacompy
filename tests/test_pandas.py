@@ -30,12 +30,12 @@ import datacompy
 import numpy as np
 import pandas as pd
 import pytest
+from datacompy.comparator.string import pandas_normalize_string_column
 from datacompy.pandas import (
     PandasCompare,
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
-    normalize_string_column,
     temp_column_name,
 )
 from pandas.testing import assert_frame_equal, assert_series_equal
@@ -393,11 +393,11 @@ def test_infinity_and_beyond():
 def test_mixed_column():
     df = pd.DataFrame(
         [
-            {"a": "hi", "b": "hi", "expected": False},
-            {"a": 1, "b": 1, "expected": False},
-            {"a": np.inf, "b": np.inf, "expected": False},
-            {"a": Decimal("1"), "b": Decimal("1"), "expected": False},
-            {"a": 1, "b": "1", "expected": False},
+            {"a": "hi", "b": "hi", "expected": True},
+            {"a": 1, "b": 1, "expected": True},
+            {"a": np.inf, "b": np.inf, "expected": True},
+            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
+            {"a": 1, "b": "1", "expected": True},
             {"a": 1, "b": "yo", "expected": False},
         ]
     )
@@ -410,9 +410,9 @@ def test_mixed_column_with_ignore_spaces():
     df = pd.DataFrame(
         [
             {"a": "hi", "b": "hi ", "expected": False},
-            {"a": 1, "b": 1, "expected": False},
-            {"a": np.inf, "b": np.inf, "expected": False},
-            {"a": Decimal("1"), "b": Decimal("1"), "expected": False},
+            {"a": 1, "b": 1, "expected": True},
+            {"a": np.inf, "b": np.inf, "expected": True},
+            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
             {"a": 1, "b": "1 ", "expected": False},
             {"a": 1, "b": "yo ", "expected": False},
         ]
@@ -426,9 +426,9 @@ def test_mixed_column_with_ignore_spaces_and_case():
     df = pd.DataFrame(
         [
             {"a": "hi", "b": "hi ", "expected": False},
-            {"a": 1, "b": 1, "expected": False},
-            {"a": np.inf, "b": np.inf, "expected": False},
-            {"a": Decimal("1"), "b": Decimal("1"), "expected": False},
+            {"a": 1, "b": 1, "expected": True},
+            {"a": np.inf, "b": np.inf, "expected": True},
+            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
             {"a": 1, "b": "1 ", "expected": False},
             {"a": 1, "b": "yo ", "expected": False},
             {"a": "Hi", "b": "hI ", "expected": False},
@@ -1963,7 +1963,7 @@ def test_columns_equal_lists():
     ],
 )
 def test_normalize_string_column(data, ignore_spaces, ignore_case, expected):
-    result = normalize_string_column(
+    result = pandas_normalize_string_column(
         data, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
     assert_series_equal(result, expected, check_names=False)
