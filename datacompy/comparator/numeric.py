@@ -75,6 +75,13 @@ except Exception:
     NUMERIC_SNOWFLAKE_TYPES = None
 
 
+NUMERIC_PANDAS_TYPES = [
+    "floating",
+    "integer",
+    "decimal",
+]
+
+
 class PolarsNumericComparator(BaseNumericComparator):
     """Comparator for numeric columns in Polars.
 
@@ -113,9 +120,10 @@ class PolarsNumericComparator(BaseNumericComparator):
         - If the Series shapes do not match, and neither type is numeric a series of `False`
           values is returned.
         """
-        if (col1.shape == col2.shape) and (
-            col1.dtype.is_numeric() and col2.dtype.is_numeric()
-        ):
+        if col1.shape != col2.shape:
+            return None
+
+        if col1.dtype.is_numeric() and col2.dtype.is_numeric():
             try:
                 return pl.Series(
                     np.isclose(
@@ -177,8 +185,12 @@ class PandasNumericComparator(BaseNumericComparator):
         - If the Series shapes do not match, and neither type is numeric a series of `False`
           values is returned.
         """
-        if (col1.shape == col2.shape) and (
-            pd.api.types.is_numeric_dtype(col1) and pd.api.types.is_numeric_dtype(col2)
+        if col1.shape != col2.shape:
+            return None
+
+        if (
+            pd.api.types.infer_dtype(col1, skipna=True) in NUMERIC_PANDAS_TYPES
+            and pd.api.types.infer_dtype(col2, skipna=True) in NUMERIC_PANDAS_TYPES
         ):
             try:
                 return pd.Series(

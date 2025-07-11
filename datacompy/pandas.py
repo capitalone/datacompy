@@ -24,7 +24,6 @@ two dataframes.
 import logging
 from typing import Any, Dict, List, cast
 
-import numpy as np
 import pandas as pd
 from ordered_set import OrderedSet
 
@@ -980,7 +979,6 @@ def columns_equal(
 
     # order of comparators is important here, as we want to
     # check for mixed types first, then arrays,  then numeric, and finally then strings as a catch all
-
     # compare arrays or lists
     if (compare := PandasArrayLikeComparator().compare(col_1, col_2)) is not None:
         compare.index = col_1.index
@@ -1004,83 +1002,9 @@ def columns_equal(
         compare.index = col_1.index
         return compare
 
-    col_1 = pandas_normalize_string_column(
-        col_1, ignore_spaces=ignore_spaces, ignore_case=ignore_case
-    )
-    col_2 = pandas_normalize_string_column(
-        col_2, ignore_spaces=ignore_spaces, ignore_case=ignore_case
-    )
-
-    # Rest of comparison logic using rel_tol and abs_tol
-    # short circuit if comparing mixed type columns. Check list/arrrays or just return false for everything else.
-    if {col_1.dtype.kind, col_2.dtype.kind} == {"M", "O"}:
-        compare = compare_string_and_date_columns(col_1, col_2)
-    else:
-        try:
-            compare = pd.Series(
-                np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
-            )
-        except TypeError:
-            try:
-                compare = pd.Series(
-                    np.isclose(
-                        col_1.astype(float),
-                        col_2.astype(float),
-                        rtol=rel_tol,
-                        atol=abs_tol,
-                        equal_nan=True,
-                    )
-                )
-            except Exception:
-                try:  # last check where we just cast to strings
-                    compare = pd.Series(col_1.astype(str) == col_2.astype(str))
-                except Exception:  # Blanket exception should just return all False
-                    compare = pd.Series(False, index=col_1.index)
+    compare = pd.Series(False, index=col_1.index)
     compare.index = col_1.index
     return compare
-
-
-def compare_string_and_date_columns(
-    col_1: "pd.Series[Any]", col_2: "pd.Series[Any]"
-) -> "pd.Series[bool]":
-    """Compare a string column and date column, value-wise.
-
-    This tries to
-    convert a string column to a date column and compare that way.
-
-    Parameters
-    ----------
-    col_1 : Pandas.Series
-        The first column to look at
-    col_2 : Pandas.Series
-        The second column
-
-    Returns
-    -------
-    pandas.Series
-        A series of Boolean values.  True == the values match, False == the
-        values don't match.
-    """
-    if col_1.dtype.kind == "O":
-        obj_column = col_1
-        date_column = col_2
-    else:
-        obj_column = col_2
-        date_column = col_1
-
-    try:
-        return pd.Series(
-            (pd.to_datetime(obj_column) == date_column)
-            | (obj_column.isnull() & date_column.isnull())
-        )
-    except Exception:
-        try:
-            return pd.Series(
-                (pd.to_datetime(obj_column, format="mixed") == date_column)
-                | (obj_column.isnull() & date_column.isnull())
-            )
-        except Exception:
-            return pd.Series(False, index=col_1.index)
 
 
 def get_merged_columns(
