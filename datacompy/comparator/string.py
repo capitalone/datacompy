@@ -35,6 +35,7 @@ LOG = logging.getLogger(__name__)
 
 DEFAULT_VALUE = "DATACOMPY_NULL"
 POLARS_STRING_TYPE = {"String", "Utf8"}
+POLARS_DATE_TYPE = {"Date", "Datetime"}
 PYSPARK_STRING_TYPE = {"string"}
 SNOWFLAKE_STRING_TYPE = {spf.StringType()}
 PANDAS_STRING_TYPE = {"string", "categorical"}
@@ -50,7 +51,7 @@ PANDAS_DATE_TYPES = {
 
 
 class PolarsStringComparator(BaseStringComparator):
-    """Comparator for string columns in Polars.
+    """Comparator for string / temporal / date columns in Polars.
 
     Parameters
     ----------
@@ -90,9 +91,19 @@ class PolarsStringComparator(BaseStringComparator):
         if col1.shape != col2.shape:
             return None
 
-        if (
-            str(col1.dtype.base_type()) in POLARS_STRING_TYPE
-            and str(col2.dtype.base_type()) in POLARS_STRING_TYPE
+        col1_type = str(col1.dtype.base_type())
+        col2_type = str(col2.dtype.base_type())
+
+        # if one is a string and another is a date
+        if (col1_type in POLARS_DATE_TYPE and col2_type in POLARS_STRING_TYPE) or (
+            col2_type in POLARS_DATE_TYPE and col1_type in POLARS_STRING_TYPE
+        ):
+            return polars_compare_string_and_date_columns(col1, col2)
+        # both are strings or both are temporal or both are categorical
+        elif (
+            (col1_type in POLARS_STRING_TYPE and col2_type in POLARS_STRING_TYPE)
+            or (col1.dtype.is_temporal() and col2.dtype.is_temporal())
+            or (col1_type == "Categorical" and col2_type == "Categorical")
         ):
             col1 = polars_normalize_string_column(
                 col1, self.ignore_space, self.ignore_case
@@ -492,3 +503,42 @@ def pandas_compare_string_and_date_columns(
                 return pd.Series(obj_column.astype(str) == date_column.astype(str))
             except Exception:
                 return pd.Series(False, index=col_1.index)
+
+
+def polars_compare_string_and_date_columns(
+    col_1: pl.Series, col_2: pl.Series
+) -> pl.Series:
+    """Compare a string column and date column, value-wise.
+
+    This tries to convert a string column to a date column and compare that way.
+
+    Parameters
+    ----------
+    col_1 : Polars.Series
+        The first column to look at
+    col_2 : Polars.Series
+        The second column
+
+    Returns
+    -------
+    Polars.Series
+        A series of Boolean values.  True == the values match, False == the
+        values don't match.
+    """
+    if str(col_1.dtype) in POLARS_STRING_TYPE:
+        str_column = col_1
+        date_column = col_2
+    else:
+        str_column = col_2
+        date_column = col_1
+
+    try:  # datetime is inferred
+        return pl.Series(
+            (str_column.str.to_datetime(strict=False).eq_missing(date_column))
+            | (str_column.is_null() & date_column.is_null())
+        )
+    except Exception:
+        try:
+            return pl.Series(str_column.cast(pl.String) == date_column.cast(pl.String))
+        except Exception:
+            return pl.Series([False] * col_1.shape[0])
