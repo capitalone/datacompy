@@ -37,6 +37,7 @@ DEFAULT_VALUE = "DATACOMPY_NULL"
 POLARS_STRING_TYPE = {"String", "Utf8"}
 POLARS_DATE_TYPE = {"Date", "Datetime"}
 PYSPARK_STRING_TYPE = {"string"}
+PYSPARK_DATE_TYPE = {"date", "timestamp"}
 SNOWFLAKE_STRING_TYPE = {spf.StringType()}
 PANDAS_STRING_TYPE = {"string", "categorical"}
 PANDAS_DATE_TYPES = {
@@ -211,7 +212,7 @@ class PandasStringComparator(BaseStringComparator):
 
 
 class SparkStringComparator(BaseStringComparator):
-    """Comparator for string columns in PySpark.
+    """Comparator for string / temporal / date columns in PySpark.
 
     Parameters
     ----------
@@ -250,10 +251,27 @@ class SparkStringComparator(BaseStringComparator):
             If the comparison fails due to incompatible types or other issues,
             returns a column of `False` values.
         """
-        # if col1 and col2 of dataframe are of type string
+        # if col1 and col2 of dataframe are of type string OR timestamp
         base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
-        if (base_dtype in PYSPARK_STRING_TYPE) and (
-            compare_dtype in PYSPARK_STRING_TYPE
+        if (
+            (
+                (base_dtype in PYSPARK_STRING_TYPE)
+                and (compare_dtype in PYSPARK_STRING_TYPE)
+            )
+            or (
+                (
+                    (base_dtype in PYSPARK_STRING_TYPE)
+                    and (compare_dtype in PYSPARK_DATE_TYPE)
+                )
+                or (
+                    (base_dtype in PYSPARK_DATE_TYPE)
+                    and (compare_dtype in PYSPARK_STRING_TYPE)
+                )  # string/date compare.
+            )
+            or (
+                (base_dtype in PYSPARK_DATE_TYPE)
+                and (compare_dtype in PYSPARK_DATE_TYPE)  # date/date compare.
+            )
         ):
             try:
                 col1 = spark_normalize_string_column(
