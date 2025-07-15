@@ -40,7 +40,6 @@ from pyspark.sql.functions import (
     monotonically_increasing_id,
     row_number,
     trim,
-    upper,
     when,
 )
 
@@ -52,6 +51,11 @@ from datacompy.base import (
     save_html_report,
     temp_column_name,
     validate_tolerance_parameter,
+)
+from datacompy.comparator import (
+    SparkArrayLikeComparator,
+    SparkNumericComparator,
+    SparkStringComparator,
 )
 
 LOG = logging.getLogger(__name__)
@@ -1108,44 +1112,31 @@ def columns_equal(
     Starting in version 0.18.0, the behavior of this function was changed so rather than returning
     a DataFrame a Column expression is returned.
     """
-    base_dtype, compare_dtype = _get_column_dtypes(dataframe, col_1, col_2)
-    if _is_comparable(base_dtype, compare_dtype):
-        if (base_dtype in NUMERIC_SPARK_TYPES) and (
-            compare_dtype in NUMERIC_SPARK_TYPES
-        ):
-            # numeric tolerance comparison
-            return when(
-                (col(col_1).eqNullSafe(col(col_2)))
-                | (
-                    abs(col(col_1) - col(col_2))
-                    <= lit(abs_tol) + (lit(rel_tol) * abs(col(col_2)))
-                ),
-                # corner case of col1 != NaN and col2 == NaN returns True incorrectly
-                when(
-                    (isnan(col(col_1)) == False)  # noqa: E712
-                    & (isnan(col(col_2)) == True),  # noqa: E712
-                    lit(False),
-                ).otherwise(lit(True)),
-            ).otherwise(lit(False))
-        else:
-            # non-numeric comparison
-            if ignore_case and not ignore_spaces:
-                when_clause = upper(col(col_1)).eqNullSafe(upper(col(col_2)))
-            elif not ignore_case and ignore_spaces:
-                when_clause = trim(col(col_1)).eqNullSafe(trim(col(col_2)))
-            elif ignore_case and ignore_spaces:
-                when_clause = upper(trim(col(col_1))).eqNullSafe(
-                    upper(trim(col(col_2)))
-                )
-            else:
-                when_clause = col(col_1).eqNullSafe(col(col_2))
-
-            return when(when_clause, lit(True)).otherwise(lit(False))
-    else:
-        LOG.debug(
-            f"Skipping {col_1}({base_dtype}) and {col_2}({compare_dtype}), columns are not comparable"
+    if (
+        compare := SparkArrayLikeComparator().compare(
+            dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match
         )
-        return lit(False)
+    ) is not None:
+        return compare
+
+    # compare numeric values
+    if (
+        compare := SparkNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
+            dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match
+        )
+    ) is not None:
+        return compare
+
+    # compare strings
+    if (
+        compare := SparkStringComparator(
+            ignore_case=ignore_case, ignore_space=ignore_spaces
+        ).compare(dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match)
+    ) is not None:
+        return compare
+
+    compare = dataframe.withColumn(col_match, lit(False))
+    return compare
 
 
 def get_merged_columns(
