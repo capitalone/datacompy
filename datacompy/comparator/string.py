@@ -20,25 +20,39 @@ from typing import Any
 
 import pandas as pd
 import polars as pl
-import pyspark as ps
-import pyspark.sql.functions as psf
-import snowflake.snowpark as sp
-import snowflake.snowpark.functions as spf
 
 from datacompy.comparator.base import BaseStringComparator
-from datacompy.comparator.utility import (
-    get_snowflake_column_dtypes,
-    get_spark_column_dtypes,
-)
 
 LOG = logging.getLogger(__name__)
+
+# Initialize optional dependencies
+ps = None
+psf = None
+sp = None
+spf = None
+
+try:
+    import pyspark as ps
+    import pyspark.sql.functions as psf
+
+    from datacompy.comparator.utility import get_spark_column_dtypes
+except ImportError:
+    pass
+
+try:
+    import snowflake.snowpark as sp
+    import snowflake.snowpark.functions as spf
+
+    from datacompy.comparator.utility import get_snowflake_column_dtypes
+except ImportError:
+    pass
 
 DEFAULT_VALUE = "DATACOMPY_NULL"
 POLARS_STRING_TYPE = {"String", "Utf8"}
 POLARS_DATE_TYPE = {"Date", "Datetime"}
 PYSPARK_STRING_TYPE = {"string"}
 PYSPARK_DATE_TYPE = {"date", "timestamp"}
-SNOWFLAKE_STRING_TYPE = {spf.StringType()}
+SNOWFLAKE_STRING_TYPE = {spf.StringType()} if spf is not None else set()
 PANDAS_STRING_TYPE = {"string", "categorical"}
 PANDAS_DATE_TYPES = {
     "datetime64",
@@ -223,8 +237,8 @@ class SparkStringComparator(BaseStringComparator):
     """
 
     def compare(
-        self, dataframe: ps.sql.DataFrame, col1: str, col2: str, col_match: str
-    ) -> ps.sql.DataFrame | None:
+        self, dataframe: "ps.sql.DataFrame", col1: str, col2: str, col_match: str
+    ) -> "ps.sql.DataFrame" | None:
         """Compare two columns in a PySpark DataFrame for string equality.
 
         Parameters
@@ -305,8 +319,8 @@ class SnowflakeStringComparator(BaseStringComparator):
     """
 
     def compare(
-        self, dataframe: sp.DataFrame, col1: str, col2: str, col_match: str
-    ) -> sp.DataFrame | None:
+        self, dataframe: "sp.DataFrame", col1: str, col2: str, col_match: str
+    ) -> "sp.DataFrame" | None:
         """Compare two columns in a Snowflake DataFrame for string equality.
 
         Parameters
@@ -424,8 +438,8 @@ def polars_normalize_string_column(
 
 
 def spark_normalize_string_column(
-    column: ps.sql.Column, ignore_spaces: bool, ignore_case: bool
-) -> ps.sql.Column:
+    column: "ps.sql.Column", ignore_spaces: bool, ignore_case: bool
+) -> "ps.sql.Column":
     """Normalize a string column by converting to upper case and stripping whitespace.
 
     Parameters
@@ -450,8 +464,8 @@ def spark_normalize_string_column(
 
 
 def snowpark_normalize_string_column(
-    column: sp.Column, ignore_spaces: bool, ignore_case: bool
-) -> sp.Column:
+    column: "sp.Column", ignore_spaces: bool, ignore_case: bool
+) -> "sp.Column":
     """Normalize a string column by converting to upper case and stripping whitespace.
 
     Parameters

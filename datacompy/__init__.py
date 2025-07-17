@@ -20,30 +20,26 @@ Then extended to carry that functionality over to Spark Dataframes.
 
 __version__ = "1.0.0"
 
-import logging
-import platform
-
-logger = logging.getLogger(__name__)
-
 from datacompy.base import BaseCompare
 from datacompy.pandas import PandasCompare
 from datacompy.polars import PolarsCompare
-from datacompy.snowflake import SnowflakeCompare
-from datacompy.spark import SparkSQLCompare
 
 __all__ = [
     "BaseCompare",
     "PandasCompare",
     "PolarsCompare",
-    "SnowflakeCompare",
-    "SparkSQLCompare",
 ]
 
-major = platform.python_version_tuple()[0]
-minor = platform.python_version_tuple()[1]
+try:
+    from datacompy.snowflake import SnowflakeCompare  # noqa: F401
 
-if major == "3" and minor >= "12":
-    logger.warning(
-        "Python 3.12 and above currently is not supported by Spark and Ray. "
-        "Please note that some functionality will not work and currently is not supported."
-    )
+    __all__.append("SnowflakeCompare")
+except ImportError:
+    pass
+
+try:
+    from datacompy.spark import SparkSQLCompare  # noqa: F401
+
+    __all__.append("SparkSQLCompare")
+except ImportError:
+    pass
