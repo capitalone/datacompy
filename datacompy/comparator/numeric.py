@@ -101,7 +101,7 @@ class PolarsNumericComparator(BaseNumericComparator):
         The absolute tolerance to use for comparison.
     """
 
-    def compare(self, col1: pl.Series, col2: pl.Series) -> pl.Series:
+    def compare(self, col1: pl.Series, col2: pl.Series) -> pl.Series | None:
         """
         Compare two Polars Series for approximate equality.
 
@@ -166,7 +166,7 @@ class PandasNumericComparator(BaseNumericComparator):
         The absolute tolerance to use for comparison.
     """
 
-    def compare(self, col1: pd.Series, col2: pd.Series) -> pd.Series:
+    def compare(self, col1: pd.Series, col2: pd.Series) -> pd.Series | None:
         """
         Compare two Pandas Series for approximate equality.
 
@@ -237,7 +237,7 @@ class SparkNumericComparator(BaseNumericComparator):
 
     def compare(
         self, dataframe: "ps.sql.DataFrame", col1: str, col2: str, col_match: str
-    ) -> "ps.sql.DataFrame" | None:
+    ) -> "ps.sql.DataFrame | None":
         """
         Compare two columns in a PySpark DataFrame for approximate equality.
 
@@ -314,7 +314,7 @@ class SnowflakeNumericComparator(BaseNumericComparator):
         col1: str,
         col2: str,
         col_match: str,
-    ) -> "sp.DataFrame" | None:
+    ) -> "sp.DataFrame | None":
         """
         Compare two columns in a Snowpark DataFrame for approximate equality.
 

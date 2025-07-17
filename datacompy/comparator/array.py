@@ -55,7 +55,7 @@ except ImportError:
 class PandasArrayLikeComparator(BaseComparator):
     """Comparator for array-like columns in Pandas."""
 
-    def compare(self, col1: pd.Series, col2: pd.Series) -> pd.Series:
+    def compare(self, col1: pd.Series, col2: pd.Series) -> pd.Series | None:
         """
         Compare two array like columns for equality.
 
@@ -82,8 +82,8 @@ class PandasArrayLikeComparator(BaseComparator):
             or pd.api.types.infer_dtype(col2).startswith("mixed")
         ) and (
             # Using any() instead of all() for early termination
-            not any(not isinstance(item, (list, np.ndarray)) for item in col1)
-            and not any(not isinstance(item, (list, np.ndarray)) for item in col2)
+            not any(not isinstance(item, list | np.ndarray) for item in col1)
+            and not any(not isinstance(item, list | np.ndarray) for item in col2)
         ):
             temp_df = pd.DataFrame({"col1": col1, "col2": col2})
             return temp_df.apply(
@@ -96,7 +96,7 @@ class PandasArrayLikeComparator(BaseComparator):
 class PolarsArrayLikeComparator(BaseComparator):
     """Comparator for array-like columns in Polars."""
 
-    def compare(self, col1: pl.Series, col2: pl.Series) -> pl.Series:
+    def compare(self, col1: pl.Series, col2: pl.Series) -> pl.Series | None:
         """
         Compare two array like columns for equality.
 
@@ -134,7 +134,7 @@ class SparkArrayLikeComparator(BaseComparator):
 
     def compare(
         self, dataframe: "ps.sql.DataFrame", col1: str, col2: str, col_match: str
-    ) -> "ps.sql.DataFrame" | None:
+    ) -> "ps.sql.DataFrame | None":
         """
         Compare two array like columns for equality.
 
@@ -174,7 +174,7 @@ class SnowflakeArrayLikeComparator(BaseComparator):
 
     def compare(
         self, dataframe: "sp.DataFrame", col1: str, col2: str, col_match: str
-    ) -> "sp.DataFrame" | None:
+    ) -> "sp.DataFrame | None":
         """
         Compare two array like columns for equality.
 
