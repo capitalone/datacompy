@@ -20,33 +20,37 @@ import logging
 import numpy as np
 import pandas as pd
 import polars as pl
-import pyspark as ps
-import pyspark.sql.functions as psf
-import snowflake.snowpark as sp
-import snowflake.snowpark.functions as spf
-import snowflake.snowpark.types as spt
 
 from datacompy.comparator.base import BaseNumericComparator
-from datacompy.comparator.utility import (
-    get_snowflake_column_dtypes,
-    get_spark_column_dtypes,
-)
+
+NUMERIC_PANDAS_TYPES = [
+    "floating",
+    "integer",
+    "decimal",
+]
 
 LOG = logging.getLogger(__name__)
 
+
+def decimal_comparator():
+    """Check equality with decimal(X, Y) types.
+
+    Otherwise treated as the string "decimal".
+    """
+
+    class DecimalComparator(str):
+        def __eq__(self, other):
+            return len(other) >= 7 and other[0:7] == "decimal"
+
+    return DecimalComparator("decimal")
+
+
+# Optional Spark dependencies
 try:
+    import pyspark as ps
+    import pyspark.sql.functions as psf
 
-    def decimal_comparator():
-        """Check equality with decimal(X, Y) types.
-
-        Otherwise treated as the string "decimal".
-        """
-
-        class DecimalComparator(str):
-            def __eq__(self, other):
-                return len(other) >= 7 and other[0:7] == "decimal"
-
-        return DecimalComparator("decimal")
+    from datacompy.comparator.utility import get_spark_column_dtypes
 
     NUMERIC_PYSPARK_TYPES = [
         "tinyint",
@@ -57,11 +61,19 @@ try:
         "double",
         decimal_comparator(),
     ]
-except Exception:
+except ImportError:
+    ps = None
+    psf = None
     NUMERIC_PYSPARK_TYPES = None
 
-
+# Optional Snowflake dependencies
 try:
+    import snowflake.snowpark as sp
+    import snowflake.snowpark.functions as spf
+    import snowflake.snowpark.types as spt
+
+    from datacompy.comparator.utility import get_snowflake_column_dtypes
+
     NUMERIC_SNOWFLAKE_TYPES = {
         spt.ByteType(),
         spt.ShortType(),
@@ -71,15 +83,11 @@ try:
         spt.DoubleType(),
         spt.DecimalType(),
     }
-except Exception:
+except ImportError:
+    sp = None
+    spf = None
+    spt = None
     NUMERIC_SNOWFLAKE_TYPES = None
-
-
-NUMERIC_PANDAS_TYPES = [
-    "floating",
-    "integer",
-    "decimal",
-]
 
 
 class PolarsNumericComparator(BaseNumericComparator):
@@ -228,8 +236,8 @@ class SparkNumericComparator(BaseNumericComparator):
     """
 
     def compare(
-        self, dataframe: ps.sql.DataFrame, col1: str, col2: str, col_match: str
-    ) -> ps.sql.DataFrame:
+        self, dataframe: "ps.sql.DataFrame", col1: str, col2: str, col_match: str
+    ) -> "ps.sql.DataFrame" | None:
         """
         Compare two columns in a PySpark DataFrame for approximate equality.
 
@@ -302,11 +310,11 @@ class SnowflakeNumericComparator(BaseNumericComparator):
 
     def compare(
         self,
-        dataframe: sp.DataFrame,
+        dataframe: "sp.DataFrame",
         col1: str,
         col2: str,
         col_match: str,
-    ) -> sp.DataFrame:
+    ) -> "sp.DataFrame" | None:
         """
         Compare two columns in a Snowpark DataFrame for approximate equality.
 

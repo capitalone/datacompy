@@ -20,24 +20,36 @@ import logging
 import numpy as np
 import pandas as pd
 import polars as pl
-import pyspark as ps
-import pyspark.sql.functions as psf
-import snowflake.snowpark as sp
-import snowflake.snowpark.functions as spf
-import snowflake.snowpark.types as spt
 
 from datacompy.comparator.base import BaseComparator
-from datacompy.comparator.utility import (
-    get_snowflake_column_dtypes,
-    get_spark_column_dtypes,
-)
 
 LOG = logging.getLogger(__name__)
 
-
 POLARS_ARRAY_TYPE = ["List", "Array"]
 PYSPARK_ARRAY_TYPE = ["array"]
-SNOWFLAKE_ARRAY_TYPE = {spt.ArrayType()}
+SNOWFLAKE_ARRAY_TYPE = None
+
+try:
+    import pyspark as ps
+    import pyspark.sql.functions as psf
+
+    from datacompy.comparator.utility import get_spark_column_dtypes
+except ImportError:
+    ps = None
+    psf = None
+
+try:
+    import snowflake.snowpark as sp
+    import snowflake.snowpark.functions as spf
+    import snowflake.snowpark.types as spt
+
+    from datacompy.comparator.utility import get_snowflake_column_dtypes
+
+    SNOWFLAKE_ARRAY_TYPE = {spt.ArrayType()}
+except ImportError:
+    sp = None
+    spf = None
+    spt = None
 
 
 class PandasArrayLikeComparator(BaseComparator):
@@ -121,8 +133,8 @@ class SparkArrayLikeComparator(BaseComparator):
     """Comparator for array-like columns in PySpark."""
 
     def compare(
-        self, dataframe: ps.sql.DataFrame, col1: str, col2: str, col_match: str
-    ) -> ps.sql.DataFrame | None:
+        self, dataframe: "ps.sql.DataFrame", col1: str, col2: str, col_match: str
+    ) -> "ps.sql.DataFrame" | None:
         """
         Compare two array like columns for equality.
 
@@ -161,8 +173,8 @@ class SnowflakeArrayLikeComparator(BaseComparator):
     """Comparator for array-like columns in Snowflake."""
 
     def compare(
-        self, dataframe: sp.DataFrame, col1: str, col2: str, col_match: str
-    ) -> sp.DataFrame | None:
+        self, dataframe: "sp.DataFrame", col1: str, col2: str, col_match: str
+    ) -> "sp.DataFrame" | None:
         """
         Compare two array like columns for equality.
 

@@ -17,8 +17,6 @@ dependencies = [
   "numpy<=2.2.6,>=2.2.2",
   "ordered-set<=4.1.0,>=4.0.2",
   "polars[pandas]<=1.31.0,>=1.19.0",
-  "pyspark[connect]<=4.0.0,>=4.0.0",
-  "snowflake-snowpark-python<=1.33.0,>=1.26.0",
   "Jinja2>=3.0.0"
   ]
 requires-python = ">=3.10.0"
@@ -63,6 +61,8 @@ version = {attr = "datacompy.__version__"}
 python-tag = "py3"
 
 [project.optional-dependencies]
+spark = ["pyspark[connect]<=4.0.0,>=4.0.0"]
+snowflake = ["snowflake-snowpark-python<=1.33.0,>=1.26.0"]
 docs = ["sphinx", "furo", "myst-parser"]
 tests = ["pytest", "pytest-cov", "pytest-spark", "snowflake-snowpark-python[localtest]"]
 qa = ["pre-commit", "ruff==0.5.7", "mypy", "pandas-stubs"]

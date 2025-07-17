@@ -15,12 +15,23 @@
 
 """Utility and helper functions for data comparison."""
 
-import pyspark as ps
-import snowflake.snowpark as sp
+# Optional dependencies initialization
+ps = None
+sp = None
+
+try:
+    import pyspark as ps
+except ImportError:
+    pass
+
+try:
+    import snowflake.snowpark as sp
+except ImportError:
+    pass
 
 
 def get_spark_column_dtypes(
-    dataframe: ps.sql.DataFrame, col_1: str, col_2: str
+    dataframe: "ps.sql.DataFrame", col_1: str, col_2: str
 ) -> tuple[str, str]:
     """Get the dtypes of two columns.
 
@@ -46,7 +57,7 @@ def get_spark_column_dtypes(
 
 
 def get_snowflake_column_dtypes(
-    dataframe: sp.DataFrame, col_1: str, col_2: str
+    dataframe: "sp.DataFrame", col_1: str, col_2: str
 ) -> tuple[str, str]:
     """Get the dtypes of two columns.
 
