@@ -238,7 +238,7 @@ class SparkStringComparator(BaseStringComparator):
 
     def compare(
         self, dataframe: "ps.sql.DataFrame", col1: str, col2: str, col_match: str
-    ) -> "ps.sql.DataFrame" | None:
+    ) -> "ps.sql.DataFrame | None":
         """Compare two columns in a PySpark DataFrame for string equality.
 
         Parameters
@@ -320,7 +320,7 @@ class SnowflakeStringComparator(BaseStringComparator):
 
     def compare(
         self, dataframe: "sp.DataFrame", col1: str, col2: str, col_match: str
-    ) -> "sp.DataFrame" | None:
+    ) -> "sp.DataFrame | None":
         """Compare two columns in a Snowflake DataFrame for string equality.
 
         Parameters
