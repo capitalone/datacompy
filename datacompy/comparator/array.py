@@ -26,8 +26,6 @@ from datacompy.comparator.base import BaseComparator
 LOG = logging.getLogger(__name__)
 
 POLARS_ARRAY_TYPE = ["List", "Array"]
-PYSPARK_ARRAY_TYPE = ["array"]
-SNOWFLAKE_ARRAY_TYPE = None
 
 try:
     import pyspark as ps
@@ -45,7 +43,6 @@ try:
 
     from datacompy.comparator.utility import get_snowflake_column_dtypes
 
-    SNOWFLAKE_ARRAY_TYPE = {spt.ArrayType()}
 except ImportError:
     sp = None
     spf = None
@@ -199,9 +196,7 @@ class SnowflakeArrayLikeComparator(BaseComparator):
             if the columns are not comparable.
         """
         base_dtype, compare_dtype = get_snowflake_column_dtypes(dataframe, col1, col2)
-        if (base_dtype in SNOWFLAKE_ARRAY_TYPE) and (
-            compare_dtype in SNOWFLAKE_ARRAY_TYPE
-        ):
+        if base_dtype.startswith("array") and compare_dtype.startswith("array"):
             when_clause = spf.col(col1).eqNullSafe(spf.col(col2))
             return dataframe.withColumn(
                 col_match,
