@@ -75,12 +75,10 @@ def get_snowflake_column_dtypes(
     Tuple(str, str)
         Tuple of base and compare datatype
     """
-    df_raw_dtypes = [
-        (name, field.datatype)
-        for name, field in zip(
-            dataframe.schema.names, dataframe.schema.fields, strict=False
-        )
-    ]
-    base_dtype = next(d[1] for d in df_raw_dtypes if d[0].upper() == col_1.upper())
-    compare_dtype = next(d[1] for d in df_raw_dtypes if d[0].upper() == col_2.upper())
+    base_dtype = next(
+        d[1] for d in dataframe.dtypes if d[0].strip('"').upper() == col_1.upper()
+    )
+    compare_dtype = next(
+        d[1] for d in dataframe.dtypes if d[0].strip('"').upper() == col_2.upper()
+    )
     return base_dtype, compare_dtype

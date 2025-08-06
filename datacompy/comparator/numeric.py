@@ -75,13 +75,13 @@ try:
     from datacompy.comparator.utility import get_snowflake_column_dtypes
 
     NUMERIC_SNOWFLAKE_TYPES = {
-        spt.ByteType(),
-        spt.ShortType(),
-        spt.IntegerType(),
-        spt.LongType(),
-        spt.FloatType(),
-        spt.DoubleType(),
-        spt.DecimalType(),
+        "tinyint",
+        "smallint",
+        "int",
+        "bigint",
+        "double",
+        "decimal",
+        "float",
     }
 except ImportError:
     sp = None
@@ -269,9 +269,11 @@ class SparkNumericComparator(BaseNumericComparator):
           incorrect comparisons.
         """
         base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
-        if (base_dtype in NUMERIC_PYSPARK_TYPES) and (
-            compare_dtype in NUMERIC_PYSPARK_TYPES
-        ):
+        base_numeric_type = any(base_dtype.startswith(t) for t in NUMERIC_PYSPARK_TYPES)
+        compare_numeric_type = any(
+            compare_dtype.startswith(t) for t in NUMERIC_PYSPARK_TYPES
+        )
+        if (base_numeric_type) and (compare_numeric_type):
             try:
                 return dataframe.withColumn(
                     col_match,
@@ -346,9 +348,13 @@ class SnowflakeNumericComparator(BaseNumericComparator):
           incorrect comparisons.
         """
         base_dtype, compare_dtype = get_snowflake_column_dtypes(dataframe, col1, col2)
-        if (base_dtype in NUMERIC_SNOWFLAKE_TYPES) and (
-            compare_dtype in NUMERIC_SNOWFLAKE_TYPES
-        ):
+        base_numeric_type = any(
+            base_dtype.startswith(t) for t in NUMERIC_SNOWFLAKE_TYPES
+        )
+        compare_numeric_type = any(
+            compare_dtype.startswith(t) for t in NUMERIC_SNOWFLAKE_TYPES
+        )
+        if (base_numeric_type) and (compare_numeric_type):
             try:
                 return dataframe.withColumn(
                     col_match,
