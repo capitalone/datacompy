@@ -63,6 +63,11 @@ from datacompy.base import (
     save_html_report,
     validate_tolerance_parameter,
 )
+from datacompy.comparator import (
+    SnowflakeArrayLikeComparator,
+    SnowflakeNumericComparator,
+    SnowflakeStringComparator,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -1076,46 +1081,31 @@ def columns_equal(
         A column of boolean values are added.  True == the values match, False == the
         values don't match.
     """
-    base_dtype_instance, compare_dtype_instance = _get_column_dtypes(
-        dataframe, col_1, col_2
-    )
-    base_dtype, compare_dtype = type(base_dtype_instance), type(compare_dtype_instance)
-    if _is_comparable(base_dtype, compare_dtype):
-        if (base_dtype in NUMERIC_SNOWPARK_TYPES) and (
-            compare_dtype in NUMERIC_SNOWPARK_TYPES
-        ):  # numeric tolerance comparison
-            dataframe = dataframe.withColumn(
-                col_match,
-                when(
-                    (col(col_1).eqNullSafe(col(col_2)))
-                    | (
-                        abs(col(col_1) - col(col_2))
-                        <= lit(abs_tol) + (lit(rel_tol) * abs(col(col_2)))
-                    ),
-                    # corner case of col1 != NaN and col2 == Nan returns True incorrectly
-                    when(
-                        (is_null(col(col_1)) == False)  # noqa: E712
-                        & (is_null(col(col_2)) == True),  # noqa: E712
-                        lit(False),
-                    ).otherwise(lit(True)),
-                ).otherwise(lit(False)),
-            )
-        else:  # non-numeric comparison
-            if ignore_spaces:
-                when_clause = trim(col(col_1)).eqNullSafe(trim(col(col_2)))
-            else:
-                when_clause = col(col_1).eqNullSafe(col(col_2))
-
-            dataframe = dataframe.withColumn(
-                col_match,
-                when(when_clause, lit(True)).otherwise(lit(False)),
-            )
-    else:
-        LOG.debug(
-            f"Skipping {col_1}({base_dtype_instance.simple_string()}) and {col_2}({compare_dtype_instance.simple_string()}), columns are not comparable"
+    if (
+        compare := SnowflakeArrayLikeComparator().compare(
+            dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match
         )
-        dataframe = dataframe.withColumn(col_match, lit(False))
-    return dataframe
+    ) is not None:
+        return compare
+
+    # compare numeric values
+    if (
+        compare := SnowflakeNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
+            dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match
+        )
+    ) is not None:
+        return compare
+
+    # compare strings
+    if (
+        compare := SnowflakeStringComparator(ignore_space=ignore_spaces).compare(
+            dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match
+        )
+    ) is not None:
+        return compare
+
+    compare = dataframe.withColumn(col_match, lit(False))
+    return compare
 
 
 def get_merged_columns(
