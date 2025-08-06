@@ -36,23 +36,31 @@ try:
     import pyspark.sql.functions as psf
 
     from datacompy.comparator.utility import get_spark_column_dtypes
+
+    PYSPARK_STRING_TYPE = {"string", "char", "varchar"}
+    PYSPARK_DATE_TYPE = {"date", "timestamp"}
 except ImportError:
-    pass
+    PYSPARK_STRING_TYPE = None
+    PYSPARK_DATE_TYPE = None
 
 try:
     import snowflake.snowpark as sp
     import snowflake.snowpark.functions as spf
 
     from datacompy.comparator.utility import get_snowflake_column_dtypes
+
+    SNOWFLAKE_STRING_TYPE = {"string"}
+    SNOWFLAKE_DATE_TYPE = {"date", "time", "timestamp"}
+
 except ImportError:
-    pass
+    SNOWFLAKE_STRING_TYPE = None
+    SNOWFLAKE_DATE_TYPE = None
 
 DEFAULT_VALUE = "DATACOMPY_NULL"
 POLARS_STRING_TYPE = {"String", "Utf8"}
 POLARS_DATE_TYPE = {"Date", "Datetime"}
-PYSPARK_STRING_TYPE = {"string"}
-PYSPARK_DATE_TYPE = {"date", "timestamp"}
-SNOWFLAKE_STRING_TYPE = {spf.StringType()} if spf is not None else set()
+
+
 PANDAS_STRING_TYPE = {"string", "categorical"}
 PANDAS_DATE_TYPES = {
     "datetime64",
@@ -267,24 +275,20 @@ class SparkStringComparator(BaseStringComparator):
         """
         # if col1 and col2 of dataframe are of type string OR timestamp
         base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
+        base_string_type = any(base_dtype.startswith(t) for t in PYSPARK_STRING_TYPE)
+        compare_string_type = any(
+            compare_dtype.startswith(t) for t in PYSPARK_STRING_TYPE
+        )
+        base_date_type = any(base_dtype.startswith(t) for t in PYSPARK_DATE_TYPE)
+        compare_date_type = any(compare_dtype.startswith(t) for t in PYSPARK_DATE_TYPE)
         if (
-            (
-                (base_dtype in PYSPARK_STRING_TYPE)
-                and (compare_dtype in PYSPARK_STRING_TYPE)
+            ((base_string_type) and (compare_string_type))
+            or (
+                ((base_string_type) and (compare_date_type))
+                or ((base_date_type) and (compare_string_type))  # string/date compare.
             )
             or (
-                (
-                    (base_dtype in PYSPARK_STRING_TYPE)
-                    and (compare_dtype in PYSPARK_DATE_TYPE)
-                )
-                or (
-                    (base_dtype in PYSPARK_DATE_TYPE)
-                    and (compare_dtype in PYSPARK_STRING_TYPE)
-                )  # string/date compare.
-            )
-            or (
-                (base_dtype in PYSPARK_DATE_TYPE)
-                and (compare_dtype in PYSPARK_DATE_TYPE)  # date/date compare.
+                (base_date_type) and (compare_date_type)  # date/date compare.
             )
         ):
             try:
@@ -350,9 +354,23 @@ class SnowflakeStringComparator(BaseStringComparator):
         """
         # if col1 and col2 of dataframe are of type string
         base_dtype, compare_dtype = get_snowflake_column_dtypes(dataframe, col1, col2)
+        base_string_type = any(base_dtype.startswith(t) for t in SNOWFLAKE_STRING_TYPE)
+        compare_string_type = any(
+            compare_dtype.startswith(t) for t in SNOWFLAKE_STRING_TYPE
+        )
+        base_date_type = any(base_dtype.startswith(t) for t in SNOWFLAKE_DATE_TYPE)
+        compare_date_type = any(
+            compare_dtype.startswith(t) for t in SNOWFLAKE_DATE_TYPE
+        )
         if (
-            base_dtype in SNOWFLAKE_STRING_TYPE
-            and compare_dtype in SNOWFLAKE_STRING_TYPE
+            (base_string_type and compare_string_type)
+            or (
+                ((base_string_type) and (compare_date_type))
+                or ((base_date_type) and (compare_string_type))  # string/date compare.
+            )
+            or (
+                (base_date_type) and (compare_date_type)  # date/date compare.
+            )
         ):
             try:
                 col1 = snowpark_normalize_string_column(
