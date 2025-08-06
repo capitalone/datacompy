@@ -118,6 +118,8 @@ class SnowflakeCompare(BaseCompare):
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns (including any join
         columns).
+    ignore_case : bool, optional
+        Flag to ignore the case of string columns
 
     Attributes
     ----------
@@ -138,6 +140,7 @@ class SnowflakeCompare(BaseCompare):
         df1_name: str | None = None,
         df2_name: str | None = None,
         ignore_spaces: bool = False,
+        ignore_case: bool = False,
     ) -> None:
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
@@ -167,11 +170,12 @@ class SnowflakeCompare(BaseCompare):
         self.abs_tol = abs_tol
         self.rel_tol = rel_tol
         self.ignore_spaces = ignore_spaces
+        self.ignore_case = ignore_case
         self.df1_unq_rows: sp.DataFrame
         self.df2_unq_rows: sp.DataFrame
         self.intersect_rows: sp.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
-        self._compare(ignore_spaces=ignore_spaces)
+        self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
     @property
     def df1(self) -> "sp.DataFrame":
@@ -262,7 +266,7 @@ class SnowflakeCompare(BaseCompare):
         if df.drop_duplicates(self.join_columns).count() < df.count():
             self._any_dupes = True
 
-    def _compare(self, ignore_spaces: bool) -> None:
+    def _compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
         """Actually run the comparison.
 
         This method will log out information about what is different between
@@ -282,7 +286,7 @@ class SnowflakeCompare(BaseCompare):
         )
         LOG.debug("Merging dataframes")
         self._dataframe_merge(ignore_spaces)
-        self._intersect_compare(ignore_spaces)
+        self._intersect_compare(ignore_spaces, ignore_case)
         if self.matches():
             LOG.info("df1 matches df2")
         else:
@@ -427,7 +431,7 @@ class SnowflakeCompare(BaseCompare):
         )
         self.intersect_rows = self.intersect_rows.cache_result()
 
-    def _intersect_compare(self, ignore_spaces: bool) -> None:
+    def _intersect_compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
         """Run the comparison on the intersect dataframe.
 
         This loops through all columns that are shared between df1 and df2, and
@@ -448,6 +452,7 @@ class SnowflakeCompare(BaseCompare):
                     rel_tol=get_column_tolerance(c, self._rel_tol_dict),
                     abs_tol=get_column_tolerance(c, self._abs_tol_dict),
                     ignore_spaces=ignore_spaces,
+                    ignore_case=ignore_case,
                 )
 
         with ThreadPoolExecutor() as executor:
@@ -1045,6 +1050,7 @@ def columns_equal(
     rel_tol: float = 0,
     abs_tol: float = 0,
     ignore_spaces: bool = False,
+    ignore_case: bool = False,
 ) -> "sp.DataFrame":
     """Compare two columns from a dataframe.
 
@@ -1074,6 +1080,8 @@ def columns_equal(
         Absolute tolerance
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns
+    ignore_case : bool, optional
+        Flag to ignore the case of string columns
 
     Returns
     -------
@@ -1098,9 +1106,9 @@ def columns_equal(
 
     # compare strings
     if (
-        compare := SnowflakeStringComparator(ignore_space=ignore_spaces).compare(
-            dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match
-        )
+        compare := SnowflakeStringComparator(
+            ignore_space=ignore_spaces, ignore_case=ignore_case
+        ).compare(dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match)
     ) is not None:
         return compare
 
