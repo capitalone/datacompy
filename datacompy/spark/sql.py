@@ -498,10 +498,10 @@ class SparkSQLCompare(BaseCompare):
                 ignore_case=ignore_case,
             )
 
-        if exprs:
-            self.intersect_rows = self.intersect_rows.withColumns(exprs)
+        self.intersect_rows = self.intersect_rows.withColumns(exprs)
 
         all_rows_count = self.intersect_rows.count()
+
         if exprs:
             agg_exprs = [
                 F.sum(F.when(F.col(c) == True, 1).otherwise(0)).alias(f"{c}_count")  # noqa: E712
@@ -509,6 +509,8 @@ class SparkSQLCompare(BaseCompare):
             ]
             match_counts_df = self.intersect_rows.agg(*agg_exprs)
             match_counts = match_counts_df.first()
+        else:
+            match_counts = {}
 
         for column in self.intersect_columns():
             if column in self.join_columns:
@@ -762,8 +764,8 @@ class SparkSQLCompare(BaseCompare):
                     ignore_spaces=self.ignore_spaces,
                     ignore_case=self.ignore_case,
                 )
-        if exprs:
-            self.intersect_rows = self.intersect_rows.withColumns(exprs)
+
+        self.intersect_rows = self.intersect_rows.withColumns(exprs)
 
         if exprs:
             agg_exprs = [
@@ -772,6 +774,8 @@ class SparkSQLCompare(BaseCompare):
             ]
             mismatch_counts_df = self.intersect_rows.agg(*agg_exprs)
             mismatch_counts = mismatch_counts_df.first()
+        else:
+            mismatch_counts = {}
 
         for c in self.intersect_rows.columns:
             if c.endswith("_match"):
