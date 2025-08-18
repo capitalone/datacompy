@@ -44,6 +44,7 @@ try:
     import pyspark.sql
     import pyspark.sql.connect.dataframe
     from pyspark.sql import Window
+    from pyspark.sql import functions as F
     from pyspark.sql.functions import (
         abs,
         array,
@@ -368,18 +369,23 @@ class SparkSQLCompare(BaseCompare):
         df1_non_join_columns = OrderedSet(df1.columns) - OrderedSet(temp_join_columns)
         df2_non_join_columns = OrderedSet(df2.columns) - OrderedSet(temp_join_columns)
 
-        for c in df1_non_join_columns:
-            df1 = df1.withColumnRenamed(c, c + "_" + self.df1_name)
-        for c in df2_non_join_columns:
-            df2 = df2.withColumnRenamed(c, c + "_" + self.df2_name)
+        df1 = df1.withColumnsRenamed(
+            {c: c + "_" + self.df1_name for c in df1_non_join_columns}
+        )
+        df2 = df2.withColumnsRenamed(
+            {c: c + "_" + self.df2_name for c in df2_non_join_columns}
+        )
 
         # generate merge indicator
         df1 = df1.withColumn("_merge_left", lit(True))
         df2 = df2.withColumn("_merge_right", lit(True))
 
-        for c in temp_join_columns:
-            df1 = df1.withColumnRenamed(c, c + "_" + self.df1_name)
-            df2 = df2.withColumnRenamed(c, c + "_" + self.df2_name)
+        df1 = df1.withColumnsRenamed(
+            {c: c + "_" + self.df1_name for c in temp_join_columns}
+        )
+        df2 = df2.withColumnsRenamed(
+            {c: c + "_" + self.df2_name for c in temp_join_columns}
+        )
 
         # cache
         df1.cache()
@@ -457,7 +463,7 @@ class SparkSQLCompare(BaseCompare):
         LOG.debug("Selecting intersecting rows")
         self.intersect_rows = outer_join[outer_join["_merge"] == "both"]
         LOG.info(
-            "Number of rows in df1 and df2 (not necessarily equal): {len(self.intersect_rows)}"
+            f"Number of rows in df1 and df2 (not necessarily equal): {self.intersect_rows.count()}"
         )
         # cache
         self.intersect_rows.cache()
@@ -472,40 +478,59 @@ class SparkSQLCompare(BaseCompare):
         LOG.debug("Comparing intersection")
         max_diff: float
         null_diff: int
+        exprs = {}
+        LOG.info("Using expression columns for comparison")
+        for column in self.intersect_columns():
+            if column in self.join_columns:
+                continue  # same as original: no per-column comparison for join cols
+
+            col_1 = f"{column}_{self.df1_name}"
+            col_2 = f"{column}_{self.df2_name}"
+            col_match = f"{column}_match"
+
+            exprs[col_match] = columns_equal_expr(
+                self.intersect_rows,
+                col_1,
+                col_2,
+                rel_tol=get_column_tolerance(column, self._rel_tol_dict),
+                abs_tol=get_column_tolerance(column, self._abs_tol_dict),
+                ignore_spaces=ignore_spaces,
+                ignore_case=ignore_case,
+            )
+
+        if exprs:
+            self.intersect_rows = self.intersect_rows.withColumns(exprs)
+
+        all_rows_count = self.intersect_rows.count()
+        if exprs:
+            agg_exprs = [
+                F.sum(F.when(F.col(c) == True, 1).otherwise(0)).alias(f"{c}_count")  # noqa: E712
+                for c in exprs
+            ]
+            match_counts_df = self.intersect_rows.agg(*agg_exprs)
+            match_counts = match_counts_df.first()
+
         for column in self.intersect_columns():
             if column in self.join_columns:
                 col_match = column + "_match"
-                match_cnt = self.intersect_rows.count()
+                match_cnt = all_rows_count
                 if not self.only_join_columns():
-                    row_cnt = self.intersect_rows.count()
+                    row_cnt = all_rows_count
                 else:
                     row_cnt = (
-                        self.intersect_rows.count()
+                        all_rows_count
                         + self.df1_unq_rows.count()
                         + self.df2_unq_rows.count()
                     )
                 max_diff = 0
                 null_diff = 0
             else:
-                row_cnt = self.intersect_rows.count()
+                row_cnt = all_rows_count
                 col_1 = column + "_" + self.df1_name
                 col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
-                self.intersect_rows = columns_equal(
-                    dataframe=self.intersect_rows,
-                    col_1=col_1,
-                    col_2=col_2,
-                    col_match=col_match,
-                    rel_tol=get_column_tolerance(column, self._rel_tol_dict),
-                    abs_tol=get_column_tolerance(column, self._abs_tol_dict),
-                    ignore_spaces=ignore_spaces,
-                    ignore_case=ignore_case,
-                )
-                match_cnt = (
-                    self.intersect_rows.select(col_match)
-                    .where(col(col_match) == True)  # noqa: E712
-                    .count()
-                )
+                # Lookup pre-calculated col_match_count instead of querying, with default 0 to avoid None for empty rows
+                match_cnt = match_counts[f"{col_match}_count"] or 0
                 max_diff = calculate_max_diff(self.intersect_rows, col_1, col_2)
                 null_diff = calculate_null_diff(self.intersect_rows, col_1, col_2)
 
@@ -723,27 +748,37 @@ class SparkSQLCompare(BaseCompare):
             for c in self.join_columns:
                 to_return = to_return.withColumnRenamed(c + "_" + self.df1_name, c)
             return to_return
+
+        exprs = {}
         for c in self.intersect_rows.columns:
             if c.endswith("_match"):
                 orig_col_name = c[:-6]
-
-                col_comparison = columns_equal(
-                    dataframe=self.intersect_rows,
-                    col_1=orig_col_name + "_" + self.df1_name,
-                    col_2=orig_col_name + "_" + self.df2_name,
-                    col_match=c,
+                exprs[c] = columns_equal_expr(
+                    self.intersect_rows,
+                    orig_col_name + "_" + self.df1_name,
+                    orig_col_name + "_" + self.df2_name,
                     rel_tol=get_column_tolerance(orig_col_name, self._rel_tol_dict),
                     abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
                     ignore_spaces=self.ignore_spaces,
                     ignore_case=self.ignore_case,
                 )
+        if exprs:
+            self.intersect_rows = self.intersect_rows.withColumns(exprs)
+
+        if exprs:
+            agg_exprs = [
+                F.sum(F.when(F.col(c) == False, 1).otherwise(0)).alias(f"{c}_count")  # noqa: E712
+                for c in exprs
+            ]
+            mismatch_counts_df = self.intersect_rows.agg(*agg_exprs)
+            mismatch_counts = mismatch_counts_df.first()
+
+        for c in self.intersect_rows.columns:
+            if c.endswith("_match"):
+                orig_col_name = c[:-6]
 
                 if not ignore_matching_cols or (
-                    ignore_matching_cols
-                    and col_comparison.select(c)
-                    .where(col(c) == False)  # noqa: E712
-                    .count()
-                    > 0
+                    ignore_matching_cols and mismatch_counts[f"{c}_count"] > 0
                 ):
                     LOG.debug(f"Adding column {orig_col_name} to the result.")
                     match_list.append(c)
@@ -1029,17 +1064,16 @@ class SparkSQLCompare(BaseCompare):
         return report
 
 
-def columns_equal(
+def columns_equal_expr(
     dataframe: "pyspark.sql.DataFrame",
     col_1: str,
     col_2: str,
-    col_match: str,
     rel_tol: float = 0,
     abs_tol: float = 0,
     ignore_spaces: bool = False,
     ignore_case: bool = False,
-) -> "pyspark.sql.DataFrame":
-    """Compare two columns from a dataframe.
+) -> "pyspark.sql.Column":
+    """Compare if two columns are considered equal, returns a boolean Spark Column to be used in a `.withColumn(...)` statement.
 
     Returns a True/False series with the same index as column 1.
 
@@ -1059,8 +1093,6 @@ def columns_equal(
         The first column to look at
     col_2 : str
         The second column
-    col_match : str
-        The matching column denoting if the compare was a match or not
     rel_tol : float, optional
         Relative tolerance
     abs_tol : float, optional
@@ -1072,32 +1104,30 @@ def columns_equal(
 
     Returns
     -------
-    pyspark.sql.DataFrame
-        A column of boolean values are added.  True == the values match, False == the
-        values don't match.
+    pyspark.sql.Column
+        Boolean Spark Column: True if values match according to the rules above, False otherwise.
     """
     base_dtype, compare_dtype = _get_column_dtypes(dataframe, col_1, col_2)
     if _is_comparable(base_dtype, compare_dtype):
         if (base_dtype in NUMERIC_SPARK_TYPES) and (
             compare_dtype in NUMERIC_SPARK_TYPES
-        ):  # numeric tolerance comparison
-            dataframe = dataframe.withColumn(
-                col_match,
+        ):
+            # numeric tolerance comparison
+            return when(
+                (col(col_1).eqNullSafe(col(col_2)))
+                | (
+                    abs(col(col_1) - col(col_2))
+                    <= lit(abs_tol) + (lit(rel_tol) * abs(col(col_2)))
+                ),
+                # corner case of col1 != NaN and col2 == NaN returns True incorrectly
                 when(
-                    (col(col_1).eqNullSafe(col(col_2)))
-                    | (
-                        abs(col(col_1) - col(col_2))
-                        <= lit(abs_tol) + (lit(rel_tol) * abs(col(col_2)))
-                    ),
-                    # corner case of col1 != NaN and col2 == Nan returns True incorrectly
-                    when(
-                        (isnan(col(col_1)) == False)  # noqa: E712
-                        & (isnan(col(col_2)) == True),  # noqa: E712
-                        lit(False),
-                    ).otherwise(lit(True)),
-                ).otherwise(lit(False)),
-            )
-        else:  # non-numeric comparison
+                    (isnan(col(col_1)) == False)  # noqa: E712
+                    & (isnan(col(col_2)) == True),  # noqa: E712
+                    lit(False),
+                ).otherwise(lit(True)),
+            ).otherwise(lit(False))
+        else:
+            # non-numeric comparison
             if ignore_case and not ignore_spaces:
                 when_clause = upper(col(col_1)).eqNullSafe(upper(col(col_2)))
             elif not ignore_case and ignore_spaces:
@@ -1109,16 +1139,12 @@ def columns_equal(
             else:
                 when_clause = col(col_1).eqNullSafe(col(col_2))
 
-            dataframe = dataframe.withColumn(
-                col_match,
-                when(when_clause, lit(True)).otherwise(lit(False)),
-            )
+            return when(when_clause, lit(True)).otherwise(lit(False))
     else:
         LOG.debug(
             f"Skipping {col_1}({base_dtype}) and {col_2}({compare_dtype}), columns are not comparable"
         )
-        dataframe = dataframe.withColumn(col_match, lit(False))
-    return dataframe
+        return lit(False)
 
 
 def get_merged_columns(
