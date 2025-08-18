@@ -20,7 +20,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-            python-version: "3.10"
+          python-version: "3.10"
       - name: Install dependencies
         run: python -m pip install .[qa]
       - name: Linting by ruff
@@ -28,12 +28,11 @@ jobs:
       - name: Formatting by ruff
         run: ruff format --check
   test-dev-install:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12']
+        python-version: ["3.10", "3.11", "3.12"]
         spark-version: [3.4.4, 3.5.6]
         pandas-version: [2.3.1, 1.5.3]
         numpy-version: [2.3.2, 1.26.4]
@@ -45,100 +44,97 @@ jobs:
       SPARK_VERSION: ${{ matrix.spark-version }}
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Setup Java JDK
-      uses: actions/setup-java@v3
-      with:
-        java-version: '8'
-        distribution: 'adopt'
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: "8"
+          distribution: "adopt"
 
-    - name: Install Spark, Pandas, and Numpy
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install pytest pytest-spark pypandoc
-        python -m pip install pyspark[connect]==${{ matrix.spark-version }}
-        python -m pip install pandas==${{ matrix.pandas-version }}
-        python -m pip install numpy==${{ matrix.numpy-version }}
+      - name: Install Spark, Pandas, and Numpy
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest pytest-spark pypandoc
+          python -m pip install pyspark[connect]==${{ matrix.spark-version }}
+          python -m pip install pandas==${{ matrix.pandas-version }}
 
-    - name: Install numpy<=2.2.6 if Python 3.10 (due to dropped 3.10 support)
-      if: ${{ matrix.python-version == '3.10' }} && ${{ matrix.numpy-version == '2.3.2' }}
-      run: |
-        python -m pip install numpy==2.2.6
+      - name: Install numpy<=2.2.6 if Python 3.10 and matrix.numpy-version == 2.3.2
+        if: ${{ matrix.python-version == '3.10' }} && ${{ matrix.numpy-version == '2.3.2' }}
+        run: |
+          python -m pip install numpy==2.2.6
 
-    - name: Install numpy>2.2.6 if Python 3.11, 3.12
-      if: ${{ matrix.python-version != '3.10' }}
-      run: |
-        python -m pip install numpy==${{ matrix.numpy-version }}
+      - name: Install numpy if Python (3.11, 3.12) or (3.10 and matrix.numpy-version == 1.26.4)
+        if: ${{ matrix.python-version != '3.10' }} || ( ${{ matrix.python-version == '3.10' }} && ${{ matrix.numpy-version == '1.26.4' }} )
+        run: |
+          python -m pip install numpy==${{ matrix.numpy-version }}
 
-    - name: Install Datacompy without Snowflake/Snowpark if Python 3.12
-      if: ${{ matrix.python-version == '3.12' }}
-      run: |
-        python -m pip install .[dev_no_snowflake]
+      - name: Install Datacompy without Snowflake/Snowpark if Python 3.12
+        if: ${{ matrix.python-version == '3.12' }}
+        run: |
+          python -m pip install .[dev_no_snowflake]
 
-    - name: Install Datacompy with all dev dependencies if Python 3.10, or 3.11
-      if: ${{ matrix.python-version != '3.12' }}
-      run: |
-        python -m pip install .[dev]
+      - name: Install Datacompy with all dev dependencies if Python 3.10, or 3.11
+        if: ${{ matrix.python-version != '3.12' }}
+        run: |
+          python -m pip install .[dev]
 
-    - name: Test with pytest
-      run: |
-        python -m pytest tests/ --ignore=tests/test_snowflake.py
+      - name: Test with pytest
+        run: |
+          python -m pytest tests/ --ignore=tests/test_snowflake.py
 
   test-bare-install:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12']
+        python-version: ["3.10", "3.11", "3.12"]
 
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install datacompy
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install .[tests]
-    - name: Test with pytest
-      run: |
-        python -m pytest tests/ --ignore=tests/test_snowflake.py
+      - name: Install datacompy
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .[tests]
+      - name: Test with pytest
+        run: |
+          python -m pytest tests/ --ignore=tests/test_snowflake.py
 
   test-fugue-install-no-spark:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11']
+        python-version: ["3.10", "3.11"]
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install datacompy
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install .[tests,fugue]
-    - name: Test with pytest
-      run: |
-        python -m pytest tests/ --ignore=tests/test_snowflake.py
+      - name: Install datacompy
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .[tests,fugue]
+      - name: Test with pytest
+        run: |
+          python -m pytest tests/ --ignore=tests/test_snowflake.py
