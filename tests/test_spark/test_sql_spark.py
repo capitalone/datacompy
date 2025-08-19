@@ -41,7 +41,7 @@ from datacompy.spark.sql import (
     SparkSQLCompare,
     _generate_id_within_group,
     calculate_max_diff,
-    columns_equal_expr,
+    columns_equal,
     temp_column_name,
 )
 from pandas.testing import assert_frame_equal, assert_series_equal
@@ -70,7 +70,7 @@ NULL|NULL|True"""
 
     df = spark_session.createDataFrame(pd.read_csv(StringIO(data), sep="|"))
     actual_out = df.withColumn(
-        "actual", columns_equal_expr(df, "a", "b", abs_tol=0.2)
+        "actual", columns_equal(df, "a", "b", abs_tol=0.2)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -86,7 +86,7 @@ NULL|4|False
 NULL|NULL|True"""
     df = spark_session.createDataFrame(pd.read_csv(StringIO(data), sep="|"))
     actual_out = df.withColumn(
-        "actual", columns_equal_expr(df, "a", "b", rel_tol=0.2)
+        "actual", columns_equal(df, "a", "b", rel_tol=0.2)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -109,7 +109,7 @@ something||False
 ||True"""
     df = spark_session.createDataFrame(pd.read_csv(StringIO(data), sep="|"))
     actual_out = df.withColumn(
-        "actual", columns_equal_expr(df, "a", "b", rel_tol=0.2)
+        "actual", columns_equal(df, "a", "b", rel_tol=0.2)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -132,7 +132,7 @@ something||False
 ||True"""
     df = spark_session.createDataFrame(pd.read_csv(StringIO(data), sep="|"))
     actual_out = df.withColumn(
-        "actual", columns_equal_expr(df, "a", "b", rel_tol=0.2, ignore_spaces=True)
+        "actual", columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -156,9 +156,7 @@ something||False
     df = spark_session.createDataFrame(pd.read_csv(StringIO(data), sep="|"))
     actual_out = df.withColumn(
         "actual",
-        columns_equal_expr(
-            df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True
-        ),
+        columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True),
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -176,7 +174,7 @@ def test_date_columns_equal(spark_session):
     df = spark_session.createDataFrame(pdf)
     # First compare just the strings
     actual_out = df.withColumn(
-        "actual", columns_equal_expr(df, "a", "b", rel_tol=0.2)
+        "actual", columns_equal(df, "a", "b", rel_tol=0.2)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -186,13 +184,13 @@ def test_date_columns_equal(spark_session):
     pdf["b"] = pd.to_datetime(pdf["b"])
     df = spark_session.createDataFrame(pdf)
     actual_out = df.withColumn(
-        "actual", columns_equal_expr(df, "a", "b", rel_tol=0.2)
+        "actual", columns_equal(df, "a", "b", rel_tol=0.2)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
     # and reverse
     actual_out_rev = df.withColumn(
-        "actual", columns_equal_expr(df, "b", "a", rel_tol=0.2)
+        "actual", columns_equal(df, "b", "a", rel_tol=0.2)
     ).toPandas()["actual"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
@@ -209,7 +207,7 @@ def test_date_columns_equal_with_ignore_spaces(spark_session):
     df = spark_session.createDataFrame(pdf)
     # First compare just the strings
     actual_out = df.withColumn(
-        "actual", columns_equal_expr(df, "a", "b", rel_tol=0.2, ignore_spaces=True)
+        "actual", columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -223,13 +221,13 @@ def test_date_columns_equal_with_ignore_spaces(spark_session):
         pdf["b"] = pd.to_datetime(pdf["b"])
     df = spark_session.createDataFrame(pdf)
     actual_out = df.withColumn(
-        "actual", columns_equal_expr(df, "a", "b", rel_tol=0.2, ignore_spaces=True)
+        "actual", columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
     # and reverse
     actual_out_rev = df.withColumn(
-        "actual", columns_equal_expr(df, "b", "a", rel_tol=0.2, ignore_spaces=True)
+        "actual", columns_equal(df, "b", "a", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
@@ -247,9 +245,7 @@ def test_date_columns_equal_with_ignore_spaces_and_case(spark_session):
     # First compare just the strings
     actual_out = df.withColumn(
         "actual",
-        columns_equal_expr(
-            df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True
-        ),
+        columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True),
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -264,18 +260,14 @@ def test_date_columns_equal_with_ignore_spaces_and_case(spark_session):
     df = spark_session.createDataFrame(pdf)
     actual_out = df.withColumn(
         "actual",
-        columns_equal_expr(
-            df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True
-        ),
+        columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True),
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
     # and reverse
     actual_out_rev = df.withColumn(
         "actual",
-        columns_equal_expr(
-            df, "b", "a", rel_tol=0.2, ignore_spaces=True, ignore_case=True
-        ),
+        columns_equal(df, "b", "a", rel_tol=0.2, ignore_spaces=True, ignore_case=True),
     ).toPandas()["actual"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
@@ -288,42 +280,42 @@ def test_date_columns_unequal(spark_session):
     pdf["b_dt"] = pd.to_datetime(pdf["b"])
     df = spark_session.createDataFrame(pdf)
     assert (
-        df.withColumn("actual", columns_equal_expr(df, "a", "a_dt"))
+        df.withColumn("actual", columns_equal(df, "a", "a_dt"))
         .toPandas()["actual"]
         .all()
     )
     assert (
-        df.withColumn("actual", columns_equal_expr(df, "b", "b_dt"))
+        df.withColumn("actual", columns_equal(df, "b", "b_dt"))
         .toPandas()["actual"]
         .all()
     )
     assert (
-        df.withColumn("actual", columns_equal_expr(df, "a_dt", "a"))
+        df.withColumn("actual", columns_equal(df, "a_dt", "a"))
         .toPandas()["actual"]
         .all()
     )
     assert (
-        df.withColumn("actual", columns_equal_expr(df, "b_dt", "b"))
+        df.withColumn("actual", columns_equal(df, "b_dt", "b"))
         .toPandas()["actual"]
         .all()
     )
     assert (
-        not df.withColumn("actual", columns_equal_expr(df, "b_dt", "a"))
+        not df.withColumn("actual", columns_equal(df, "b_dt", "a"))
         .toPandas()["actual"]
         .any()
     )
     assert (
-        not df.withColumn("actual", columns_equal_expr(df, "a_dt", "b"))
+        not df.withColumn("actual", columns_equal(df, "a_dt", "b"))
         .toPandas()["actual"]
         .any()
     )
     assert (
-        not df.withColumn("actual", columns_equal_expr(df, "a", "b_dt"))
+        not df.withColumn("actual", columns_equal(df, "a", "b_dt"))
         .toPandas()["actual"]
         .any()
     )
     assert (
-        not df.withColumn("actual", columns_equal_expr(df, "b", "a_dt"))
+        not df.withColumn("actual", columns_equal(df, "b", "a_dt"))
         .toPandas()["actual"]
         .any()
     )
@@ -341,12 +333,12 @@ def test_bad_date_columns(spark_session):
     pdf["a_dt"] = pd.to_datetime(pdf["a"])
     df = spark_session.createDataFrame(pdf)
     assert (
-        not df.withColumn("actual", columns_equal_expr(df, "a_dt", "b"))
+        not df.withColumn("actual", columns_equal(df, "a_dt", "b"))
         .toPandas()["actual"]
         .all()
     )
     assert (
-        df.withColumn("actual", columns_equal_expr(df, "a_dt", "b"))
+        df.withColumn("actual", columns_equal(df, "a_dt", "b"))
         .toPandas()["actual"]
         .any()
     )
@@ -365,7 +357,7 @@ def test_rounded_date_columns(spark_session):
     pdf = pd.DataFrame(data)
     pdf["a_dt"] = pd.to_datetime(pdf["a"])
     df = spark_session.createDataFrame(pdf)
-    actual = df.withColumn("actual", columns_equal_expr(df, "a_dt", "b")).toPandas()[
+    actual = df.withColumn("actual", columns_equal(df, "a_dt", "b")).toPandas()[
         "actual"
     ]
     expected = df.select("exp").toPandas()["exp"]
@@ -385,7 +377,7 @@ def test_decimal_float_columns_equal(spark_session):
     ]
     pdf = pd.DataFrame(data)
     df = spark_session.createDataFrame(pdf)
-    actual_out = df.withColumn("actual", columns_equal_expr(df, "a", "b")).toPandas()[
+    actual_out = df.withColumn("actual", columns_equal(df, "a", "b")).toPandas()[
         "actual"
     ]
     expect_out = df.select("expected").toPandas()["expected"]
@@ -406,7 +398,7 @@ def test_decimal_float_columns_equal_rel(spark_session):
     pdf = pd.DataFrame(data)
     df = spark_session.createDataFrame(pdf)
     actual_out = df.withColumn(
-        "actual", columns_equal_expr(df, "a", "b", abs_tol=0.001)
+        "actual", columns_equal(df, "a", "b", abs_tol=0.001)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -429,7 +421,7 @@ def test_decimal_columns_equal(spark_session):
     ]
     pdf = pd.DataFrame(data)
     df = spark_session.createDataFrame(pdf)
-    actual_out = df.withColumn("actual", columns_equal_expr(df, "a", "b")).toPandas()[
+    actual_out = df.withColumn("actual", columns_equal(df, "a", "b")).toPandas()[
         "actual"
     ]
     expect_out = df.select("expected").toPandas()["expected"]
@@ -454,7 +446,7 @@ def test_decimal_columns_equal_rel(spark_session):
     pdf = pd.DataFrame(data)
     df = spark_session.createDataFrame(pdf)
     actual_out = df.withColumn(
-        "actual", columns_equal_expr(df, "a", "b", abs_tol=0.001)
+        "actual", columns_equal(df, "a", "b", abs_tol=0.001)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -475,7 +467,7 @@ def test_infinity_and_beyond(spark_session):
     ]
     pdf = pd.DataFrame(data)
     df = spark_session.createDataFrame(pdf)
-    actual_out = df.withColumn("actual", columns_equal_expr(df, "a", "b")).toPandas()[
+    actual_out = df.withColumn("actual", columns_equal(df, "a", "b")).toPandas()[
         "actual"
     ]
     expect_out = df.select("expected").toPandas()["expected"]
@@ -1670,30 +1662,30 @@ def test_columns_equal_arrays(spark_session):
     df = spark_session.createDataFrame(data, schema)
 
     # all equal
-    all_equal = df.withColumn("all_equal", columns_equal_expr(df, "a", "b"))
+    all_equal = df.withColumn("all_equal", columns_equal(df, "a", "b"))
     assert all_equal.toPandas()["all_equal"].all()
 
     # all mismatch
-    all_mismatch = df.withColumn("all_mismatch", columns_equal_expr(df, "a", "c"))
+    all_mismatch = df.withColumn("all_mismatch", columns_equal(df, "a", "c"))
     assert not all_mismatch.toPandas()["all_mismatch"].all()
 
     # some equal
-    some_equal = df.withColumn("some_equal", columns_equal_expr(df, "a", "d"))
+    some_equal = df.withColumn("some_equal", columns_equal(df, "a", "d"))
     assert (
         some_equal.toPandas()["some_equal"]
         == pd.Series([True, True, True, True, False])
     ).all()
 
     # null all
-    null_all = df.withColumn("null_all", columns_equal_expr(df, "e", "f"))
+    null_all = df.withColumn("null_all", columns_equal(df, "e", "f"))
     assert null_all.toPandas()["null_all"].all()
 
     # empty all vs value
-    none_value_all = df.withColumn("none_value_all", columns_equal_expr(df, "a", "f"))
+    none_value_all = df.withColumn("none_value_all", columns_equal(df, "a", "f"))
     assert not none_value_all.toPandas()["none_value_all"].all()
 
     # different shape arrays
-    diff_shapes = df.withColumn("diff_shapes", columns_equal_expr(df, "g", "h"))
+    diff_shapes = df.withColumn("diff_shapes", columns_equal(df, "g", "h"))
     assert (
         diff_shapes.toPandas()["diff_shapes"]
         == pd.Series([True, True, True, False, False])
