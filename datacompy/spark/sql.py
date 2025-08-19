@@ -480,10 +480,10 @@ class SparkSQLCompare(BaseCompare):
         null_diff: int
         exprs = {}
         LOG.info("Generating expression columns for comparison")
-        # expression comparison
-        for column in self.intersect_columns() - set(
-            self.join_columns
-        ):  # exclude the join columns from the columns_equal call
+        for column in self.intersect_columns():
+            if column in self.join_columns:
+                continue  # same as original: no per-column comparison for join cols
+
             col_1 = f"{column}_{self.df1_name}"
             col_2 = f"{column}_{self.df2_name}"
             col_match = f"{column}_match"
