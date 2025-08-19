@@ -42,6 +42,7 @@ LOG = logging.getLogger(__name__)
 
 try:
     import pyspark.sql
+    import pyspark.sql.connect.dataframe
     from pyspark.sql import Window
     from pyspark.sql.functions import (
         abs,
@@ -235,15 +236,7 @@ class SparkSQLCompare(BaseCompare):
         None
         """
         dataframe = getattr(self, index)
-
-        if self.spark_session.version >= "3.4.0":
-            import pyspark.sql.connect.dataframe
-
-            instances = (pyspark.sql.DataFrame, pyspark.sql.connect.dataframe.DataFrame)
-        else:
-            import pyspark.sql
-
-            instances = pyspark.sql.DataFrame
+        instances = (pyspark.sql.DataFrame, pyspark.sql.connect.dataframe.DataFrame)
 
         if not isinstance(dataframe, instances):
             raise TypeError(
