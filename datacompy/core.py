@@ -105,8 +105,8 @@ class Compare(BaseCompare):
         ignore_spaces: bool = False,
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
-        sensitive_data_columns_df1: List[str] | None = None,
-        sensitive_data_columns_df2: List[str] | None = None,
+        sensitive_columns_df1: List[str] | None = None,
+        sensitive_columns_df2: List[str] | None = None,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
 
@@ -138,8 +138,8 @@ class Compare(BaseCompare):
             self.on_index = False
 
         self._any_dupes: bool = False
-        self.sensitive_data_columns_df1 = sensitive_data_columns_df1
-        self.sensitive_data_columns_df2 = sensitive_data_columns_df2
+        self.sensitive_columns_df1 = sensitive_columns_df1
+        self.sensitive_columns_df2 = sensitive_columns_df2
         self.df1 = df1
         self.df2 = df2
         self.df1_name = df1_name
@@ -163,8 +163,8 @@ class Compare(BaseCompare):
     def df1(self, df1: pd.DataFrame) -> None:
         """First, hash any sensitive columns
         Then, that it is a dataframe and has the join columns."""
-        if self.sensitive_data_columns_df1:
-            for column in self.sensitive_data_columns_df1:
+        if self.sensitive_columns_df1:
+            for column in self.sensitive_columns_df1:
                 if column in df1.columns:
                     df1[column] = df1[column].apply(lambda v: hashlib.sha256(str(v).encode('utf-8')).hexdigest())
                 else:
@@ -185,8 +185,8 @@ class Compare(BaseCompare):
     def df2(self, df2: pd.DataFrame) -> None:
         """First, hash any sensitive columns
         Then, that it is a dataframe and has the join columns."""
-        if self.sensitive_data_columns_df2:
-            for column in self.sensitive_data_columns_df2:
+        if self.sensitive_columns_df2:
+            for column in self.sensitive_columns_df2:
                 if column in df2.columns:
                     df2[column] = df2[column].apply(lambda v: hashlib.sha256(str(v).encode('utf-8')).hexdigest())
                 else:
