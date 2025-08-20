@@ -768,19 +768,23 @@ class SparkSQLCompare(BaseCompare):
                     ignore_case=self.ignore_case,
                 )
 
-        col_comparison = self.intersect_rows.withColumns(exprs)
+        self.intersect_rows = self.intersect_rows.withColumns(exprs)
 
-        # metric calculation
+        if exprs:
+            agg_exprs = [
+                F.sum(F.when(F.col(c) == False, 1).otherwise(0)).alias(f"{c}_count")  # noqa: E712
+                for c in exprs
+            ]
+            mismatch_counts = self.intersect_rows.agg(*agg_exprs).first()
+        else:
+            mismatch_counts = {}
+
         for c in self.intersect_rows.columns:
             if c.endswith("_match"):
                 orig_col_name = c[:-6]
 
                 if not ignore_matching_cols or (
-                    ignore_matching_cols
-                    and col_comparison.select(c)
-                    .where(col(c) == False)  # noqa: E712
-                    .count()
-                    > 0
+                    ignore_matching_cols and mismatch_counts[f"{c}_count"] > 0
                 ):
                     LOG.debug(f"Adding column {orig_col_name} to the result.")
                     match_list.append(c)
