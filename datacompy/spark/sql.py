@@ -753,27 +753,13 @@ class SparkSQLCompare(BaseCompare):
             )
             return to_return
 
-        # expression comparison
-        exprs = {}
-        for c in self.intersect_rows.columns:
-            if c.endswith("_match"):
-                orig_col_name = c[:-6]
-                exprs[c] = columns_equal(
-                    self.intersect_rows,
-                    f"{orig_col_name}_{self.df1_name}",
-                    f"{orig_col_name}_{self.df2_name}",
-                    rel_tol=get_column_tolerance(orig_col_name, self._rel_tol_dict),
-                    abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
-                    ignore_spaces=self.ignore_spaces,
-                    ignore_case=self.ignore_case,
-                )
+        # get the match cols to aggregate
+        match_cols = [c for c in self.intersect_rows.columns if c.endswith("_match")]
 
-        self.intersect_rows = self.intersect_rows.withColumns(exprs)
-
-        if exprs:
+        if match_cols:
             agg_exprs = [
                 F.sum(F.when(F.col(c) == False, 1).otherwise(0)).alias(f"{c}_count")  # noqa: E712
-                for c in exprs
+                for c in match_cols
             ]
             mismatch_counts = self.intersect_rows.agg(*agg_exprs).first()
         else:
