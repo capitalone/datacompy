@@ -56,18 +56,18 @@ With the move to Pandas on Spark API and compatability issues with Pandas 2+ we 
 with the Pandas on Spark implementation. Spark plans to support Pandas 2 in [Spark 4](https://issues.apache.org/jira/browse/SPARK-44101)
 
 
-|             | Spark 3.2.4 | Spark 3.3.4 | Spark 3.4.2 | Spark 3.5.1 |
-|-------------|-------------|-------------|-------------|-------------|
-| Python 3.10 | ✅           | ✅           | ✅           | ✅           |
-| Python 3.11 | ❌           | ❌           | ✅           | ✅           |
-| Python 3.12 | ❌           | ❌           | ❌           | ❌           |
+|             |  Spark 3.4.4 | Spark 3.5.6 |
+|-------------|--------------|-------------|
+| Python 3.10 |   ✅         | ✅           |
+| Python 3.11 |   ✅         | ✅           |
+| Python 3.12 |   ❌         | ❌           |
 
 
 |                        | Pandas < 1.5.3 | Pandas >=2.0.0 |
 |------------------------|----------------|----------------|
-| ``Compare``            | ✅              | ✅              |
-| ``SparkSQLCompare``    | ✅              | ✅              |
-| Fugue                  | ✅              | ✅              |
+| ``Compare``            | ✅              | ✅             |
+| ``SparkSQLCompare``    | ✅              | ✅             |
+| Fugue                  | ✅              | ✅             |
 
 
 
