@@ -4,8 +4,8 @@ description = "Dataframe comparison in Python"
 readme = "README.md"
 authors = [
   { name="Faisal Dosani", email="faisal.dosani@capitalone.com" },
-  { name="Ian Robertson" },
-  { name="Dan Coates" },
+  { name="Raymond Haffar", email="raymond.haffar@capitalone.com" },
+  { name="Jacob Dawang", email="jacob.dawang@capitalone.com" },
 ]
 maintainers = [
   { name="Faisal Dosani", email="faisal.dosani@capitalone.com" },
