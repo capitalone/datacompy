@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Developer Instructions" href="developer_instructions.html" /><link rel="prev" title="Template Customization Guide" href="template_guide.html" />
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2025.07.19 -->
-        <title>Benchmarks - datacompy 0.17.1 documentation</title>
+        <title>Benchmarks - datacompy 0.18.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=25af2a20" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -166,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.17.1 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.18.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -189,7 +189,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 0.17.1 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.18.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -301,16 +301,10 @@ preformance please make an issue, we always welcome contributions.</p>
 <th class="head"><p>pandas</p></th>
 <th class="head"><p>polars</p></th>
 <th class="head"><p>spark sql</p></th>
-<th class="head"><p>pandas on spark</p></th>
-<th class="head"><p>spark (fugue)</p></th>
-<th class="head"><p>spark (fugue)</p></th>
 </tr>
 <tr class="row-even"><th class="head"><p>rows</p></th>
 <th class="head"></th>
 <th class="head"></th>
-<th class="head"><p>(distributed)</p></th>
-<th class="head"><p>(distributed)</p></th>
-<th class="head"><p>(single)</p></th>
 <th class="head"><p>(distributed)</p></th>
 </tr>
 </thead>
@@ -318,50 +312,32 @@ preformance please make an issue, we always welcome contributions.</p>
 <tr class="row-odd"><td><p>1000</p></td>
 <td><p>0.025</p></td>
 <td><p>0.025</p></td>
-<td><p>15.3112</p></td>
-<td><p>15.2838</p></td>
-<td><p>2.041</p></td>
-<td><p>1.109</p></td>
+<td><p>14.1894</p></td>
 </tr>
 <tr class="row-even"><td><p>100,000</p></td>
 <td><p>0.196</p></td>
 <td><p>0.120</p></td>
-<td><p>15.0701</p></td>
-<td><p>11.1113</p></td>
-<td><p>1.743</p></td>
-<td><p>3.175</p></td>
+<td><p>9.3198</p></td>
 </tr>
 <tr class="row-odd"><td><p>10,000,000</p></td>
 <td><p>18.804</p></td>
 <td><p>11.330</p></td>
-<td><p>18.2763</p></td>
-<td><p>20.6274</p></td>
-<td><p>17.560</p></td>
-<td><p>16.455</p></td>
+<td><p>11.3773</p></td>
 </tr>
 <tr class="row-even"><td><p>50,000,000</p></td>
 <td><p>96.494</p></td>
 <td><p>62.827</p></td>
-<td><p>31.1257</p></td>
-<td><p>57.5735</p></td>
-<td><p>90.578</p></td>
-<td><p>94.304</p></td>
+<td><p>19.9034</p></td>
 </tr>
 <tr class="row-odd"><td><p>100,000,000</p></td>
 <td><p>DNR</p></td>
 <td><p>127.194</p></td>
-<td><p>47.2185</p></td>
-<td><p>96.3204</p></td>
-<td><p>DNR</p></td>
-<td><p>193.234</p></td>
+<td><p>30.0525</p></td>
 </tr>
 <tr class="row-even"><td><p>500,000,000</p></td>
 <td><p>DNR</p></td>
 <td><p>DNR</p></td>
-<td><p>130.9814</p></td>
-<td><p>262.6094</p></td>
-<td><p>DNR</p></td>
-<td><p>DNR</p></td>
+<td><p>103.6135</p></td>
 </tr>
 </tbody>
 </table>
@@ -378,12 +354,6 @@ preformance please make an issue, we always welcome contributions.</p>
 <li><p>Polars can handle a lot of data and is fast!</p>
 <ul>
 <li><p>From our experiments we can see that on a 64GB machine it was able to process 100 Million records</p></li>
-</ul>
-</li>
-<li><p>The Pandas on Spark implementation will be slower for small to mediumish data.</p>
-<ul>
-<li><p>in the 100 Million + range is starts to shine, and due to its distributed
-nature it can process vast amounts of data</p></li>
 </ul>
 </li>
 <li><p>The Spark SQL implementaion seems to be the most performant on very large datasets</p>
@@ -466,7 +436,7 @@ nature it can process vast amounts of data</p></li>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=a8455094"></script>
+</div><script src="_static/documentation_options.js?v=ba2e7b09"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
