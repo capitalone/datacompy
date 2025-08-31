@@ -164,13 +164,9 @@ class Compare(BaseCompare):
         """First, hash any sensitive columns
         Then, that it is a dataframe and has the join columns."""
         if self.sensitive_columns_df1:
-            for column in self.sensitive_columns_df1:
-                if column in df1.columns:
-                    df1[column] = df1[column].apply(lambda v: hashlib.sha256(str(v).encode('utf-8')).hexdigest())
-                else:
-                    raise KeyError(
-                        f"Column name {column} was not found in 'df1'"
-                    )
+            cols_to_hash = [col for col in self.sensitive_columns_df1 if col in df1.columns]
+            if cols_to_hash:
+                df1.loc[:, cols_to_hash] = df1.loc[:, cols_to_hash].astype(str).map(lambda v: hashlib.sha256(v.encode('utf-8')).hexdigest())
         self._df1 = df1
         self._validate_dataframe(
             "df1", cast_column_names_lower=self.cast_column_names_lower
@@ -186,13 +182,9 @@ class Compare(BaseCompare):
         """First, hash any sensitive columns
         Then, that it is a dataframe and has the join columns."""
         if self.sensitive_columns_df2:
-            for column in self.sensitive_columns_df2:
-                if column in df2.columns:
-                    df2[column] = df2[column].apply(lambda v: hashlib.sha256(str(v).encode('utf-8')).hexdigest())
-                else:
-                    raise KeyError(
-                        f"Column name {column} was not found in 'df1'"
-                    )
+            cols_to_hash = [col for col in self.sensitive_columns_df2 if col in df2.columns]
+            if cols_to_hash:
+                df2.loc[:, cols_to_hash] = df2.loc[:, cols_to_hash].astype(str).map(lambda v: hashlib.sha256(v.encode('utf-8')).hexdigest())
         self._df2 = df2
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
