@@ -83,6 +83,12 @@ class Compare(BaseCompare):
         Flag to ignore the case of string columns. Excludes categoricals.
     cast_column_names_lower: bool, optional
         Boolean indicator that controls of column names will be cast into lower case
+    sensitive_columns_df1: list[str], optional
+        A list of the columns in df1 that should have their values hashed to mask sensitive data.
+    sensitive_columns_df2: list[str], optional
+        A list of the columns in df2 that should have their values hashed to mask sensitive data.
+    salt: str, optional
+        An optional salt string, used to increase security during hashing.
 
     Attributes
     ----------
@@ -107,6 +113,7 @@ class Compare(BaseCompare):
         cast_column_names_lower: bool = True,
         sensitive_columns_df1: List[str] | None = None,
         sensitive_columns_df2: List[str] | None = None,
+        salt: str = "",
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
 
@@ -140,6 +147,7 @@ class Compare(BaseCompare):
         self._any_dupes: bool = False
         self.sensitive_columns_df1 = sensitive_columns_df1
         self.sensitive_columns_df2 = sensitive_columns_df2
+        self.salt = salt
         self.df1 = df1
         self.df2 = df2
         self.df1_name = df1_name
@@ -166,7 +174,7 @@ class Compare(BaseCompare):
         if self.sensitive_columns_df1:
             cols_to_hash = [col for col in self.sensitive_columns_df1 if col in df1.columns]
             if cols_to_hash:
-                df1.loc[:, cols_to_hash] = df1.loc[:, cols_to_hash].astype(str).map(lambda v: hashlib.sha256(v.encode('utf-8')).hexdigest())
+                df1.loc[:, cols_to_hash] = df1.loc[:, cols_to_hash].astype(str).map(lambda v: hashlib.sha256(((v+self.salt)).encode('utf-8')).hexdigest())
         self._df1 = df1
         self._validate_dataframe(
             "df1", cast_column_names_lower=self.cast_column_names_lower
@@ -184,7 +192,7 @@ class Compare(BaseCompare):
         if self.sensitive_columns_df2:
             cols_to_hash = [col for col in self.sensitive_columns_df2 if col in df2.columns]
             if cols_to_hash:
-                df2.loc[:, cols_to_hash] = df2.loc[:, cols_to_hash].astype(str).map(lambda v: hashlib.sha256(v.encode('utf-8')).hexdigest())
+                df2.loc[:, cols_to_hash] = df2.loc[:, cols_to_hash].astype(str).map(lambda v: hashlib.sha256((v+self.salt).encode('utf-8')).hexdigest())
         self._df2 = df2
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
