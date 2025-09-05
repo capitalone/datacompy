@@ -236,8 +236,8 @@ class SparkNumericComparator(BaseNumericComparator):
     """
 
     def compare(
-        self, dataframe: "ps.sql.DataFrame", col1: str, col2: str, col_match: str
-    ) -> "ps.sql.DataFrame | None":
+        self, dataframe: "ps.sql.DataFrame", col1: str, col2: str
+    ) -> "ps.sql.Column | None":
         """
         Compare two columns in a PySpark DataFrame for approximate equality.
 
@@ -249,15 +249,12 @@ class SparkNumericComparator(BaseNumericComparator):
             The name of the first column to compare.
         col2 : str
             The name of the second column to compare.
-        col_match : str
-            The name of the output column that will store the comparison results.
 
         Returns
         -------
-        pyspark.sql.DataFrame
-            A PySpark DataFrame with an additional column (`col_match`) containing
-            boolean values indicating whether the values in `col_1` and `col_2` are
-            approximately equal within the given tolerances.
+        pyspark.sql.Column
+            A PySpark Column containing boolean values indicating whether the values in
+            `col_1` and `col_2` are approximately equal within the given tolerances.
         None
             if the columns are not comparable.
 
@@ -275,25 +272,22 @@ class SparkNumericComparator(BaseNumericComparator):
         )
         if (base_numeric_type) and (compare_numeric_type):
             try:
-                return dataframe.withColumn(
-                    col_match,
+                return psf.when(
+                    (psf.col(col1).eqNullSafe(psf.col(col2)))
+                    | (
+                        psf.abs(psf.col(col1) - psf.col(col2))
+                        <= psf.lit(self.atol)
+                        + (psf.lit(self.rtol) * psf.abs(psf.col(col2)))
+                    ),
+                    # corner case of col1 != NaN and col2 == Nan returns True incorrectly
                     psf.when(
-                        (psf.col(col1).eqNullSafe(psf.col(col2)))
-                        | (
-                            psf.abs(psf.col(col1) - psf.col(col2))
-                            <= psf.lit(self.atol)
-                            + (psf.lit(self.rtol) * psf.abs(psf.col(col2)))
-                        ),
-                        # corner case of col1 != NaN and col2 == Nan returns True incorrectly
-                        psf.when(
-                            (psf.isnan(psf.col(col1)) == False)  # noqa: E712
-                            & (psf.isnan(psf.col(col2)) == True),  # noqa: E712
-                            psf.lit(False),
-                        ).otherwise(psf.lit(True)),
-                    ).otherwise(psf.lit(False)),
-                )
+                        (psf.isnan(psf.col(col1)) == False)  # noqa: E712
+                        & (psf.isnan(psf.col(col2)) == True),  # noqa: E712
+                        psf.lit(False),
+                    ).otherwise(psf.lit(True)),
+                ).otherwise(psf.lit(False))
             except Exception:
-                return dataframe.withColumn(col_match, psf.lit(False))
+                return psf.lit(False)
         else:
             return None
 

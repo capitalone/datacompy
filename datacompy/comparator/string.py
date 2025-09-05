@@ -245,8 +245,8 @@ class SparkStringComparator(BaseStringComparator):
     """
 
     def compare(
-        self, dataframe: "ps.sql.DataFrame", col1: str, col2: str, col_match: str
-    ) -> "ps.sql.DataFrame | None":
+        self, dataframe: "ps.sql.DataFrame", col1: str, col2: str
+    ) -> "ps.sql.Column | None":
         """Compare two columns in a PySpark DataFrame for string equality.
 
         Parameters
@@ -257,13 +257,12 @@ class SparkStringComparator(BaseStringComparator):
             The name of the first column to compare.
         col2 : str
             The name of the second column to compare.
-        col_match : str
-            The name of the output column that will store the comparison results.
 
         Returns
         -------
-        pyspark.sql.DataFrame
-            The DataFrame with an additional column containing the comparison results.
+        pyspark.sql.Column
+            A Column containing boolean values indicating whether the values in
+            `col1` and `col2` are equal.
         None
             if the columns are not comparable.
 
@@ -287,9 +286,7 @@ class SparkStringComparator(BaseStringComparator):
                 ((base_string_type) and (compare_date_type))
                 or ((base_date_type) and (compare_string_type))  # string/date compare.
             )
-            or (
-                (base_date_type) and (compare_date_type)  # date/date compare.
-            )
+            or ((base_date_type) and (compare_date_type))  # date/date compare.
         ):
             try:
                 col1 = spark_normalize_string_column(
@@ -299,14 +296,11 @@ class SparkStringComparator(BaseStringComparator):
                     psf.col(col2), self.ignore_space, self.ignore_case
                 )
 
-                return dataframe.withColumn(
-                    col_match,
-                    psf.when(col1.eqNullSafe(col2), psf.lit(True)).otherwise(
-                        psf.lit(False)
-                    ),
+                return psf.when(col1.eqNullSafe(col2), psf.lit(True)).otherwise(
+                    psf.lit(False)
                 )
             except Exception:
-                return dataframe.withColumn(col_match, psf.lit(False))
+                return psf.lit(False)
         else:
             return None
 
@@ -368,9 +362,7 @@ class SnowflakeStringComparator(BaseStringComparator):
                 ((base_string_type) and (compare_date_type))
                 or ((base_date_type) and (compare_string_type))  # string/date compare.
             )
-            or (
-                (base_date_type) and (compare_date_type)  # date/date compare.
-            )
+            or ((base_date_type) and (compare_date_type))  # date/date compare.
         ):
             try:
                 col1 = snowpark_normalize_string_column(
