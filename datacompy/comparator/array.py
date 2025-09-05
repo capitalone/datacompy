@@ -130,8 +130,8 @@ class SparkArrayLikeComparator(BaseComparator):
     """Comparator for array-like columns in PySpark."""
 
     def compare(
-        self, dataframe: "ps.sql.DataFrame", col1: str, col2: str, col_match: str
-    ) -> "ps.sql.DataFrame | None":
+        self, dataframe: "ps.sql.DataFrame", col1: str, col2: str
+    ) -> "ps.sql.Column | None":
         """
         Compare two array like columns for equality.
 
@@ -143,25 +143,19 @@ class SparkArrayLikeComparator(BaseComparator):
             The first column to look at
         col_2 : str
             The second column
-        col_match : str
-            The matching column denoting if the compare was a match or not
 
         Returns
         -------
-        pyspark.sql.DataFrame
-            A PySpark DataFrame with an additional column (`col_match`) containing
-            boolean values indicating whether the values in `col_1` and `col_2` are
-            equal.
+        pyspark.sql.Column
+            A PySpark Column containing boolean values indicating whether the values in
+            `col_1` and `col_2` are equal.
         None
             if the columns are not comparable.
         """
         base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
         if base_dtype.startswith("array") and compare_dtype.startswith("array"):
             when_clause = psf.col(col1).eqNullSafe(psf.col(col2))
-            return dataframe.withColumn(
-                col_match,
-                psf.when(when_clause, psf.lit(True)).otherwise(psf.lit(False)),
-            )
+            return psf.when(when_clause, psf.lit(True)).otherwise(psf.lit(False))
         else:
             return None
 

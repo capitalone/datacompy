@@ -181,7 +181,9 @@ def test_date_columns_equal(spark_session):
     df = spark_session.createDataFrame(data, schema)
 
     # First compare as strings
-    actual_out = columns_equal(df, "a", "b", "actual", rel_tol=0.2).toPandas()["actual"]
+    actual_out = df.withColumn(
+        "actual", columns_equal(df, "a", "b", rel_tol=0.2)
+    ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -208,16 +210,16 @@ def test_date_columns_equal(spark_session):
     date_df = spark_session.createDataFrame(date_data, date_schema)
 
     # Compare date columns
-    actual_out = columns_equal(date_df, "a", "b", "actual", rel_tol=0.2).toPandas()[
-        "actual"
-    ]
+    actual_out = date_df.withColumn(
+        "actual", columns_equal(date_df, "a", "b", rel_tol=0.2)
+    ).toPandas()["actual"]
     expect_out = date_df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
     # Test reverse comparison
-    actual_out_rev = columns_equal(date_df, "b", "a", "actual", rel_tol=0.2).toPandas()[
-        "actual"
-    ]
+    actual_out_rev = date_df.withColumn(
+        "actual", columns_equal(date_df, "b", "a", rel_tol=0.2)
+    ).toPandas()["actual"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
     # Define schema for date / string comparison
@@ -243,7 +245,9 @@ def test_date_columns_equal(spark_session):
     df = spark_session.createDataFrame(data, schema)
 
     # First compare as strings
-    actual_out = columns_equal(df, "a", "b", "actual", rel_tol=0.2).toPandas()["actual"]
+    actual_out = df.withColumn(
+        "actual", columns_equal(df, "a", "b", rel_tol=0.2)
+    ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -272,8 +276,8 @@ def test_date_columns_equal_with_ignore_spaces(spark_session):
     df = spark_session.createDataFrame(string_data, schema)
 
     # First compare as strings
-    actual_out = columns_equal(
-        df, "a", "b", "actual", rel_tol=0.2, ignore_spaces=True
+    actual_out = df.withColumn(
+        "actual", columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -301,15 +305,15 @@ def test_date_columns_equal_with_ignore_spaces(spark_session):
     date_df = spark_session.createDataFrame(date_data, date_schema)
 
     # Compare date columns
-    actual_out = columns_equal(
-        date_df, "a", "b", "actual", rel_tol=0.2, ignore_spaces=True
+    actual_out = date_df.withColumn(
+        "actual", columns_equal(date_df, "a", "b", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
     expect_out = date_df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
     # Test reverse comparison
-    actual_out_rev = columns_equal(
-        date_df, "b", "a", "actual", rel_tol=0.2, ignore_spaces=True
+    actual_out_rev = date_df.withColumn(
+        "actual", columns_equal(date_df, "b", "a", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
@@ -338,8 +342,9 @@ def test_date_columns_equal_with_ignore_spaces_and_case(spark_session):
     df = spark_session.createDataFrame(string_data, schema)
 
     # First compare as strings
-    actual_out = columns_equal(
-        df, "a", "b", "actual", rel_tol=0.2, ignore_spaces=True, ignore_case=True
+    actual_out = df.withColumn(
+        "actual",
+        columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True),
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -367,15 +372,21 @@ def test_date_columns_equal_with_ignore_spaces_and_case(spark_session):
     date_df = spark_session.createDataFrame(date_data, date_schema)
 
     # Compare date columns
-    actual_out = columns_equal(
-        date_df, "a", "b", "actual", rel_tol=0.2, ignore_spaces=True, ignore_case=True
+    actual_out = date_df.withColumn(
+        "actual",
+        columns_equal(
+            date_df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True
+        ),
     ).toPandas()["actual"]
     expect_out = date_df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
     # Test reverse comparison
-    actual_out_rev = columns_equal(
-        date_df, "b", "a", "actual", rel_tol=0.2, ignore_spaces=True, ignore_case=True
+    actual_out_rev = date_df.withColumn(
+        "actual",
+        columns_equal(
+            date_df, "b", "a", rel_tol=0.2, ignore_spaces=True, ignore_case=True
+        ),
     ).toPandas()["actual"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
@@ -399,16 +410,48 @@ def test_date_columns_unequal(spark_session):
     df = spark_session.createDataFrame(data, schema)
 
     # Test string vs date equality both ways
-    assert columns_equal(df, "a", "a_dt", "actual").toPandas()["actual"].all()
-    assert columns_equal(df, "b", "b_dt", "actual").toPandas()["actual"].all()
-    assert columns_equal(df, "a_dt", "a", "actual").toPandas()["actual"].all()
-    assert columns_equal(df, "b_dt", "b", "actual").toPandas()["actual"].all()
+    assert (
+        df.withColumn("actual", columns_equal(df, "a", "a_dt"))
+        .toPandas()["actual"]
+        .all()
+    )
+    assert (
+        df.withColumn("actual", columns_equal(df, "b", "b_dt"))
+        .toPandas()["actual"]
+        .all()
+    )
+    assert (
+        df.withColumn("actual", columns_equal(df, "a_dt", "a"))
+        .toPandas()["actual"]
+        .all()
+    )
+    assert (
+        df.withColumn("actual", columns_equal(df, "b_dt", "b"))
+        .toPandas()["actual"]
+        .all()
+    )
 
     # Test mismatched fields
-    assert not columns_equal(df, "b_dt", "a", "actual").toPandas()["actual"].any()
-    assert not columns_equal(df, "a_dt", "b", "actual").toPandas()["actual"].any()
-    assert not columns_equal(df, "a", "b_dt", "actual").toPandas()["actual"].any()
-    assert not columns_equal(df, "b", "a_dt", "actual").toPandas()["actual"].any()
+    assert (
+        not df.withColumn("actual", columns_equal(df, "b_dt", "a"))
+        .toPandas()["actual"]
+        .any()
+    )
+    assert (
+        not df.withColumn("actual", columns_equal(df, "a_dt", "b"))
+        .toPandas()["actual"]
+        .any()
+    )
+    assert (
+        not df.withColumn("actual", columns_equal(df, "a", "b_dt"))
+        .toPandas()["actual"]
+        .any()
+    )
+    assert (
+        not df.withColumn("actual", columns_equal(df, "b", "a_dt"))
+        .toPandas()["actual"]
+        .any()
+    )
 
 
 def test_bad_date_columns(spark_session):
@@ -430,8 +473,16 @@ def test_bad_date_columns(spark_session):
 
     df = spark_session.createDataFrame(data, schema)
 
-    assert not columns_equal(df, "a_dt", "b", "actual").toPandas()["actual"].all()
-    assert columns_equal(df, "a_dt", "b", "actual").toPandas()["actual"].any()
+    assert (
+        not df.withColumn("actual", columns_equal(df, "a_dt", "b"))
+        .toPandas()["actual"]
+        .all()
+    )
+    assert (
+        df.withColumn("actual", columns_equal(df, "a_dt", "b"))
+        .toPandas()["actual"]
+        .any()
+    )
 
 
 def test_rounded_date_columns(spark_session):
@@ -460,7 +511,9 @@ def test_rounded_date_columns(spark_session):
     ]
 
     df = spark_session.createDataFrame(data, schema)
-    actual = columns_equal(df, "a_dt", "b", "actual").toPandas()["actual"]
+    actual = df.withColumn("actual", columns_equal(df, "a_dt", "b")).toPandas()[
+        "actual"
+    ]
     expected = df.select("exp").toPandas()["exp"]
     assert_series_equal(actual, expected, check_names=False)
 
