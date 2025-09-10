@@ -140,7 +140,9 @@ class PolarsStringComparator(BaseStringComparator):
                 )
             except Exception:
                 try:
-                    return pl.Series(col1.cast(pl.String) == col2.cast(pl.String))
+                    return pl.Series(
+                        col1.cast(pl.String).eq_missing(col2.cast(pl.String))
+                    )
                 except Exception:
                     return pl.Series([False] * col1.shape[0])
         else:
@@ -264,13 +266,13 @@ class SparkStringComparator(BaseStringComparator):
             A Column containing boolean values indicating whether the values in
             `col1` and `col2` are equal.
         None
-            if the columns are not comparable.
+            Columns are not comparable if their datatypes are not in any of the string or date combination.
 
         Raises
         ------
         Exception
             If the comparison fails due to incompatible types or other issues,
-            returns a column of `False` values.
+            `None` is returned.
         """
         # if col1 and col2 of dataframe are of type string OR timestamp
         base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
@@ -338,13 +340,14 @@ class SnowflakeStringComparator(BaseStringComparator):
             The DataFrame with an additional column containing the comparison results.
 
         None
-            if the columns are not comparable.
+            If the comparison fails due to incompatible types or other issues,
+            `None` is returned.
 
         Raises
         ------
         Exception
             If the comparison fails due to incompatible types or other issues,
-            returns a column of `False` values.
+            `None` is returned.
         """
         # if col1 and col2 of dataframe are of type string
         base_dtype, compare_dtype = get_snowflake_column_dtypes(dataframe, col1, col2)
@@ -581,6 +584,8 @@ def polars_compare_string_and_date_columns(
         )
     except Exception:
         try:
-            return pl.Series(str_column.cast(pl.String) == date_column.cast(pl.String))
+            return pl.Series(
+                str_column.cast(pl.String).eq_missing(date_column.cast(pl.String))
+            )
         except Exception:
             return pl.Series([False] * col_1.shape[0])
