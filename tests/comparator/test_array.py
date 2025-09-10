@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import polars as pl
+import pytest
 import snowflake.snowpark as sf
 from datacompy.comparator.array import (
     PandasArrayLikeComparator,
@@ -206,7 +207,8 @@ def test_spark_compare_equal_arrays(spark_session):
     comparator = SparkArrayLikeComparator()
 
     # Execute
-    result = comparator.compare(df, "col1", "col2", "match")
+    result_col = comparator.compare(dataframe=df, col1="col1", col2="col2")
+    result = df.withColumn("match", result_col)
 
     # Assert
     assert result is not None
@@ -221,7 +223,8 @@ def test_spark_compare_unequal_arrays(spark_session):
     comparator = SparkArrayLikeComparator()
 
     # Execute
-    result = comparator.compare(df, "col1", "col2", "match")
+    result_col = comparator.compare(dataframe=df, col1="col1", col2="col2")
+    result = df.withColumn("match", result_col)
 
     # Assert
     assert result is not None
@@ -237,7 +240,8 @@ def test_spark_compare_with_nulls(spark_session):
     comparator = SparkArrayLikeComparator()
 
     # Execute
-    result = comparator.compare(df, "col1", "col2", "match")
+    result_col = comparator.compare(dataframe=df, col1="col1", col2="col2")
+    result = df.withColumn("match", result_col)
 
     # Assert
     assert result is not None
@@ -250,24 +254,25 @@ def test_spark_compare_non_array(spark_session):
     data = [(1, 1), (2, 2)]
     df = spark_session.createDataFrame(data, ["col1", "col2"])
     comparator = SparkArrayLikeComparator()
-    result = comparator.compare(df, "col1", "col2", "match")
+    result = comparator.compare(dataframe=df, col1="col1", col2="col2")
     assert result is None
 
     # floats
     data = [(1.0, 1.0), (2.0, 2.0)]
     df = spark_session.createDataFrame(data, ["col1", "col2"])
     comparator = SparkArrayLikeComparator()
-    result = comparator.compare(df, "col1", "col2", "match")
+    result = comparator.compare(dataframe=df, col1="col1", col2="col2")
     assert result is None
 
     # dicts
     data = [({"a": 1}, {"a": 1}), ({"b": 2}, {"b": 2})]
     df = spark_session.createDataFrame(data, ["col1", "col2"])
     comparator = SparkArrayLikeComparator()
-    result = comparator.compare(df, "col1", "col2", "match")
+    result = comparator.compare(dataframe=df, col1="col1", col2="col2")
     assert result is None
 
 
+@pytest.mark.snowflake
 def test_snowflake_compare_equal_arrays(snowflake_session):
     # Setup
     data = [([1, 2], [1, 2]), ([3, 4], [3, 4])]
@@ -283,6 +288,7 @@ def test_snowflake_compare_equal_arrays(snowflake_session):
     assert all(row for row in matches)
 
 
+@pytest.mark.snowflake
 def test_snowflake_compare_unequal_arrays(snowflake_session):
     # Setup
     data = [([1, 2], [1, 2]), ([3, 4], [3, 5])]
@@ -301,6 +307,7 @@ def test_snowflake_compare_unequal_arrays(snowflake_session):
     ]
 
 
+@pytest.mark.snowflake
 def test_snowflake_compare_with_nulls(snowflake_session):
     # Setup
     data = [([1, None], [1, None]), ([3, 4], [3, 4])]
@@ -316,6 +323,7 @@ def test_snowflake_compare_with_nulls(snowflake_session):
     assert all(row for row in matches)
 
 
+@pytest.mark.snowflake
 def test_snowflake_compare_non_array(snowflake_session):
     # integers
     data = [(1, 1), (2, 2)]
