@@ -123,8 +123,8 @@ class PolarsNumericComparator(BaseNumericComparator):
         Notes
         -----
         - The comparison uses `np.isclose` to check for approximate equality.
-        - If the series cannot be directly compared due to type mismatches, they are cast
-          to `pl.Float64` for comparison.
+        - If the series cannot be directly compared due to numeric type mismatches,
+          If casting fails, a series of `False` values is returned.
         - If the Series shapes do not match, and neither type is numeric a `None`
           values is returned.
         """
@@ -188,9 +188,9 @@ class PandasNumericComparator(BaseNumericComparator):
         Notes
         -----
         - The comparison uses `np.isclose` to check for approximate equality.
-        - If the series cannot be directly compared due to type mismatches, they are cast
-          to `float` for comparison.
-        - If the Series shapes do not match, and neither type is numeric a series of `False`
+        - If the series cannot be directly compared due to numeric type mismatches,
+          If casting fails, a series of `False` values is returned.
+        - If the Series shapes do not match, and neither type is numeric a `None`
           values is returned.
         """
         if col1.shape != col2.shape:
@@ -239,7 +239,7 @@ class SparkNumericComparator(BaseNumericComparator):
         self, dataframe: "ps.sql.DataFrame", col1: str, col2: str
     ) -> "ps.sql.Column | None":
         """
-        Compare two columns in a PySpark DataFrame for approximate equality.
+        Compare two columns in a PySpark DataFrame for approximate equality within specified tolerances `rtol` and `atol`.
 
         Parameters
         ----------
@@ -312,7 +312,7 @@ class SnowflakeNumericComparator(BaseNumericComparator):
         col_match: str,
     ) -> "sp.DataFrame | None":
         """
-        Compare two columns in a Snowpark DataFrame for approximate equality.
+        Compare two columns in a Snowpark DataFrame for approximate equality within specified tolerances `rtol` and `atol`.
 
         Parameters
         ----------

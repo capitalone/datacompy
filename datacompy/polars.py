@@ -1051,34 +1051,3 @@ def generate_id_within_group(
         return dataframe.select(
             rn=pl.col(dataframe.columns[0]).cum_count().over(join_columns)
         ).to_series()
-
-
-# def normalize_string_column(
-#     column: pl.Series, ignore_spaces: bool, ignore_case: bool
-# ) -> pl.Series:
-#     """Normalize a string column by converting to upper case and stripping whitespace.
-
-#     Parameters
-#     ----------
-#     column : pl.Series
-#         The column to normalize
-#     ignore_spaces : bool
-#         Whether to ignore spaces when normalizing
-#     ignore_case : bool
-#         Whether to ignore case when normalizing
-
-#     Returns
-#     -------
-#     pl.Series
-#         The normalized column
-
-#     Notes
-#     -----
-#     Will not operate on categorical columns.
-#     """
-#     if str(column.dtype.base_type()) in STRING_TYPE:
-#         if ignore_spaces:
-#             column = column.str.strip_chars()
-#         if ignore_case:
-#             column = column.str.to_uppercase()
-#     return column
