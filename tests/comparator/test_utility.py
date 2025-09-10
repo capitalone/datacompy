@@ -16,6 +16,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
+import pytest
 import snowflake.snowpark.types as spt
 from datacompy.comparator.utility import (
     get_snowflake_column_dtypes,
@@ -77,6 +78,7 @@ def test_get_spark_column_dtypes(spark_session):
     assert timestamp_type == "timestamp"
 
 
+@pytest.mark.snowflake
 def test_get_snowflake_column_dtypes(snowflake_session):
     schema = spt.StructType(
         [
@@ -142,6 +144,7 @@ def test_get_spark_column_dtypes_case_insensitive(spark_session):
     assert dtype2 == "string"
 
 
+@pytest.mark.snowflake
 def test_get_snowflake_column_dtypes_case_insensitive(snowflake_session):
     schema = spt.StructType(
         [

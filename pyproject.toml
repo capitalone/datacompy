@@ -45,6 +45,8 @@ optional-dependencies.dev = [
   "datacompy[build]",
   "datacompy[docs]",
   "datacompy[qa]",
+  "datacompy[snowflake]",
+  "datacompy[spark]",
   "datacompy[tests]",
 ]
 optional-dependencies.docs = [ "furo", "myst-parser", "sphinx" ]

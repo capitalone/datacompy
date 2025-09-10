@@ -30,6 +30,7 @@ import pyspark.sql
 import pyspark.sql.functions as F
 from ordered_set import OrderedSet
 from pyspark.sql import Window
+from pyspark.sql.connect.dataframe import DataFrame
 
 from datacompy.base import (
     BaseCompare,
@@ -220,7 +221,7 @@ class SparkSQLCompare(BaseCompare):
         None
         """
         dataframe = getattr(self, index)
-        instances = (pyspark.sql.DataFrame, pyspark.sql.connect.dataframe.DataFrame)
+        instances = (pyspark.sql.DataFrame, DataFrame)
 
         if not isinstance(dataframe, instances):
             raise TypeError(

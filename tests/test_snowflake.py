@@ -53,6 +53,7 @@ pd.DataFrame.iteritems = pd.DataFrame.items  # Pandas 2+ compatability
 np.bool = np.bool_  # Numpy 1.24.3+ comptability
 
 
+@pytest.mark.snowflake
 def test_numeric_columns_equal_abs(snowflake_session):
     data = """A|B|EXPECTED
 1|1|True
@@ -68,6 +69,7 @@ NULL|NULL|True"""
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+@pytest.mark.snowflake
 def test_numeric_columns_equal_rel(snowflake_session):
     data = """A|B|EXPECTED
 1|1|True
@@ -82,6 +84,7 @@ NULL|NULL|True"""
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+@pytest.mark.snowflake
 def test_string_columns_equal(snowflake_session):
     data = """A|B|EXPECTED
 Hi|Hi|True
@@ -103,6 +106,7 @@ something||False
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+@pytest.mark.snowflake
 def test_string_columns_equal_with_ignore_spaces(snowflake_session):
     data = """A|B|EXPECTED
 Hi|Hi|True
@@ -126,6 +130,7 @@ something||False
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+@pytest.mark.snowflake
 def test_date_columns_equal(snowflake_session):
     data = """A|B|EXPECTED
 2017-01-01|2017-01-01|True
@@ -155,6 +160,7 @@ def test_date_columns_equal(snowflake_session):
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
+@pytest.mark.snowflake
 def test_date_columns_equal_with_ignore_spaces(snowflake_session):
     data = """A|B|EXPECTED
 2017-01-01|2017-01-01   |True
@@ -192,6 +198,7 @@ def test_date_columns_equal_with_ignore_spaces(snowflake_session):
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
+@pytest.mark.snowflake
 def test_columns_equal_same_type_dif_length(snowflake_session):
     schema = StructType(
         [
@@ -220,6 +227,7 @@ def test_columns_equal_same_type_dif_length(snowflake_session):
     )
 
 
+@pytest.mark.snowflake
 def test_date_columns_unequal(snowflake_session):
     """I want datetime fields to match with dates stored as strings"""
     data = [{"A": "2017-01-01", "B": "2017-01-02"}, {"A": "2017-01-01"}]
@@ -237,6 +245,7 @@ def test_date_columns_unequal(snowflake_session):
     assert not columns_equal(df, "B", "A_DT", "ACTUAL").toPandas()["ACTUAL"].any()
 
 
+@pytest.mark.snowflake
 def test_bad_date_columns(snowflake_session):
     """If strings can't be coerced into dates then it should be false for the
     whole column.
@@ -252,6 +261,7 @@ def test_bad_date_columns(snowflake_session):
     assert columns_equal(df, "A_DT", "B", "ACTUAL").toPandas()["ACTUAL"].any()
 
 
+@pytest.mark.snowflake
 def test_rounded_date_columns(snowflake_session):
     """If strings can't be coerced into dates then it should be false for the
     whole column.
@@ -270,6 +280,7 @@ def test_rounded_date_columns(snowflake_session):
     assert_series_equal(actual, expected, check_names=False)
 
 
+@pytest.mark.snowflake
 def test_decimal_float_columns_equal(snowflake_session):
     data = [
         {"A": Decimal("1"), "B": 1, "EXPECTED": True},
@@ -288,6 +299,7 @@ def test_decimal_float_columns_equal(snowflake_session):
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+@pytest.mark.snowflake
 def test_decimal_float_columns_equal_rel(snowflake_session):
     data = [
         {"A": Decimal("1"), "B": 1, "EXPECTED": True},
@@ -308,6 +320,7 @@ def test_decimal_float_columns_equal_rel(snowflake_session):
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+@pytest.mark.snowflake
 def test_decimal_columns_equal(snowflake_session):
     data = [
         {"A": Decimal("1"), "B": Decimal("1"), "EXPECTED": True},
@@ -330,6 +343,7 @@ def test_decimal_columns_equal(snowflake_session):
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+@pytest.mark.snowflake
 def test_decimal_columns_equal_rel(snowflake_session):
     data = [
         {"A": Decimal("1"), "B": Decimal("1"), "EXPECTED": True},
@@ -354,6 +368,7 @@ def test_decimal_columns_equal_rel(snowflake_session):
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+@pytest.mark.snowflake
 def test_infinity_and_beyond(snowflake_session):
     # https://spark.apache.org/docs/latest/sql-ref-datatypes.html#positivenegative-infinity-semantics
     # Positive/negative infinity multiplied by 0 returns NaN.
@@ -374,6 +389,7 @@ def test_infinity_and_beyond(snowflake_session):
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+@pytest.mark.snowflake
 def test_compare_table_setter_bad(snowflake_session):
     # Invalid table name
     with raises(ValueError, match=r"invalid_table_name_1 is not a valid table name."):
@@ -391,6 +407,7 @@ def test_compare_table_setter_bad(snowflake_session):
     "datacompy.snowflake.SnowflakeCompare._validate_dataframe", new=mock.MagicMock()
 )
 @mock.patch("datacompy.snowflake.SnowflakeCompare._compare", new=mock.MagicMock())
+@pytest.mark.snowflake
 def test_compare_table_unique_names(snowflake_session):
     # Assert that two tables with the same name but from a different DB/Schema have unique names
     # Same schema/name, different DB
@@ -412,6 +429,7 @@ def test_compare_table_unique_names(snowflake_session):
     assert compare.df1_name != compare.df2_name
 
 
+@pytest.mark.snowflake
 def test_compare_table_setter_good(snowflake_session):
     data = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
     10000001234,123.4,George Michael Bluth,14530.155,
@@ -447,6 +465,7 @@ def test_compare_table_setter_good(snowflake_session):
     assert compare.join_columns == ["ACCT_ID"]
 
 
+@pytest.mark.snowflake
 def test_compare_df_setter_bad(snowflake_session):
     pdf = pd.DataFrame([{"A": 1, "C": 2}, {"A": 2, "C": 2}])
     df = snowflake_session.createDataFrame(pdf)
@@ -465,6 +484,7 @@ def test_compare_df_setter_bad(snowflake_session):
     )
 
 
+@pytest.mark.snowflake
 def test_compare_df_setter_good(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 2}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
@@ -476,6 +496,7 @@ def test_compare_df_setter_good(snowflake_session):
     assert compare.join_columns == ["A", "B"]
 
 
+@pytest.mark.snowflake
 def test_compare_df_setter_different_cases(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 2}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
@@ -483,6 +504,7 @@ def test_compare_df_setter_different_cases(snowflake_session):
     assert compare.df1.toPandas().equals(df1.toPandas())
 
 
+@pytest.mark.snowflake
 def test_columns_overlap(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 2}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
@@ -492,6 +514,7 @@ def test_columns_overlap(snowflake_session):
     assert compare.intersect_columns() == {"A", "B"}
 
 
+@pytest.mark.snowflake
 def test_columns_no_overlap(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"A": 1, "B": 2, "C": "HI"}, {"A": 2, "B": 2, "C": "YO"}]
@@ -505,6 +528,7 @@ def test_columns_no_overlap(snowflake_session):
     assert compare.intersect_columns() == {"A", "B"}
 
 
+@pytest.mark.snowflake
 def test_columns_maintain_order_through_set_operations(snowflake_session):
     pdf1 = pd.DataFrame(
         {
@@ -536,6 +560,7 @@ def test_columns_maintain_order_through_set_operations(snowflake_session):
     assert list(compare.intersect_columns()) == ["JOIN", "G", "B", "H", "A"]
 
 
+@pytest.mark.snowflake
 def test_10k_rows(snowflake_session):
     rng = np.random.default_rng()
     pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
@@ -564,6 +589,7 @@ def test_10k_rows(snowflake_session):
     assert not compare_no_tol.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_10k_rows_abs_tol_per_column(snowflake_session):
     rng = np.random.default_rng()
     pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
@@ -585,6 +611,7 @@ def test_10k_rows_abs_tol_per_column(snowflake_session):
     assert compare_tol.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_10k_rows_abs_tol_per_column_default(snowflake_session):
     rng = np.random.default_rng()
     pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
@@ -607,6 +634,7 @@ def test_10k_rows_abs_tol_per_column_default(snowflake_session):
     assert not compare_tol.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_10k_rows_rel_tol_per_column(snowflake_session):
     rng = np.random.default_rng()
     pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
@@ -628,6 +656,7 @@ def test_10k_rows_rel_tol_per_column(snowflake_session):
     assert compare_tol.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_10k_rows_rel_tol_per_column_default(snowflake_session):
     rng = np.random.default_rng()
     pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
@@ -650,6 +679,7 @@ def test_10k_rows_rel_tol_per_column_default(snowflake_session):
     assert not compare_tol.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_subset(snowflake_session, caplog):
     caplog.set_level(logging.DEBUG)
     df1 = snowflake_session.createDataFrame(
@@ -660,6 +690,7 @@ def test_subset(snowflake_session, caplog):
     assert comp.subset()
 
 
+@pytest.mark.snowflake
 def test_not_subset(snowflake_session, caplog):
     caplog.set_level(logging.INFO)
     df1 = snowflake_session.createDataFrame(
@@ -673,6 +704,7 @@ def test_not_subset(snowflake_session, caplog):
     assert "C: 1 / 2 (50.00%) match" in caplog.text
 
 
+@pytest.mark.snowflake
 def test_large_subset(snowflake_session):
     rng = np.random.default_rng()
     pdf = pd.DataFrame(rng.integers(0, 100, size=(10000, 2)), columns=["B", "C"])
@@ -686,6 +718,7 @@ def test_large_subset(snowflake_session):
     assert comp.subset()
 
 
+@pytest.mark.snowflake
 def test_string_joiner(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"AB": 1, "BC": 2}, {"AB": 2, "BC": 2}])
     df2 = snowflake_session.createDataFrame([{"AB": 1, "BC": 2}, {"AB": 2, "BC": 2}])
@@ -693,6 +726,7 @@ def test_string_joiner(snowflake_session):
     assert compare.matches()
 
 
+@pytest.mark.snowflake
 def test_decimal_with_joins(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"A": Decimal("1"), "B": 2}, {"A": Decimal("2"), "B": 2}]
@@ -705,6 +739,7 @@ def test_decimal_with_joins(snowflake_session):
     assert compare.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_decimal_with_nulls(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"A": 1, "B": Decimal("2")}, {"A": 2, "B": Decimal("2")}]
@@ -719,6 +754,7 @@ def test_decimal_with_nulls(snowflake_session):
     assert compare.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_strings_with_joins(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": "HI", "B": 2}, {"A": "BYE", "B": 2}])
     df2 = snowflake_session.createDataFrame([{"A": "HI", "B": 2}, {"A": "BYE", "B": 2}])
@@ -729,6 +765,7 @@ def test_strings_with_joins(snowflake_session):
     assert compare.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_temp_column_name(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": "HI", "B": 2}, {"A": "BYE", "B": 2}])
     df2 = snowflake_session.createDataFrame(
@@ -738,6 +775,7 @@ def test_temp_column_name(snowflake_session):
     assert actual == "_TEMP_0"
 
 
+@pytest.mark.snowflake
 def test_temp_column_name_one_has(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"_TEMP_0": "HI", "B": 2}, {"_TEMP_0": "BYE", "B": 2}]
@@ -749,6 +787,7 @@ def test_temp_column_name_one_has(snowflake_session):
     assert actual == "_TEMP_1"
 
 
+@pytest.mark.snowflake
 def test_temp_column_name_both_have_temp_1(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"_TEMP_0": "HI", "B": 2}, {"_TEMP_0": "BYE", "B": 2}]
@@ -764,6 +803,7 @@ def test_temp_column_name_both_have_temp_1(snowflake_session):
     assert actual == "_TEMP_1"
 
 
+@pytest.mark.snowflake
 def test_temp_column_name_both_have_temp_2(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"_TEMP_0": "HI", "B": 2}, {"_TEMP_0": "BYE", "B": 2}]
@@ -779,6 +819,7 @@ def test_temp_column_name_both_have_temp_2(snowflake_session):
     assert actual == "_TEMP_2"
 
 
+@pytest.mark.snowflake
 def test_temp_column_name_one_already(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"_TEMP_1": "HI", "B": 2}, {"_TEMP_1": "BYE", "B": 2}]
@@ -797,6 +838,7 @@ def test_temp_column_name_one_already(snowflake_session):
 # Duplicate testing!
 
 
+@pytest.mark.snowflake
 def test_simple_dupes_one_field(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
@@ -806,6 +848,7 @@ def test_simple_dupes_one_field(snowflake_session):
     compare.report()
 
 
+@pytest.mark.snowflake
 def test_simple_dupes_two_fields(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"A": 1, "B": 2}, {"A": 1, "B": 2, "C": 2}]
@@ -819,6 +862,7 @@ def test_simple_dupes_two_fields(snowflake_session):
     compare.report()
 
 
+@pytest.mark.snowflake
 def test_simple_dupes_one_field_two_vals_1(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 0}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 0}])
@@ -828,6 +872,7 @@ def test_simple_dupes_one_field_two_vals_1(snowflake_session):
     compare.report()
 
 
+@pytest.mark.snowflake
 def test_simple_dupes_one_field_two_vals_2(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 0}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 0}])
@@ -840,6 +885,7 @@ def test_simple_dupes_one_field_two_vals_2(snowflake_session):
     compare.report()
 
 
+@pytest.mark.snowflake
 def test_simple_dupes_one_field_three_to_two_vals(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"A": 1, "B": 2}, {"A": 1, "B": 0}, {"A": 1, "B": 0}]
@@ -856,6 +902,7 @@ def test_simple_dupes_one_field_three_to_two_vals(snowflake_session):
     assert "(First 2 Columns)" in compare.report(column_count=2)
 
 
+@pytest.mark.snowflake
 def test_dupes_from_real_data(snowflake_session):
     data = """ACCT_ID,ACCT_SFX_NUM,TRXN_POST_DT,TRXN_POST_SEQ_NUM,TRXN_AMT,TRXN_DT,DEBIT_CR_CD,CASH_ADV_TRXN_COMN_CNTRY_CD,MRCH_CATG_CD,MRCH_PSTL_CD,VISA_MAIL_PHN_CD,VISA_RQSTD_PMT_SVC_CD,MC_PMT_FACILITATOR_IDN_NUM
 100,0,2017-06-17,1537019,30.64,2017-06-15,D,CAN,5812,M2N5P5,,,0.0
@@ -896,63 +943,7 @@ def test_dupes_from_real_data(snowflake_session):
     compare_unq.report()
 
 
-def test_table_compare_from_real_data(snowflake_session):
-    data = """ACCT_ID,ACCT_SFX_NUM,TRXN_POST_DT,TRXN_POST_SEQ_NUM,TRXN_AMT,TRXN_DT,DEBIT_CR_CD,CASH_ADV_TRXN_COMN_CNTRY_CD,MRCH_CATG_CD,MRCH_PSTL_CD,VISA_MAIL_PHN_CD,VISA_RQSTD_PMT_SVC_CD,MC_PMT_FACILITATOR_IDN_NUM
-100,0,2017-06-17,1537019,30.64,2017-06-15,D,CAN,5812,M2N5P5,,,0.0
-200,0,2017-06-24,1022477,485.32,2017-06-22,D,USA,4511,7114,7.0,1,
-100,0,2017-06-17,1537039,2.73,2017-06-16,D,CAN,5812,M4J 1M9,,,0.0
-200,0,2017-06-29,1049223,22.41,2017-06-28,D,USA,4789,21211,,A,
-100,0,2017-06-17,1537029,34.05,2017-06-16,D,CAN,5812,M4E 2C7,,,0.0
-200,0,2017-06-29,1049213,9.12,2017-06-28,D,CAN,5814,0,,,
-100,0,2017-06-19,1646426,165.21,2017-06-17,D,CAN,5411,M4M 3H9,,,0.0
-200,0,2017-06-30,1233082,28.54,2017-06-29,D,USA,4121,94105,7.0,G,
-100,0,2017-06-19,1646436,17.87,2017-06-18,D,CAN,5812,M4J 1M9,,,0.0
-200,0,2017-06-30,1233092,24.39,2017-06-29,D,USA,4121,94105,7.0,G,
-100,0,2017-06-19,1646446,5.27,2017-06-17,D,CAN,5200,M4M 3G6,,,0.0
-200,0,2017-06-30,1233102,61.8,2017-06-30,D,CAN,4121,0,,,
-100,0,2017-06-20,1607573,41.99,2017-06-19,D,CAN,5661,M4C1M9,,,0.0
-200,0,2017-07-01,1009403,2.31,2017-06-29,D,USA,5814,22102,,F,
-100,0,2017-06-20,1607553,86.88,2017-06-19,D,CAN,4812,H2R3A8,,,0.0
-200,0,2017-07-01,1009423,5.5,2017-06-29,D,USA,5812,2903,,F,
-100,0,2017-06-20,1607563,25.17,2017-06-19,D,CAN,5641,M4C 1M9,,,0.0
-200,0,2017-07-01,1009433,214.12,2017-06-29,D,USA,3640,20170,,A,
-100,0,2017-06-20,1607593,1.67,2017-06-19,D,CAN,5814,M2N 6L7,,,0.0
-200,0,2017-07-01,1009393,2.01,2017-06-29,D,USA,5814,22102,,F,"""
-    df = pd.read_csv(StringIO(data), sep=",")
-    database = snowflake_session.get_current_database().replace('"', "")
-    schema = snowflake_session.get_current_schema().replace('"', "")
-    full_table_name = f"{database}.{schema}"
-    toy_table_name_1 = "DC_TOY_TABLE_1"
-    toy_table_name_2 = "DC_TOY_TABLE_2"
-    full_toy_table_name_1 = f"{full_table_name}.{toy_table_name_1}"
-    full_toy_table_name_2 = f"{full_table_name}.{toy_table_name_2}"
-
-    snowflake_session.write_pandas(
-        df, toy_table_name_1, table_type="temp", auto_create_table=True, overwrite=True
-    )
-    snowflake_session.write_pandas(
-        df, toy_table_name_2, table_type="temp", auto_create_table=True, overwrite=True
-    )
-
-    compare_acct = SnowflakeCompare(
-        snowflake_session,
-        full_toy_table_name_1,
-        full_toy_table_name_2,
-        join_columns=["ACCT_ID"],
-    )
-    assert compare_acct.matches()
-    compare_acct.report()
-
-    compare_unq = SnowflakeCompare(
-        snowflake_session,
-        full_toy_table_name_1,
-        full_toy_table_name_2,
-        join_columns=["ACCT_ID", "ACCT_SFX_NUM", "TRXN_POST_DT", "TRXN_POST_SEQ_NUM"],
-    )
-    assert compare_unq.matches()
-    compare_unq.report()
-
-
+@pytest.mark.snowflake
 def test_strings_with_joins_with_ignore_spaces(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"A": "HI", "B": " A"}, {"A": "BYE", "B": "A"}]
@@ -973,6 +964,7 @@ def test_strings_with_joins_with_ignore_spaces(snowflake_session):
     assert compare.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_decimal_with_joins_with_ignore_spaces(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": " A"}, {"A": 2, "B": "A"}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A "}])
@@ -989,6 +981,7 @@ def test_decimal_with_joins_with_ignore_spaces(snowflake_session):
     assert compare.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_joins_with_ignore_spaces(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": " A"}, {"A": 2, "B": "A"}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A "}])
@@ -1000,6 +993,7 @@ def test_joins_with_ignore_spaces(snowflake_session):
     assert compare.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_joins_with_insensitive_lowercase_cols(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"a": 1, "B": "A"}, {"a": 2, "B": "A"}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A"}])
@@ -1020,6 +1014,7 @@ def test_joins_with_insensitive_lowercase_cols(snowflake_session):
     assert compare.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_joins_with_sensitive_lowercase_cols(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{'"a"': 1, "B": "A"}, {'"a"': 2, "B": "A"}]
@@ -1035,6 +1030,7 @@ def test_joins_with_sensitive_lowercase_cols(snowflake_session):
     assert compare.intersect_rows_match()
 
 
+@pytest.mark.snowflake
 def test_full_join_counts_all_matches(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
@@ -1044,6 +1040,7 @@ def test_full_join_counts_all_matches(snowflake_session):
     assert compare.count_matching_rows() == 2
 
 
+@pytest.mark.snowflake
 def test_strings_with_ignore_spaces_and_join_columns(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"A": "HI", "B": "A"}, {"A": "BYE", "B": "A"}]
@@ -1065,6 +1062,7 @@ def test_strings_with_ignore_spaces_and_join_columns(snowflake_session):
     assert compare.count_matching_rows() == 2
 
 
+@pytest.mark.snowflake
 def test_integers_with_ignore_spaces_and_join_columns(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A"}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": "A"}, {"A": 2, "B": "A"}])
@@ -1083,6 +1081,7 @@ def test_integers_with_ignore_spaces_and_join_columns(snowflake_session):
     assert compare.count_matching_rows() == 2
 
 
+@pytest.mark.snowflake
 def test_sample_mismatch(snowflake_session):
     data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -1120,6 +1119,7 @@ def test_sample_mismatch(snowflake_session):
     assert (output.NAME_DF1 != output.NAME_DF2).all()
 
 
+@pytest.mark.snowflake
 def test_all_mismatch_not_ignore_matching_cols_no_cols_matching(snowflake_session):
     data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -1159,6 +1159,7 @@ def test_all_mismatch_not_ignore_matching_cols_no_cols_matching(snowflake_sessio
     assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 0
 
 
+@pytest.mark.snowflake
 def test_all_mismatch_not_ignore_matching_cols_some_cols_matching(snowflake_session):
     # Columns dollar_amt and name are matching
     data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
@@ -1199,6 +1200,7 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching(snowflake_sess
     assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 0
 
 
+@pytest.mark.snowflake
 def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows(
     snowflake_session,
 ):
@@ -1240,6 +1242,7 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows(
     assert not ("DOLLAR_AMT_DF1" in output and "DOLLAR_AMT_DF1" in output)
 
 
+@pytest.mark.snowflake
 def test_all_mismatch_ignore_matching_cols_some_cols_matching(snowflake_session):
     # Columns dollar_amt and name are matching
     data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
@@ -1278,6 +1281,7 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching(snowflake_session)
     assert not ("DOLLAR_AMT_DF1" in output and "DOLLAR_AMT_DF1" in output)
 
 
+@pytest.mark.snowflake
 def test_all_mismatch_ignore_matching_cols_no_cols_matching(snowflake_session):
     data1 = """ACCT_ID,DOLLAR_AMT,NAME,FLOAT_FLD,DATE_FLD
         10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -1317,6 +1321,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching(snowflake_session):
     assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 0
 
 
+@pytest.mark.snowflake
 def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_float(
     snowflake_session,
 ):
@@ -1358,6 +1363,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_float(
     assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 0
 
 
+@pytest.mark.snowflake
 def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_dict(
     snowflake_session,
 ):
@@ -1385,6 +1391,8 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_dict(
     )
 
     output = compare.all_mismatch().toPandas()
+    compare.report()
+
     assert output.shape[0] == 3
     assert output.shape[1] == 9
 
@@ -1401,6 +1409,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_abs_tol_dict(
     assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 1
 
 
+@pytest.mark.snowflake
 def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_float(
     snowflake_session,
 ):
@@ -1442,6 +1451,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_float(
     assert (~(output.DATE_FLD_DF1 != output.DATE_FLD_DF2)).values.sum() == 0
 
 
+@pytest.mark.snowflake
 def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_dict(
     snowflake_session,
 ):
@@ -1465,12 +1475,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_dict(
     df1 = snowflake_session.createDataFrame(pd.read_csv(StringIO(data1), sep=","))
     df2 = snowflake_session.createDataFrame(pd.read_csv(StringIO(data2), sep=","))
     compare = SnowflakeCompare(
-        snowflake_session,
-        df1,
-        df2,
-        "ACCT_ID",
-        abs_tol={"FLOAT_FLD": 0.01},
-        rel_tol={"DOLLAR_AMT": 0.10, "FLOAT_FLD": 0.02},
+        snowflake_session, df1, df2, "ACCT_ID", {"DOLLAR_AMT": 0.05}
     )
 
     output = compare.all_mismatch().toPandas()
@@ -1503,6 +1508,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching_rel_tol_dict(
         ("INFINITY", np.inf),
     ],
 )
+@pytest.mark.snowflake
 def test_calculate_max_diff(snowflake_session, column, expected):
     pdf = pd.DataFrame(
         {
@@ -1527,6 +1533,7 @@ def test_calculate_max_diff(snowflake_session, column, expected):
     )
 
 
+@pytest.mark.snowflake
 def test_dupes_with_nulls_strings(snowflake_session):
     pdf1 = pd.DataFrame(
         {
@@ -1550,6 +1557,7 @@ def test_dupes_with_nulls_strings(snowflake_session):
     assert comp.subset()
 
 
+@pytest.mark.snowflake
 def test_dupes_with_nulls_ints(snowflake_session):
     pdf1 = pd.DataFrame(
         {
@@ -1573,6 +1581,7 @@ def test_dupes_with_nulls_ints(snowflake_session):
     assert comp.subset()
 
 
+@pytest.mark.snowflake
 def test_generate_id_within_group(snowflake_session):
     matrix = [
         (
@@ -1630,6 +1639,7 @@ def test_generate_id_within_group(snowflake_session):
         assert (actual["_TEMP_0"] == expected).all()
 
 
+@pytest.mark.snowflake
 def test_generate_id_within_group_single_join(snowflake_session):
     dataframe = snowflake_session.createDataFrame(
         [{"A": 1, "B": 2, "__INDEX": 1}, {"A": 1, "B": 2, "__INDEX": 2}]
@@ -1645,6 +1655,7 @@ def test_generate_id_within_group_single_join(snowflake_session):
 
 @mock.patch("datacompy.snowflake.render")
 @mock.patch("datacompy.snowflake.save_html_report")
+@pytest.mark.snowflake
 def test_save_html(mock_save_html, mock_render, snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
@@ -1667,6 +1678,7 @@ def test_save_html(mock_save_html, mock_render, snowflake_session):
     assert args[1] == "test.html"  # The filename
 
 
+@pytest.mark.snowflake
 def test_full_join_counts_no_matches(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 3}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": 4}, {"A": 1, "B": 5}])
@@ -1703,6 +1715,7 @@ def test_full_join_counts_no_matches(snowflake_session):
     )
 
 
+@pytest.mark.snowflake
 def test_full_join_counts_some_matches(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 3}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 5}])
@@ -1742,6 +1755,7 @@ def test_full_join_counts_some_matches(snowflake_session):
     )
 
 
+@pytest.mark.snowflake
 def test_non_full_join_counts_no_matches(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"A": 1, "B": 2, "C": 4}, {"A": 1, "B": 3, "C": 4}]
@@ -1789,6 +1803,7 @@ def test_non_full_join_counts_no_matches(snowflake_session):
     )
 
 
+@pytest.mark.snowflake
 def test_non_full_join_counts_some_matches(snowflake_session):
     df1 = snowflake_session.createDataFrame(
         [{"A": 1, "B": 2, "C": 4}, {"A": 1, "B": 3, "C": 4}]
@@ -1832,6 +1847,7 @@ def test_non_full_join_counts_some_matches(snowflake_session):
     )
 
 
+@pytest.mark.snowflake
 def test_custom_template_usage(snowflake_session):
     """Test using a custom template with template_path parameter."""
     df1 = snowflake_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
@@ -1868,6 +1884,7 @@ def test_custom_template_usage(snowflake_session):
             os.unlink(template_path)
 
 
+@pytest.mark.snowflake
 def test_template_without_extension(snowflake_session):
     """Test that template_path works without .j2 extension."""
     df1 = snowflake_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
@@ -1887,6 +1904,7 @@ def test_template_without_extension(snowflake_session):
             os.unlink(template_path)
 
 
+@pytest.mark.snowflake
 def test_nonexistent_template(snowflake_session):
     """Test that a clear error is raised when template file doesn't exist."""
     df1 = snowflake_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
@@ -1901,6 +1919,7 @@ def test_nonexistent_template(snowflake_session):
     ) or "nonexistent_template.j2" in str(exc_info.value)
 
 
+@pytest.mark.snowflake
 def test_template_context_variables(snowflake_session):
     """Test that all expected context variables are available in the template."""
     df1 = snowflake_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
@@ -1933,6 +1952,7 @@ def test_template_context_variables(snowflake_session):
 
 @mock.patch("datacompy.snowflake.save_html_report")
 @mock.patch("datacompy.snowflake.render")
+@pytest.mark.snowflake
 def test_html_report_generation(mock_render, mock_save_html, snowflake_session):
     """Test that HTML reports can be generated and saved to a file."""
     df1 = snowflake_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])

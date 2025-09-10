@@ -103,7 +103,7 @@ class PolarsNumericComparator(BaseNumericComparator):
 
     def compare(self, col1: pl.Series, col2: pl.Series) -> pl.Series | None:
         """
-        Compare two Polars Series for approximate equality.
+        Compare two Polars Series for approximate equality within specified tolerances `rtol` and `atol`.
 
         Parameters
         ----------
@@ -125,7 +125,7 @@ class PolarsNumericComparator(BaseNumericComparator):
         - The comparison uses `np.isclose` to check for approximate equality.
         - If the series cannot be directly compared due to type mismatches, they are cast
           to `pl.Float64` for comparison.
-        - If the Series shapes do not match, and neither type is numeric a series of `False`
+        - If the Series shapes do not match, and neither type is numeric a `None`
           values is returned.
         """
         if col1.shape != col2.shape:
@@ -168,7 +168,7 @@ class PandasNumericComparator(BaseNumericComparator):
 
     def compare(self, col1: pd.Series, col2: pd.Series) -> pd.Series | None:
         """
-        Compare two Pandas Series for approximate equality.
+        Compare two Pandas Series for approximate equality within specified tolerances  `rtol` and `atol`.
 
         Parameters
         ----------
