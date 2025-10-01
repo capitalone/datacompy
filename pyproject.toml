@@ -66,7 +66,7 @@ optional-dependencies.dev_no_snowflake = [
 ]
 optional-dependencies.docs = [ "furo", "myst-parser", "sphinx" ]
 optional-dependencies.edgetest = [ "edgetest", "edgetest-conda" ]
-optional-dependencies.fugue = [ "fugue[dask,duckdb,ray]>=0.8.7,<=0.9.1" ]
+optional-dependencies.fugue = [ "fugue[dask,duckdb,ray]>=0.8.7,<=0.9.1", "duckdb<1.4.0" ]
 optional-dependencies.qa = [ "mypy", "pandas-stubs", "pre-commit", "ruff==0.5.7" ]
 optional-dependencies.snowflake = [
   "snowflake-connector-python",
