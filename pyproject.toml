@@ -38,7 +38,7 @@ dependencies = [
   "numpy>=1.22,<=2.2.6; python_version=='3.10'",
   "numpy>=1.22,<=2.3.3; python_version>='3.11'",
   "ordered-set>=4.0.2,<=4.1",
-  "pandas>=0.25,<=2.3.2",
+  "pandas>=0.25,<=2.3.3",
   "polars[pandas]>=0.20.4,<=1.33.1",
 ]
 optional-dependencies.build = [ "build", "twine", "wheel" ]
@@ -66,7 +66,7 @@ optional-dependencies.dev_no_snowflake = [
 ]
 optional-dependencies.docs = [ "furo", "myst-parser", "sphinx" ]
 optional-dependencies.edgetest = [ "edgetest", "edgetest-conda" ]
-optional-dependencies.fugue = [ "fugue[dask,duckdb,ray]>=0.8.7,<=0.9.1", "duckdb<1.4.0" ]
+optional-dependencies.fugue = [ "duckdb<1.4", "fugue[dask,duckdb,ray]>=0.8.7,<=0.9.1" ]
 optional-dependencies.qa = [ "mypy", "pandas-stubs", "pre-commit", "ruff==0.5.7" ]
 optional-dependencies.snowflake = [
   "snowflake-connector-python",
