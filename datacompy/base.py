@@ -332,6 +332,8 @@ def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) 
     """
     # Handle pandas DataFrame
     if hasattr(df, "to_string"):
+        if sample_count is not None and len(df) > sample_count:
+            df = df.head(sample_count)
         if not on_index and hasattr(df, "reset_index"):
             df = df.reset_index(drop=True)
         return df.to_string()
@@ -344,6 +346,8 @@ def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) 
 
     # Handle Polars DataFrame
     if hasattr(df, "to_pandas"):
+        if sample_count is not None and len(df) > sample_count:
+            df = df.head(sample_count)
         return df.to_pandas().to_string()
 
     # Fallback to str() if we can't determine the type
