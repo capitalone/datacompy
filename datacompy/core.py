@@ -177,8 +177,7 @@ class Compare(BaseCompare):
         if self.sensitive_columns_df1:
             cols_to_hash = [col for col in self.sensitive_columns_df1 if col in df1.columns]
             if cols_to_hash:
-                df1.loc[:, cols_to_hash] = df1.loc[:, cols_to_hash].astype(str).map(lambda v: hashlib.sha256(((v+self.salt)).encode('utf-8')).hexdigest())
-
+                df1.loc[:, cols_to_hash] = df1.loc[:, cols_to_hash].astype(str).map(lambda v: hashlib.sha256(((v + self.salt)).encode('utf-8')).hexdigest())
         self._df1 = df1
         self._validate_dataframe(
             "df1", cast_column_names_lower=self.cast_column_names_lower
@@ -199,8 +198,7 @@ class Compare(BaseCompare):
         if self.sensitive_columns_df2:
             cols_to_hash = [col for col in self.sensitive_columns_df2 if col in df2.columns]
             if cols_to_hash:
-                df2.loc[:, cols_to_hash] = df2.loc[:, cols_to_hash].astype(str).map(lambda v: hashlib.sha256((v+self.salt).encode('utf-8')).hexdigest())
-
+                df2.loc[:, cols_to_hash] = df2.loc[:, cols_to_hash].astype(str).map(lambda v: hashlib.sha256((v + self.salt).encode('utf-8')).hexdigest())
         self._df2 = df2
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
