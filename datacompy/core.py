@@ -170,7 +170,7 @@ class Compare(BaseCompare):
     @df1.setter
     def df1(self, df1: pd.DataFrame) -> None:
         """Set df1.
-        
+
         First, hash any sensitive columns
         Then, that it is a dataframe and has the join columns.
         """
@@ -178,6 +178,7 @@ class Compare(BaseCompare):
             cols_to_hash = [col for col in self.sensitive_columns_df1 if col in df1.columns]
             if cols_to_hash:
                 df1.loc[:, cols_to_hash] = df1.loc[:, cols_to_hash].astype(str).map(lambda v: hashlib.sha256(((v+self.salt)).encode('utf-8')).hexdigest())
+
         self._df1 = df1
         self._validate_dataframe(
             "df1", cast_column_names_lower=self.cast_column_names_lower
@@ -191,7 +192,7 @@ class Compare(BaseCompare):
     @df2.setter
     def df2(self, df2: pd.DataFrame) -> None:
         """Set df2.
-        
+
         First, hash any sensitive columns
         Then, that it is a dataframe and has the join columns.
         """
@@ -199,6 +200,7 @@ class Compare(BaseCompare):
             cols_to_hash = [col for col in self.sensitive_columns_df2 if col in df2.columns]
             if cols_to_hash:
                 df2.loc[:, cols_to_hash] = df2.loc[:, cols_to_hash].astype(str).map(lambda v: hashlib.sha256((v+self.salt).encode('utf-8')).hexdigest())
+
         self._df2 = df2
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
