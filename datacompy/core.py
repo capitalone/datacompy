@@ -169,8 +169,11 @@ class Compare(BaseCompare):
 
     @df1.setter
     def df1(self, df1: pd.DataFrame) -> None:
-        """First, hash any sensitive columns
-        Then, that it is a dataframe and has the join columns."""
+        """Set df1.
+        
+        First, hash any sensitive columns
+        Then, that it is a dataframe and has the join columns.
+        """
         if self.sensitive_columns_df1:
             cols_to_hash = [col for col in self.sensitive_columns_df1 if col in df1.columns]
             if cols_to_hash:
@@ -187,8 +190,11 @@ class Compare(BaseCompare):
 
     @df2.setter
     def df2(self, df2: pd.DataFrame) -> None:
-        """First, hash any sensitive columns
-        Then, that it is a dataframe and has the join columns."""
+        """Set df2.
+        
+        First, hash any sensitive columns
+        Then, that it is a dataframe and has the join columns.
+        """
         if self.sensitive_columns_df2:
             cols_to_hash = [col for col in self.sensitive_columns_df2 if col in df2.columns]
             if cols_to_hash:
