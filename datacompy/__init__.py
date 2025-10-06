@@ -18,10 +18,12 @@ Originally started to be something of a replacement for SAS's PROC COMPARE for P
 Then extended to carry that functionality over to Spark Dataframes.
 """
 
-__version__ = "0.17.1"
+__version__ = "0.18.1"
 
+import logging
 import platform
-from warnings import warn
+
+logger = logging.getLogger(__name__)
 
 from datacompy.base import (
     BaseCompare,
@@ -79,9 +81,7 @@ major = platform.python_version_tuple()[0]
 minor = platform.python_version_tuple()[1]
 
 if major == "3" and minor >= "12":
-    warn(
+    logger.warning(
         "Python 3.12 and above currently is not supported by Spark and Ray. "
-        "Please note that some functionality will not work and currently is not supported.",
-        UserWarning,
-        stacklevel=2,
+        "Please note that some functionality will not work and currently is not supported."
     )

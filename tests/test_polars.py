@@ -1193,6 +1193,8 @@ MAX_DIFF_DF = pl.DataFrame(
         "strings": ["1", "1", "1", "1.1", "1"],
         "mixed_strings": ["1", "1", "1", "2", "some string"],
         "infinity": [1, 1, 1, 1, np.inf],
+        "nulls": [None, None, None, None, None],
+        "some_nulls": [10, 10, 10, None, None],
     },
     strict=False,
 )
@@ -1209,6 +1211,8 @@ MAX_DIFF_DF = pl.DataFrame(
         ("strings", 0.1),
         ("mixed_strings", 0),
         ("infinity", np.inf),
+        ("nulls", 1),
+        ("some_nulls", 9),
     ],
 )
 def test_calculate_max_diff(column, expected):

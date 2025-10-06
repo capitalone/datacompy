@@ -1045,7 +1045,10 @@ def calculate_max_diff(col_1: pl.Series, col_2: pl.Series) -> float:
     """
     try:
         return cast(
-            float, (col_1.cast(pl.Float64) - col_2.cast(pl.Float64)).abs().max()
+            float,
+            (col_1.cast(pl.Float64).fill_null(0) - col_2.cast(pl.Float64).fill_null(0))
+            .abs()
+            .max(),
         )
     except Exception:
         return 0.0
