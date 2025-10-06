@@ -2057,3 +2057,47 @@ def test_mixed_tolerances() -> None:
     )  # large_vals should match (rel_tol 0.001 = 0.1%)
     assert compare._rel_tol_dict == {"large_vals": 0.001, "default": 0.0}
     assert compare._abs_tol_dict == {"small_vals": 0.2, "default": 0.0}
+
+
+def test_sensitive_columns():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.Compare(df1, df2, join_columns=["a"], sensitive_columns_df1=['b'], sensitive_columns_df2=['b'])
+    assert compare.df1.loc[0, 'b'] != 2
+    assert compare.df1.loc[1, 'b'] != 0
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_as_join_columns():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.Compare(df1, df2, join_columns=["a"], sensitive_columns_df1=['a'], sensitive_columns_df2=['a'])
+    assert compare.df1.loc[0, 'a'] != 1
+    assert compare.df1.loc[1, 'a'] != 1
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_with_salt():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.Compare(df1, df2, join_columns=["a"], sensitive_columns_df1=['b'], sensitive_columns_df2=['b'], salt="test_salt")
+    assert compare.df1.loc[0, 'b'] != 2
+    assert compare.df1.loc[1, 'b'] != 0
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_as_join_columns_with_salt():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.Compare(df1, df2, join_columns=["a"], sensitive_columns_df1=['a'], sensitive_columns_df2=['a'], salt="test_salt")
+    assert compare.df1.loc[0, 'a'] != 1
+    assert compare.df1.loc[1, 'a'] != 1
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
