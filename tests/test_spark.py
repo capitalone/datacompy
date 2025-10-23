@@ -19,7 +19,6 @@ Testing out the datacompy functionality
 
 import logging
 import os
-import sys
 import tempfile
 from datetime import datetime
 from decimal import Decimal
@@ -29,6 +28,9 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
+
+pytest.importorskip("pyspark")
+
 from datacompy.spark import (
     SparkSQLCompare,
     _generate_id_within_group,
@@ -47,11 +49,6 @@ from pyspark.sql.types import (
     StructType,
 )
 from pytest import raises
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
-pd.DataFrame.iteritems = pd.DataFrame.items  # Pandas 2+ compatability
-np.bool = np.bool_  # Numpy 1.24.3+ comptability
 
 
 def test_numeric_columns_equal_abs(spark_session):
