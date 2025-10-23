@@ -54,7 +54,7 @@ optional-dependencies.docs = [ "furo", "myst-parser", "sphinx" ]
 optional-dependencies.edgetest = [ "edgetest", "edgetest-conda" ]
 optional-dependencies.qa = [ "mypy", "pandas-stubs", "pre-commit", "ruff==0.5.7" ]
 optional-dependencies.snowflake = [ "snowflake-snowpark-python>=1.26,<=1.33" ]
-optional-dependencies.spark = [ "pyspark[connect]<=4,>=4" ]
+optional-dependencies.spark = [ "pyspark[connect]==4.0.*" ]
 optional-dependencies.tests = [
   "pytest",
   "pytest-cov",
@@ -142,14 +142,13 @@ ignore_missing_imports = true
 
 [edgetest.envs.core]
 python_version = "3.10"
-conda_install = [ "openjdk=8" ]
-extras = [ "dev" ]
-command = "pytest tests/ --ignore=tests/test_snowflake.py"
+conda_install = [ "openjdk=17" ]
+extras = [ "spark, qa, tests, tests-spark" ]
+command = "pytest"
 upgrade = [
   "pandas",
   "numpy",
   "ordered-set",
   "polars[pandas]",
   "pyspark[connect]",
-  "snowflake-snowpark-python",
 ]
