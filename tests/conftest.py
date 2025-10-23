@@ -7,7 +7,7 @@ import pytest
 try:
     from snowflake.snowpark.session import Session
 except ModuleNotFoundError:
-    pass
+    Session = None  # type: ignore
 
 CONNECTION_PARAMETERS = {
     "account": os.environ.get("SF_ACCOUNT"),
@@ -20,7 +20,7 @@ CONNECTION_PARAMETERS = {
 
 
 @pytest.fixture(scope="module")
-def snowflake_session(request) -> Session:
+def snowflake_session(request) -> Session:  # type: ignore
     if request.config.getoption("--snowflake-session") == "local":
         return Session.builder.config("local_testing", True).create()
     else:
