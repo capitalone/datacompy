@@ -47,6 +47,7 @@ optional-dependencies.dev = [
   "datacompy[qa]",
   "datacompy[snowflake]",
   "datacompy[spark]",
+  "datacompy[tests-spark]",
   "datacompy[tests]",
 ]
 optional-dependencies.docs = [ "furo", "myst-parser", "sphinx" ]
@@ -57,6 +58,8 @@ optional-dependencies.spark = [ "pyspark[connect]<=4,>=4" ]
 optional-dependencies.tests = [
   "pytest",
   "pytest-cov",
+]
+optional-dependencies.tests-spark = [
   "pytest-spark",
 ]
 urls."Bug Tracker" = "https://github.com/capitalone/datacompy/issues"
