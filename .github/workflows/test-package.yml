@@ -5,9 +5,10 @@ name: Test package
 
 on:
   push:
-    branches: [develop, main]
+    branches: [develop, main, "release/*", "release-*"]
   pull_request:
     branches: [develop, main]
+  workflow_dispatch:
 
 permissions:
   contents: read
