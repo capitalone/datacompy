@@ -7,7 +7,7 @@ on:
   push:
     branches: [develop, main, "release/*", "release-*"]
   pull_request:
-    branches: [develop, main]
+    branches: [develop, main, "release/*", "release-*"]
   workflow_dispatch:
 
 permissions:
