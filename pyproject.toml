@@ -34,6 +34,7 @@ classifiers = [
 dynamic = [ "version" ]
 
 dependencies = [
+  "codeflash",
   "jinja2>=3",
   "numpy>=1.22,<=2.2.6; python_version=='3.10'",
   "numpy>=1.22,<=2.3.3; python_version>='3.11'",
@@ -173,3 +174,6 @@ tests-root = "tests"
 test-framework = "pytest"
 ignore-paths = []
 formatter-cmds = ["disabled"]
+
+[tool.uv.sources]
+codeflash = { path = "../codeflash", editable = true }
