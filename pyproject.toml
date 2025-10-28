@@ -166,14 +166,3 @@ upgrade = [
   "ordered-set",
   "polars[pandas]",
 ]
-
-[tool.codeflash]
-# All paths are relative to this pyproject.toml's directory.
-module-root = "datacompy"
-tests-root = "tests"
-test-framework = "pytest"
-ignore-paths = []
-formatter-cmds = ["disabled"]
-
-[tool.uv.sources]
-codeflash = { path = "../codeflash", editable = true }
