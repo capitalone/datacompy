@@ -34,7 +34,6 @@ classifiers = [
 dynamic = [ "version" ]
 
 dependencies = [
-  "codeflash",
   "jinja2>=3",
   "numpy>=1.22,<=2.2.6; python_version=='3.10'",
   "numpy>=1.22,<=2.3.3; python_version>='3.11'",
