@@ -25,3 +25,6 @@ docs/source/api/
 .tmp/
 
 test.html
+
+.coverage
+coverage.xml

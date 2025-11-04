@@ -25,19 +25,24 @@ import logging
 from copy import deepcopy
 from typing import Any, Dict, List, cast
 
-import numpy as np
 import polars as pl
 from ordered_set import OrderedSet
 
 from datacompy.base import (
     BaseCompare,
-    _validate_tolerance_parameter,
     df_to_str,
     get_column_tolerance,
     render,
     save_html_report,
     temp_column_name,
+    validate_tolerance_parameter,
 )
+from datacompy.comparator import (
+    PolarsArrayLikeComparator,
+    PolarsNumericComparator,
+    PolarsStringComparator,
+)
+from datacompy.comparator.string import polars_normalize_string_column
 
 LOG = logging.getLogger(__name__)
 
@@ -106,10 +111,10 @@ class PolarsCompare(BaseCompare):
         self.cast_column_names_lower = cast_column_names_lower
 
         # Validate tolerance parameters first
-        self._abs_tol_dict = _validate_tolerance_parameter(
+        self._abs_tol_dict = validate_tolerance_parameter(
             abs_tol, "abs_tol", "lower" if cast_column_names_lower else "preserve"
         )
-        self._rel_tol_dict = _validate_tolerance_parameter(
+        self._rel_tol_dict = validate_tolerance_parameter(
             rel_tol, "rel_tol", "lower" if cast_column_names_lower else "preserve"
         )
 
@@ -289,12 +294,12 @@ class PolarsCompare(BaseCompare):
         if ignore_spaces:
             for column in self.join_columns:
                 df1 = df1.with_columns(
-                    normalize_string_column(
+                    polars_normalize_string_column(
                         df1[column], ignore_spaces=ignore_spaces, ignore_case=False
                     )
                 )
                 df2 = df2.with_columns(
-                    normalize_string_column(
+                    polars_normalize_string_column(
                         df2[column], ignore_spaces=ignore_spaces, ignore_case=False
                     )
                 )
@@ -926,80 +931,27 @@ def columns_equal(
     """
     compare: pl.Series
 
-    col_1 = normalize_string_column(col_1, ignore_spaces, ignore_case)
-    col_2 = normalize_string_column(col_2, ignore_spaces, ignore_case)
+    if (compare := PolarsArrayLikeComparator().compare(col_1, col_2)) is not None:
+        return compare
 
+    # compare numeric values
     if (
-        (str(col_1.dtype) in STRING_TYPE and str(col_2.dtype) in STRING_TYPE)
-        or (col_1.dtype.is_temporal() and col_2.dtype.is_temporal())
-        or (
-            str(col_1.dtype.base_type()) in LIST_TYPE
-            and str(col_2.dtype.base_type()) in LIST_TYPE
+        compare := PolarsNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
+            col_1, col_2
         )
-    ):
-        compare = pl.Series(
-            (col_1.eq_missing(col_2)) | (col_1.is_null() & col_2.is_null())
-        )
-    elif (str(col_1.dtype) in STRING_TYPE and str(col_2.dtype).startswith("Date")) or (
-        str(col_1.dtype).startswith("Date") and str(col_2.dtype) in STRING_TYPE
-    ):
-        compare = compare_string_and_date_columns(col_1, col_2)
-    else:
-        try:
-            compare = pl.Series(
-                np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
-            )
-        except TypeError:
-            try:
-                compare = pl.Series(
-                    np.isclose(
-                        col_1.cast(pl.Float64, strict=True),
-                        col_2.cast(pl.Float64, strict=True),
-                        rtol=rel_tol,
-                        atol=abs_tol,
-                        equal_nan=True,
-                    )
-                )
-            except Exception:
-                try:  # last check where we just cast to strings
-                    compare = pl.Series(col_1.cast(pl.String) == col_2.cast(pl.String))
-                except Exception:  # Blanket exception should just return all False
-                    compare = pl.Series(False * col_1.shape[0])
+    ) is not None:
+        return compare
+
+    # compare strings
+    if (
+        compare := PolarsStringComparator(
+            ignore_case=ignore_case, ignore_space=ignore_spaces
+        ).compare(col_1, col_2)
+    ) is not None:
+        return compare
+
+    compare = pl.Series([False] * col_1.shape[0])
     return compare
-
-
-def compare_string_and_date_columns(col_1: pl.Series, col_2: pl.Series) -> pl.Series:
-    """Compare a string column and date column, value-wise.
-
-    This tries to convert a string column to a date column and compare that way.
-
-    Parameters
-    ----------
-    col_1 : Polars.Series
-        The first column to look at
-    col_2 : Polars.Series
-        The second column
-
-    Returns
-    -------
-    Polars.Series
-        A series of Boolean values.  True == the values match, False == the
-        values don't match.
-    """
-    if str(col_1.dtype) in STRING_TYPE:
-        str_column = col_1
-        date_column = col_2
-    else:
-        str_column = col_2
-        date_column = col_1
-
-    try:  # datetime is inferred
-        return pl.Series(
-            (str_column.str.to_datetime(strict=False).eq_missing(date_column))
-            | (str_column.is_null() & date_column.is_null())
-        )
-    except Exception:
-        return pl.Series([False] * col_1.shape[0])
 
 
 def get_merged_columns(
@@ -1099,34 +1051,3 @@ def generate_id_within_group(
         return dataframe.select(
             rn=pl.col(dataframe.columns[0]).cum_count().over(join_columns)
         ).to_series()
-
-
-def normalize_string_column(
-    column: pl.Series, ignore_spaces: bool, ignore_case: bool
-) -> pl.Series:
-    """Normalize a string column by converting to upper case and stripping whitespace.
-
-    Parameters
-    ----------
-    column : pl.Series
-        The column to normalize
-    ignore_spaces : bool
-        Whether to ignore spaces when normalizing
-    ignore_case : bool
-        Whether to ignore case when normalizing
-
-    Returns
-    -------
-    pl.Series
-        The normalized column
-
-    Notes
-    -----
-    Will not operate on categorical columns.
-    """
-    if str(column.dtype.base_type()) in STRING_TYPE:
-        if ignore_spaces:
-            column = column.str.strip_chars()
-        if ignore_case:
-            column = column.str.to_uppercase()
-    return column

@@ -28,7 +28,7 @@ jobs:
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '8'
+          java-version: '17'
           distribution: 'adopt'
 
       - name: Install edgetest
@@ -36,7 +36,7 @@ jobs:
         run: |
           conda install pip
           conda install edgetest edgetest-conda
-          python -m pip install .[dev]
+          python -m pip install ."[spark, qa, tests, tests-spark]"
 
       - name: Run edgetest
         shell: bash -el {0}

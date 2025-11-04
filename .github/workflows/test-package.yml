@@ -5,9 +5,10 @@ name: Test package
 
 on:
   push:
-    branches: [develop, main]
+    branches: [develop, main, "release/*", "release-*"]
   pull_request:
-    branches: [develop, main]
+    branches: [develop, main, "release/*", "release-*"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -28,110 +29,58 @@ jobs:
       - name: Formatting by ruff
         run: ruff format --check
 
-  test-spark-install:
+  test-with-spark-install:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11"]
-        spark-version: [3.4.4, 3.5.6]
-        pandas-version: [2.3.2, 1.5.3]
-        numpy-version: [2.3.3, 1.26.4]
-        exclude:
-          - pandas-version: 1.5.3
-            numpy-version: 2.3.3
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        spark-version: [4.0.1]
 
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SPARK_VERSION: ${{ matrix.spark-version }}
-      PANDAS_VERSION: ${{ matrix.pandas-version }}
-      NUMPY_VERSION: ${{ matrix.numpy-version }}
 
     steps:
       - uses: actions/checkout@v3
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Setup Java JDK
         uses: actions/setup-java@v3
         with:
-          java-version: "8"
+          java-version: "17"
           distribution: "adopt"
-
-      - name: Install Spark, Pandas, and Numpy
+      - name: Install pyspark
         run: |
           python -m pip install pyspark[connect]==${{ matrix.spark-version }}
-          python -m pip install pandas==${{ matrix.pandas-version }}
-
-      - name: Install numpy<=2.2.6 if Python 3.10 and matrix.numpy-version == 2.3.3
-        if: ${{ matrix.python-version == '3.10' &&  matrix.numpy-version == '2.3.3' }}
-        run: |
-          python -m pip install numpy==2.2.6
-
-      - name: Install numpy if Python 3.11 or (3.10 and matrix.numpy-version == 1.26.4)
-        if: ${{ (matrix.python-version == '3.11') || ( matrix.python-version == '3.10' && matrix.numpy-version == '1.26.4' ) }}
-        run: |
-          python -m pip install numpy==${{ matrix.numpy-version }}
-
       - name: Install datacompy
         run: |
-          python -m pip install .[spark,tests-spark]
-
+          python -m pip install ."[spark, qa, tests, tests-spark]"
       - name: Test with pytest
         run: |
-          python -m pytest tests/test_spark
+          python -m pytest --cov=datacompy --cov-report=xml --cov-report=term-missing
 
-
-  test-bare-install:
+  test-basic-install:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
 
     steps:
       - uses: actions/checkout@v3
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Install datacompy
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install .[tests]
+          python -m pip install ."[tests, qa]"
       - name: Test with pytest
         run: |
-          python -m pytest tests/ --ignore=tests/test_snowflake.py
-
-  test-fugue-install-no-spark:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11"]
-    env:
-      PYTHON_VERSION: ${{ matrix.python-version }}
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install datacompy
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install .[tests,fugue]
-      - name: Test with pytest
-        run: |
-          python -m pytest tests/ --ignore=tests/test_snowflake.py
+          python -m pytest --cov=datacompy --cov-report=xml --cov-report=term-missing

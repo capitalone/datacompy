@@ -25,24 +25,29 @@ import hashlib
 import logging
 from typing import Any, Dict, List, cast
 
-import numpy as np
 import pandas as pd
 from ordered_set import OrderedSet
 
 from datacompy.base import (
     BaseCompare,
-    _validate_tolerance_parameter,
     df_to_str,
     get_column_tolerance,
     render,
     save_html_report,
     temp_column_name,
+    validate_tolerance_parameter,
 )
+from datacompy.comparator import (
+    PandasArrayLikeComparator,
+    PandasNumericComparator,
+    PandasStringComparator,
+)
+from datacompy.comparator.string import pandas_normalize_string_column
 
 LOG = logging.getLogger(__name__)
 
 
-class Compare(BaseCompare):
+class PandasCompare(BaseCompare):
     """Comparison class to be used to compare whether two dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
@@ -92,9 +97,9 @@ class Compare(BaseCompare):
 
     Attributes
     ----------
-    df1_unq_rows : pandas ``DataFrame``
+    df1_unq_rows : pd.DataFrame
         All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : pandas ``DataFrame``
+    df2_unq_rows : pd.DataFrame
         All records that are only in df2 (based on a join on join_columns)
     """
 
@@ -118,10 +123,10 @@ class Compare(BaseCompare):
         self.cast_column_names_lower = cast_column_names_lower
 
         # Validate tolerance parameters first
-        self._abs_tol_dict = _validate_tolerance_parameter(
+        self._abs_tol_dict = validate_tolerance_parameter(
             abs_tol, "abs_tol", "lower" if cast_column_names_lower else "preserve"
         )
-        self._rel_tol_dict = _validate_tolerance_parameter(
+        self._rel_tol_dict = validate_tolerance_parameter(
             rel_tol, "rel_tol", "lower" if cast_column_names_lower else "preserve"
         )
 
@@ -335,10 +340,10 @@ class Compare(BaseCompare):
             params = {"on": self.join_columns}
 
         for column in self.join_columns:
-            self.df1[column] = normalize_string_column(
+            self.df1[column] = pandas_normalize_string_column(
                 self.df1[column], ignore_spaces=ignore_spaces, ignore_case=False
             )
-            self.df2[column] = normalize_string_column(
+            self.df2[column] = pandas_normalize_string_column(
                 self.df2[column], ignore_spaces=ignore_spaces, ignore_case=False
             )
 
@@ -999,107 +1004,36 @@ def columns_equal(
         A series of Boolean values.  True == the values match, False == the
         values don't match.
     """
-    default_value = "DATACOMPY_NULL"
     compare: pd.Series[bool]
 
-    col_1 = normalize_string_column(
-        col_1, ignore_spaces=ignore_spaces, ignore_case=ignore_case
-    )
-    col_2 = normalize_string_column(
-        col_2, ignore_spaces=ignore_spaces, ignore_case=ignore_case
-    )
+    # order of comparators is important here, as we want to
+    # check for mixed types first, then arrays,  then numeric, and finally then strings as a catch all
+    # compare arrays or lists
+    if (compare := PandasArrayLikeComparator().compare(col_1, col_2)) is not None:
+        compare.index = col_1.index
+        return compare
 
-    # Rest of comparison logic using rel_tol and abs_tol
-    # short circuit if comparing mixed type columns. Check list/arrrays or just return false for everything else.
-    if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(
-        col_2
-    ).startswith("mixed"):
-        if all(isinstance(item, list | np.ndarray) for item in col_1) and all(
-            isinstance(item, list | np.ndarray) for item in col_2
-        ):  # compare list like
-            # join together and apply np.array_equal
-            temp_df = pd.DataFrame({"col_1": col_1, "col_2": col_2})
-            compare = temp_df.apply(
-                lambda row: np.array_equal(row.col_1, row.col_2, equal_nan=True), axis=1
-            )
-        else:
-            compare = pd.Series(False, index=col_1.index)
-    elif pd.api.types.is_string_dtype(col_1) and pd.api.types.is_string_dtype(col_2):
-        try:
-            compare = pd.Series(
-                (col_1.fillna(default_value) == col_2.fillna(default_value))
-                | (col_1.isnull() & col_2.isnull())
-            )
-        except TypeError:
-            compare = pd.Series(col_1.astype(str) == col_2.astype(str))
-    elif {col_1.dtype.kind, col_2.dtype.kind} == {"M", "O"}:
-        compare = compare_string_and_date_columns(col_1, col_2)
-    else:
-        try:
-            compare = pd.Series(
-                np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
-            )
-        except TypeError:
-            try:
-                compare = pd.Series(
-                    np.isclose(
-                        col_1.astype(float),
-                        col_2.astype(float),
-                        rtol=rel_tol,
-                        atol=abs_tol,
-                        equal_nan=True,
-                    )
-                )
-            except Exception:
-                try:  # last check where we just cast to strings
-                    compare = pd.Series(col_1.astype(str) == col_2.astype(str))
-                except Exception:  # Blanket exception should just return all False
-                    compare = pd.Series(False, index=col_1.index)
+    # compare numeric values
+    if (
+        compare := PandasNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
+            col_1, col_2
+        )
+    ) is not None:
+        compare.index = col_1.index
+        return compare
+
+    # compare strings
+    if (
+        compare := PandasStringComparator(
+            ignore_case=ignore_case, ignore_space=ignore_spaces
+        ).compare(col_1, col_2)
+    ) is not None:
+        compare.index = col_1.index
+        return compare
+
+    compare = pd.Series(False, index=col_1.index)
     compare.index = col_1.index
     return compare
-
-
-def compare_string_and_date_columns(
-    col_1: "pd.Series[Any]", col_2: "pd.Series[Any]"
-) -> "pd.Series[bool]":
-    """Compare a string column and date column, value-wise.
-
-    This tries to
-    convert a string column to a date column and compare that way.
-
-    Parameters
-    ----------
-    col_1 : Pandas.Series
-        The first column to look at
-    col_2 : Pandas.Series
-        The second column
-
-    Returns
-    -------
-    pandas.Series
-        A series of Boolean values.  True == the values match, False == the
-        values don't match.
-    """
-    if col_1.dtype.kind == "O":
-        obj_column = col_1
-        date_column = col_2
-    else:
-        obj_column = col_2
-        date_column = col_1
-
-    try:
-        return pd.Series(
-            (pd.to_datetime(obj_column) == date_column)
-            | (obj_column.isnull() & date_column.isnull())
-        )
-    except Exception:
-        try:
-            return pd.Series(
-                (pd.to_datetime(obj_column, format="mixed") == date_column)
-                | (obj_column.isnull() & date_column.isnull())
-            )
-        except Exception:
-            return pd.Series(False, index=col_1.index)
 
 
 def get_merged_columns(
@@ -1182,35 +1116,3 @@ def generate_id_within_group(
         )
     else:
         return dataframe[join_columns].groupby(join_columns).cumcount()
-
-
-def normalize_string_column(
-    column: pd.Series, ignore_spaces: bool, ignore_case: bool
-) -> pd.Series:
-    """Normalize a string column by converting to upper case and stripping whitespace.
-
-    Parameters
-    ----------
-    column : pd.Series
-        The column to normalize
-    ignore_spaces : bool
-        Whether to ignore spaces when normalizing
-    ignore_case : bool
-        Whether to ignore case when normalizing
-
-    Returns
-    -------
-    pd.Series
-        The normalized column
-
-    Notes
-    -----
-    Will not operate on categorical columns.
-    """
-    if (column.dtype.kind == "O" and pd.api.types.infer_dtype(column) == "string") or (
-        pd.api.types.is_string_dtype(column)
-        and not isinstance(column.dtype, pd.CategoricalDtype)
-    ):
-        column = column.str.strip() if ignore_spaces else column
-        column = column.str.upper() if ignore_case else column
-    return column

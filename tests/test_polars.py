@@ -27,22 +27,19 @@ from decimal import Decimal
 from unittest import mock
 
 import numpy as np
-import pytest
-from pytest import raises
-
-pytest.importorskip("polars")
-
 import polars as pl
+import pytest
 from datacompy import PolarsCompare
+from datacompy.comparator.string import polars_normalize_string_column
 from datacompy.polars import (
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
-    normalize_string_column,
     temp_column_name,
 )
 from polars.exceptions import ComputeError, DuplicateError, SchemaError
 from polars.testing import assert_frame_equal, assert_series_equal
+from pytest import raises
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -1494,7 +1491,7 @@ def test_string_as_numeric():
 
 def test_single_date_columns_equal_to_string():
     data = """a|b|expected
-2017-01-01|2017-01-01   |True
+2017-01-01|2017-01-01   |False
 2017-01-02  |2017-01-02|True
 2017-10-01  |2017-10-10   |False
 2017-01-01||False
@@ -1509,7 +1506,9 @@ def test_single_date_columns_equal_to_string():
     col_a = df["a"].str.strip_chars().str.to_date(strict=False)
     col_b = df["b"]
 
-    actual_out = columns_equal(col_a, col_b, rel_tol=0.2, ignore_spaces=True)
+    actual_out = columns_equal(
+        col_a, col_b, rel_tol=0.2, ignore_spaces=True
+    )  # ignore_spaces is ignored
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -1757,7 +1756,7 @@ def test_columns_equal_lists():
     ],
 )
 def test_normalize_string_column(input_data, ignore_spaces, ignore_case, expected):
-    result = normalize_string_column(
+    result = polars_normalize_string_column(
         input_data, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
     assert_series_equal(result, expected, check_names=False)
