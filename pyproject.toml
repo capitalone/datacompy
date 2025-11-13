@@ -38,7 +38,7 @@ dependencies = [
   "numpy>=1.22,<=2.2.6; python_version=='3.10'",
   "numpy>=1.22,<=2.3.4; python_version>='3.11'",
   "ordered-set>=4.0.2,<=4.1",
-  "pandas>=0.25,<=2.3.3",
+  "pandas>=2.2,<=2.3.3",
   "polars[pandas]>=0.20.4,<=1.35.2",
 ]
 optional-dependencies.build = [ "build", "twine", "wheel" ]
