@@ -23,6 +23,7 @@ two dataframes.
 
 import logging
 from copy import deepcopy
+from functools import wraps
 from typing import Any, Dict, List, Tuple
 
 import pandas as pd
@@ -87,15 +88,22 @@ except ImportError:
     _SPARK_AVAILABLE = False
 
 
-def _check_spark_available() -> None:
-    """Check that the spark extra is installed."""
-    if not _SPARK_AVAILABLE:
-        raise ImportError(
-            "The 'spark' extra is not installed. Please install it to use SparkSQLCompare, "
-            "e.g. `pip install datacompy[spark]`"
-        )
+def check_spark_available(func):
+    """Check that the 'spark' extra is installed."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not _SPARK_AVAILABLE:
+            raise ImportError(
+                "The 'spark' extra is not installed. Please install it to use SparkSQLCompare, "
+                "e.g. `pip install datacompy[spark]`"
+            )
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
+@check_spark_available
 class SparkSQLCompare(BaseCompare):
     """Comparison class to be used to compare whether two Spark SQL dataframes are equal.
 
@@ -160,7 +168,6 @@ class SparkSQLCompare(BaseCompare):
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
     ) -> None:
-        _check_spark_available()
         self.cast_column_names_lower = cast_column_names_lower
 
         # Validate tolerance parameters first
@@ -1066,6 +1073,7 @@ class SparkSQLCompare(BaseCompare):
         return report
 
 
+@check_spark_available
 def columns_equal(
     dataframe: "pyspark.sql.DataFrame",
     col_1: str,
@@ -1128,7 +1136,6 @@ def columns_equal(
     Starting in version 0.18.0, the behavior of this function was changed so rather than returning
     a DataFrame a Column expression is returned.
     """
-    _check_spark_available()
     base_dtype, compare_dtype = _get_column_dtypes(dataframe, col_1, col_2)
     if _is_comparable(base_dtype, compare_dtype):
         if (base_dtype in NUMERIC_SPARK_TYPES) and (
@@ -1169,6 +1176,7 @@ def columns_equal(
         return lit(False)
 
 
+@check_spark_available
 def get_merged_columns(
     original_df: "pyspark.sql.DataFrame",
     merged_df: "pyspark.sql.DataFrame",
@@ -1191,7 +1199,6 @@ def get_merged_columns(
     List[str]
         Column list of the original dataframe pre suffix
     """
-    _check_spark_available()
     columns = []
     for col in original_df.columns:
         if col in merged_df.columns:
@@ -1203,6 +1210,7 @@ def get_merged_columns(
     return columns
 
 
+@check_spark_available
 def calculate_max_diff(
     dataframe: "pyspark.sql.DataFrame", col_1: str, col_2: str
 ) -> float:
@@ -1222,7 +1230,6 @@ def calculate_max_diff(
     float
         max diff
     """
-    _check_spark_available()
     diff = dataframe.select(
         (col(col_1).astype("float") - col(col_2).astype("float")).alias("diff")
     )
@@ -1239,6 +1246,7 @@ def calculate_max_diff(
         return max_diff
 
 
+@check_spark_available
 def calculate_null_diff(
     dataframe: "pyspark.sql.DataFrame", col_1: str, col_2: str
 ) -> int:
@@ -1258,7 +1266,6 @@ def calculate_null_diff(
     int
         null diff
     """
-    _check_spark_available()
     nulls_df = dataframe.withColumn(
         "col_1_null",
         when(col(col_1).isNull() == True, lit(True)).otherwise(  # noqa: E712

@@ -24,6 +24,7 @@ two dataframes.
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
+from functools import wraps
 from typing import Any, Dict, List, Union, cast
 
 from ordered_set import OrderedSet
@@ -84,13 +85,19 @@ except ImportError:
     _SNOWFLAKE_AVAILABLE = False
 
 
-def _check_snowflake_available() -> None:
-    """Check that the snowflake extra is installed."""
-    if not _SNOWFLAKE_AVAILABLE:
-        raise ImportError(
-            "The 'snowflake' extra is not installed. Please install it to use SnowflakeCompare, "
-            "e.g. `pip install datacompy[snowflake]`"
-        )
+def check_snowflake_available(func):
+    """Check that the 'snowflake' extra is installed."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not _SNOWFLAKE_AVAILABLE:
+            raise ImportError(
+                "The 'snowflake' extra is not installed. Please install it to use this functionality, "
+                "e.g. `pip install datacompy[snowflake]`"
+            )
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 class SnowflakeCompare(BaseCompare):
@@ -137,6 +144,7 @@ class SnowflakeCompare(BaseCompare):
         All records that are only in df2 (based on a join on join_columns)
     """
 
+    @check_snowflake_available
     def __init__(
         self,
         session: "sp.Session",
@@ -149,8 +157,6 @@ class SnowflakeCompare(BaseCompare):
         df2_name: str | None = None,
         ignore_spaces: bool = False,
     ) -> None:
-        _check_snowflake_available()
-
         # Validate tolerance parameters first
         self._abs_tol_dict = _validate_tolerance_parameter(
             abs_tol, "abs_tol", case_mode="upper"
@@ -1055,6 +1061,7 @@ class SnowflakeCompare(BaseCompare):
         return report
 
 
+@check_snowflake_available
 def columns_equal(
     dataframe: "sp.DataFrame",
     col_1: str,
@@ -1099,7 +1106,6 @@ def columns_equal(
         A column of boolean values are added.  True == the values match, False == the
         values don't match.
     """
-    _check_snowflake_available()
     base_dtype_instance, compare_dtype_instance = _get_column_dtypes(
         dataframe, col_1, col_2
     )
@@ -1145,6 +1151,7 @@ def columns_equal(
     return dataframe
 
 
+@check_snowflake_available
 def get_merged_columns(
     original_df: "sp.DataFrame", merged_df: "sp.DataFrame", suffix: str
 ) -> List[str]:
@@ -1165,7 +1172,6 @@ def get_merged_columns(
     List[str]
         Column list of the original dataframe pre suffix
     """
-    _check_snowflake_available()
     columns = []
     for column in original_df.columns:
         if column in merged_df.columns:
@@ -1177,6 +1183,7 @@ def get_merged_columns(
     return columns
 
 
+@check_snowflake_available
 def calculate_max_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> float:
     """Get a maximum difference between two columns.
 
@@ -1194,7 +1201,6 @@ def calculate_max_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> flo
     float
         max diff
     """
-    _check_snowflake_available()
     # Attempting to coalesce maximum diff for non-numeric results in error, if error return 0 max diff.
     diff = dataframe.select(
         (col(col_1).astype("float") - col(col_2).astype("float")).alias("diff")
@@ -1208,6 +1214,7 @@ def calculate_max_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> flo
     return max_diff
 
 
+@check_snowflake_available
 def calculate_null_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> int:
     """Get the null differences between two columns.
 
@@ -1225,7 +1232,6 @@ def calculate_null_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> in
     int
         null diff
     """
-    _check_snowflake_available()
     nulls_df = dataframe.withColumn(
         "col_1_null",
         when(col(col_1).isNull() == True, lit(True)).otherwise(  # noqa: E712
