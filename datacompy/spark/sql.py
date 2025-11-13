@@ -59,35 +59,41 @@ try:
         upper,
         when,
     )
+
+    def decimal_comparator():
+        """Check equality with decimal(X, Y) types.
+
+        Otherwise treated as the string "decimal".
+        """
+
+        class DecimalComparator(str):
+            def __eq__(self, other):
+                return len(other) >= 7 and other[0:7] == "decimal"
+
+        return DecimalComparator("decimal")
+
+    NUMERIC_SPARK_TYPES = [
+        "tinyint",
+        "smallint",
+        "int",
+        "bigint",
+        "float",
+        "double",
+        decimal_comparator(),
+    ]
+    _SPARK_AVAILABLE = True
 except ImportError:
-    LOG.warning(
-        "Please note that you are missing the optional dependency: spark. "
-        "If you need to use this functionality it must be installed."
-    )
+    NUMERIC_SPARK_TYPES = []
+    _SPARK_AVAILABLE = False
 
 
-def decimal_comparator():
-    """Check equality with decimal(X, Y) types.
-
-    Otherwise treated as the string "decimal".
-    """
-
-    class DecimalComparator(str):
-        def __eq__(self, other):
-            return len(other) >= 7 and other[0:7] == "decimal"
-
-    return DecimalComparator("decimal")
-
-
-NUMERIC_SPARK_TYPES = [
-    "tinyint",
-    "smallint",
-    "int",
-    "bigint",
-    "float",
-    "double",
-    decimal_comparator(),
-]
+def _check_spark_available() -> None:
+    """Check that the spark extra is installed."""
+    if not _SPARK_AVAILABLE:
+        raise ImportError(
+            "The 'spark' extra is not installed. Please install it to use SparkSQLCompare, "
+            "e.g. `pip install datacompy[spark]`"
+        )
 
 
 class SparkSQLCompare(BaseCompare):
@@ -154,6 +160,7 @@ class SparkSQLCompare(BaseCompare):
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
     ) -> None:
+        _check_spark_available()
         self.cast_column_names_lower = cast_column_names_lower
 
         # Validate tolerance parameters first
@@ -1121,6 +1128,7 @@ def columns_equal(
     Starting in version 0.18.0, the behavior of this function was changed so rather than returning
     a DataFrame a Column expression is returned.
     """
+    _check_spark_available()
     base_dtype, compare_dtype = _get_column_dtypes(dataframe, col_1, col_2)
     if _is_comparable(base_dtype, compare_dtype):
         if (base_dtype in NUMERIC_SPARK_TYPES) and (
@@ -1183,6 +1191,7 @@ def get_merged_columns(
     List[str]
         Column list of the original dataframe pre suffix
     """
+    _check_spark_available()
     columns = []
     for col in original_df.columns:
         if col in merged_df.columns:
@@ -1213,6 +1222,7 @@ def calculate_max_diff(
     float
         max diff
     """
+    _check_spark_available()
     diff = dataframe.select(
         (col(col_1).astype("float") - col(col_2).astype("float")).alias("diff")
     )
@@ -1248,6 +1258,7 @@ def calculate_null_diff(
     int
         null diff
     """
+    _check_spark_available()
     nulls_df = dataframe.withColumn(
         "col_1_null",
         when(col(col_1).isNull() == True, lit(True)).otherwise(  # noqa: E712

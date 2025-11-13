@@ -35,11 +35,20 @@ try:
     import pyarrow as pa
     from fugue import AnyDataFrame
     from triad import Schema
+
+    _FUGUE_AVAILABLE = True
+
 except ImportError:
-    LOG.warning(
-        "Please note that you are missing the optional dependency: fugue. "
-        "If you need to use this functionality it must be installed."
-    )
+    _FUGUE_AVAILABLE = False
+
+
+def _check_fugue_available() -> None:
+    """Check that the fugue extra is installed."""
+    if not _FUGUE_AVAILABLE:
+        raise ImportError(
+            "The 'fugue' extra is not installed. Please install it to use the Fugue functionality,"
+            "e.g. `pip install datacompy[fugue]`"
+        )
 
 
 def unq_columns(df1: "AnyDataFrame", df2: "AnyDataFrame") -> OrderedSet[str]:
@@ -58,6 +67,7 @@ def unq_columns(df1: "AnyDataFrame", df2: "AnyDataFrame") -> OrderedSet[str]:
     OrderedSet
         Set of columns that are unique to df1
     """
+    _check_fugue_available()
     col1 = fa.get_column_names(df1)
     col2 = fa.get_column_names(df2)
     return cast(OrderedSet[str], OrderedSet(col1) - OrderedSet(col2))
@@ -79,6 +89,7 @@ def intersect_columns(df1: "AnyDataFrame", df2: "AnyDataFrame") -> OrderedSet[st
     OrderedSet
         Set of that are shared between the two dataframes
     """
+    _check_fugue_available()
     col1 = fa.get_column_names(df1)
     col2 = fa.get_column_names(df2)
     return OrderedSet(col1) & OrderedSet(col2)
@@ -100,6 +111,7 @@ def all_columns_match(df1: "AnyDataFrame", df2: "AnyDataFrame") -> bool:
     bool
         Boolean indicating whether the columns all match in the dataframes
     """
+    _check_fugue_available()
     return unq_columns(df1, df2) == unq_columns(df2, df1) == set()
 
 
@@ -160,6 +172,7 @@ def is_match(
     bool
         Returns boolean as to if the DataFrames match.
     """
+    _check_fugue_available()
     if (
         isinstance(df1, pd.DataFrame)
         and isinstance(df2, pd.DataFrame)
@@ -256,6 +269,7 @@ def all_rows_overlap(
         True if all rows in df1 are in df2 and vice versa (based on
         existence for join option)
     """
+    _check_fugue_available()
     if (
         isinstance(df1, pd.DataFrame)
         and isinstance(df2, pd.DataFrame)
@@ -351,6 +365,7 @@ def count_matching_rows(
     int
         Number of matching rows
     """
+    _check_fugue_available()
     if (
         isinstance(df1, pd.DataFrame)
         and isinstance(df2, pd.DataFrame)
@@ -462,6 +477,7 @@ def report(
     str
         The report, formatted kinda nicely.
     """
+    _check_fugue_available()
     if isinstance(join_columns, str):
         join_columns = [join_columns]
 
