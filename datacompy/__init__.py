@@ -19,17 +19,3 @@ Then extended to carry that functionality over to Spark Dataframes.
 """
 
 __version__ = "0.19.0"
-
-import logging
-import platform
-
-logger = logging.getLogger(__name__)
-
-major = platform.python_version_tuple()[0]
-minor = platform.python_version_tuple()[1]
-
-if major == "3" and minor >= "12":
-    logger.warning(
-        "Python 3.12 and above currently is not supported by Spark and Ray. "
-        "Please note that some functionality will not work and currently is not supported."
-    )
