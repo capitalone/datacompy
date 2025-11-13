@@ -103,7 +103,6 @@ def check_spark_available(func):
     return wrapper
 
 
-@check_spark_available
 class SparkSQLCompare(BaseCompare):
     """Comparison class to be used to compare whether two Spark SQL dataframes are equal.
 
@@ -154,6 +153,7 @@ class SparkSQLCompare(BaseCompare):
         All records that are in both df1 and df2
     """
 
+    @check_spark_available
     def __init__(
         self,
         spark_session: "pyspark.sql.SparkSession",
