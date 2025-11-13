@@ -24,7 +24,7 @@ Usage is very similar to the Pandas implementation. Consider the following code:
 
     from io import StringIO
     import polars as pl
-    from datacompy import PolarsCompare
+    from datacompy.polars import PolarsCompare
 
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -196,7 +196,7 @@ There are a few convenience methods available after the comparison has been run:
 Duplicate rows
 --------------
 
-The PolarsCompare will try and handle duplicate rows just like the Pandas version. See :ref:`pandas-dup-rows`.
+The ``PolarsCompare`` will try and handle duplicate rows just like the Pandas version. See :ref:`pandas-dup-rows`.
 
 Caveats and Limitations
 -----------------------

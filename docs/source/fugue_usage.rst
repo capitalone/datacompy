@@ -19,12 +19,12 @@ Basic Usage
 
 The Fugue implementation can be accessed via the:
 
-- ``datacompy.unq_columns``
-- ``datacompy.intersect_columns``
-- ``datacompy.all_columns_match``
-- ``datacompy.all_rows_overlap``
-- ``datacompy.is_match``
-- and ``datacompy.report`` functions
+- ``datacompy.fugue.unq_columns``
+- ``datacompy.fugue.intersect_columns``
+- ``datacompy.fugue.all_columns_match``
+- ``datacompy.fugue.all_rows_overlap``
+- ``datacompy.fugue.is_match``
+- and ``datacompy.fugue.report`` functions
 
 Please note this is different than the native Pandas implementation which can be accessed via the ``Compare`` class,
 the Fugue implementation is using the ``Compare`` class in the background though.
@@ -35,7 +35,7 @@ The following usage example compares two Pandas dataframes, it is equivalent to 
 
     from io import StringIO
     import pandas as pd
-    import datacompy
+    from datacompy.fugue import is_match, report
 
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -56,7 +56,7 @@ The following usage example compares two Pandas dataframes, it is equivalent to 
     df1 = pd.read_csv(StringIO(data1))
     df2 = pd.read_csv(StringIO(data2))
 
-    datacompy.is_match(
+    is_match(
         df1,
         df2,
         join_columns='acct_id',  #You can also specify a list of columns
@@ -68,7 +68,7 @@ The following usage example compares two Pandas dataframes, it is equivalent to 
     # False
 
     # This method prints out a human-readable report summarizing and sampling differences
-    print(datacompy.report(
+    print(report(
         df1,
         df2,
         join_columns='acct_id',  #You can also specify a list of columns

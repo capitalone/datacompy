@@ -17,7 +17,7 @@ join column(s).
 
     from io import StringIO
     import pandas as pd
-    from datacompy import SparkSQLCompare
+    from datacompy.spark.sql import SparkSQLCompare
     from pyspark.sql import SparkSession
 
     spark = SparkSession.builder.getOrCreate()
