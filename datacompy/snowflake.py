@@ -24,7 +24,6 @@ two dataframes.
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
-from functools import wraps
 from typing import Any, Dict, List, Union, cast
 
 from ordered_set import OrderedSet
@@ -37,6 +36,7 @@ from datacompy.base import (
     render,
     save_html_report,
 )
+from datacompy.utility import check_module_available
 
 LOG = logging.getLogger(__name__)
 
@@ -85,19 +85,7 @@ except ImportError:
     _SNOWFLAKE_AVAILABLE = False
 
 
-def check_snowflake_available(func):
-    """Check that the 'snowflake' extra is installed."""
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not _SNOWFLAKE_AVAILABLE:
-            raise ImportError(
-                "The 'snowflake' extra is not installed. Please install it to use this functionality, "
-                "e.g. `pip install datacompy[snowflake]`"
-            )
-        return func(*args, **kwargs)
-
-    return wrapper
+check_snowflake_available = check_module_available(_SNOWFLAKE_AVAILABLE, "snowflake")
 
 
 class SnowflakeCompare(BaseCompare):

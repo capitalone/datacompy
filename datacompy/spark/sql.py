@@ -23,7 +23,6 @@ two dataframes.
 
 import logging
 from copy import deepcopy
-from functools import wraps
 from typing import Any, Dict, List, Tuple
 
 import pandas as pd
@@ -38,6 +37,7 @@ from datacompy.base import (
     save_html_report,
     temp_column_name,
 )
+from datacompy.utility import check_module_available
 
 LOG = logging.getLogger(__name__)
 
@@ -88,19 +88,7 @@ except ImportError:
     _SPARK_AVAILABLE = False
 
 
-def check_spark_available(func):
-    """Check that the 'spark' extra is installed."""
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not _SPARK_AVAILABLE:
-            raise ImportError(
-                "The 'spark' extra is not installed. Please install it to use SparkSQLCompare, "
-                "e.g. `pip install datacompy[spark]`"
-            )
-        return func(*args, **kwargs)
-
-    return wrapper
+check_spark_available = check_module_available(_SPARK_AVAILABLE, "spark")
 
 
 class SparkSQLCompare(BaseCompare):

@@ -18,7 +18,6 @@
 import logging
 import pickle
 from collections import defaultdict
-from functools import wraps
 from typing import Any, Callable, Dict, Iterable, List, Tuple, cast
 
 import pandas as pd
@@ -26,6 +25,7 @@ from ordered_set import OrderedSet
 
 from datacompy.base import df_to_str, render, save_html_report
 from datacompy.core import Compare
+from datacompy.utility import check_module_available
 
 LOG = logging.getLogger(__name__)
 HASH_COL = "__datacompy__hash__"
@@ -43,19 +43,7 @@ except ImportError:
     _FUGUE_AVAILABLE = False
 
 
-def check_fugue_available(func):
-    """Check that the 'fugue' extra is installed."""
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not _FUGUE_AVAILABLE:
-            raise ImportError(
-                "The 'fugue' extra is not installed. Please install it to use this functionality, "
-                "e.g. `pip install datacompy[fugue]`"
-            )
-        return func(*args, **kwargs)
-
-    return wrapper
+check_fugue_available = check_module_available(_FUGUE_AVAILABLE, "fugue")
 
 
 @check_fugue_available
