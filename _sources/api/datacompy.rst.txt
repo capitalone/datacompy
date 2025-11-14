@@ -52,6 +52,14 @@ datacompy.snowflake module
    :undoc-members:
    :show-inheritance:
 
+datacompy.utility module
+------------------------
+
+.. automodule:: datacompy.utility
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

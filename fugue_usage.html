@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Template Customization Guide" href="template_guide.html"><link rel="prev" title="Polars Usage" href="polars_usage.html">
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2025.09.25 -->
-        <title>Fugue Detail - datacompy 0.18.1 documentation</title>
+        <title>Fugue Detail - datacompy 0.19.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.18.1 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.19.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 0.18.1 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.19.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -264,19 +264,19 @@ DataComPy integrates with Fugue to provide a simple way to compare data across t
 <h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">¶</a></h2>
 <p>The Fugue implementation can be accessed via the:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.unq_columns</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.intersect_columns</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.all_columns_match</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.all_rows_overlap</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.is_match</span></code></p></li>
-<li><p>and <code class="docutils literal notranslate"><span class="pre">datacompy.report</span></code> functions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.fugue.unq_columns</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.fugue.intersect_columns</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.fugue.all_columns_match</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.fugue.all_rows_overlap</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.fugue.is_match</span></code></p></li>
+<li><p>and <code class="docutils literal notranslate"><span class="pre">datacompy.fugue.report</span></code> functions</p></li>
 </ul>
 <p>Please note this is different than the native Pandas implementation which can be accessed via the <code class="docutils literal notranslate"><span class="pre">Compare</span></code> class,
 the Fugue implementation is using the <code class="docutils literal notranslate"><span class="pre">Compare</span></code> class in the background though.</p>
 <p>The following usage example compares two Pandas dataframes, it is equivalent to the Pandas usage example.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">datacompy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datacompy.fugue</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_match</span><span class="p">,</span> <span class="n">report</span>
 
 <span class="n">data1</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld,date_fld</span>
 <span class="s2">10000001234,123.45,George Maharis,14530.1555,2017-01-01</span>
@@ -297,7 +297,7 @@ the Fugue implementation is using the <code class="docutils literal notranslate"
 <span class="n">df1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data1</span><span class="p">))</span>
 <span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data2</span><span class="p">))</span>
 
-<span class="n">datacompy</span><span class="o">.</span><span class="n">is_match</span><span class="p">(</span>
+<span class="n">is_match</span><span class="p">(</span>
     <span class="n">df1</span><span class="p">,</span>
     <span class="n">df2</span><span class="p">,</span>
     <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1">#You can also specify a list of columns</span>
@@ -309,7 +309,7 @@ the Fugue implementation is using the <code class="docutils literal notranslate"
 <span class="c1"># False</span>
 
 <span class="c1"># This method prints out a human-readable report summarizing and sampling differences</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">datacompy</span><span class="o">.</span><span class="n">report</span><span class="p">(</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="p">(</span>
     <span class="n">df1</span><span class="p">,</span>
     <span class="n">df2</span><span class="p">,</span>
     <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1">#You can also specify a list of columns</span>
@@ -420,7 +420,7 @@ guarantees full data comparison with consistent result compared to Pandas-based 
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=1e56ff10"></script>
+</div><script src="_static/documentation_options.js?v=cbfb3150"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Benchmarks" href="benchmark.html"><link rel="prev" title="Fugue Detail" href="fugue_usage.html">
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2025.09.25 -->
-        <title>Template Customization Guide - datacompy 0.18.1 documentation</title>
+        <title>Template Customization Guide - datacompy 0.19.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 0.18.1 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 0.19.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 0.18.1 documentation</span>
+  <span class="sidebar-brand-text">datacompy 0.19.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -392,7 +392,7 @@ The template receives a context dictionary with various comparison metrics and d
 <section id="using-a-custom-template">
 <h2>Using a Custom Template<a class="headerlink" href="#using-a-custom-template" title="Link to this heading">¶</a></h2>
 <p>To use your custom template, pass its path to the <code class="docutils literal notranslate"><span class="pre">report()</span></code> method:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datacompy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Compare</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datacompy.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Compare</span>
 
 <span class="n">compare</span> <span class="o">=</span> <span class="n">Compare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
 
@@ -504,7 +504,7 @@ You can use this as a reference when creating your own templates.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=1e56ff10"></script>
+</div><script src="_static/documentation_options.js?v=cbfb3150"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
