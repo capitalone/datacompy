@@ -35,17 +35,10 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11"]
         spark-version: [3.4.4, 3.5.6]
-        pandas-version: [2.3.2, 1.5.3]
-        numpy-version: [2.3.3, 1.26.4]
-        exclude:
-          - pandas-version: 1.5.3
-            numpy-version: 2.3.3
 
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SPARK_VERSION: ${{ matrix.spark-version }}
-      PANDAS_VERSION: ${{ matrix.pandas-version }}
-      NUMPY_VERSION: ${{ matrix.numpy-version }}
 
     steps:
       - uses: actions/checkout@v3
@@ -60,21 +53,6 @@ jobs:
         with:
           java-version: "8"
           distribution: "adopt"
-
-      - name: Install Spark, Pandas, and Numpy
-        run: |
-          python -m pip install pyspark[connect]==${{ matrix.spark-version }}
-          python -m pip install pandas==${{ matrix.pandas-version }}
-
-      - name: Install numpy<=2.2.6 if Python 3.10 and matrix.numpy-version == 2.3.3
-        if: ${{ matrix.python-version == '3.10' &&  matrix.numpy-version == '2.3.3' }}
-        run: |
-          python -m pip install numpy==2.2.6
-
-      - name: Install numpy if Python 3.11 or (3.10 and matrix.numpy-version == 1.26.4)
-        if: ${{ (matrix.python-version == '3.11') || ( matrix.python-version == '3.10' && matrix.numpy-version == '1.26.4' ) }}
-        run: |
-          python -m pip install numpy==${{ matrix.numpy-version }}
 
       - name: Install datacompy
         run: |

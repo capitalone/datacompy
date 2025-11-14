@@ -17,8 +17,8 @@
 import sys
 
 import pytest
-from datacompy import (
-    Compare,
+from datacompy.core import Compare
+from datacompy.fugue import (
     all_columns_match,
     all_rows_overlap,
     count_matching_rows,

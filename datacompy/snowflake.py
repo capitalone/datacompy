@@ -36,6 +36,7 @@ from datacompy.base import (
     render,
     save_html_report,
 )
+from datacompy.utility import check_module_available
 
 LOG = logging.getLogger(__name__)
 
@@ -78,12 +79,13 @@ try:
         DecimalType,
     ]
 
+    _SNOWFLAKE_AVAILABLE = True
 
 except ImportError:
-    LOG.warning(
-        "Please note that you are missing the optional dependency: snowflake. "
-        "If you need to use this functionality it must be installed."
-    )
+    _SNOWFLAKE_AVAILABLE = False
+
+
+check_snowflake_available = check_module_available(_SNOWFLAKE_AVAILABLE, "snowflake")
 
 
 class SnowflakeCompare(BaseCompare):
@@ -130,6 +132,7 @@ class SnowflakeCompare(BaseCompare):
         All records that are only in df2 (based on a join on join_columns)
     """
 
+    @check_snowflake_available
     def __init__(
         self,
         session: "sp.Session",
@@ -295,13 +298,15 @@ class SnowflakeCompare(BaseCompare):
     def df1_unq_columns(self) -> OrderedSet[str]:
         """Get columns that are unique to df1."""
         return cast(
-            OrderedSet[str], OrderedSet(self.df1.columns) - OrderedSet(self.df2.columns)
+            OrderedSet[str],
+            OrderedSet(self.df1.columns) - OrderedSet(self.df2.columns),
         )
 
     def df2_unq_columns(self) -> OrderedSet[str]:
         """Get columns that are unique to df2."""
         return cast(
-            OrderedSet[str], OrderedSet(self.df2.columns) - OrderedSet(self.df1.columns)
+            OrderedSet[str],
+            OrderedSet(self.df2.columns) - OrderedSet(self.df1.columns),
         )
 
     def intersect_columns(self) -> OrderedSet[str]:
@@ -520,7 +525,10 @@ class SnowflakeCompare(BaseCompare):
 
         col1_dtype_instance, _ = _get_column_dtypes(self.df1, column, column)
         col2_dtype_instance, _ = _get_column_dtypes(self.df2, column, column)
-        col1_dtype, col2_dtype = type(col1_dtype_instance), type(col2_dtype_instance)
+        col1_dtype, col2_dtype = (
+            type(col1_dtype_instance),
+            type(col2_dtype_instance),
+        )
 
         self.column_stats.append(
             {
@@ -1041,6 +1049,7 @@ class SnowflakeCompare(BaseCompare):
         return report
 
 
+@check_snowflake_available
 def columns_equal(
     dataframe: "sp.DataFrame",
     col_1: str,
@@ -1058,9 +1067,9 @@ def columns_equal(
     - A null and a non-null value will evaluate to False.
     - Numeric values will use the relative and absolute tolerances.
     - Decimal values (decimal.Decimal) will attempt to be converted to floats
-      before comparing
+        before comparing
     - Non-numeric values (i.e. where np.isclose can't be used) will just
-      trigger True on two nulls or exact matches.
+        trigger True on two nulls or exact matches.
 
     Parameters
     ----------
@@ -1088,7 +1097,10 @@ def columns_equal(
     base_dtype_instance, compare_dtype_instance = _get_column_dtypes(
         dataframe, col_1, col_2
     )
-    base_dtype, compare_dtype = type(base_dtype_instance), type(compare_dtype_instance)
+    base_dtype, compare_dtype = (
+        type(base_dtype_instance),
+        type(compare_dtype_instance),
+    )
     if _is_comparable(base_dtype, compare_dtype):
         if (base_dtype in NUMERIC_SNOWPARK_TYPES) and (
             compare_dtype in NUMERIC_SNOWPARK_TYPES
@@ -1127,6 +1139,7 @@ def columns_equal(
     return dataframe
 
 
+@check_snowflake_available
 def get_merged_columns(
     original_df: "sp.DataFrame", merged_df: "sp.DataFrame", suffix: str
 ) -> List[str]:
@@ -1158,6 +1171,7 @@ def get_merged_columns(
     return columns
 
 
+@check_snowflake_available
 def calculate_max_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> float:
     """Get a maximum difference between two columns.
 
@@ -1188,6 +1202,7 @@ def calculate_max_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> flo
     return max_diff
 
 
+@check_snowflake_available
 def calculate_null_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> int:
     """Get the null differences between two columns.
 

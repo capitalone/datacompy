@@ -37,6 +37,7 @@ from datacompy.base import (
     save_html_report,
     temp_column_name,
 )
+from datacompy.utility import check_module_available
 
 LOG = logging.getLogger(__name__)
 
@@ -59,35 +60,35 @@ try:
         upper,
         when,
     )
+
+    def decimal_comparator():
+        """Check equality with decimal(X, Y) types.
+
+        Otherwise treated as the string "decimal".
+        """
+
+        class DecimalComparator(str):
+            def __eq__(self, other):
+                return len(other) >= 7 and other[0:7] == "decimal"
+
+        return DecimalComparator("decimal")
+
+    NUMERIC_SPARK_TYPES = [
+        "tinyint",
+        "smallint",
+        "int",
+        "bigint",
+        "float",
+        "double",
+        decimal_comparator(),
+    ]
+    _SPARK_AVAILABLE = True
 except ImportError:
-    LOG.warning(
-        "Please note that you are missing the optional dependency: spark. "
-        "If you need to use this functionality it must be installed."
-    )
+    NUMERIC_SPARK_TYPES = []
+    _SPARK_AVAILABLE = False
 
 
-def decimal_comparator():
-    """Check equality with decimal(X, Y) types.
-
-    Otherwise treated as the string "decimal".
-    """
-
-    class DecimalComparator(str):
-        def __eq__(self, other):
-            return len(other) >= 7 and other[0:7] == "decimal"
-
-    return DecimalComparator("decimal")
-
-
-NUMERIC_SPARK_TYPES = [
-    "tinyint",
-    "smallint",
-    "int",
-    "bigint",
-    "float",
-    "double",
-    decimal_comparator(),
-]
+check_spark_available = check_module_available(_SPARK_AVAILABLE, "spark")
 
 
 class SparkSQLCompare(BaseCompare):
@@ -140,6 +141,7 @@ class SparkSQLCompare(BaseCompare):
         All records that are in both df1 and df2
     """
 
+    @check_spark_available
     def __init__(
         self,
         spark_session: "pyspark.sql.SparkSession",
@@ -1059,6 +1061,7 @@ class SparkSQLCompare(BaseCompare):
         return report
 
 
+@check_spark_available
 def columns_equal(
     dataframe: "pyspark.sql.DataFrame",
     col_1: str,
@@ -1161,6 +1164,7 @@ def columns_equal(
         return lit(False)
 
 
+@check_spark_available
 def get_merged_columns(
     original_df: "pyspark.sql.DataFrame",
     merged_df: "pyspark.sql.DataFrame",
@@ -1194,6 +1198,7 @@ def get_merged_columns(
     return columns
 
 
+@check_spark_available
 def calculate_max_diff(
     dataframe: "pyspark.sql.DataFrame", col_1: str, col_2: str
 ) -> float:
@@ -1229,6 +1234,7 @@ def calculate_max_diff(
         return max_diff
 
 
+@check_spark_available
 def calculate_null_diff(
     dataframe: "pyspark.sql.DataFrame", col_1: str, col_2: str
 ) -> int:

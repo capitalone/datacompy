@@ -39,7 +39,7 @@ Set up like:
 
     from io import StringIO
     import pandas as pd
-    import datacompy
+    from datacompy.core import Compare
 
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01
@@ -69,7 +69,7 @@ join column(s) or by index.
 
 .. code-block:: python
 
-    compare = datacompy.Compare(
+    compare = Compare(
         df1,
         df2,
         join_columns='acct_id',  #You can also specify a list of columns
@@ -80,11 +80,11 @@ join column(s) or by index.
 
     # OR
 
-    compare = datacompy.Compare(df1, df2, join_columns=['acct_id', 'name'])
+    compare = Compare(df1, df2, join_columns=['acct_id', 'name'])
 
     # OR
 
-    compare = datacompy.Compare(df1, df2, on_index=True)
+    compare = Compare(df1, df2, on_index=True)
 
 Reports
 -------

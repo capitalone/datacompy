@@ -15,7 +15,7 @@
 """Test fugue functionality with duckdb."""
 
 import pytest
-from datacompy import (
+from datacompy.fugue import (
     all_columns_match,
     all_rows_overlap,
     count_matching_rows,
