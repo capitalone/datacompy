@@ -29,9 +29,9 @@ from unittest import mock
 import numpy as np
 import polars as pl
 import pytest
-from datacompy import PolarsCompare
 from datacompy.comparator.string import polars_normalize_string_column
 from datacompy.polars import (
+    PolarsCompare,
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,

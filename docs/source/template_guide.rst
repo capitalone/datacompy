@@ -123,7 +123,7 @@ To use your custom template, pass its path to the ``report()`` method:
 
 .. code-block:: python
 
-    from datacompy import Compare
+    from datacompy.core import Compare
 
     compare = Compare(df1, df2, join_columns=['id'])
 
