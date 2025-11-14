@@ -25,6 +25,7 @@ from ordered_set import OrderedSet
 
 from datacompy.base import df_to_str, render, save_html_report
 from datacompy.core import Compare
+from datacompy.utility import check_module_available
 
 LOG = logging.getLogger(__name__)
 HASH_COL = "__datacompy__hash__"
@@ -35,13 +36,17 @@ try:
     import pyarrow as pa
     from fugue import AnyDataFrame
     from triad import Schema
+
+    _FUGUE_AVAILABLE = True
+
 except ImportError:
-    LOG.warning(
-        "Please note that you are missing the optional dependency: fugue. "
-        "If you need to use this functionality it must be installed."
-    )
+    _FUGUE_AVAILABLE = False
 
 
+check_fugue_available = check_module_available(_FUGUE_AVAILABLE, "fugue")
+
+
+@check_fugue_available
 def unq_columns(df1: "AnyDataFrame", df2: "AnyDataFrame") -> OrderedSet[str]:
     """Get columns that are unique to df1.
 
@@ -63,6 +68,7 @@ def unq_columns(df1: "AnyDataFrame", df2: "AnyDataFrame") -> OrderedSet[str]:
     return cast(OrderedSet[str], OrderedSet(col1) - OrderedSet(col2))
 
 
+@check_fugue_available
 def intersect_columns(df1: "AnyDataFrame", df2: "AnyDataFrame") -> OrderedSet[str]:
     """Get columns that are shared between the two dataframes.
 
@@ -84,6 +90,7 @@ def intersect_columns(df1: "AnyDataFrame", df2: "AnyDataFrame") -> OrderedSet[st
     return OrderedSet(col1) & OrderedSet(col2)
 
 
+@check_fugue_available
 def all_columns_match(df1: "AnyDataFrame", df2: "AnyDataFrame") -> bool:
     """Whether the columns all match in the dataframes.
 
@@ -103,6 +110,7 @@ def all_columns_match(df1: "AnyDataFrame", df2: "AnyDataFrame") -> bool:
     return unq_columns(df1, df2) == unq_columns(df2, df1) == set()
 
 
+@check_fugue_available
 def is_match(
     df1: "AnyDataFrame",
     df2: "AnyDataFrame",
@@ -202,6 +210,7 @@ def is_match(
     return all(matches)
 
 
+@check_fugue_available
 def all_rows_overlap(
     df1: "AnyDataFrame",
     df2: "AnyDataFrame",
@@ -298,6 +307,7 @@ def all_rows_overlap(
     return all(overlap)
 
 
+@check_fugue_available
 def count_matching_rows(
     df1: "AnyDataFrame",
     df2: "AnyDataFrame",
@@ -393,6 +403,7 @@ def count_matching_rows(
     return sum(count_matching_rows)
 
 
+@check_fugue_available
 def report(
     df1: "AnyDataFrame",
     df2: "AnyDataFrame",

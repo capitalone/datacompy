@@ -33,8 +33,8 @@ from pytest import raises
 pytest.importorskip("polars")
 
 import polars as pl
-from datacompy import PolarsCompare
 from datacompy.polars import (
+    PolarsCompare,
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,

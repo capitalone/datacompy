@@ -15,7 +15,7 @@
 """Test fugue and polars."""
 
 import pytest
-from datacompy import (
+from datacompy.fugue import (
     all_columns_match,
     all_rows_overlap,
     count_matching_rows,

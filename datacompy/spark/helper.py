@@ -22,7 +22,7 @@ and use the row order of the datasets.
 
 import logging
 
-from datacompy.spark.sql import SparkSQLCompare
+from datacompy.spark.sql import SparkSQLCompare, check_spark_available
 
 LOG = logging.getLogger(__name__)
 
@@ -31,13 +31,13 @@ try:
     from pyspark.sql import Window
     from pyspark.sql import types as T
     from pyspark.sql.functions import col, format_number, row_number
+
+    _SPARK_AVAILABLE = True
 except ImportError:
-    LOG.warning(
-        "Please note that you are missing the optional dependency: spark. "
-        "If you need to use this functionality it must be installed."
-    )
+    _SPARK_AVAILABLE = False
 
 
+@check_spark_available
 def compare_by_row(
     spark_session: "pyspark.sql.SparkSession",
     base_dataframe: "pyspark.sql.DataFrame",
