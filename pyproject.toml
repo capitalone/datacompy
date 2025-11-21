@@ -35,7 +35,7 @@ dynamic = [ "version" ]
 
 dependencies = [
   "jinja2>=3",
-  "numpy>=1.26,<=2.3.4",
+  "numpy>=1.26,<=2.2.6",
   "ordered-set>=4.0.2,<=4.1",
   "pandas>=2.2,<=2.3.3",
   "polars[pandas]>=0.20.4,<=1.35.2",
