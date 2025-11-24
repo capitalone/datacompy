@@ -9,11 +9,11 @@ Contents
     :maxdepth: 2
 
     Installation <install>
+    Datacompy v1.0.0 Changes <v1_changes>
     Pandas Usage <pandas_usage>
     Spark Usage <spark_usage>
     Snowflake Usage <snowflake_usage>
     Polars Usage <polars_usage>
-    Fugue Usage <fugue_usage>
     Template Guide <template_guide>
     Benchmarks <benchmark>
     Developer Instructions <developer_instructions>
