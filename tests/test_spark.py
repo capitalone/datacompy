@@ -17,10 +17,8 @@
 Testing out the datacompy functionality
 """
 
-import io
 import logging
 import os
-import sys
 import tempfile
 from datetime import datetime
 from decimal import Decimal
@@ -30,14 +28,10 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
-from pytest import raises
 
 pytest.importorskip("pyspark")
 
-if sys.version_info >= (3, 12):
-    pytest.skip("unsupported python version", allow_module_level=True)
-
-from datacompy.spark.sql import (
+from datacompy.spark import (
     SparkSQLCompare,
     _generate_id_within_group,
     calculate_max_diff,
@@ -47,16 +41,14 @@ from datacompy.spark.sql import (
 from pandas.testing import assert_frame_equal, assert_series_equal
 from pyspark.sql.types import (
     ArrayType,
+    BooleanType,
+    DateType,
     IntegerType,
     StringType,
     StructField,
     StructType,
 )
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
-pd.DataFrame.iteritems = pd.DataFrame.items  # Pandas 2+ compatability
-np.bool = np.bool_  # Numpy 1.24.3+ comptability
+from pytest import raises
 
 
 def test_numeric_columns_equal_abs(spark_session):
@@ -163,86 +155,190 @@ something||False
 
 
 def test_date_columns_equal(spark_session):
-    data = """a|b|expected
-2017-01-01|2017-01-01|True
-2017-01-02|2017-01-02|True
-2017-10-01|2017-10-10|False
-2017-01-01||False
-|2017-01-01|False
-||True"""
-    pdf = pd.read_csv(io.StringIO(data), sep="|")
-    df = spark_session.createDataFrame(pdf)
-    # First compare just the strings
+    # Define schema for string comparison
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", StringType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data for string comparison
+    data = [
+        ("2017-01-01", "2017-01-01", True),
+        ("2017-01-02", "2017-01-02", True),
+        ("2017-10-01", "2017-10-10", False),
+        ("2017-01-01", None, False),
+        (None, "2017-01-01", False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with string dates
+    df = spark_session.createDataFrame(data, schema)
+
+    # First compare as strings
     actual_out = df.withColumn(
         "actual", columns_equal(df, "a", "b", rel_tol=0.2)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
-    # Then compare converted to datetime objects
-    pdf["a"] = pd.to_datetime(pdf["a"])
-    pdf["b"] = pd.to_datetime(pdf["b"])
-    df = spark_session.createDataFrame(pdf)
-    actual_out = df.withColumn(
-        "actual", columns_equal(df, "a", "b", rel_tol=0.2)
+    # Define schema for date comparison
+    date_schema = StructType(
+        [
+            StructField("a", DateType(), True),
+            StructField("b", DateType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data with actual date objects
+    date_data = [
+        (datetime(2017, 1, 1), datetime(2017, 1, 1), True),
+        (datetime(2017, 1, 2), datetime(2017, 1, 2), True),
+        (datetime(2017, 10, 1), datetime(2017, 10, 10), False),
+        (datetime(2017, 1, 1), None, False),
+        (None, datetime(2017, 1, 1), False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with date objects
+    date_df = spark_session.createDataFrame(date_data, date_schema)
+
+    # Compare date columns
+    actual_out = date_df.withColumn(
+        "actual", columns_equal(date_df, "a", "b", rel_tol=0.2)
     ).toPandas()["actual"]
-    expect_out = df.select("expected").toPandas()["expected"]
+    expect_out = date_df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
-    # and reverse
-    actual_out_rev = df.withColumn(
-        "actual", columns_equal(df, "b", "a", rel_tol=0.2)
+
+    # Test reverse comparison
+    actual_out_rev = date_df.withColumn(
+        "actual", columns_equal(date_df, "b", "a", rel_tol=0.2)
     ).toPandas()["actual"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
+    # Define schema for date / string comparison
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", DateType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data for string comparison
+    data = [
+        ("2017-01-01", datetime(2017, 1, 1), True),
+        ("2017-01-02", datetime(2017, 1, 2), True),
+        ("2017-10-01", datetime(2017, 10, 10), False),
+        ("2017-01-01", None, False),
+        (None, datetime(2017, 1, 1), False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with string dates
+    df = spark_session.createDataFrame(data, schema)
+
+    # First compare as strings
+    actual_out = df.withColumn(
+        "actual", columns_equal(df, "a", "b", rel_tol=0.2)
+    ).toPandas()["actual"]
+    expect_out = df.select("expected").toPandas()["expected"]
+    assert_series_equal(expect_out, actual_out, check_names=False)
+
 
 def test_date_columns_equal_with_ignore_spaces(spark_session):
-    data = """a|b|expected
-2017-01-01|2017-01-01   |True
-2017-01-02  |2017-01-02|True
-2017-10-01  |2017-10-10   |False
-2017-01-01||False
-|2017-01-01|False
-||True"""
-    pdf = pd.read_csv(io.StringIO(data), sep="|")
-    df = spark_session.createDataFrame(pdf)
-    # First compare just the strings
+    # Define schema for string comparison
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", StringType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data with string dates including spaces
+    string_data = [
+        ("2017-01-01", "2017-01-01   ", True),
+        ("2017-01-02  ", "2017-01-02", True),
+        ("2017-10-01  ", "2017-10-10   ", False),
+        ("2017-01-01", None, False),
+        (None, "2017-01-01", False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with string dates
+    df = spark_session.createDataFrame(string_data, schema)
+
+    # First compare as strings
     actual_out = df.withColumn(
         "actual", columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
-    # Then compare converted to datetime objects
-    try:  # pandas 2
-        pdf["a"] = pd.to_datetime(pdf["a"], format="mixed")
-        pdf["b"] = pd.to_datetime(pdf["b"], format="mixed")
-    except ValueError:  # pandas 1.5
-        pdf["a"] = pd.to_datetime(pdf["a"])
-        pdf["b"] = pd.to_datetime(pdf["b"])
-    df = spark_session.createDataFrame(pdf)
-    actual_out = df.withColumn(
-        "actual", columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True)
+    # Define schema for date comparison
+    date_schema = StructType(
+        [
+            StructField("a", DateType(), True),
+            StructField("b", DateType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data with actual date objects
+    date_data = [
+        (datetime(2017, 1, 1), datetime(2017, 1, 1), True),
+        (datetime(2017, 1, 2), datetime(2017, 1, 2), True),
+        (datetime(2017, 10, 1), datetime(2017, 10, 10), False),
+        (datetime(2017, 1, 1), None, False),
+        (None, datetime(2017, 1, 1), False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with date objects
+    date_df = spark_session.createDataFrame(date_data, date_schema)
+
+    # Compare date columns
+    actual_out = date_df.withColumn(
+        "actual", columns_equal(date_df, "a", "b", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
-    expect_out = df.select("expected").toPandas()["expected"]
+    expect_out = date_df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
-    # and reverse
-    actual_out_rev = df.withColumn(
-        "actual", columns_equal(df, "b", "a", rel_tol=0.2, ignore_spaces=True)
+
+    # Test reverse comparison
+    actual_out_rev = date_df.withColumn(
+        "actual", columns_equal(date_df, "b", "a", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
 def test_date_columns_equal_with_ignore_spaces_and_case(spark_session):
-    data = """a|b|expected
-2017-01-01|2017-01-01   |True
-2017-01-02  |2017-01-02|True
-2017-10-01  |2017-10-10   |False
-2017-01-01||False
-|2017-01-01|False
-||True"""
-    pdf = pd.read_csv(io.StringIO(data), sep="|")
-    df = spark_session.createDataFrame(pdf)
-    # First compare just the strings
+    # Define schema for string comparison
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", StringType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data with string dates including spaces
+    string_data = [
+        ("2017-01-01", "2017-01-01   ", True),
+        ("2017-01-02  ", "2017-01-02", True),
+        ("2017-10-01  ", "2017-10-10   ", False),
+        ("2017-01-01", None, False),
+        (None, "2017-01-01", False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with string dates
+    df = spark_session.createDataFrame(string_data, schema)
+
+    # First compare as strings
     actual_out = df.withColumn(
         "actual",
         columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True),
@@ -250,35 +346,67 @@ def test_date_columns_equal_with_ignore_spaces_and_case(spark_session):
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
-    # Then compare converted to datetime objects
-    try:  # pandas 2
-        pdf["a"] = pd.to_datetime(pdf["a"], format="mixed")
-        pdf["b"] = pd.to_datetime(pdf["b"], format="mixed")
-    except ValueError:  # pandas 1.5
-        pdf["a"] = pd.to_datetime(pdf["a"])
-        pdf["b"] = pd.to_datetime(pdf["b"])
-    df = spark_session.createDataFrame(pdf)
-    actual_out = df.withColumn(
+    # Define schema for date comparison
+    date_schema = StructType(
+        [
+            StructField("a", DateType(), True),
+            StructField("b", DateType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data with actual date objects
+    date_data = [
+        (datetime(2017, 1, 1), datetime(2017, 1, 1), True),
+        (datetime(2017, 1, 2), datetime(2017, 1, 2), True),
+        (datetime(2017, 10, 1), datetime(2017, 10, 10), False),
+        (datetime(2017, 1, 1), None, False),
+        (None, datetime(2017, 1, 1), False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with date objects
+    date_df = spark_session.createDataFrame(date_data, date_schema)
+
+    # Compare date columns
+    actual_out = date_df.withColumn(
         "actual",
-        columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True),
+        columns_equal(
+            date_df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True
+        ),
     ).toPandas()["actual"]
-    expect_out = df.select("expected").toPandas()["expected"]
+    expect_out = date_df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
-    # and reverse
-    actual_out_rev = df.withColumn(
+
+    # Test reverse comparison
+    actual_out_rev = date_df.withColumn(
         "actual",
-        columns_equal(df, "b", "a", rel_tol=0.2, ignore_spaces=True, ignore_case=True),
+        columns_equal(
+            date_df, "b", "a", rel_tol=0.2, ignore_spaces=True, ignore_case=True
+        ),
     ).toPandas()["actual"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
 def test_date_columns_unequal(spark_session):
     """I want datetime fields to match with dates stored as strings"""
-    data = [{"a": "2017-01-01", "b": "2017-01-02"}, {"a": "2017-01-01"}]
-    pdf = pd.DataFrame(data)
-    pdf["a_dt"] = pd.to_datetime(pdf["a"])
-    pdf["b_dt"] = pd.to_datetime(pdf["b"])
-    df = spark_session.createDataFrame(pdf)
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", StringType(), True),
+            StructField("a_dt", DateType(), True),
+            StructField("b_dt", DateType(), True),
+        ]
+    )
+
+    data = [
+        ("2017-01-01", "2017-01-02", datetime(2017, 1, 1), datetime(2017, 1, 2)),
+        ("2017-01-01", None, datetime(2017, 1, 1), None),
+    ]
+
+    df = spark_session.createDataFrame(data, schema)
+
+    # Test string vs date equality both ways
     assert (
         df.withColumn("actual", columns_equal(df, "a", "a_dt"))
         .toPandas()["actual"]
@@ -299,6 +427,8 @@ def test_date_columns_unequal(spark_session):
         .toPandas()["actual"]
         .all()
     )
+
+    # Test mismatched fields
     assert (
         not df.withColumn("actual", columns_equal(df, "b_dt", "a"))
         .toPandas()["actual"]
@@ -325,13 +455,21 @@ def test_bad_date_columns(spark_session):
     """If strings can't be coerced into dates then it should be false for the
     whole column.
     """
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", StringType(), True),
+            StructField("a_dt", DateType(), True),
+        ]
+    )
+
     data = [
-        {"a": "2017-01-01", "b": "2017-01-01"},
-        {"a": "2017-01-01", "b": "217-01-01"},
+        ("2017-01-01", "2017-01-01", datetime(2017, 1, 1)),
+        ("2017-01-01", "217-01-01", datetime(2017, 1, 1)),  # malformed date in b column
     ]
-    pdf = pd.DataFrame(data)
-    pdf["a_dt"] = pd.to_datetime(pdf["a"])
-    df = spark_session.createDataFrame(pdf)
+
+    df = spark_session.createDataFrame(data, schema)
+
     assert (
         not df.withColumn("actual", columns_equal(df, "a_dt", "b"))
         .toPandas()["actual"]
@@ -348,15 +486,28 @@ def test_rounded_date_columns(spark_session):
     """If strings can't be coerced into dates then it should be false for the
     whole column.
     """
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", StringType(), True),
+            StructField("exp", BooleanType(), True),
+            StructField("a_dt", DateType(), True),
+        ]
+    )
+
     data = [
-        {"a": "2017-01-01", "b": "2017-01-01 00:00:00.000000", "exp": True},
-        {"a": "2017-01-01", "b": "2017-01-01 00:00:00.123456", "exp": False},
-        {"a": "2017-01-01", "b": "2017-01-01 00:00:01.000000", "exp": False},
-        {"a": "2017-01-01", "b": "2017-01-01 00:00:00", "exp": True},
+        ("2017-01-01", "2017-01-01 00:00:00.000000", True, datetime(2017, 1, 1)),
+        (
+            "2017-01-01",
+            "2017-01-01 00:01:00.123456",
+            True,
+            datetime(2017, 1, 1),
+        ),  # rounded to the day
+        ("2017-01-01", "2017-01-02 00:00:01.000000", False, datetime(2017, 1, 1)),
+        ("2017-01-01", "2017-01-01 00:00:00", True, datetime(2017, 1, 1)),
     ]
-    pdf = pd.DataFrame(data)
-    pdf["a_dt"] = pd.to_datetime(pdf["a"])
-    df = spark_session.createDataFrame(pdf)
+
+    df = spark_session.createDataFrame(data, schema)
     actual = df.withColumn("actual", columns_equal(df, "a_dt", "b")).toPandas()[
         "actual"
     ]
@@ -1383,8 +1534,8 @@ def test_integer_column_names(spark_session):
     assert compare.matches()
 
 
-@mock.patch("datacompy.spark.sql.render")
-@mock.patch("datacompy.spark.sql.save_html_report")
+@mock.patch("datacompy.spark.render")
+@mock.patch("datacompy.spark.save_html_report")
 def test_save_html(mock_save_html, mock_render, spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
@@ -1791,8 +1942,8 @@ def test_template_context_variables(spark_session):
             os.unlink(template_path)
 
 
-@mock.patch("datacompy.spark.sql.save_html_report")
-@mock.patch("datacompy.spark.sql.render")
+@mock.patch("datacompy.spark.save_html_report")
+@mock.patch("datacompy.spark.render")
 def test_html_report_generation(mock_render, mock_save_html, spark_session):
     """Test that HTML reports can be generated and saved to a file."""
     df1 = spark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])

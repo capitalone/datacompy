@@ -5,7 +5,7 @@ requires = [ "setuptools>=64" ]
 
 [project]
 name = "datacompy"
-description = "Dataframe comparison in Python"
+description = "Dataframe comparisons in Python"
 readme = "README.md"
 license = { text = "Apache Software License" }
 maintainers = [
@@ -35,7 +35,7 @@ dynamic = [ "version" ]
 
 dependencies = [
   "jinja2>=3",
-  "numpy>=1.26,<=2.3.4",
+  "numpy>=2,<=2.3.4",
   "ordered-set>=4.0.2,<=4.1",
   "pandas>=2.2,<=2.3.3",
   "polars[pandas]>=0.20.4,<=1.35.2",
@@ -44,37 +44,24 @@ optional-dependencies.build = [ "build", "twine", "wheel" ]
 optional-dependencies.dev = [
   "datacompy[build]",
   "datacompy[docs]",
-  "datacompy[fugue]",
   "datacompy[qa]",
   "datacompy[snowflake]",
-  "datacompy[spark]",
-  "datacompy[tests-snowflake]",
-  "datacompy[tests-spark]",
-  "datacompy[tests]",
-]
-
-# Linters, formatters and type checkers
-optional-dependencies.dev_no_snowflake = [
-  "datacompy[build]",
-  "datacompy[docs]",
-  "datacompy[fugue]",
-  "datacompy[qa]",
   "datacompy[spark]",
   "datacompy[tests-spark]",
   "datacompy[tests]",
 ]
 optional-dependencies.docs = [ "furo", "myst-parser", "sphinx" ]
 optional-dependencies.edgetest = [ "edgetest", "edgetest-conda" ]
-optional-dependencies.fugue = [ "duckdb<1.4", "fugue[dask,duckdb,ray]>=0.8.7,<=0.9.1" ]
 optional-dependencies.qa = [ "mypy", "pandas-stubs", "pre-commit", "ruff==0.5.7" ]
-optional-dependencies.snowflake = [
-  "snowflake-connector-python",
-  "snowflake-snowpark-python",
+optional-dependencies.snowflake = [ "snowflake-snowpark-python>=1.26,<=1.33" ]
+optional-dependencies.spark = [ "pyspark[connect]==4.0.*" ]
+optional-dependencies.tests = [
+  "pytest",
+  "pytest-cov",
 ]
-optional-dependencies.spark = [ "pyspark[connect]>=3.4,<=3.5.6" ]
-optional-dependencies.tests = [ "pytest", "pytest-cov" ]
-optional-dependencies.tests-snowflake = [ "snowflake-snowpark-python[localtest]" ]
-optional-dependencies.tests-spark = [ "pytest", "pytest-cov", "pytest-spark" ]
+optional-dependencies.tests-spark = [
+  "pytest-spark",
+]
 urls."Bug Tracker" = "https://github.com/capitalone/datacompy/issues"
 urls.Documentation = "https://capitalone.github.io/datacompy/"
 urls.Homepage = "https://github.com/capitalone/datacompy"
@@ -82,7 +69,7 @@ urls.Repository = "https://github.com/capitalone/datacompy.git"
 urls."Source Code" = "https://github.com/capitalone/datacompy"
 
 [tool.setuptools]
-packages = [ "datacompy", "datacompy.spark" ]
+packages = [ "datacompy" ]
 zip-safe = false
 include-package-data = true
 
@@ -155,12 +142,13 @@ ignore_missing_imports = true
 
 [edgetest.envs.core]
 python_version = "3.10"
-conda_install = [ "openjdk=8" ]
-extras = [ "dev" ]
-command = "pytest tests/ --ignore=tests/test_snowflake.py"
+conda_install = [ "openjdk=17" ]
+extras = [ "spark, qa, tests, tests-spark" ]
+command = "pytest"
 upgrade = [
   "pandas",
   "numpy",
   "ordered-set",
   "polars[pandas]",
+  "pyspark[connect]",
 ]

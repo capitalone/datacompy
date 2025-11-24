@@ -375,7 +375,7 @@ def get_column_tolerance(column: str, tol_dict: Dict[str, float]) -> float:
     return tol_dict.get(column, tol_dict.get("default", 0.0))
 
 
-def _validate_tolerance_parameter(
+def validate_tolerance_parameter(
     param_value: float | Dict[str, float],
     param_name: str,
     case_mode: str = "lower",

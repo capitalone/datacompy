@@ -26,66 +26,61 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
 from typing import Any, Dict, List, Union, cast
 
+import snowflake.snowpark as sp
 from ordered_set import OrderedSet
+from snowflake.connector.errors import DatabaseError, ProgrammingError
+from snowflake.snowpark import Window
+from snowflake.snowpark.functions import (
+    abs,
+    col,
+    concat,
+    contains,
+    is_null,
+    lit,
+    monotonically_increasing_id,
+    row_number,
+    trim,
+    when,
+)
+from snowflake.snowpark.types import (
+    ByteType,
+    DateType,
+    DecimalType,
+    DoubleType,
+    FloatType,
+    IntegerType,
+    LongType,
+    ShortType,
+    StringType,
+    TimestampType,
+)
 
 from datacompy.base import (
     BaseCompare,
-    _validate_tolerance_parameter,
     df_to_str,
     get_column_tolerance,
     render,
     save_html_report,
+    validate_tolerance_parameter,
 )
-from datacompy.utility import check_module_available
+from datacompy.comparator import (
+    SnowflakeArrayLikeComparator,
+    SnowflakeNumericComparator,
+    SnowflakeStringComparator,
+)
 
 LOG = logging.getLogger(__name__)
 
-try:
-    import snowflake.snowpark as sp
-    from snowflake.connector.errors import DatabaseError, ProgrammingError
-    from snowflake.snowpark import Window
-    from snowflake.snowpark.functions import (
-        abs,
-        col,
-        concat,
-        contains,
-        is_null,
-        lit,
-        monotonically_increasing_id,
-        row_number,
-        trim,
-        when,
-    )
-    from snowflake.snowpark.types import (
-        ByteType,
-        DateType,
-        DecimalType,
-        DoubleType,
-        FloatType,
-        IntegerType,
-        LongType,
-        ShortType,
-        StringType,
-        TimestampType,
-    )
 
-    NUMERIC_SNOWPARK_TYPES = [
-        ByteType,
-        ShortType,
-        IntegerType,
-        LongType,
-        FloatType,
-        DoubleType,
-        DecimalType,
-    ]
-
-    _SNOWFLAKE_AVAILABLE = True
-
-except ImportError:
-    _SNOWFLAKE_AVAILABLE = False
-
-
-check_snowflake_available = check_module_available(_SNOWFLAKE_AVAILABLE, "snowflake")
+NUMERIC_SNOWPARK_TYPES = [
+    ByteType,
+    ShortType,
+    IntegerType,
+    LongType,
+    FloatType,
+    DoubleType,
+    DecimalType,
+]
 
 
 class SnowflakeCompare(BaseCompare):
@@ -123,6 +118,8 @@ class SnowflakeCompare(BaseCompare):
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns (including any join
         columns).
+    ignore_case : bool, optional
+        Flag to ignore the case of string columns
 
     Attributes
     ----------
@@ -132,7 +129,6 @@ class SnowflakeCompare(BaseCompare):
         All records that are only in df2 (based on a join on join_columns)
     """
 
-    @check_snowflake_available
     def __init__(
         self,
         session: "sp.Session",
@@ -144,12 +140,13 @@ class SnowflakeCompare(BaseCompare):
         df1_name: str | None = None,
         df2_name: str | None = None,
         ignore_spaces: bool = False,
+        ignore_case: bool = False,
     ) -> None:
         # Validate tolerance parameters first
-        self._abs_tol_dict = _validate_tolerance_parameter(
+        self._abs_tol_dict = validate_tolerance_parameter(
             abs_tol, "abs_tol", case_mode="upper"
         )
-        self._rel_tol_dict = _validate_tolerance_parameter(
+        self._rel_tol_dict = validate_tolerance_parameter(
             rel_tol, "rel_tol", case_mode="upper"
         )
 
@@ -163,8 +160,7 @@ class SnowflakeCompare(BaseCompare):
             self.join_columns = [str(join_columns).replace('"', "").upper()]
         else:
             self.join_columns = [
-                str(col).replace('"', "").upper()
-                for col in cast(List[str], join_columns)
+                str(c).replace('"', "").upper() for c in cast(List[str], join_columns)
             ]
 
         self._any_dupes: bool = False
@@ -174,11 +170,12 @@ class SnowflakeCompare(BaseCompare):
         self.abs_tol = abs_tol
         self.rel_tol = rel_tol
         self.ignore_spaces = ignore_spaces
+        self.ignore_case = ignore_case
         self.df1_unq_rows: sp.DataFrame
         self.df2_unq_rows: sp.DataFrame
         self.intersect_rows: sp.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
-        self._compare(ignore_spaces=ignore_spaces)
+        self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
     @property
     def df1(self) -> "sp.DataFrame":
@@ -269,7 +266,7 @@ class SnowflakeCompare(BaseCompare):
         if df.drop_duplicates(self.join_columns).count() < df.count():
             self._any_dupes = True
 
-    def _compare(self, ignore_spaces: bool) -> None:
+    def _compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
         """Actually run the comparison.
 
         This method will log out information about what is different between
@@ -289,7 +286,7 @@ class SnowflakeCompare(BaseCompare):
         )
         LOG.debug("Merging dataframes")
         self._dataframe_merge(ignore_spaces)
-        self._intersect_compare(ignore_spaces)
+        self._intersect_compare(ignore_spaces, ignore_case)
         if self.matches():
             LOG.info("df1 matches df2")
         else:
@@ -298,15 +295,13 @@ class SnowflakeCompare(BaseCompare):
     def df1_unq_columns(self) -> OrderedSet[str]:
         """Get columns that are unique to df1."""
         return cast(
-            OrderedSet[str],
-            OrderedSet(self.df1.columns) - OrderedSet(self.df2.columns),
+            OrderedSet[str], OrderedSet(self.df1.columns) - OrderedSet(self.df2.columns)
         )
 
     def df2_unq_columns(self) -> OrderedSet[str]:
         """Get columns that are unique to df2."""
         return cast(
-            OrderedSet[str],
-            OrderedSet(self.df2.columns) - OrderedSet(self.df1.columns),
+            OrderedSet[str], OrderedSet(self.df2.columns) - OrderedSet(self.df1.columns)
         )
 
     def intersect_columns(self) -> OrderedSet[str]:
@@ -436,7 +431,7 @@ class SnowflakeCompare(BaseCompare):
         )
         self.intersect_rows = self.intersect_rows.cache_result()
 
-    def _intersect_compare(self, ignore_spaces: bool) -> None:
+    def _intersect_compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
         """Run the comparison on the intersect dataframe.
 
         This loops through all columns that are shared between df1 and df2, and
@@ -444,19 +439,20 @@ class SnowflakeCompare(BaseCompare):
         Finally calculates and stores the compare metrics for matching column pairs.
         """
         LOG.debug("Comparing intersection")
-        for col in self.intersect_columns():
-            if col not in self.join_columns:
-                col_1 = col + "_" + self.df1_name
-                col_2 = col + "_" + self.df2_name
-                col_match = col + "_MATCH"
+        for c in self.intersect_columns():
+            if c not in self.join_columns:
+                col_1 = c + "_" + self.df1_name
+                col_2 = c + "_" + self.df2_name
+                col_match = c + "_MATCH"
                 self.intersect_rows = columns_equal(
                     dataframe=self.intersect_rows,
                     col_1=col_1,
                     col_2=col_2,
                     col_match=col_match,
-                    rel_tol=get_column_tolerance(col, self._rel_tol_dict),
-                    abs_tol=get_column_tolerance(col, self._abs_tol_dict),
+                    rel_tol=get_column_tolerance(c, self._rel_tol_dict),
+                    abs_tol=get_column_tolerance(c, self._abs_tol_dict),
                     ignore_spaces=ignore_spaces,
+                    ignore_case=ignore_case,
                 )
 
         with ThreadPoolExecutor() as executor:
@@ -525,10 +521,7 @@ class SnowflakeCompare(BaseCompare):
 
         col1_dtype_instance, _ = _get_column_dtypes(self.df1, column, column)
         col2_dtype_instance, _ = _get_column_dtypes(self.df2, column, column)
-        col1_dtype, col2_dtype = (
-            type(col1_dtype_instance),
-            type(col2_dtype_instance),
-        )
+        col1_dtype, col2_dtype = type(col1_dtype_instance), type(col2_dtype_instance)
 
         self.column_stats.append(
             {
@@ -1049,7 +1042,6 @@ class SnowflakeCompare(BaseCompare):
         return report
 
 
-@check_snowflake_available
 def columns_equal(
     dataframe: "sp.DataFrame",
     col_1: str,
@@ -1058,6 +1050,7 @@ def columns_equal(
     rel_tol: float = 0,
     abs_tol: float = 0,
     ignore_spaces: bool = False,
+    ignore_case: bool = False,
 ) -> "sp.DataFrame":
     """Compare two columns from a dataframe.
 
@@ -1067,9 +1060,9 @@ def columns_equal(
     - A null and a non-null value will evaluate to False.
     - Numeric values will use the relative and absolute tolerances.
     - Decimal values (decimal.Decimal) will attempt to be converted to floats
-        before comparing
+      before comparing
     - Non-numeric values (i.e. where np.isclose can't be used) will just
-        trigger True on two nulls or exact matches.
+      trigger True on two nulls or exact matches.
 
     Parameters
     ----------
@@ -1087,6 +1080,8 @@ def columns_equal(
         Absolute tolerance
     ignore_spaces : bool, optional
         Flag to strip whitespace (including newlines) from string columns
+    ignore_case : bool, optional
+        Flag to ignore the case of string columns
 
     Returns
     -------
@@ -1094,52 +1089,33 @@ def columns_equal(
         A column of boolean values are added.  True == the values match, False == the
         values don't match.
     """
-    base_dtype_instance, compare_dtype_instance = _get_column_dtypes(
-        dataframe, col_1, col_2
-    )
-    base_dtype, compare_dtype = (
-        type(base_dtype_instance),
-        type(compare_dtype_instance),
-    )
-    if _is_comparable(base_dtype, compare_dtype):
-        if (base_dtype in NUMERIC_SNOWPARK_TYPES) and (
-            compare_dtype in NUMERIC_SNOWPARK_TYPES
-        ):  # numeric tolerance comparison
-            dataframe = dataframe.withColumn(
-                col_match,
-                when(
-                    (col(col_1).eqNullSafe(col(col_2)))
-                    | (
-                        abs(col(col_1) - col(col_2))
-                        <= lit(abs_tol) + (lit(rel_tol) * abs(col(col_2)))
-                    ),
-                    # corner case of col1 != NaN and col2 == Nan returns True incorrectly
-                    when(
-                        (is_null(col(col_1)) == False)  # noqa: E712
-                        & (is_null(col(col_2)) == True),  # noqa: E712
-                        lit(False),
-                    ).otherwise(lit(True)),
-                ).otherwise(lit(False)),
-            )
-        else:  # non-numeric comparison
-            if ignore_spaces:
-                when_clause = trim(col(col_1)).eqNullSafe(trim(col(col_2)))
-            else:
-                when_clause = col(col_1).eqNullSafe(col(col_2))
-
-            dataframe = dataframe.withColumn(
-                col_match,
-                when(when_clause, lit(True)).otherwise(lit(False)),
-            )
-    else:
-        LOG.debug(
-            f"Skipping {col_1}({base_dtype_instance.simple_string()}) and {col_2}({compare_dtype_instance.simple_string()}), columns are not comparable"
+    if (
+        compare := SnowflakeArrayLikeComparator().compare(
+            dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match
         )
-        dataframe = dataframe.withColumn(col_match, lit(False))
-    return dataframe
+    ) is not None:
+        return compare
+
+    # compare numeric values
+    if (
+        compare := SnowflakeNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
+            dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match
+        )
+    ) is not None:
+        return compare
+
+    # compare strings
+    if (
+        compare := SnowflakeStringComparator(
+            ignore_space=ignore_spaces, ignore_case=ignore_case
+        ).compare(dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match)
+    ) is not None:
+        return compare
+
+    compare = dataframe.withColumn(col_match, lit(False))
+    return compare
 
 
-@check_snowflake_available
 def get_merged_columns(
     original_df: "sp.DataFrame", merged_df: "sp.DataFrame", suffix: str
 ) -> List[str]:
@@ -1171,7 +1147,6 @@ def get_merged_columns(
     return columns
 
 
-@check_snowflake_available
 def calculate_max_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> float:
     """Get a maximum difference between two columns.
 
@@ -1202,7 +1177,6 @@ def calculate_max_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> flo
     return max_diff
 
 
-@check_snowflake_available
 def calculate_null_diff(dataframe: "sp.DataFrame", col_1: str, col_2: str) -> int:
     """Get the null differences between two columns.
 
