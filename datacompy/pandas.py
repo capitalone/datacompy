@@ -41,6 +41,7 @@ from datacompy.comparator import (
     PandasNumericComparator,
     PandasStringComparator,
 )
+from datacompy.comparator.base import BaseComparator
 from datacompy.comparator.string import pandas_normalize_string_column
 
 LOG = logging.getLogger(__name__)
@@ -87,13 +88,8 @@ class PandasCompare(BaseCompare):
         Flag to ignore the case of string columns. Excludes categoricals.
     cast_column_names_lower: bool, optional
         Boolean indicator that controls of column names will be cast into lower case
-
-    Attributes
-    ----------
-    df1_unq_rows : pd.DataFrame
-        All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : pd.DataFrame
-        All records that are only in df2 (based on a join on join_columns)
+    custom_comparators : list of ``BaseComparator``, optional
+        A list of custom comparator classes to use to compare columns.
     """
 
     def __init__(
@@ -109,8 +105,10 @@ class PandasCompare(BaseCompare):
         ignore_spaces: bool = False,
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
+        custom_comparators: List[BaseComparator] | None = None,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
+        self.custom_comparators = custom_comparators or []
 
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
@@ -153,6 +151,20 @@ class PandasCompare(BaseCompare):
         self.intersect_rows: pd.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
+
+    def _get_comparators(self) -> List[BaseComparator]:
+        """Build and return the list of comparators to be used.
+
+        Custom comparators are placed first, followed by the default ones.
+        """
+        default_comparators = [
+            PandasArrayLikeComparator(),
+            PandasNumericComparator(rtol=self.rel_tol, atol=self.abs_tol),
+            PandasStringComparator(
+                ignore_case=self.ignore_case, ignore_space=self.ignore_spaces
+            ),
+        ]
+        return self.custom_comparators + default_comparators
 
     @property
     def df1(self) -> pd.DataFrame:
@@ -395,6 +407,7 @@ class PandasCompare(BaseCompare):
                             abs_tol=get_column_tolerance(column, self._abs_tol_dict),
                             ignore_spaces=ignore_spaces,
                             ignore_case=ignore_case,
+                            comparators=self._get_comparators(),
                         ).to_frame(name=col_match),
                     ],
                     axis=1,
@@ -617,6 +630,7 @@ class PandasCompare(BaseCompare):
                     abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
                     ignore_spaces=self.ignore_spaces,
                     ignore_case=self.ignore_case,
+                    comparators=self._get_comparators(),
                 )
 
                 if not ignore_matching_cols or (
@@ -928,12 +942,11 @@ def columns_equal(
     abs_tol: float = 0,
     ignore_spaces: bool = False,
     ignore_case: bool = False,
+    comparators: List[BaseComparator] | None = None,
 ) -> "pd.Series[bool]":
     """Compare two columns from a dataframe.
 
-    Returns a True/False series,
-    with the same index as column 1.
-
+    Returns a True/False series, with the same index as column 1.
     - Two nulls (np.nan) will evaluate to True.
     - A null and a non-null value will evaluate to False.
     - Numeric values will use the relative and absolute tolerances.
@@ -944,11 +957,8 @@ def columns_equal(
 
     Notes
     -----
-    As of version ``0.14.0`` If a column is of a mixed data type the compare will
+    - As of version ``0.14.0`` If a column is of a mixed data type the compare will
     default to returning ``False``.
-
-    Notes
-    -----
     - ``list`` and ``np.array`` types will be compared row wise using ``np.array_equal``.
       Depending on the size of your data this might lead to performance issues.
     - All the rows must be of the same type otherwise it is considered "mixed"
@@ -968,6 +978,8 @@ def columns_equal(
         Flag to strip whitespace (including newlines) from string columns
     ignore_case : bool, optional
         Flag to ignore the case of string columns
+    comparators : list of ``BaseComparator``, optional
+        A list of custom comparator classes to use to compare columns.
 
     Returns
     -------
@@ -975,32 +987,40 @@ def columns_equal(
         A series of Boolean values.  True == the values match, False == the
         values don't match.
     """
-    compare: pd.Series[bool]
+    compare: pd.Series[bool] | None
 
-    # order of comparators is important here, as we want to
-    # check for mixed types first, then arrays,  then numeric, and finally then strings as a catch all
-    # compare arrays or lists
-    if (compare := PandasArrayLikeComparator().compare(col_1, col_2)) is not None:
-        compare.index = col_1.index
-        return compare
+    comparators_ = comparators
+    if not comparators_:
+        # If no comparators are passed, behave as before.
+        comparators_ = [
+            PandasArrayLikeComparator(),
+            PandasNumericComparator(rtol=rel_tol, atol=abs_tol),
+            PandasStringComparator(ignore_case=ignore_case, ignore_space=ignore_spaces),
+        ]
 
-    # compare numeric values
-    if (
-        compare := PandasNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
-            col_1, col_2
-        )
-    ) is not None:
-        compare.index = col_1.index
-        return compare
+    for comparator in comparators_:
+        # To handle per-column tolerances for the default numeric comparator,
+        # we can't just use the instance from _get_comparators, because that one
+        # was created with the global tolerance settings (which could be dicts).
+        # We need to use the `rel_tol` and `abs_tol` passed to this function,
+        # which are specific to the column being compared.
+        # A simple way is to create a new instance of the default comparator.
+        # We only do this for the exact base classes, to avoid breaking user-subclassed comparators.
 
-    # compare strings
-    if (
-        compare := PandasStringComparator(
-            ignore_case=ignore_case, ignore_space=ignore_spaces
-        ).compare(col_1, col_2)
-    ) is not None:
-        compare.index = col_1.index
-        return compare
+        if type(comparator) is PandasNumericComparator:
+            comparator_to_use = PandasNumericComparator(rtol=rel_tol, atol=abs_tol)
+        elif type(comparator) is PandasStringComparator:
+            comparator_to_use = PandasStringComparator(
+                ignore_case=ignore_case, ignore_space=ignore_spaces
+            )
+        else:
+            comparator_to_use = comparator
+
+        compare = comparator_to_use.compare(col_1, col_2)
+
+        if compare is not None:
+            compare.index = col_1.index
+            return compare
 
     compare = pd.Series(False, index=col_1.index)
     compare.index = col_1.index
