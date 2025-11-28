@@ -68,6 +68,7 @@ from datacompy.comparator import (
     SnowflakeNumericComparator,
     SnowflakeStringComparator,
 )
+from datacompy.comparator.base import BaseComparator
 
 LOG = logging.getLogger(__name__)
 
@@ -120,13 +121,8 @@ class SnowflakeCompare(BaseCompare):
         columns).
     ignore_case : bool, optional
         Flag to ignore the case of string columns
-
-    Attributes
-    ----------
-    df1_unq_rows : sp.DataFrame
-        All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : sp.DataFrame
-        All records that are only in df2 (based on a join on join_columns)
+    custom_comparators : list of ``BaseComparator``, optional
+        A list of custom comparator classes to use to compare columns.
     """
 
     def __init__(
@@ -141,7 +137,9 @@ class SnowflakeCompare(BaseCompare):
         df2_name: str | None = None,
         ignore_spaces: bool = False,
         ignore_case: bool = False,
+        custom_comparators: List[BaseComparator] | None = None,
     ) -> None:
+        self.custom_comparators = custom_comparators or []
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
             abs_tol, "abs_tol", case_mode="upper"
@@ -176,6 +174,20 @@ class SnowflakeCompare(BaseCompare):
         self.intersect_rows: sp.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
+
+    def _get_comparators(self) -> List[BaseComparator]:
+        """Build and return the list of comparators to be used.
+
+        Custom comparators are placed first, followed by the default ones.
+        """
+        default_comparators = [
+            SnowflakeArrayLikeComparator(),
+            SnowflakeNumericComparator(rtol=self.rel_tol, atol=self.abs_tol),
+            SnowflakeStringComparator(
+                ignore_case=self.ignore_case, ignore_space=self.ignore_spaces
+            ),
+        ]
+        return self.custom_comparators + default_comparators
 
     @property
     def df1(self) -> "sp.DataFrame":
@@ -453,6 +465,7 @@ class SnowflakeCompare(BaseCompare):
                     abs_tol=get_column_tolerance(c, self._abs_tol_dict),
                     ignore_spaces=ignore_spaces,
                     ignore_case=ignore_case,
+                    comparators=self._get_comparators(),
                 )
 
         with ThreadPoolExecutor() as executor:
@@ -750,6 +763,7 @@ class SnowflakeCompare(BaseCompare):
                     rel_tol=get_column_tolerance(orig_col_name, self._rel_tol_dict),
                     abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
                     ignore_spaces=self.ignore_spaces,
+                    comparators=self._get_comparators(),
                 )
 
                 if not ignore_matching_cols or (
@@ -1051,6 +1065,7 @@ def columns_equal(
     abs_tol: float = 0,
     ignore_spaces: bool = False,
     ignore_case: bool = False,
+    comparators: List[BaseComparator] | None = None,
 ) -> "sp.DataFrame":
     """Compare two columns from a dataframe.
 
@@ -1082,6 +1097,8 @@ def columns_equal(
         Flag to strip whitespace (including newlines) from string columns
     ignore_case : bool, optional
         Flag to ignore the case of string columns
+    comparators: List[BaseComparator] | None = None,
+        A list of custom comparator classes to use to compare columns.
 
     Returns
     -------
@@ -1089,28 +1106,39 @@ def columns_equal(
         A column of boolean values are added.  True == the values match, False == the
         values don't match.
     """
-    if (
-        compare := SnowflakeArrayLikeComparator().compare(
-            dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match
-        )
-    ) is not None:
-        return compare
+    comparators_ = comparators
+    if not comparators_:
+        # If no comparators are passed, behave as before.
+        comparators_ = [
+            SnowflakeArrayLikeComparator(),
+            SnowflakeNumericComparator(rtol=rel_tol, atol=abs_tol),
+            SnowflakeStringComparator(
+                ignore_case=ignore_case, ignore_space=ignore_spaces
+            ),
+        ]
 
-    # compare numeric values
-    if (
-        compare := SnowflakeNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
-            dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match
-        )
-    ) is not None:
-        return compare
+    for comparator in comparators_:
+        # To handle per-column tolerances for the default numeric comparator,
+        # we can't just use the instance from _get_comparators, because that one
+        # was created with the global tolerance settings (which could be dicts).
+        # We need to use the `rel_tol` and `abs_tol` passed to this function,
+        # which are specific to the column being compared.
+        # A simple way is to create a new instance of the default comparator.
+        # We only do this for the exact base classes, to avoid breaking user-subclassed comparators.
 
-    # compare strings
-    if (
-        compare := SnowflakeStringComparator(
-            ignore_space=ignore_spaces, ignore_case=ignore_case
-        ).compare(dataframe=dataframe, col1=col_1, col2=col_2, col_match=col_match)
-    ) is not None:
-        return compare
+        if type(comparator) is SnowflakeNumericComparator:
+            comparator_to_use = SnowflakeNumericComparator(rtol=rel_tol, atol=abs_tol)
+        elif type(comparator) is SnowflakeStringComparator:
+            comparator_to_use = SnowflakeStringComparator(
+                ignore_case=ignore_case, ignore_space=ignore_spaces
+            )
+        else:
+            comparator_to_use = comparator
+
+        compare = comparator_to_use.compare(col_1, col_2)
+
+        if compare is not None:
+            return compare
 
     compare = dataframe.withColumn(col_match, lit(False))
     return compare
