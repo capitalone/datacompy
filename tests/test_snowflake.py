@@ -1925,9 +1925,9 @@ def test_custom_comparator_snowflake(snowflake_session):
             if base_string_type and compare_string_type:
                 return dataframe.withColumn(
                     col_match,
-                    when(
-                        length(col("column1")) == length(col("column2")), lit(True)
-                    ).otherwise(lit(False)),
+                    when(length(col(col1)) == length(col(col2)), lit(True)).otherwise(
+                        lit(False)
+                    ),
                 )
             return None
 
@@ -1956,7 +1956,11 @@ def test_custom_comparator_snowflake(snowflake_session):
     # With custom comparator, but it won't apply to integer 'value' column
     # so default comparison for integers should kick in, resulting in a mismatch.
     compare_custom_fallback = SnowflakeCompare(
-        df3, df4, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+        snowflake_session,
+        df3,
+        df4,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
     )
     assert not compare_custom_fallback.matches()
 
@@ -1968,7 +1972,11 @@ def test_custom_comparator_snowflake(snowflake_session):
     # With custom comparator, but it won't apply to integer 'value' column
     # so default comparison for integers should kick in, resulting in a match.
     compare_custom_fallback = SnowflakeCompare(
-        df5, df6, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+        snowflake_session,
+        df5,
+        df6,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
     )
     assert compare_custom_fallback.matches()
 
@@ -1977,11 +1985,17 @@ def test_custom_comparator_snowflake(snowflake_session):
     df8 = snowflake_session.createDataFrame([(1, "abcd")], ["id", "value"])
 
     compare_string_custom = SnowflakeCompare(
-        df7, df8, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+        snowflake_session,
+        df7,
+        df8,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
     )
     assert compare_string_custom.matches()
 
-    compare_string_default = SnowflakeCompare(df7, df8, join_columns=["id"])
+    compare_string_default = SnowflakeCompare(
+        snowflake_session, df7, df8, join_columns=["id"]
+    )
     assert not compare_string_default.matches()
 
     # StringLengthComparator mismatch case
@@ -1989,6 +2003,10 @@ def test_custom_comparator_snowflake(snowflake_session):
     df10 = snowflake_session.createDataFrame([(1, "abcde")], ["id", "value"])
 
     compare_string_custom_mismatch = SnowflakeCompare(
-        df9, df10, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+        snowflake_session,
+        df9,
+        df10,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
     )
     assert not compare_string_custom_mismatch.matches()

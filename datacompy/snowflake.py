@@ -1135,7 +1135,7 @@ def columns_equal(
         else:
             comparator_to_use = comparator
 
-        compare = comparator_to_use.compare(col_1, col_2)
+        compare = comparator_to_use.compare(dataframe, col_1, col_2, col_match)
 
         if compare is not None:
             return compare
