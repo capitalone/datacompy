@@ -31,6 +31,9 @@ import pytest
 
 pytest.importorskip("pyspark")
 
+from datacompy.comparator.base import BaseComparator
+from datacompy.comparator.string import PYSPARK_STRING_TYPE
+from datacompy.comparator.utility import get_spark_column_dtypes
 from datacompy.spark import (
     SparkSQLCompare,
     _generate_id_within_group,
@@ -39,6 +42,7 @@ from datacompy.spark import (
     temp_column_name,
 )
 from pandas.testing import assert_frame_equal, assert_series_equal
+from pyspark.sql.functions import col, length, lit, when
 from pyspark.sql.types import (
     ArrayType,
     BooleanType,
@@ -2113,3 +2117,104 @@ def test_10k_rows_rel_tol_per_column_default(spark_session):
     assert compare_tol.all_columns_match()
     assert compare_tol.all_rows_overlap()
     assert not compare_tol.intersect_rows_match()
+
+
+def test_custom_comparator_spark(spark_session):
+    """Test that a custom comparator can be passed and used with Snowflake."""
+
+    class StringLengthComparator(BaseComparator):
+        """A custom comparator that matches strings based on length."""
+
+        def compare(self, dataframe, col1, col2):
+            base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
+            base_string_type = any(
+                base_dtype.startswith(t) for t in PYSPARK_STRING_TYPE
+            )
+            compare_string_type = any(
+                compare_dtype.startswith(t) for t in PYSPARK_STRING_TYPE
+            )
+            if base_string_type and compare_string_type:
+                return when(
+                    length(col(col1)) == length(col(col2)), lit(True)
+                ).otherwise(lit(False))
+            return None
+
+    df1 = spark_session.createDataFrame([(1, "apple")], ["id", "value"])
+    df2 = spark_session.createDataFrame([(1, "grape")], ["id", "value"])
+
+    # With custom comparator, it should match because 'apple' and 'grape' have the same length
+    compare_custom = SparkSQLCompare(
+        spark_session,
+        df1,
+        df2,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
+    )
+    assert compare_custom.matches()
+
+    # Without custom comparator, it should not match
+    compare_default = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    assert not compare_default.matches()
+
+    # Test case where custom comparator does not apply (returns None)
+    # and default comparison should be used.
+    df3 = spark_session.createDataFrame([(1, 10)], ["id", "value"])
+    df4 = spark_session.createDataFrame([(1, 20)], ["id", "value"])
+
+    # With custom comparator, but it won't apply to integer 'value' column
+    # so default comparison for integers should kick in, resulting in a mismatch.
+    compare_custom_fallback = SparkSQLCompare(
+        spark_session,
+        df3,
+        df4,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
+    )
+    assert not compare_custom_fallback.matches()
+
+    # Test case where custom comparator does not apply (returns None)
+    # and default comparison should be used.
+    df5 = spark_session.createDataFrame([(1, 10)], ["id", "value"])
+    df6 = spark_session.createDataFrame([(1, 10)], ["id", "value"])
+
+    # With custom comparator, but it won't apply to integer 'value' column
+    # so default comparison for integers should kick in, resulting in a match.
+    compare_custom_fallback = SparkSQLCompare(
+        spark_session,
+        df5,
+        df6,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
+    )
+    assert compare_custom_fallback.matches()
+
+    # Ensure the StringLengthComparator is actually used for string columns
+    df7 = spark_session.createDataFrame([(1, "test")], ["id", "value"])
+    df8 = spark_session.createDataFrame([(1, "abcd")], ["id", "value"])
+
+    compare_string_custom = SparkSQLCompare(
+        spark_session,
+        df7,
+        df8,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
+    )
+    assert compare_string_custom.matches()
+
+    compare_string_default = SparkSQLCompare(
+        spark_session, df7, df8, join_columns=["id"]
+    )
+    assert not compare_string_default.matches()
+
+    # StringLengthComparator mismatch case
+    df9 = spark_session.createDataFrame([(1, "test")], ["id", "value"])
+    df10 = spark_session.createDataFrame([(1, "abcde")], ["id", "value"])
+
+    compare_string_custom_mismatch = SparkSQLCompare(
+        spark_session,
+        df9,
+        df10,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
+    )
+    assert not compare_string_custom_mismatch.matches()

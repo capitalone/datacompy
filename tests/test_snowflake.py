@@ -29,11 +29,11 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
-from datacompy.comparator.string import SNOWFLAKE_STRING_TYPE
 
 pytest.importorskip("snowflake.snowpark")
 
 from datacompy.comparator.base import BaseComparator
+from datacompy.comparator.string import SNOWFLAKE_STRING_TYPE
 from datacompy.comparator.utility import get_snowflake_column_dtypes
 from datacompy.snowflake import (
     SnowflakeCompare,
