@@ -2058,7 +2058,7 @@ def test_custom_comparator_pandas():
     class StringLengthComparator(BaseComparator):
         """A custom comparator that matches strings based on length."""
 
-        def compare(self, s1, s2):
+        def compare(self, s1, s2, **kwargs):
             if s1.dtype == "object" and s2.dtype == "object":
                 return s1.str.len() == s2.str.len()
             return None

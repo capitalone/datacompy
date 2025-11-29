@@ -32,28 +32,28 @@ def test_polars_string_comparator_exact_match():
 
 
 def test_polars_string_comparator_case_space_insensitivity():
-    comparator = PolarsStringComparator(ignore_case=True, ignore_space=True)
+    comparator = PolarsStringComparator()
     col1 = pl.Series(["a", "b", "c    "])
     col2 = pl.Series(["A", "   b  ", "C"])
-    result = comparator.compare(col1, col2)
+    result = comparator.compare(col1, col2, ignore_case=True, ignore_space=True)
     assert result.to_list() == [True, True, True]
 
-    comparator = PolarsStringComparator(ignore_case=True, ignore_space=False)
+    comparator = PolarsStringComparator()
     col1 = pl.Series(["a", "b", "c    "])
     col2 = pl.Series(["A", "   b  ", "C"])
-    result = comparator.compare(col1, col2)
+    result = comparator.compare(col1, col2, ignore_case=True, ignore_space=False)
     assert result.to_list() == [True, False, False]
 
-    comparator = PolarsStringComparator(ignore_case=False, ignore_space=True)
+    comparator = PolarsStringComparator()
     col1 = pl.Series(["a", "b", "c    "])
     col2 = pl.Series(["A", "   b  ", "C"])
-    result = comparator.compare(col1, col2)
+    result = comparator.compare(col1, col2, ignore_case=False, ignore_space=True)
     assert result.to_list() == [False, True, False]
 
-    comparator = PolarsStringComparator(ignore_case=False, ignore_space=False)
+    comparator = PolarsStringComparator()
     col1 = pl.Series(["a", "b", "c    "])
     col2 = pl.Series(["A", "   b  ", "C"])
-    result = comparator.compare(col1, col2)
+    result = comparator.compare(col1, col2, ignore_case=False, ignore_space=False)
     assert result.to_list() == [False, False, False]
 
 
@@ -97,28 +97,28 @@ def test_pandas_string_comparator_exact_match():
 
 
 def test_pandas_string_comparator_case_space_insensitivity():
-    comparator = PandasStringComparator(ignore_case=True, ignore_space=True)
+    comparator = PandasStringComparator()
     col1 = pd.Series(["a", "b", "c    "])
     col2 = pd.Series(["A", "   b  ", "C"])
-    result = comparator.compare(col1, col2)
+    result = comparator.compare(col1, col2, ignore_case=True, ignore_space=True)
     assert result.tolist() == [True, True, True]
 
-    comparator = PandasStringComparator(ignore_case=True, ignore_space=False)
+    comparator = PandasStringComparator()
     col1 = pd.Series(["a", "b", "c    "])
     col2 = pd.Series(["A", "   b  ", "C"])
-    result = comparator.compare(col1, col2)
+    result = comparator.compare(col1, col2, ignore_case=True, ignore_space=False)
     assert result.tolist() == [True, False, False]
 
-    comparator = PandasStringComparator(ignore_case=False, ignore_space=True)
+    comparator = PandasStringComparator()
     col1 = pd.Series(["a", "b", "c    "])
     col2 = pd.Series(["A", "   b  ", "C"])
-    result = comparator.compare(col1, col2)
+    result = comparator.compare(col1, col2, ignore_case=False, ignore_space=True)
     assert result.tolist() == [False, True, False]
 
-    comparator = PandasStringComparator(ignore_case=False, ignore_space=False)
+    comparator = PandasStringComparator()
     col1 = pd.Series(["a", "b", "c    "])
     col2 = pd.Series(["A", "   b  ", "C"])
-    result = comparator.compare(col1, col2)
+    result = comparator.compare(col1, col2, ignore_case=False, ignore_space=False)
     assert result.tolist() == [False, False, False]
 
 

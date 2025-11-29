@@ -152,10 +152,8 @@ class PolarsCompare(BaseCompare):
         """
         default_comparators = [
             PolarsArrayLikeComparator(),
-            PolarsNumericComparator(rtol=self.rel_tol, atol=self.abs_tol),
-            PolarsStringComparator(
-                ignore_case=self.ignore_case, ignore_space=self.ignore_spaces
-            ),
+            PolarsNumericComparator(),
+            PolarsStringComparator(),
         ]
         return self.custom_comparators + default_comparators
 
@@ -909,6 +907,7 @@ def columns_equal(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     comparators: List[BaseComparator] | None = None,
+    **kwargs,
 ) -> pl.Series:
     """Compare two columns from a dataframe.
 
@@ -939,6 +938,8 @@ def columns_equal(
         Flag to ignore the case of string columns
     comparators : list of ``BaseComparator``, optional
         A list of custom comparator classes to use to compare columns.
+    **kwargs
+        Additional keyword arguments to pass to custom comparators.
 
     Returns
     -------
@@ -953,29 +954,23 @@ def columns_equal(
         # If no comparators are passed, behave as before.
         comparators_ = [
             PolarsArrayLikeComparator(),
-            PolarsNumericComparator(rtol=rel_tol, atol=abs_tol),
-            PolarsStringComparator(ignore_case=ignore_case, ignore_space=ignore_spaces),
+            PolarsNumericComparator(),
+            PolarsStringComparator(),
         ]
 
     for comparator in comparators_:
-        # To handle per-column tolerances for the default numeric comparator,
-        # we can't just use the instance from _get_comparators, because that one
-        # was created with the global tolerance settings (which could be dicts).
-        # We need to use the `rel_tol` and `abs_tol` passed to this function,
-        # which are specific to the column being compared.
-        # A simple way is to create a new instance of the default comparator.
-        # We only do this for the exact base classes, to avoid breaking user-subclassed comparators.
-
-        if type(comparator) is PolarsNumericComparator:
-            comparator_to_use = PolarsNumericComparator(rtol=rel_tol, atol=abs_tol)
-        elif type(comparator) is PolarsStringComparator:
-            comparator_to_use = PolarsStringComparator(
-                ignore_case=ignore_case, ignore_space=ignore_spaces
+        if isinstance(comparator, PolarsNumericComparator):
+            compare = comparator.compare(col_1, col_2, rtol=rel_tol, atol=abs_tol)
+        elif isinstance(comparator, PolarsStringComparator):
+            compare = comparator.compare(
+                col_1, col_2, ignore_space=ignore_spaces, ignore_case=ignore_case
             )
+        elif isinstance(comparator, PolarsArrayLikeComparator):
+            compare = comparator.compare(col_1, col_2)
         else:
-            comparator_to_use = comparator
-
-        compare = comparator_to_use.compare(col_1, col_2)
+            # for custom comparators pass all the available parameters
+            # custom comparators can ignore what they don't need.
+            compare = comparator.compare(col_1, col_2, **kwargs)
 
         if compare is not None:
             return compare

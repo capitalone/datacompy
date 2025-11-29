@@ -27,36 +27,24 @@ class BaseComparator(ABC):
     """
 
     @abstractmethod
-    def compare(self) -> Any:
-        """Check if two columns are equal."""
+    def compare(self, col1: Any, col2: Any, **kwargs) -> Any:
+        """Check if two columns are equal.
+
+        This method should be implemented in derived classes to provide
+        specific comparison logic.
+
+        Parameters
+        ----------
+        col1 : Any
+            The first column to compare.
+        col2 : Any
+            The second column to compare.
+        **kwargs : Any
+            Additional keyword arguments for comparison.
+
+        Returns
+        -------
+        Any
+            Comparison result. (implementation-specific)
+        """
         raise NotImplementedError()
-
-
-class BaseStringComparator(BaseComparator):
-    """Base class for all string comparators.
-
-    This class serves as an abstract base class for implementing
-    specific string comparator logic in derived classes.
-    """
-
-    def __init__(self, ignore_space: bool = True, ignore_case: bool = True):
-        self.ignore_space = ignore_space
-        self.ignore_case = ignore_case
-
-    def compare(self, *args, **kwargs):  # noqa: D102
-        pass
-
-
-class BaseNumericComparator(BaseComparator):
-    """Base class for all numeric comparators.
-
-    This class serves as an abstract base class for implementing
-    specific numeric comparator logic in derived classes.
-    """
-
-    def __init__(self, rtol: float = 1e-5, atol: float = 1e-8):
-        self.rtol = rtol
-        self.atol = atol
-
-    def compare(self, *args, **kwargs):  # noqa: D102
-        pass

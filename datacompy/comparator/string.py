@@ -21,7 +21,7 @@ from typing import Any
 import pandas as pd
 import polars as pl
 
-from datacompy.comparator.base import BaseStringComparator
+from datacompy.comparator.base import BaseComparator
 
 LOG = logging.getLogger(__name__)
 
@@ -73,18 +73,16 @@ PANDAS_DATE_TYPES = {
 }
 
 
-class PolarsStringComparator(BaseStringComparator):
-    """Comparator for string / temporal / date columns in Polars.
+class PolarsStringComparator(BaseComparator):
+    """Comparator for string / temporal / date columns in Polars."""
 
-    Parameters
-    ----------
-    ignore_space : bool
-        Whether to ignore leading and trailing whitespace when comparing strings.
-    ignore_case : bool
-        Whether to ignore case when comparing strings.
-    """
-
-    def compare(self, col1: pl.Series, col2: pl.Series) -> pl.Series | None:
+    def compare(
+        self,
+        col1: pl.Series,
+        col2: pl.Series,
+        ignore_space: bool = True,
+        ignore_case: bool = True,
+    ) -> pl.Series | None:
         """Compare two Polars Series column-wise, taking into account optional normalization for spaces and case sensitivity.
 
         Parameters
@@ -93,6 +91,10 @@ class PolarsStringComparator(BaseStringComparator):
             The first Polars Series to compare.
         col2 : pl.Series
             The second Polars Series to compare.
+        ignore_space : bool
+            Whether to ignore leading and trailing whitespace when comparing strings.
+        ignore_case : bool
+            Whether to ignore case when comparing strings.
 
         Returns
         -------
@@ -128,12 +130,8 @@ class PolarsStringComparator(BaseStringComparator):
             or (col1.dtype.is_temporal() and col2.dtype.is_temporal())
             or (col1_type == "Categorical" and col2_type == "Categorical")
         ):
-            col1 = polars_normalize_string_column(
-                col1, self.ignore_space, self.ignore_case
-            )
-            col2 = polars_normalize_string_column(
-                col2, self.ignore_space, self.ignore_case
-            )
+            col1 = polars_normalize_string_column(col1, ignore_space, ignore_case)
+            col2 = polars_normalize_string_column(col2, ignore_space, ignore_case)
             try:
                 return pl.Series(
                     (col1.eq_missing(col2)) | (col1.is_null() & col2.is_null())
@@ -149,7 +147,7 @@ class PolarsStringComparator(BaseStringComparator):
             return None
 
 
-class PandasStringComparator(BaseStringComparator):
+class PandasStringComparator(BaseComparator):
     """Comparator for string / date / mixed columns in Pandas.
 
     Parameters
@@ -160,7 +158,13 @@ class PandasStringComparator(BaseStringComparator):
         Whether to ignore case when comparing strings.
     """
 
-    def compare(self, col1: pd.Series, col2: pd.Series) -> pd.Series | None:
+    def compare(
+        self,
+        col1: pd.Series,
+        col2: pd.Series,
+        ignore_space: bool = True,
+        ignore_case: bool = True,
+    ) -> pd.Series | None:
         """Compare two Pandas Series column-wise, taking into account optional normalization for spaces and case sensitivity.
 
         Parameters
@@ -169,6 +173,10 @@ class PandasStringComparator(BaseStringComparator):
             The first Pandas Series to compare.
         col2 : pd.Series
             The second Pandas Series to compare.
+        ignore_space : bool
+            Whether to ignore leading and trailing whitespace when comparing strings.
+        ignore_case : bool
+            Whether to ignore case when comparing strings.
 
         Returns
         -------
@@ -205,12 +213,8 @@ class PandasStringComparator(BaseStringComparator):
             return pandas_compare_string_and_date_columns(col1, col2)
         # if both are strings
         elif col1_type in PANDAS_STRING_TYPE and col2_type in PANDAS_STRING_TYPE:
-            col1 = pandas_normalize_string_column(
-                col1, self.ignore_space, self.ignore_case
-            )
-            col2 = pandas_normalize_string_column(
-                col2, self.ignore_space, self.ignore_case
-            )
+            col1 = pandas_normalize_string_column(col1, ignore_space, ignore_case)
+            col2 = pandas_normalize_string_column(col2, ignore_space, ignore_case)
             try:
                 return pd.Series(
                     (col1.fillna(DEFAULT_VALUE) == col2.fillna(DEFAULT_VALUE))
@@ -235,19 +239,16 @@ class PandasStringComparator(BaseStringComparator):
             return None
 
 
-class SparkStringComparator(BaseStringComparator):
-    """Comparator for string / temporal / date columns in PySpark.
-
-    Parameters
-    ----------
-    ignore_space : bool
-        Whether to ignore leading and trailing whitespace when comparing strings.
-    ignore_case : bool
-        Whether to ignore case when comparing strings.
-    """
+class SparkStringComparator(BaseComparator):
+    """Comparator for string / temporal / date columns in PySpark."""
 
     def compare(
-        self, dataframe: "ps.sql.DataFrame", col1: str, col2: str
+        self,
+        dataframe: "ps.sql.DataFrame",
+        col1: str,
+        col2: str,
+        ignore_space: bool = True,
+        ignore_case: bool = True,
     ) -> "ps.sql.Column | None":
         """Compare two columns in a PySpark DataFrame for string equality.
 
@@ -259,6 +260,10 @@ class SparkStringComparator(BaseStringComparator):
             The name of the first column to compare.
         col2 : str
             The name of the second column to compare.
+        ignore_space : bool
+            Whether to ignore leading and trailing whitespace when comparing strings.
+        ignore_case : bool
+            Whether to ignore case when comparing strings.
 
         Returns
         -------
@@ -292,10 +297,10 @@ class SparkStringComparator(BaseStringComparator):
         ):
             try:
                 col1 = spark_normalize_string_column(
-                    psf.col(col1), self.ignore_space, self.ignore_case
+                    psf.col(col1), ignore_space, ignore_case
                 )
                 col2 = spark_normalize_string_column(
-                    psf.col(col2), self.ignore_space, self.ignore_case
+                    psf.col(col2), ignore_space, ignore_case
                 )
 
                 return psf.when(col1.eqNullSafe(col2), psf.lit(True)).otherwise(
@@ -307,19 +312,17 @@ class SparkStringComparator(BaseStringComparator):
             return None
 
 
-class SnowflakeStringComparator(BaseStringComparator):
-    """Comparator for string columns in Snowflake.
-
-    Parameters
-    ----------
-    ignore_space : bool
-        Whether to ignore leading and trailing whitespace when comparing strings.
-    ignore_case : bool
-        Whether to ignore case when comparing strings.
-    """
+class SnowflakeStringComparator(BaseComparator):
+    """Comparator for string columns in Snowflake."""
 
     def compare(
-        self, dataframe: "sp.DataFrame", col1: str, col2: str, col_match: str
+        self,
+        dataframe: "sp.DataFrame",
+        col1: str,
+        col2: str,
+        col_match: str,
+        ignore_space: bool = True,
+        ignore_case: bool = True,
     ) -> "sp.DataFrame | None":
         """Compare two columns in a Snowflake DataFrame for string equality.
 
@@ -333,6 +336,10 @@ class SnowflakeStringComparator(BaseStringComparator):
             The name of the second column to compare.
         col_match : str
             The name of the output column that will store the comparison results.
+        ignore_space : bool
+            Whether to ignore leading and trailing whitespace when comparing strings.
+        ignore_case : bool
+            Whether to ignore case when comparing strings.
 
         Returns
         -------
@@ -369,10 +376,10 @@ class SnowflakeStringComparator(BaseStringComparator):
         ):
             try:
                 col1 = snowpark_normalize_string_column(
-                    spf.col(col1), self.ignore_space, self.ignore_case
+                    spf.col(col1), ignore_space, ignore_case
                 )
                 col2 = snowpark_normalize_string_column(
-                    spf.col(col2), self.ignore_space, self.ignore_case
+                    spf.col(col2), ignore_space, ignore_case
                 )
 
                 return dataframe.withColumn(

@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 import polars as pl
 
-from datacompy.comparator.base import BaseNumericComparator
+from datacompy.comparator.base import BaseComparator
 
 NUMERIC_PANDAS_TYPES = [
     "floating",
@@ -90,7 +90,7 @@ except ImportError:
     NUMERIC_SNOWFLAKE_TYPES = None
 
 
-class PolarsNumericComparator(BaseNumericComparator):
+class PolarsNumericComparator(BaseComparator):
     """Comparator for numeric columns in Polars.
 
     Parameters
@@ -101,7 +101,9 @@ class PolarsNumericComparator(BaseNumericComparator):
         The absolute tolerance to use for comparison.
     """
 
-    def compare(self, col1: pl.Series, col2: pl.Series) -> pl.Series | None:
+    def compare(
+        self, col1: pl.Series, col2: pl.Series, rtol=1e-5, atol=1e-8
+    ) -> pl.Series | None:
         """
         Compare two Polars Series for approximate equality within specified tolerances `rtol` and `atol`.
 
@@ -111,6 +113,10 @@ class PolarsNumericComparator(BaseNumericComparator):
             The first Polars Series to compare.
         col2 : pl.Series
             The second Polars Series to compare.
+        rtol : float, optional
+            The relative tolerance to use for comparison. Default is 1e-5.
+        atol : float, optional
+            The absolute tolerance to use for comparison. Default is 1e-8.
 
         Returns
         -------
@@ -134,9 +140,7 @@ class PolarsNumericComparator(BaseNumericComparator):
         if col1.dtype.is_numeric() and col2.dtype.is_numeric():
             try:
                 return pl.Series(
-                    np.isclose(
-                        col1, col2, rtol=self.rtol, atol=self.atol, equal_nan=True
-                    )
+                    np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
                 )
             except Exception:
                 try:
@@ -144,8 +148,8 @@ class PolarsNumericComparator(BaseNumericComparator):
                         np.isclose(
                             col1.cast(pl.Float64, strict=True),
                             col2.cast(pl.Float64, strict=True),
-                            rtol=self.rtol,
-                            atol=self.atol,
+                            rtol=rtol,
+                            atol=atol,
                             equal_nan=True,
                         )
                     )
@@ -155,7 +159,7 @@ class PolarsNumericComparator(BaseNumericComparator):
             return None
 
 
-class PandasNumericComparator(BaseNumericComparator):
+class PandasNumericComparator(BaseComparator):
     """Comparator for numeric columns in Pandas.
 
     Parameters
@@ -166,7 +170,9 @@ class PandasNumericComparator(BaseNumericComparator):
         The absolute tolerance to use for comparison.
     """
 
-    def compare(self, col1: pd.Series, col2: pd.Series) -> pd.Series | None:
+    def compare(
+        self, col1: pd.Series, col2: pd.Series, rtol=1e-5, atol=1e-8
+    ) -> pd.Series | None:
         """
         Compare two Pandas Series for approximate equality within specified tolerances  `rtol` and `atol`.
 
@@ -176,6 +182,10 @@ class PandasNumericComparator(BaseNumericComparator):
             The first Pandas Series to compare.
         col2 : pd.Series
             The second Pandas Series to compare.
+        rtol : float, optional
+            The relative tolerance to use for comparison. Default is 1e-5.
+        atol : float, optional
+            The absolute tolerance to use for comparison. Default is 1e-8.
 
         Returns
         -------
@@ -202,9 +212,7 @@ class PandasNumericComparator(BaseNumericComparator):
         ):
             try:
                 return pd.Series(
-                    np.isclose(
-                        col1, col2, rtol=self.rtol, atol=self.atol, equal_nan=True
-                    )
+                    np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
                 )
             except TypeError:
                 try:
@@ -212,8 +220,8 @@ class PandasNumericComparator(BaseNumericComparator):
                         np.isclose(
                             col1.astype(float),
                             col2.astype(float),
-                            rtol=self.rtol,
-                            atol=self.atol,
+                            rtol=rtol,
+                            atol=atol,
                             equal_nan=True,
                         )
                     )
@@ -223,7 +231,7 @@ class PandasNumericComparator(BaseNumericComparator):
             return None
 
 
-class SparkNumericComparator(BaseNumericComparator):
+class SparkNumericComparator(BaseComparator):
     """Comparator for numeric columns in PySpark.
 
     Parameters
@@ -236,7 +244,12 @@ class SparkNumericComparator(BaseNumericComparator):
     """
 
     def compare(
-        self, dataframe: "ps.sql.DataFrame", col1: str, col2: str
+        self,
+        dataframe: "ps.sql.DataFrame",
+        col1: str,
+        col2: str,
+        rtol=1e-5,
+        atol=1e-8,
     ) -> "ps.sql.Column | None":
         """
         Compare two columns in a PySpark DataFrame for approximate equality within specified tolerances `rtol` and `atol`.
@@ -249,6 +262,10 @@ class SparkNumericComparator(BaseNumericComparator):
             The name of the first column to compare.
         col2 : str
             The name of the second column to compare.
+        rtol : float, optional
+            The relative tolerance to use for comparison. Default is 1e-5.
+        atol : float, optional
+            The absolute tolerance to use for comparison. Default is 1e-8.
 
         Returns
         -------
@@ -276,8 +293,7 @@ class SparkNumericComparator(BaseNumericComparator):
                     (psf.col(col1).eqNullSafe(psf.col(col2)))
                     | (
                         psf.abs(psf.col(col1) - psf.col(col2))
-                        <= psf.lit(self.atol)
-                        + (psf.lit(self.rtol) * psf.abs(psf.col(col2)))
+                        <= psf.lit(atol) + (psf.lit(rtol) * psf.abs(psf.col(col2)))
                     ),
                     # corner case of col1 != NaN and col2 == Nan returns True incorrectly
                     psf.when(
@@ -292,7 +308,7 @@ class SparkNumericComparator(BaseNumericComparator):
             return None
 
 
-class SnowflakeNumericComparator(BaseNumericComparator):
+class SnowflakeNumericComparator(BaseComparator):
     """Comparator for numeric columns in Snowflake.
 
     Parameters
@@ -310,6 +326,8 @@ class SnowflakeNumericComparator(BaseNumericComparator):
         col1: str,
         col2: str,
         col_match: str,
+        rtol=1e-5,
+        atol=1e-8,
     ) -> "sp.DataFrame | None":
         """
         Compare two columns in a Snowpark DataFrame for approximate equality within specified tolerances `rtol` and `atol`.
@@ -324,6 +342,10 @@ class SnowflakeNumericComparator(BaseNumericComparator):
             The name of the second column to compare.
         col_match : str
             The name of the output column that will store the comparison results.
+        rtol : float, optional
+            The relative tolerance to use for comparison. Default is 1e-5.
+        atol : float, optional
+            The absolute tolerance to use for comparison. Default is 1e-8.
 
         Returns
         -------
@@ -356,8 +378,7 @@ class SnowflakeNumericComparator(BaseNumericComparator):
                         (spf.col(col1).eqNullSafe(spf.col(col2)))
                         | (
                             spf.abs(spf.col(col1) - spf.col(col2))
-                            <= spf.lit(self.atol)
-                            + (spf.lit(self.rtol) * spf.abs(spf.col(col2)))
+                            <= spf.lit(atol) + (spf.lit(rtol) * spf.abs(spf.col(col2)))
                         ),
                         # corner case of col1 != null and col2 == null returns True incorrectly
                         spf.when(
