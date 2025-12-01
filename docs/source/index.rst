@@ -9,7 +9,7 @@ Contents
     :maxdepth: 2
 
     Installation <install>
-    Datacompy v1.0.0 Changes <v1_changes>
+    Comparator Framework Usage <comparator_usage>
     Pandas Usage <pandas_usage>
     Spark Usage <spark_usage>
     Snowflake Usage <snowflake_usage>

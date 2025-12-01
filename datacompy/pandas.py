@@ -61,10 +61,10 @@ class PandasCompare(BaseCompare):
     df2 : pandas ``DataFrame``
         Second dataframe to check
     join_columns : list or str, optional
-        Column(s) to join dataframes on.  If a string is passed in, that one
+        Column(s) to join dataframes on. If a string is passed in, that one
         column will be used.
     on_index : bool, optional
-        If True, the index will be used to join the two dataframes.  If both
+        If True, the index will be used to join the two dataframes. If both
         ``join_columns`` and ``on_index`` are provided, an exception will be
         raised.
     abs_tol : float or dict, optional
@@ -945,19 +945,20 @@ def columns_equal(
 ) -> "pd.Series[bool]":
     """Compare two columns from a dataframe.
 
-    Returns a True/False series, with the same index as column 1.
-    - Two nulls (np.nan) will evaluate to True.
-    - A null and a non-null value will evaluate to False.
+    Returns a ``True```/``/False`` series, with the same index as column 1.
+
+    - Two nulls (``np.nan``) will evaluate to ``True``.
+    - A null and a non-null value will evaluate to ``False``.
     - Numeric values will use the relative and absolute tolerances.
-    - Decimal values (decimal.Decimal) will attempt to be converted to floats
-      before comparing
-    - Non-numeric values (i.e. where np.isclose can't be used) will just
-      trigger True on two nulls or exact matches.
+    - Decimal values (``decimal.Decimal``) will attempt to be converted
+      to floats before comparing.
+    - Non-numeric values (i.e. where np.isclose can't be used) will just trigger
+      ``True`` on two nulls or exact matches.
 
     Notes
     -----
-    - As of version ``0.14.0`` If a column is of a mixed data type the compare will
-    default to returning ``False``.
+    - As of version ``0.14.0`` If a column is of a mixed data type the compare
+      will default to returning ``False``.
     - ``list`` and ``np.array`` types will be compared row wise using ``np.array_equal``.
       Depending on the size of your data this might lead to performance issues.
     - All the rows must be of the same type otherwise it is considered "mixed"
