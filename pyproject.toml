@@ -96,7 +96,7 @@ version = { attr = "datacompy.__version__" }
 python-tag = "py3"
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py312"
 src = [ "src" ]
 
 extend-include = [ "*.ipynb" ]
@@ -154,7 +154,7 @@ module = "pyarrow"
 ignore_missing_imports = true
 
 [edgetest.envs.core]
-python_version = "3.10"
+python_version = "3.12"
 conda_install = [ "openjdk=8" ]
 extras = [ "dev" ]
 command = "pytest tests/ --ignore=tests/test_snowflake.py"
