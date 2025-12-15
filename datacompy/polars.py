@@ -973,6 +973,9 @@ def columns_equal(
             compare = comparator.compare(col_1, col_2, **kwargs)
 
         if compare is not None:
+            LOG.info(
+                f"Using comparator: {comparator.__class__.__name__} for column ({col_1.name}, {col_2.name}) comparison."
+            )
             return compare
 
     compare = pl.Series([False] * col_1.shape[0])

@@ -1155,6 +1155,9 @@ def columns_equal(
             compare = comparator.compare(dataframe, col_1, col_2, **kwargs)
 
         if compare is not None:
+            LOG.info(
+                f"Using comparator: {comparator.__class__.__name__} for column ({col_1}, {col_2}) comparison."
+            )
             return compare
 
     compare = F.lit(False)

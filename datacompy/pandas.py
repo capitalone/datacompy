@@ -1016,6 +1016,9 @@ def columns_equal(
 
         if compare is not None:
             compare.index = col_1.index
+            LOG.info(
+                f"Using comparator: {comparator.__class__.__name__} for column ({col_1.name}, {col_2.name}) comparison."
+            )
             return compare
 
     compare = pd.Series(False, index=col_1.index)
