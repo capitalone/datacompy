@@ -34,7 +34,7 @@ from pytest import raises
 
 pytest.importorskip("pyspark")
 
-if sys.version_info >= (3, 12):
+if sys.version_info >= (3, 12):  # noqa: UP036
     pytest.skip("unsupported python version", allow_module_level=True)
 
 from datacompy.spark.sql import (

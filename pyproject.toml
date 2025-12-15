@@ -36,7 +36,7 @@ dynamic = [ "version" ]
 dependencies = [
   "jinja2>=3",
   "numpy>=1.26,<=2.3.5",
-  "ordered-set>=4.0.2,<=4.1.0",
+  "ordered-set>=4.0.2,<=4.1",
   "pandas>=2.2,<=2.3.3",
   "polars[pandas]>=0.20.4,<=1.36.1",
 ]
@@ -154,7 +154,7 @@ module = "pyarrow"
 ignore_missing_imports = true
 
 [edgetest.envs.core]
-python_version = "3.12"
+python_version = "3.11"
 conda_install = [ "openjdk=8" ]
 extras = [ "dev" ]
 command = "pytest tests/ --ignore=tests/test_snowflake.py"
