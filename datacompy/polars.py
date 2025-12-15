@@ -50,6 +50,12 @@ LOG = logging.getLogger(__name__)
 STRING_TYPE = ["String", "Utf8"]
 LIST_TYPE = ["List", "Array"]
 
+_POLARS_DEFAULT_COMPARATORS = [
+    PolarsArrayLikeComparator(),
+    PolarsNumericComparator(),
+    PolarsStringComparator(),
+]
+
 
 class PolarsCompare(BaseCompare):
     """Comparison class to be used to compare whether two dataframes as equal.
@@ -150,12 +156,7 @@ class PolarsCompare(BaseCompare):
 
         Custom comparators are placed first, followed by the default ones.
         """
-        default_comparators = [
-            PolarsArrayLikeComparator(),
-            PolarsNumericComparator(),
-            PolarsStringComparator(),
-        ]
-        return self.custom_comparators + default_comparators
+        return self.custom_comparators + _POLARS_DEFAULT_COMPARATORS
 
     @property
     def df1(self) -> pl.DataFrame:
@@ -952,11 +953,7 @@ def columns_equal(
     comparators_ = comparators
     if not comparators_:
         # If no comparators are passed, behave as before.
-        comparators_ = [
-            PolarsArrayLikeComparator(),
-            PolarsNumericComparator(),
-            PolarsStringComparator(),
-        ]
+        comparators_ = _POLARS_DEFAULT_COMPARATORS
 
     for comparator in comparators_:
         if isinstance(comparator, PolarsNumericComparator):

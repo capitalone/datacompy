@@ -47,6 +47,13 @@ from datacompy.comparator.string import pandas_normalize_string_column
 LOG = logging.getLogger(__name__)
 
 
+_PANDAS_DEFAULT_COMPARATORS = [
+    PandasArrayLikeComparator(),
+    PandasNumericComparator(),
+    PandasStringComparator(),
+]
+
+
 class PandasCompare(BaseCompare):
     """Comparison class to be used to compare whether two dataframes as equal.
 
@@ -157,12 +164,7 @@ class PandasCompare(BaseCompare):
 
         Custom comparators are placed first, followed by the default ones.
         """
-        default_comparators = [
-            PandasArrayLikeComparator(),
-            PandasNumericComparator(),
-            PandasStringComparator(),
-        ]
-        return self.custom_comparators + default_comparators
+        return self.custom_comparators + _PANDAS_DEFAULT_COMPARATORS
 
     @property
     def df1(self) -> pd.DataFrame:
@@ -994,11 +996,7 @@ def columns_equal(
     comparators_ = comparators
     if not comparators_:
         # If no comparators are passed, behave as before.
-        comparators_ = [
-            PandasArrayLikeComparator(),
-            PandasNumericComparator(),
-            PandasStringComparator(),
-        ]
+        comparators_ = _PANDAS_DEFAULT_COMPARATORS
 
     for comparator in comparators_:
         if isinstance(comparator, PandasNumericComparator):

@@ -51,6 +51,13 @@ from datacompy.comparator.base import BaseComparator
 LOG = logging.getLogger(__name__)
 
 
+_SPARK_DEFAULT_COMPARATORS = [
+    SparkArrayLikeComparator(),
+    SparkNumericComparator(),
+    SparkStringComparator(),
+]
+
+
 def decimal_comparator():
     """Check equality with decimal(X, Y) types.
 
@@ -179,12 +186,7 @@ class SparkSQLCompare(BaseCompare):
 
         Custom comparators are placed first, followed by the default ones.
         """
-        default_comparators = [
-            SparkArrayLikeComparator(),
-            SparkNumericComparator(),
-            SparkStringComparator(),
-        ]
-        return self.custom_comparators + default_comparators
+        return self.custom_comparators + _SPARK_DEFAULT_COMPARATORS
 
     @property
     def df1(self) -> "pyspark.sql.DataFrame":
@@ -1128,11 +1130,7 @@ def columns_equal(
 
     if not comparators_:
         # If no comparators are passed, behave as before.
-        comparators_ = [
-            SparkArrayLikeComparator(),
-            SparkNumericComparator(),
-            SparkStringComparator(),
-        ]
+        comparators_ = _SPARK_DEFAULT_COMPARATORS
 
     for comparator in comparators_:
         if isinstance(comparator, SparkNumericComparator):

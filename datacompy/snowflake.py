@@ -83,6 +83,12 @@ NUMERIC_SNOWPARK_TYPES = [
     DecimalType,
 ]
 
+_SNOWFLAKE_DEFAULT_COMPARATORS = [
+    SnowflakeArrayLikeComparator(),
+    SnowflakeNumericComparator(),
+    SnowflakeStringComparator(),
+]
+
 
 class SnowflakeCompare(BaseCompare):
     """Comparison class to be used to compare whether two Snowpark dataframes are equal.
@@ -180,12 +186,7 @@ class SnowflakeCompare(BaseCompare):
 
         Custom comparators are placed first, followed by the default ones.
         """
-        default_comparators = [
-            SnowflakeArrayLikeComparator(),
-            SnowflakeNumericComparator(),
-            SnowflakeStringComparator(),
-        ]
-        return self.custom_comparators + default_comparators
+        return self.custom_comparators + _SNOWFLAKE_DEFAULT_COMPARATORS
 
     @property
     def df1(self) -> "sp.DataFrame":
@@ -1110,11 +1111,7 @@ def columns_equal(
     comparators_ = comparators
     if not comparators_:
         # If no comparators are passed, behave as before.
-        comparators_ = [
-            SnowflakeArrayLikeComparator(),
-            SnowflakeNumericComparator(),
-            SnowflakeStringComparator(),
-        ]
+        comparators_ = _SNOWFLAKE_DEFAULT_COMPARATORS
 
     for comparator in comparators_:
         if isinstance(comparator, SnowflakeNumericComparator):
