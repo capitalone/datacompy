@@ -1,3 +1,18 @@
+#
+# Copyright 2025 Capital One Services, LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Tests for base.py
 """
@@ -16,12 +31,12 @@ from typing import Dict
 from datacompy.base import (
     BaseCompare,
     _resolve_template_path,
-    _validate_tolerance_parameter,
     df_to_str,
     get_column_tolerance,
     render,
     save_html_report,
     temp_column_name,
+    validate_tolerance_parameter,
 )
 
 
@@ -359,28 +374,28 @@ def test_resolve_with_subdirectories(tmp_path, monkeypatch):
 
 def test_validate_tolerance_float() -> None:
     """Test validation of float tolerance values."""
-    assert _validate_tolerance_parameter(0.1, "abs_tol") == {"default": 0.1}
-    assert _validate_tolerance_parameter(0, "abs_tol") == {"default": 0.0}
+    assert validate_tolerance_parameter(0.1, "abs_tol") == {"default": 0.1}
+    assert validate_tolerance_parameter(0, "abs_tol") == {"default": 0.0}
     with pytest.raises(ValueError, match="abs_tol cannot be negative"):
-        _validate_tolerance_parameter(-0.1, "abs_tol")
+        validate_tolerance_parameter(-0.1, "abs_tol")
 
 
 def test_validate_tolerance_dict() -> None:
     """Test validation of dictionary tolerance values."""
     tol_dict: Dict[str, float] = {"col1": 0.1, "col2": 0.2, "default": 0.05}
-    result = _validate_tolerance_parameter(tol_dict, "abs_tol")
+    result = validate_tolerance_parameter(tol_dict, "abs_tol")
     assert result == {"col1": 0.1, "col2": 0.2, "default": 0.05}
 
     # Test dictionary without default value
     tol_dict = {"col1": 0.1, "col2": 0.2}
-    result = _validate_tolerance_parameter(tol_dict, "abs_tol")
+    result = validate_tolerance_parameter(tol_dict, "abs_tol")
     assert result == {"col1": 0.1, "col2": 0.2, "default": 0.0}
 
     # Test invalid values
     with pytest.raises(ValueError, match="must be numeric"):
-        _validate_tolerance_parameter({"col1": "invalid"}, "abs_tol")  # type: ignore
+        validate_tolerance_parameter({"col1": "invalid"}, "abs_tol")  # type: ignore
     with pytest.raises(ValueError, match="cannot be negative"):
-        _validate_tolerance_parameter({"col1": -0.1}, "abs_tol")
+        validate_tolerance_parameter({"col1": -0.1}, "abs_tol")
 
 
 def test_case_sensitivity() -> None:
@@ -388,15 +403,15 @@ def test_case_sensitivity() -> None:
     tol_dict = {"COL1": 0.1, "Col2": 0.2}
 
     # Test with case sensitivity lower
-    result = _validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="lower")
+    result = validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="lower")
     assert result == {"col1": 0.1, "col2": 0.2, "default": 0.0}
 
     # Test with case sensitivity disabled
-    result = _validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="preserve")
+    result = validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="preserve")
     assert result == {"COL1": 0.1, "Col2": 0.2, "default": 0.0}
 
     # Test with case sensitivity upper
-    result = _validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="upper")
+    result = validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="upper")
     assert result == {"COL1": 0.1, "COL2": 0.2, "default": 0.0}
 
 

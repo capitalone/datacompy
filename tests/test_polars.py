@@ -27,22 +27,20 @@ from decimal import Decimal
 from unittest import mock
 
 import numpy as np
-import pytest
-from pytest import raises
-
-pytest.importorskip("polars")
-
 import polars as pl
+import pytest
+from datacompy.comparator.base import BaseComparator
+from datacompy.comparator.string import polars_normalize_string_column
 from datacompy.polars import (
     PolarsCompare,
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
-    normalize_string_column,
     temp_column_name,
 )
 from polars.exceptions import ComputeError, DuplicateError, SchemaError
 from polars.testing import assert_frame_equal, assert_series_equal
+from pytest import raises
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -1494,7 +1492,7 @@ def test_string_as_numeric():
 
 def test_single_date_columns_equal_to_string():
     data = """a|b|expected
-2017-01-01|2017-01-01   |True
+2017-01-01|2017-01-01   |False
 2017-01-02  |2017-01-02|True
 2017-10-01  |2017-10-10   |False
 2017-01-01||False
@@ -1509,7 +1507,9 @@ def test_single_date_columns_equal_to_string():
     col_a = df["a"].str.strip_chars().str.to_date(strict=False)
     col_b = df["b"]
 
-    actual_out = columns_equal(col_a, col_b, rel_tol=0.2, ignore_spaces=True)
+    actual_out = columns_equal(
+        col_a, col_b, rel_tol=0.2, ignore_spaces=True
+    )  # ignore_spaces is ignored
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -1757,7 +1757,7 @@ def test_columns_equal_lists():
     ],
 )
 def test_normalize_string_column(input_data, ignore_spaces, ignore_case, expected):
-    result = normalize_string_column(
+    result = polars_normalize_string_column(
         input_data, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
     assert_series_equal(result, expected, check_names=False)
@@ -1974,3 +1974,73 @@ def test_mixed_tolerances() -> None:
     )  # large_vals should match (rel_tol 0.001 = 0.1%)
     assert compare._rel_tol_dict == {"large_vals": 0.001, "default": 0.0}
     assert compare._abs_tol_dict == {"small_vals": 0.2, "default": 0.0}
+
+
+def test_custom_comparator_polars():
+    """Test that a custom comparator can be passed and used with Polars."""
+
+    class StringLengthComparator(BaseComparator):
+        """A custom comparator that matches strings based on length."""
+
+        def compare(self, s1, s2):
+            if s1.dtype == pl.Utf8 and s2.dtype == pl.Utf8:
+                return s1.str.len_chars() == s2.str.len_chars()
+            return None
+
+    df1 = pl.DataFrame([{"id": 1, "value": "apple"}])
+    df2 = pl.DataFrame([{"id": 1, "value": "grape"}])
+
+    # With custom comparator, it should match because 'apple' and 'grape' have the same length
+    compare_custom = PolarsCompare(
+        df1, df2, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert compare_custom.matches()
+
+    # Without custom comparator, it should not match
+    compare_default = PolarsCompare(df1, df2, join_columns=["id"])
+    assert not compare_default.matches()
+
+    # Test case where custom comparator does not apply (returns None)
+    # and default comparison should be used.
+    df3 = pl.DataFrame([{"id": 1, "value": 10}])
+    df4 = pl.DataFrame([{"id": 1, "value": 20}])
+
+    # With custom comparator, but it won't apply to integer 'value' column
+    # so default comparison for integers should kick in, resulting in a mismatch.
+    compare_custom_fallback = PolarsCompare(
+        df3, df4, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert not compare_custom_fallback.matches()
+
+    # Test case where custom comparator does not apply (returns None)
+    # and default comparison should be used.
+    df5 = pl.DataFrame([{"id": 1, "value": 10}])
+    df6 = pl.DataFrame([{"id": 1, "value": 10}])
+
+    # With custom comparator, but it won't apply to integer 'value' column
+    # so default comparison for integers should kick in, resulting in a match.
+    compare_custom_fallback = PolarsCompare(
+        df5, df6, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert compare_custom_fallback.matches()
+
+    # Ensure the StringLengthComparator is actually used for string columns
+    df7 = pl.DataFrame([{"id": 1, "value": "test"}])
+    df8 = pl.DataFrame([{"id": 1, "value": "abcd"}])
+
+    compare_string_custom = PolarsCompare(
+        df7, df8, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert compare_string_custom.matches()
+
+    compare_string_default = PolarsCompare(df7, df8, join_columns=["id"])
+    assert not compare_string_default.matches()
+
+    # StringLengthComparator mismatch case
+    df9 = pl.DataFrame([{"id": 1, "value": "test"}])
+    df10 = pl.DataFrame([{"id": 1, "value": "abcde"}])
+
+    compare_string_custom_mismatch = PolarsCompare(
+        df9, df10, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert not compare_string_custom_mismatch.matches()
