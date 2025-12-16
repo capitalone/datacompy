@@ -20,6 +20,11 @@ and lets you tweak how accurate matches have to be). Supported types include:
 - Dask (via Fugue)
 - DuckDB (via Fugue)
 
+> [!IMPORTANT]
+> datacompy is progressing towards a `v1` release. During this transition, a `support/0.19.x` branch will be maintained solely for `v0.19.x` users.
+> This branch will only receive dependency updates and critical bug fixes; no new features will be added.
+> All new feature development should target the `v1` branches (`develop` and eventually `main`).
+
 
 ## Quick Installation
 
