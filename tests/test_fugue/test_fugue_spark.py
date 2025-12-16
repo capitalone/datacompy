@@ -34,7 +34,7 @@ from test_fugue_helpers import _compare_report
 pytest.importorskip("fugue")
 pyspark = pytest.importorskip("pyspark")
 
-if sys.version_info >= (3, 12):
+if sys.version_info >= (3, 12):  # noqa: UP036
     pytest.skip("unsupported python version", allow_module_level=True)
 
 
