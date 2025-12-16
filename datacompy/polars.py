@@ -42,12 +42,19 @@ from datacompy.comparator import (
     PolarsNumericComparator,
     PolarsStringComparator,
 )
+from datacompy.comparator.base import BaseComparator
 from datacompy.comparator.string import polars_normalize_string_column
 
 LOG = logging.getLogger(__name__)
 
 STRING_TYPE = ["String", "Utf8"]
 LIST_TYPE = ["List", "Array"]
+
+_POLARS_DEFAULT_COMPARATORS = [
+    PolarsArrayLikeComparator(),
+    PolarsNumericComparator(),
+    PolarsStringComparator(),
+]
 
 
 class PolarsCompare(BaseCompare):
@@ -86,13 +93,8 @@ class PolarsCompare(BaseCompare):
         Flag to ignore the case of string columns. Excludes categoricals.
     cast_column_names_lower: bool, optional
         Boolean indicator that controls of column names will be cast into lower case
-
-    Attributes
-    ----------
-    df1_unq_rows : Polars ``DataFrame``
-        All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : Polars ``DataFrame``
-        All records that are only in df2 (based on a join on join_columns)
+    custom_comparators : list of ``BaseComparator``, optional
+        A list of custom comparator classes to use to compare columns.
     """
 
     def __init__(
@@ -107,8 +109,10 @@ class PolarsCompare(BaseCompare):
         ignore_spaces: bool = False,
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
+        custom_comparators: List[BaseComparator] | None = None,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
+        self.custom_comparators = custom_comparators or []
 
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
@@ -146,6 +150,13 @@ class PolarsCompare(BaseCompare):
         self.intersect_rows: pl.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
+
+    def _get_comparators(self) -> List[BaseComparator]:
+        """Build and return the list of comparators to be used.
+
+        Custom comparators are placed first, followed by the default ones.
+        """
+        return self.custom_comparators + _POLARS_DEFAULT_COMPARATORS
 
     @property
     def df1(self) -> pl.DataFrame:
@@ -395,6 +406,7 @@ class PolarsCompare(BaseCompare):
                         abs_tol=get_column_tolerance(column, self._abs_tol_dict),
                         ignore_spaces=ignore_spaces,
                         ignore_case=ignore_case,
+                        comparators=self._get_comparators(),
                     ).alias(col_match)
                 )
                 match_cnt = self.intersect_rows[col_match].sum()
@@ -614,6 +626,7 @@ class PolarsCompare(BaseCompare):
                     abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
                     ignore_spaces=self.ignore_spaces,
                     ignore_case=self.ignore_case,
+                    comparators=self._get_comparators(),
                 )
 
                 if not ignore_matching_cols or (
@@ -894,6 +907,8 @@ def columns_equal(
     abs_tol: float = 0,
     ignore_spaces: bool = False,
     ignore_case: bool = False,
+    comparators: List[BaseComparator] | None = None,
+    **kwargs,
 ) -> pl.Series:
     """Compare two columns from a dataframe.
 
@@ -922,6 +937,10 @@ def columns_equal(
         Flag to strip whitespace (including newlines) from string columns
     ignore_case : bool, optional
         Flag to ignore the case of string columns
+    comparators : list of ``BaseComparator``, optional
+        A list of custom comparator classes to use to compare columns.
+    **kwargs
+        Additional keyword arguments to pass to custom comparators.
 
     Returns
     -------
@@ -931,24 +950,30 @@ def columns_equal(
     """
     compare: pl.Series
 
-    if (compare := PolarsArrayLikeComparator().compare(col_1, col_2)) is not None:
-        return compare
+    comparators_ = comparators
+    if not comparators_:
+        # If no comparators are passed, behave as before.
+        comparators_ = _POLARS_DEFAULT_COMPARATORS
 
-    # compare numeric values
-    if (
-        compare := PolarsNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
-            col_1, col_2
-        )
-    ) is not None:
-        return compare
+    for comparator in comparators_:
+        if isinstance(comparator, PolarsNumericComparator):
+            compare = comparator.compare(col_1, col_2, rtol=rel_tol, atol=abs_tol)
+        elif isinstance(comparator, PolarsStringComparator):
+            compare = comparator.compare(
+                col_1, col_2, ignore_space=ignore_spaces, ignore_case=ignore_case
+            )
+        elif isinstance(comparator, PolarsArrayLikeComparator):
+            compare = comparator.compare(col_1, col_2)
+        else:
+            # for custom comparators pass all the available parameters
+            # custom comparators can ignore what they don't need.
+            compare = comparator.compare(col_1, col_2, **kwargs)
 
-    # compare strings
-    if (
-        compare := PolarsStringComparator(
-            ignore_case=ignore_case, ignore_space=ignore_spaces
-        ).compare(col_1, col_2)
-    ) is not None:
-        return compare
+        if compare is not None:
+            LOG.info(
+                f"Using comparator: {comparator.__class__.__name__} for column ({col_1.name}, {col_2.name}) comparison."
+            )
+            return compare
 
     compare = pl.Series([False] * col_1.shape[0])
     return compare

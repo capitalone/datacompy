@@ -39,12 +39,17 @@ def test_snowflake_numeric_comparator_exact_match(snowflake_session):
 
 
 def test_snowflake_numeric_comparator_approximate_match(snowflake_session):
-    comparator = SnowflakeNumericComparator(rtol=1e-3, atol=1e-3)
+    comparator = SnowflakeNumericComparator()
     df = snowflake_session.createDataFrame(
         [(1.0, 1.001), (2.0, 2.002), (3.0, 3.003)], ["col1", "col2"]
     )
     result = comparator.compare(
-        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+        dataframe=df,
+        col1="col1",
+        col2="col2",
+        col_match="col_match",
+        rtol=1e-3,
+        atol=1e-3,
     )
     assert result.select(["col_match"]).collect() == [
         sf.Row(COL_MATCH=True),

@@ -18,11 +18,11 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
-          python-version: '3.11'
+          python-version: '3.12'
           channels: conda-forge
 
       - name: Setup Java JDK

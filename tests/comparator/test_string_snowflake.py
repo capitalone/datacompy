@@ -43,9 +43,14 @@ def test_snowflake_string_comparator_case_space_insensitivity(snowflake_session)
         [("a", " a"), ("b", "   B  "), ("c", "C")], ["col1", "col2"]
     )
 
-    comparator = SnowflakeStringComparator(ignore_case=True, ignore_space=True)
+    comparator = SnowflakeStringComparator()
     result = comparator.compare(
-        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+        dataframe=df,
+        col1="col1",
+        col2="col2",
+        col_match="col_match",
+        ignore_case=True,
+        ignore_space=True,
     )
     assert result.select(["col_match"]).collect() == [
         sf.Row(col_match=True),
@@ -53,9 +58,14 @@ def test_snowflake_string_comparator_case_space_insensitivity(snowflake_session)
         sf.Row(col_match=True),
     ]
 
-    comparator = SnowflakeStringComparator(ignore_case=True, ignore_space=False)
+    comparator = SnowflakeStringComparator()
     result = comparator.compare(
-        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+        dataframe=df,
+        col1="col1",
+        col2="col2",
+        col_match="col_match",
+        ignore_case=True,
+        ignore_space=False,
     )
     assert result.select(["col_match"]).collect() == [
         sf.Row(col_match=False),
@@ -63,9 +73,14 @@ def test_snowflake_string_comparator_case_space_insensitivity(snowflake_session)
         sf.Row(col_match=True),
     ]
 
-    comparator = SnowflakeStringComparator(ignore_case=False, ignore_space=True)
+    comparator = SnowflakeStringComparator()
     result = comparator.compare(
-        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+        dataframe=df,
+        col1="col1",
+        col2="col2",
+        col_match="col_match",
+        ignore_case=False,
+        ignore_space=True,
     )
     assert result.select(["col_match"]).collect() == [
         sf.Row(col_match=True),
@@ -73,9 +88,14 @@ def test_snowflake_string_comparator_case_space_insensitivity(snowflake_session)
         sf.Row(col_match=False),
     ]
 
-    comparator = SnowflakeStringComparator(ignore_case=False, ignore_space=False)
+    comparator = SnowflakeStringComparator()
     result = comparator.compare(
-        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+        dataframe=df,
+        col1="col1",
+        col2="col2",
+        col_match="col_match",
+        ignore_case=False,
+        ignore_space=False,
     )
     assert result.select(["col_match"]).collect() == [
         sf.Row(col_match=False),

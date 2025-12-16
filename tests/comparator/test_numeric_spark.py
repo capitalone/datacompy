@@ -37,11 +37,13 @@ def test_spark_numeric_comparator_exact_match(spark_session):
 
 
 def test_spark_numeric_comparator_approximate_match(spark_session):
-    comparator = SparkNumericComparator(rtol=1e-3, atol=1e-3)
+    comparator = SparkNumericComparator()
     df = spark_session.createDataFrame(
         [(1.0, 1.001), (2.0, 2.002), (3.0, 3.003)], ["col1", "col2"]
     )
-    result_col = comparator.compare(dataframe=df, col1="col1", col2="col2")
+    result_col = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", rtol=1e-3, atol=1e-3
+    )
     result = df.withColumn("col_match", result_col)
     assert result.select(["col_match"]).collect() == [
         ps.Row(col_match=True),

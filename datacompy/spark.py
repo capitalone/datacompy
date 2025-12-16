@@ -46,8 +46,16 @@ from datacompy.comparator import (
     SparkNumericComparator,
     SparkStringComparator,
 )
+from datacompy.comparator.base import BaseComparator
 
 LOG = logging.getLogger(__name__)
+
+
+_SPARK_DEFAULT_COMPARATORS = [
+    SparkArrayLikeComparator(),
+    SparkNumericComparator(),
+    SparkStringComparator(),
+]
 
 
 def decimal_comparator():
@@ -113,15 +121,8 @@ class SparkSQLCompare(BaseCompare):
         Flag to ignore the case of string columns
     cast_column_names_lower: bool, optional
         Boolean indicator that controls of column names will be cast into lower case
-
-    Attributes
-    ----------
-    df1_unq_rows : pyspark.sql.DataFrame
-        All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : pyspark.sql.DataFrame
-        All records that are only in df2 (based on a join on join_columns)
-    intersect_rows : pyspark.sql.DataFrame
-        All records that are in both df1 and df2
+    custom_comparators : list of ``BaseComparator``, optional
+        A list of custom comparator classes to use to compare columns.
     """
 
     def __init__(
@@ -137,8 +138,10 @@ class SparkSQLCompare(BaseCompare):
         ignore_spaces: bool = False,
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
+        custom_comparators: List[BaseComparator] | None = None,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
+        self.custom_comparators = custom_comparators or []
 
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
@@ -177,6 +180,13 @@ class SparkSQLCompare(BaseCompare):
         self.intersect_rows: pyspark.sql.DataFrame
         self.column_stats: List = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
+
+    def _get_comparators(self) -> List[BaseComparator]:
+        """Build and return the list of comparators to be used.
+
+        Custom comparators are placed first, followed by the default ones.
+        """
+        return self.custom_comparators + _SPARK_DEFAULT_COMPARATORS
 
     @property
     def df1(self) -> "pyspark.sql.DataFrame":
@@ -476,6 +486,7 @@ class SparkSQLCompare(BaseCompare):
                 abs_tol=get_column_tolerance(column, self._abs_tol_dict),
                 ignore_spaces=ignore_spaces,
                 ignore_case=ignore_case,
+                comparators=self._get_comparators(),
             )
 
         self.intersect_rows = self.intersect_rows.withColumns(exprs)
@@ -1055,6 +1066,8 @@ def columns_equal(
     abs_tol: float = 0,
     ignore_spaces: bool = False,
     ignore_case: bool = False,
+    comparators: List[BaseComparator] | None = None,
+    **kwargs,
 ) -> "pyspark.sql.Column":
     """Compare if two columns are considered equal, returns a boolean Spark Column to be used in a `.withColumn(...)` statement.
 
@@ -1084,6 +1097,10 @@ def columns_equal(
         Flag to strip whitespace (including newlines) from string columns
     ignore_case : bool, optional
         Flag to ignore the case of string columns
+    comparators: List[BaseComparator] | None = None,
+        A list of custom comparator classes to use to compare columns.
+    **kwargs
+        Additional keyword arguments to pass to custom comparators.
 
     Returns
     -------
@@ -1109,28 +1126,37 @@ def columns_equal(
     Starting in version 0.18.0, the behavior of this function was changed so rather than returning
     a DataFrame a Column expression is returned.
     """
-    if (
-        compare := SparkArrayLikeComparator().compare(
-            dataframe=dataframe, col1=col_1, col2=col_2
-        )
-    ) is not None:
-        return compare
+    comparators_ = comparators
 
-    # compare numeric values
-    if (
-        compare := SparkNumericComparator(rtol=rel_tol, atol=abs_tol).compare(
-            dataframe=dataframe, col1=col_1, col2=col_2
-        )
-    ) is not None:
-        return compare
+    if not comparators_:
+        # If no comparators are passed, behave as before.
+        comparators_ = _SPARK_DEFAULT_COMPARATORS
 
-    # compare strings
-    if (
-        compare := SparkStringComparator(
-            ignore_case=ignore_case, ignore_space=ignore_spaces
-        ).compare(dataframe=dataframe, col1=col_1, col2=col_2)
-    ) is not None:
-        return compare
+    for comparator in comparators_:
+        if isinstance(comparator, SparkNumericComparator):
+            compare = comparator.compare(
+                dataframe, col_1, col_2, rtol=rel_tol, atol=abs_tol
+            )
+        elif isinstance(comparator, SparkStringComparator):
+            compare = comparator.compare(
+                dataframe,
+                col_1,
+                col_2,
+                ignore_space=ignore_spaces,
+                ignore_case=ignore_case,
+            )
+        elif isinstance(comparator, SparkArrayLikeComparator):
+            compare = comparator.compare(dataframe, col_1, col_2)
+        else:
+            # for custom comparators pass all the available parameters
+            # custom comparators can ignore what they don't need.
+            compare = comparator.compare(dataframe, col_1, col_2, **kwargs)
+
+        if compare is not None:
+            LOG.info(
+                f"Using comparator: {comparator.__class__.__name__} for column ({col_1}, {col_2}) comparison."
+            )
+            return compare
 
     compare = F.lit(False)
     return compare

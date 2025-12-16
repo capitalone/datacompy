@@ -29,6 +29,7 @@ from unittest import mock
 import numpy as np
 import polars as pl
 import pytest
+from datacompy.comparator.base import BaseComparator
 from datacompy.comparator.string import polars_normalize_string_column
 from datacompy.polars import (
     PolarsCompare,
@@ -1973,3 +1974,73 @@ def test_mixed_tolerances() -> None:
     )  # large_vals should match (rel_tol 0.001 = 0.1%)
     assert compare._rel_tol_dict == {"large_vals": 0.001, "default": 0.0}
     assert compare._abs_tol_dict == {"small_vals": 0.2, "default": 0.0}
+
+
+def test_custom_comparator_polars():
+    """Test that a custom comparator can be passed and used with Polars."""
+
+    class StringLengthComparator(BaseComparator):
+        """A custom comparator that matches strings based on length."""
+
+        def compare(self, s1, s2):
+            if s1.dtype == pl.Utf8 and s2.dtype == pl.Utf8:
+                return s1.str.len_chars() == s2.str.len_chars()
+            return None
+
+    df1 = pl.DataFrame([{"id": 1, "value": "apple"}])
+    df2 = pl.DataFrame([{"id": 1, "value": "grape"}])
+
+    # With custom comparator, it should match because 'apple' and 'grape' have the same length
+    compare_custom = PolarsCompare(
+        df1, df2, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert compare_custom.matches()
+
+    # Without custom comparator, it should not match
+    compare_default = PolarsCompare(df1, df2, join_columns=["id"])
+    assert not compare_default.matches()
+
+    # Test case where custom comparator does not apply (returns None)
+    # and default comparison should be used.
+    df3 = pl.DataFrame([{"id": 1, "value": 10}])
+    df4 = pl.DataFrame([{"id": 1, "value": 20}])
+
+    # With custom comparator, but it won't apply to integer 'value' column
+    # so default comparison for integers should kick in, resulting in a mismatch.
+    compare_custom_fallback = PolarsCompare(
+        df3, df4, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert not compare_custom_fallback.matches()
+
+    # Test case where custom comparator does not apply (returns None)
+    # and default comparison should be used.
+    df5 = pl.DataFrame([{"id": 1, "value": 10}])
+    df6 = pl.DataFrame([{"id": 1, "value": 10}])
+
+    # With custom comparator, but it won't apply to integer 'value' column
+    # so default comparison for integers should kick in, resulting in a match.
+    compare_custom_fallback = PolarsCompare(
+        df5, df6, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert compare_custom_fallback.matches()
+
+    # Ensure the StringLengthComparator is actually used for string columns
+    df7 = pl.DataFrame([{"id": 1, "value": "test"}])
+    df8 = pl.DataFrame([{"id": 1, "value": "abcd"}])
+
+    compare_string_custom = PolarsCompare(
+        df7, df8, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert compare_string_custom.matches()
+
+    compare_string_default = PolarsCompare(df7, df8, join_columns=["id"])
+    assert not compare_string_default.matches()
+
+    # StringLengthComparator mismatch case
+    df9 = pl.DataFrame([{"id": 1, "value": "test"}])
+    df10 = pl.DataFrame([{"id": 1, "value": "abcde"}])
+
+    compare_string_custom_mismatch = PolarsCompare(
+        df9, df10, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert not compare_string_custom_mismatch.matches()

@@ -41,8 +41,10 @@ def test_spark_string_comparator_case_space_insensitivity(spark_session):
         [("a", " a"), ("b", "   B  "), ("c", "C")], ["col1", "col2"]
     )
 
-    comparator = SparkStringComparator(ignore_case=True, ignore_space=True)
-    result_col = comparator.compare(dataframe=df, col1="col1", col2="col2")
+    comparator = SparkStringComparator()
+    result_col = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", ignore_case=True, ignore_space=True
+    )
     result = df.withColumn("col_match", result_col)
     assert result.select(["col_match"]).collect() == [
         ps.Row(col_match=True),
@@ -50,8 +52,10 @@ def test_spark_string_comparator_case_space_insensitivity(spark_session):
         ps.Row(col_match=True),
     ]
 
-    comparator = SparkStringComparator(ignore_case=True, ignore_space=False)
-    result_col = comparator.compare(dataframe=df, col1="col1", col2="col2")
+    comparator = SparkStringComparator()
+    result_col = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", ignore_case=True, ignore_space=False
+    )
     result = df.withColumn("col_match", result_col)
     assert result.select(["col_match"]).collect() == [
         ps.Row(col_match=False),
@@ -59,8 +63,10 @@ def test_spark_string_comparator_case_space_insensitivity(spark_session):
         ps.Row(col_match=True),
     ]
 
-    comparator = SparkStringComparator(ignore_case=False, ignore_space=True)
-    result_col = comparator.compare(dataframe=df, col1="col1", col2="col2")
+    comparator = SparkStringComparator()
+    result_col = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", ignore_case=False, ignore_space=True
+    )
     result = df.withColumn("col_match", result_col)
     assert result.select(["col_match"]).collect() == [
         ps.Row(col_match=True),
@@ -68,8 +74,10 @@ def test_spark_string_comparator_case_space_insensitivity(spark_session):
         ps.Row(col_match=False),
     ]
 
-    comparator = SparkStringComparator(ignore_case=False, ignore_space=False)
-    result_col = comparator.compare(dataframe=df, col1="col1", col2="col2")
+    comparator = SparkStringComparator()
+    result_col = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", ignore_case=False, ignore_space=False
+    )
     result = df.withColumn("col_match", result_col)
     assert result.select(["col_match"]).collect() == [
         ps.Row(col_match=False),
