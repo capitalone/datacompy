@@ -29,7 +29,41 @@ jobs:
       - name: Formatting by ruff
         run: ruff format --check
 
-  test-with-spark-install:
+  test-with-spark-3-install:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11"]
+        spark-version: [3.5.7]
+
+    env:
+      PYTHON_VERSION: ${{ matrix.python-version }}
+      SPARK_VERSION: ${{ matrix.spark-version }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: "8"
+          distribution: "adopt"
+      - name: Install pyspark
+        run: |
+          python -m pip install pyspark[connect]==${{ matrix.spark-version }}
+      - name: Install datacompy
+        run: |
+          python -m pip install ."[spark, qa, tests, tests-spark]"
+      - name: Test with pytest
+        run: |
+          python -m pytest --cov=datacompy --cov-report=xml --cov-report=term-missing
+
+
+  test-with-spark-4-install:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
