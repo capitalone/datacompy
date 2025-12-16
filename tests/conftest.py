@@ -27,10 +27,10 @@ except ModuleNotFoundError:
 CONNECTION_PARAMETERS = {
     "account": os.environ.get("SF_ACCOUNT"),
     "user": os.environ.get("SF_UID"),
-    "password": os.environ.get("SF_PWD"),
     "warehouse": os.environ.get("SF_WAREHOUSE"),
     "database": os.environ.get("SF_DATABASE"),
     "schema": os.environ.get("SF_SCHEMA"),
+    "authenticator": "externalbrowser",
 }
 
 
