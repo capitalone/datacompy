@@ -28,3 +28,6 @@ test.html
 
 .coverage
 coverage.xml
+
+# benchmark data
+benchmarks/data/
