@@ -72,7 +72,7 @@ urls.Repository = "https://github.com/capitalone/datacompy.git"
 urls."Source Code" = "https://github.com/capitalone/datacompy"
 
 [tool.setuptools]
-packages = [ "datacompy" ]
+packages = [ "datacompy", "datacompy.comparator" ]
 zip-safe = false
 include-package-data = true
 
