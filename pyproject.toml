@@ -52,7 +52,7 @@ optional-dependencies.dev = [
 ]
 optional-dependencies.docs = [ "furo", "myst-parser", "sphinx" ]
 optional-dependencies.edgetest = [ "edgetest", "edgetest-conda" ]
-optional-dependencies.qa = [ "mypy", "pandas-stubs", "pre-commit", "ruff==0.5.7" ]
+optional-dependencies.qa = [ "mypy", "pandas-stubs", "pre-commit", "ruff" ]
 optional-dependencies.snowflake = [ "snowflake-snowpark-python>=1.26,<=1.33" ]
 optional-dependencies.spark = [
   "pyspark[connect]>=3.5,<4; python_version<='3.11'",
