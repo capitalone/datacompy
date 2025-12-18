@@ -2044,3 +2044,41 @@ def test_custom_comparator_polars():
         df9, df10, join_columns=["id"], custom_comparators=[StringLengthComparator()]
     )
     assert not compare_string_custom_mismatch.matches()
+
+
+def test_array_comparator_polars():
+    """Test dedicated array comparator for polars."""
+    df1 = pl.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "array_col": [
+                [1, 2, 3],  # Exact match
+                [4, 5, 6],  # Mismatch value
+                [1, 3, 2],  # Mismatch order
+            ],
+        },
+        schema={"id": pl.Int64, "array_col": pl.Array(pl.Float64, 3)},
+    )
+
+    df2 = pl.DataFrame(
+        {
+            "id": [1, 2, 4],
+            "array_col": [
+                [1, 2, 3],
+                [4, 5, 7],
+                [1, 2, 3],
+            ],
+        },
+        schema={"id": pl.Int64, "array_col": pl.Array(pl.Float64, 3)},
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+
+    assert not compare.matches()
+    assert len(compare.intersect_rows) == 2
+    assert not compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 1  # id 1
+
+    mismatches = compare.all_mismatch()
+    assert len(mismatches) == 1
+    assert mismatches["array_col_df1"].to_list()[0] == [4.0, 5.0, 6.0]
+    assert mismatches["array_col_df2"].to_list()[0] == [4.0, 5.0, 7.0]
