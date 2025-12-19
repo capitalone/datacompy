@@ -2044,9 +2044,9 @@ def test_array_comparator_snowflake(snowflake_session):
     compare = SnowflakeCompare(snowflake_session, df1, df2, join_columns=["id"])
     assert not compare.matches()
     assert compare.df1_unq_rows.count() == 1
-    assert compare.df1_unq_rows.toPandas()["id_df1"].iloc[0] == 3
+    assert compare.df1_unq_rows.toPandas()["ID_DF1"].iloc[0] == 3
     assert compare.df2_unq_rows.count() == 1
-    assert compare.df2_unq_rows.toPandas()["id_df2"].iloc[0] == 4
+    assert compare.df2_unq_rows.toPandas()["ID_DF2"].iloc[0] == 4
     assert compare.intersect_rows.count() == 6
     assert not compare.intersect_rows_match()
     assert compare.count_matching_rows() == 3
@@ -2054,12 +2054,12 @@ def test_array_comparator_snowflake(snowflake_session):
         compare.all_mismatch().toPandas().sort_values("id").reset_index(drop=True)
     )
     assert len(mismatch_df) == 3
-    assert mismatch_df["id"].iloc[0] == 2
-    assert (mismatch_df["array_col_df1"].iloc[0] == [4, 5, 6]).all()
-    assert (mismatch_df["array_col_df2"].iloc[0] == [4, 5, 7]).all()
-    assert mismatch_df["id"].iloc[1] == 5
-    assert (mismatch_df["array_col_df1"].iloc[1] == [1, 2, 3]).all()
-    assert (mismatch_df["array_col_df2"].iloc[1] == [3, 2, 1]).all()
-    assert mismatch_df["id"].iloc[2] == 6
-    assert (mismatch_df["array_col_df1"].iloc[2] == [1, 2]).all()
-    assert (mismatch_df["array_col_df2"].iloc[2] == [1, 2, 3]).all()
+    assert mismatch_df["ID"].iloc[0] == 2
+    assert mismatch_df["ARRAY_COL_DF1"].iloc[0] == "[\n  4,\n  5,\n  6\n]"
+    assert mismatch_df["ARRAY_COL_DF2"].iloc[0] == "[\n  4,\n  5,\n  7\n]"
+    assert mismatch_df["ID"].iloc[1] == 5
+    assert mismatch_df["ARRAY_COL_DF1"].iloc[1] == "[\n  1,\n  2, \n  3\n]"
+    assert mismatch_df["ARRAY_COL_DF2"].iloc[1] == "[\n  3,\n  2, \n  1\n]"
+    assert mismatch_df["ID"].iloc[2] == 6
+    assert mismatch_df["ARRAY_COL_DF1"].iloc[2] == "[\n  1,\n  2\n]"
+    assert mismatch_df["ARRAY_COL_DF2"].iloc[2] == "[\n  1,\n  2, \n  3\n]"
