@@ -47,7 +47,9 @@ from pytest import raises
 from snowflake.snowpark.exceptions import SnowparkSQLException
 from snowflake.snowpark.functions import col, length, lit, when
 from snowflake.snowpark.types import (
+    ArrayType,
     DecimalType,
+    IntegerType,
     StringType,
     StructField,
     StructType,
@@ -2010,3 +2012,54 @@ def test_custom_comparator_snowflake(snowflake_session):
         custom_comparators=[StringLengthComparator()],
     )
     assert not compare_string_custom_mismatch.matches()
+
+
+def test_array_comparator_snowflake(snowflake_session):
+    schema = StructType(
+        [
+            StructField("id", IntegerType(), True),
+            StructField("array_col", ArrayType(IntegerType()), True),
+        ]
+    )
+    data1 = [
+        (1, [1, 2, 3]),
+        (2, [4, 5, 6]),
+        (3, [7, 8, 9]),
+        (5, [1, 2, 3]),
+        (6, [1, 2]),
+        (7, None),
+        (8, [1, None]),
+    ]
+    df1 = snowflake_session.createDataFrame(data1, schema)
+    data2 = [
+        (1, [1, 2, 3]),
+        (2, [4, 5, 7]),
+        (4, [10, 11, 12]),
+        (5, [3, 2, 1]),
+        (6, [1, 2, 3]),
+        (7, None),
+        (8, [1, None]),
+    ]
+    df2 = snowflake_session.createDataFrame(data2, schema)
+    compare = SnowflakeCompare(snowflake_session, df1, df2, join_columns=["id"])
+    assert not compare.matches()
+    assert compare.df1_unq_rows.count() == 1
+    assert compare.df1_unq_rows.toPandas()["ID_DF1"].iloc[0] == 3
+    assert compare.df2_unq_rows.count() == 1
+    assert compare.df2_unq_rows.toPandas()["ID_DF2"].iloc[0] == 4
+    assert compare.intersect_rows.count() == 6
+    assert not compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 3
+    mismatch_df = (
+        compare.all_mismatch().toPandas().sort_values("ID").reset_index(drop=True)
+    )
+    assert len(mismatch_df) == 3
+    assert mismatch_df["ID"].iloc[0] == 2
+    assert mismatch_df["ARRAY_COL_DF1"].iloc[0] == "[\n  4,\n  5,\n  6\n]"
+    assert mismatch_df["ARRAY_COL_DF2"].iloc[0] == "[\n  4,\n  5,\n  7\n]"
+    assert mismatch_df["ID"].iloc[1] == 5
+    assert mismatch_df["ARRAY_COL_DF1"].iloc[1] == "[\n  1,\n  2,\n  3\n]"
+    assert mismatch_df["ARRAY_COL_DF2"].iloc[1] == "[\n  3,\n  2,\n  1\n]"
+    assert mismatch_df["ID"].iloc[2] == 6
+    assert mismatch_df["ARRAY_COL_DF1"].iloc[2] == "[\n  1,\n  2\n]"
+    assert mismatch_df["ARRAY_COL_DF2"].iloc[2] == "[\n  1,\n  2,\n  3\n]"

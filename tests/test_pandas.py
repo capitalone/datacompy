@@ -2120,3 +2120,47 @@ def test_custom_comparator_pandas():
         df9, df10, join_columns=["id"], custom_comparators=[StringLengthComparator()]
     )
     assert not compare_string_custom_mismatch.matches()
+
+
+def test_array_comparator_pandas():
+    """Test dedicated array comparator for pandas."""
+    df1 = pd.DataFrame(
+        {
+            "id": [1, 2, 5, 6, 7, 8],
+            "array_col": [
+                [1, 2, 3],  # Exact match
+                [4, 5, 6],  # Mismatch value
+                [1, 3, 2],  # Mismatch order
+                [1, 2],  # Mismatch length
+                None,  # Match null
+                [1, np.nan],  # Match with nan
+            ],
+        }
+    )
+    df1["array_col"] = df1["array_col"].astype(object)
+
+    df2 = pd.DataFrame(
+        {
+            "id": [1, 2, 5, 6, 7, 8],
+            "array_col": [
+                [1, 2, 3],
+                [4, 5, 7],
+                [1, 2, 3],
+                [1, 2, 3],
+                None,
+                [1, np.nan],
+            ],
+        }
+    )
+    df2["array_col"] = df2["array_col"].astype(object)
+
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["id"])
+
+    assert not compare.matches()
+    assert len(compare.intersect_rows) == 6
+    assert not compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 3  # ids 1, 7, 8
+
+    mismatches = compare.all_mismatch().sort_values("id").reset_index(drop=True)
+    assert len(mismatches) == 3
+    assert list(mismatches["id"]) == [2, 5, 6]

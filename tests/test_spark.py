@@ -2218,3 +2218,54 @@ def test_custom_comparator_spark(spark_session):
         custom_comparators=[StringLengthComparator()],
     )
     assert not compare_string_custom_mismatch.matches()
+
+
+def test_array_comparator_spark(spark_session):
+    schema = StructType(
+        [
+            StructField("id", IntegerType(), True),
+            StructField("array_col", ArrayType(IntegerType()), True),
+        ]
+    )
+    data1 = [
+        (1, [1, 2, 3]),
+        (2, [4, 5, 6]),
+        (3, [7, 8, 9]),
+        (5, [1, 2, 3]),
+        (6, [1, 2]),
+        (7, None),
+        (8, [1, None]),
+    ]
+    df1 = spark_session.createDataFrame(data1, schema)
+    data2 = [
+        (1, [1, 2, 3]),
+        (2, [4, 5, 7]),
+        (4, [10, 11, 12]),
+        (5, [3, 2, 1]),
+        (6, [1, 2, 3]),
+        (7, None),
+        (8, [1, None]),
+    ]
+    df2 = spark_session.createDataFrame(data2, schema)
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    assert not compare.matches()
+    assert compare.df1_unq_rows.count() == 1
+    assert compare.df1_unq_rows.toPandas()["id_df1"].iloc[0] == 3
+    assert compare.df2_unq_rows.count() == 1
+    assert compare.df2_unq_rows.toPandas()["id_df2"].iloc[0] == 4
+    assert compare.intersect_rows.count() == 6
+    assert not compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 3
+    mismatch_df = (
+        compare.all_mismatch().toPandas().sort_values("id").reset_index(drop=True)
+    )
+    assert len(mismatch_df) == 3
+    assert mismatch_df["id"].iloc[0] == 2
+    assert (mismatch_df["array_col_df1"].iloc[0] == [4, 5, 6]).all()
+    assert (mismatch_df["array_col_df2"].iloc[0] == [4, 5, 7]).all()
+    assert mismatch_df["id"].iloc[1] == 5
+    assert (mismatch_df["array_col_df1"].iloc[1] == [1, 2, 3]).all()
+    assert (mismatch_df["array_col_df2"].iloc[1] == [3, 2, 1]).all()
+    assert mismatch_df["id"].iloc[2] == 6
+    assert (mismatch_df["array_col_df1"].iloc[2] == [1, 2]).all()
+    assert (mismatch_df["array_col_df2"].iloc[2] == [1, 2, 3]).all()

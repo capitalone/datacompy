@@ -47,6 +47,7 @@ from datacompy.comparator import (
     SparkStringComparator,
 )
 from datacompy.comparator.base import BaseComparator
+from datacompy.comparator.utility import get_spark_column_dtypes
 
 LOG = logging.getLogger(__name__)
 
@@ -1214,6 +1215,12 @@ def calculate_max_diff(
     float
         max diff
     """
+    dtype1, dtype2 = get_spark_column_dtypes(dataframe, col_1, col_2)
+    if dtype1.startswith("array") and dtype2.startswith("array"):
+        LOG.warning(
+            f"Cannot calculate max_diff for array-like columns: {col_1}, {col_2}, defaulting to 0."
+        )
+        return 0
     diff = dataframe.select(
         (F.col(col_1).astype("float") - F.col(col_2).astype("float")).alias("diff")
     )
