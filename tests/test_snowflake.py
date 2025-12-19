@@ -2058,8 +2058,8 @@ def test_array_comparator_snowflake(snowflake_session):
     assert mismatch_df["ARRAY_COL_DF1"].iloc[0] == "[\n  4,\n  5,\n  6\n]"
     assert mismatch_df["ARRAY_COL_DF2"].iloc[0] == "[\n  4,\n  5,\n  7\n]"
     assert mismatch_df["ID"].iloc[1] == 5
-    assert mismatch_df["ARRAY_COL_DF1"].iloc[1] == "[\n  1,\n  2, \n  3\n]"
-    assert mismatch_df["ARRAY_COL_DF2"].iloc[1] == "[\n  3,\n  2, \n  1\n]"
+    assert mismatch_df["ARRAY_COL_DF1"].iloc[1] == "[\n  1,\n  2,\n  3\n]"
+    assert mismatch_df["ARRAY_COL_DF2"].iloc[1] == "[\n  3,\n  2,\n  1\n]"
     assert mismatch_df["ID"].iloc[2] == 6
     assert mismatch_df["ARRAY_COL_DF1"].iloc[2] == "[\n  1,\n  2\n]"
-    assert mismatch_df["ARRAY_COL_DF2"].iloc[2] == "[\n  1,\n  2, \n  3\n]"
+    assert mismatch_df["ARRAY_COL_DF2"].iloc[2] == "[\n  1,\n  2,\n  3\n]"
