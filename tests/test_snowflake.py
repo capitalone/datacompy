@@ -2051,7 +2051,7 @@ def test_array_comparator_snowflake(snowflake_session):
     assert not compare.intersect_rows_match()
     assert compare.count_matching_rows() == 3
     mismatch_df = (
-        compare.all_mismatch().toPandas().sort_values("id").reset_index(drop=True)
+        compare.all_mismatch().toPandas().sort_values("ID").reset_index(drop=True)
     )
     assert len(mismatch_df) == 3
     assert mismatch_df["ID"].iloc[0] == 2
