@@ -29,16 +29,17 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 
 dynamic = [ "version" ]
 
 dependencies = [
   "jinja2>=3",
-  "numpy>=1.26,<=2.3.5",
-  "ordered-set>=4.0.2,<=4.1",
-  "pandas>=2.2,<=2.3.3",
-  "polars[pandas]>=0.20.4,<=1.36.1",
+  "numpy<=2.4,>=1.26",
+  "ordered-set<=4.1,>=4.0.2",
+  "pandas<=2.3.3,>=2.2",
+  "polars[pandas]<=1.36.1,>=0.20.4",
 ]
 optional-dependencies.build = [ "build", "twine", "wheel" ]
 optional-dependencies.dev = [
@@ -65,13 +66,13 @@ optional-dependencies.dev_no_snowflake = [
 ]
 optional-dependencies.docs = [ "furo", "myst-parser", "sphinx" ]
 optional-dependencies.edgetest = [ "edgetest", "edgetest-conda" ]
-optional-dependencies.fugue = [ "duckdb<1.4", "fugue[dask,duckdb,ray]>=0.8.7,<=0.9.1" ]
+optional-dependencies.fugue = [ "duckdb<1.4", "fugue[dask,duckdb,ray]<=0.9.1,>=0.8.7" ]
 optional-dependencies.qa = [ "mypy", "pandas-stubs", "pre-commit", "ruff==0.5.7" ]
 optional-dependencies.snowflake = [
   "snowflake-connector-python",
   "snowflake-snowpark-python",
 ]
-optional-dependencies.spark = [ "pyspark[connect]>=3.4,<=3.5.6" ]
+optional-dependencies.spark = [ "pyspark[connect]<=3.5.6,>=3.4" ]
 optional-dependencies.tests = [ "pytest", "pytest-cov" ]
 optional-dependencies.tests-snowflake = [ "snowflake-snowpark-python[localtest]" ]
 optional-dependencies.tests-spark = [ "pytest", "pytest-cov", "pytest-spark" ]
