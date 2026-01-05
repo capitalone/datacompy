@@ -18,7 +18,7 @@ Originally started to be something of a replacement for SAS's PROC COMPARE for P
 Then extended to carry that functionality over to Spark Dataframes.
 """
 
-__version__ = "1.0.0a3"
+__version__ = "1.0.0a4"
 
 from datacompy.base import BaseCompare
 from datacompy.pandas import PandasCompare

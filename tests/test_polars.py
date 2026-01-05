@@ -2044,3 +2044,136 @@ def test_custom_comparator_polars():
         df9, df10, join_columns=["id"], custom_comparators=[StringLengthComparator()]
     )
     assert not compare_string_custom_mismatch.matches()
+
+
+def test_array_comparator_polars():
+    """Test that the PolarsCompare can handle array columns."""
+    # all equal
+    df1 = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+    )
+    df2 = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+
+    # some mismatch (different order)
+    df2_order = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [4, 3], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+    )
+    compare_order = PolarsCompare(df1, df2_order, join_columns=["id"])
+    assert not compare_order.matches()
+    list_col_stats = next(
+        stat for stat in compare_order.column_stats if stat["column"] == "list_col"
+    )
+    assert list_col_stats["unequal_cnt"] == 1
+    assert list_col_stats["match_cnt"] == 2
+
+    # with nulls matching
+    df1_null = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], None, [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+    )
+    df2_null = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], None, [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+    )
+    compare_null = PolarsCompare(df1_null, df2_null, join_columns=["id"])
+    assert compare_null.matches()
+
+    # with nulls mismatching
+    df2_null_mismatch = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+    )
+    compare_null_mismatch = PolarsCompare(
+        df1_null, df2_null_mismatch, join_columns=["id"]
+    )
+    assert not compare_null_mismatch.matches()
+    list_col_stats = next(
+        stat
+        for stat in compare_null_mismatch.column_stats
+        if stat["column"] == "list_col"
+    )
+    assert list_col_stats["unequal_cnt"] == 1
+    assert list_col_stats["match_cnt"] == 2
+
+
+def test_list_comparator_polars():
+    """Test that the PolarsCompare can handle list columns."""
+    # all equal
+    df1 = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    df2 = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+
+    # some mismatch (different order)
+    df2_order = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [4, 3], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    compare_order = PolarsCompare(df1, df2_order, join_columns=["id"])
+    assert not compare_order.matches()
+    list_col_stats = next(
+        stat for stat in compare_order.column_stats if stat["column"] == "list_col"
+    )
+    assert list_col_stats["unequal_cnt"] == 1
+    assert list_col_stats["match_cnt"] == 2
+
+    # some mismatch (different shapes)
+    df2_shape = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4, 5], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    compare_shape = PolarsCompare(df1, df2_shape, join_columns=["id"])
+    assert not compare_shape.matches()
+    list_col_stats = next(
+        stat for stat in compare_shape.column_stats if stat["column"] == "list_col"
+    )
+    assert list_col_stats["unequal_cnt"] == 1
+    assert list_col_stats["match_cnt"] == 2
+
+    # with nulls matching
+    df1_null = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], None, [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    df2_null = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], None, [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    compare_null = PolarsCompare(df1_null, df2_null, join_columns=["id"])
+    assert compare_null.matches()
+
+    # with nulls mismatching
+    df2_null_mismatch = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    compare_null_mismatch = PolarsCompare(
+        df1_null, df2_null_mismatch, join_columns=["id"]
+    )
+    assert not compare_null_mismatch.matches()
+    list_col_stats = next(
+        stat
+        for stat in compare_null_mismatch.column_stats
+        if stat["column"] == "list_col"
+    )
+    assert list_col_stats["unequal_cnt"] == 1
+    assert list_col_stats["match_cnt"] == 2
