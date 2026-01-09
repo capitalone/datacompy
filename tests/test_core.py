@@ -509,6 +509,11 @@ def test_compare_on_index_and_join_columns():
     with raises(Exception, match="Only provide on_index or join_columns"):
         Compare(df, df.copy(), on_index=True, join_columns=["a"])
 
+    with raises(
+        ValueError, match="Either join_columns must be provide or on_index must be True"
+    ):
+        Compare(df, df.copy(), on_index=False, join_columns=None)
+
 
 def test_compare_df_setter_good_index():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
