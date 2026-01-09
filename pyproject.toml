@@ -118,6 +118,7 @@ lint.ignore = [
   "E117",   # Check indentation level. Using formatter instead.
   "E203",   # Check whitespace. Using formatter instead.
   "E501",   # Line too long. Using formatter instead.
+  "RUF067",
   "SIM105", # Use `contextlib.suppress(FileNotFoundError)` instead of `try`-`except`-`pass`
   "SIM108", # Use ternary operator instead of if-else blocks.
   "UP006",  # `typing.x` is deprecated, use `x` instead
