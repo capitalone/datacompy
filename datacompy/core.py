@@ -118,7 +118,9 @@ class Compare(BaseCompare):
         if on_index and join_columns is not None:
             raise Exception("Only provide on_index or join_columns")
         elif not on_index and join_columns is None:
-            raise ValueError("Either join_columns must be provide or on_index must be True")
+            raise ValueError(
+                "Either join_columns must be provide or on_index must be True"
+            )
         elif on_index:
             self.on_index = True
             self.join_columns = []
