@@ -7,7 +7,7 @@ requires = [ "setuptools>=64" ]
 name = "datacompy"
 description = "Dataframe comparisons in Python"
 readme = "README.md"
-license-files = [ "LICENSE" ]
+license = { text = "Apache Software License" }
 maintainers = [
   { name = "Faisal Dosani", email = "faisal.dosani@capitalone.com" },
   { name = "Jacob Dawang", email = "jacob.dawang@capitalone.com" },
@@ -118,6 +118,7 @@ lint.ignore = [
   "E117",   # Check indentation level. Using formatter instead.
   "E203",   # Check whitespace. Using formatter instead.
   "E501",   # Line too long. Using formatter instead.
+  "RUF067", # non-empty-init-module
   "SIM105", # Use `contextlib.suppress(FileNotFoundError)` instead of `try`-`except`-`pass`
   "SIM108", # Use ternary operator instead of if-else blocks.
   "UP006",  # `typing.x` is deprecated, use `x` instead
