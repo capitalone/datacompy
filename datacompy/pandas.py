@@ -126,7 +126,7 @@ class PandasCompare(BaseCompare):
         )
 
         if on_index and join_columns is not None:
-            raise Exception("Only provide on_index or join_columns")
+            raise ValueError("Only provide on_index or join_columns")
         elif not on_index and join_columns is None:
             raise ValueError(
                 "Either join_columns must be provide or on_index must be True"
