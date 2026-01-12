@@ -69,7 +69,7 @@ class PandasCompare(BaseCompare):
         Second dataframe to check
     join_columns : list or str, optional
         Column(s) to join dataframes on. If a string is passed in, that one
-        column will be used.
+        column will be used. ``join_columns`` or ``on_index`` must be set, but not both.
     on_index : bool, optional
         If True, the index will be used to join the two dataframes. If both
         ``join_columns`` and ``on_index`` are provided, an exception will be
@@ -126,7 +126,11 @@ class PandasCompare(BaseCompare):
         )
 
         if on_index and join_columns is not None:
-            raise Exception("Only provide on_index or join_columns")
+            raise ValueError("Only provide on_index or join_columns")
+        elif not on_index and join_columns is None:
+            raise ValueError(
+                "Either join_columns must be provide or on_index must be True"
+            )
         elif on_index:
             self.on_index = True
             self.join_columns = []
