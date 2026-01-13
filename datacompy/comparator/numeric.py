@@ -20,8 +20,11 @@ import logging
 import numpy as np
 import pandas as pd
 import polars as pl
+import pyarrow as pa
+import pyarrow.compute as pc
 
 from datacompy.comparator.base import BaseComparator
+from datacompy._typing import ArrowArrayLike
 
 NUMERIC_PANDAS_TYPES = [
     "floating",
@@ -392,3 +395,83 @@ class SnowflakeNumericComparator(BaseComparator):
                 return dataframe.withColumn(col_match, spf.lit(False))
         else:
             return None
+        
+class PyArrowNumericComparator(BaseComparator):
+    """Comparator for numeric columns in PyArrow.
+
+    Parameters
+    ----------
+    rtol : float
+        The relative tolerance to use for comparison.
+    atol : float
+        The absolute tolerance to use for comparison.
+    """
+
+    def compare(
+        self, col1: pa.Array, col2: pa.Array, rtol=1e-5, atol=1e-8
+    ) -> pa.Array | None:
+        """
+        Compare two PyArrow Arrays for approximate equality within specified tolerances `rtol` and `atol`.
+
+        Parameters
+        ----------
+        col1 : pa.Array
+            The first PyArrow Array to compare.
+        col2 : pa.Array
+            The second PyArrow Array to compare.
+        rtol : float, optional
+            The relative tolerance to use for comparison. Default is 1e-5.
+        atol : float, optional
+            The absolute tolerance to use for comparison. Default is 1e-8.
+
+        Returns
+        -------
+        pa.Array
+            A PyArrow Array of booleans indicating whether the values in `col1` and `col2`
+            are approximately equal within the given tolerances.
+        None
+            if the columns are not comparable.
+        """
+        if len(col1) != len(col2):
+            return None
+
+        if pyarrow_numeric(col1) and pyarrow_numeric(col2):
+            try:
+                diff = pc.abs(pc.subtract(col1, col2))
+                tolerance = pc.add(
+                    pc.scalar(atol, pa.float64()),
+                    pc.multiply(
+                        pc.scalar(rtol, pa.float64()), pc.abs(col2.cast(pa.float64()))
+                    ),
+                )
+                close = pc.less_equal(diff.cast(pa.float64()), tolerance)
+                nulls_equal = pc.equal(col1, col2)
+                result = pc.or_(close, nulls_equal)
+                return result
+            except Exception:
+                return pa.array([False] * len(col1), type=pa.bool_())
+        else:
+            return None
+        
+def pyarrow_numeric (col: ArrowArrayLike) -> bool:
+    """Check if a PyArrow Array is of numeric type.
+
+    Parameters
+    ----------
+    col : ArrowArrayLike
+        The PyArrow Array to check.
+
+    Returns
+    -------
+    bool
+        True if the Array is of numeric type, False otherwise.
+    """
+    if (
+        pa.types.is_integer(col.type)
+        or pa.types.is_floating(col.type)
+        or pa.types.is_decimal128(col.type)
+        or pa.types.is_decimal256(col.type)
+    ):
+        return True
+    else:
+        return False
