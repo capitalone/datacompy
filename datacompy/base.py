@@ -25,6 +25,7 @@ import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict
+import pyarrow as pa
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ordered_set import OrderedSet
@@ -184,7 +185,10 @@ class BaseCompare(ABC):
 
     def only_join_columns(self) -> bool:
         """Boolean on if the only columns are the join columns."""
-        return set(self.join_columns) == set(self.df1.columns) == set(self.df2.columns)
+        if isinstance(self.df1, pa.Table) or isinstance(self.df2, pa.Table):
+            return set(self.join_columns) == set(self.df1.schema.names) == set(self.df2.schema.names)
+        else:
+            return set(self.join_columns) == set(self.df1.columns) == set(self.df2.columns)
 
 
 def _resolve_template_path(template_name: str) -> tuple[str, str]:
