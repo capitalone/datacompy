@@ -2269,3 +2269,58 @@ def test_array_comparator_spark(spark_session):
     assert mismatch_df["id"].iloc[2] == 6
     assert (mismatch_df["array_col_df1"].iloc[2] == [1, 2]).all()
     assert (mismatch_df["array_col_df2"].iloc[2] == [1, 2, 3]).all()
+
+
+def test_cache_intermediates_enabled(spark_session, caplog):
+    """Test that caching is enabled by default."""
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
+
+    caplog.set_level(logging.DEBUG)
+    compare = SparkSQLCompare(
+        spark_session, df1, df2, join_columns=["a"], cache_intermediates=True
+    )
+
+    # The comparison should still work correctly
+    assert not compare.matches()
+
+    # Verify the log message
+    assert compare.cache_intermediates is True
+    assert "Caching intermediate dataframes" in caplog.text
+    assert "Caching intersect_rows dataframe" in caplog.text
+
+
+def test_cache_intermediates_disabled(spark_session, caplog):
+    """Test that caching can be disabled for Databricks Serverless environments."""
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
+
+    caplog.set_level(logging.DEBUG)
+    compare = SparkSQLCompare(
+        spark_session, df1, df2, join_columns=["a"], cache_intermediates=False
+    )
+
+    # The comparison should still work correctly without caching
+    assert not compare.matches()
+
+    # Verify the log message
+    assert compare.cache_intermediates is False
+    assert "Caching disabled - skipping cache() calls" in caplog.text
+    assert "Caching disabled - skipping cache() on intersect_rows" in caplog.text
+
+
+def test_cache_intermediates_default_is_true(spark_session, caplog):
+    """Test that cache_intermediates defaults to True for backward compatibility."""
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}])
+
+    caplog.set_level(logging.DEBUG)
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+
+    # The comparison should work as expected
+    assert compare.matches()
+
+    # Verify the log message
+    assert compare.cache_intermediates is True
+    assert "Caching intermediate dataframes" in caplog.text
+    assert "Caching intersect_rows dataframe" in caplog.text
