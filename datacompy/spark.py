@@ -124,6 +124,9 @@ class SparkSQLCompare(BaseCompare):
         Boolean indicator that controls of column names will be cast into lower case
     custom_comparators : list of ``BaseComparator``, optional
         A list of custom comparator classes to use to compare columns.
+    cache_intermediates : bool, optional
+        Flag to enable/disable caching of intermediate DataFrames. Set to False when using
+        Databricks Serverless or other environments that don't support caching. Defaults to True.
     """
 
     def __init__(
@@ -140,9 +143,11 @@ class SparkSQLCompare(BaseCompare):
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
         custom_comparators: List[BaseComparator] | None = None,
+        cache_intermediates: bool = True,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
+        self.cache_intermediates = cache_intermediates
 
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
@@ -378,9 +383,13 @@ class SparkSQLCompare(BaseCompare):
             {c: f"{c}_{self.df2_name}" for c in temp_join_columns}
         )
 
-        # cache
-        df1.cache()
-        df2.cache()
+        # cache only if enabled
+        if self.cache_intermediates:
+            LOG.debug("Caching intermediate dataframes")
+            df1.cache()
+            df2.cache()
+        else:
+            LOG.debug("Caching disabled - skipping cache() calls")
 
         # NULL SAFE Outer join using ON
         df1.createOrReplaceTempView("df1")
@@ -456,8 +465,12 @@ class SparkSQLCompare(BaseCompare):
         LOG.info(
             f"Number of rows in df1 and df2 (not necessarily equal): {self.intersect_rows.count()}"
         )
-        # cache
-        self.intersect_rows.cache()
+        # cache only if enabled
+        if self.cache_intermediates:
+            LOG.debug("Caching intersect_rows dataframe")
+            self.intersect_rows.cache()
+        else:
+            LOG.debug("Caching disabled - skipping cache() on intersect_rows")
 
     def _intersect_compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
         """Run the comparison on the intersect dataframe.
