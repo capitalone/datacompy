@@ -2064,7 +2064,9 @@ def test_custom_comparator_pandas():
         """A custom comparator that matches strings based on length."""
 
         def compare(self, s1, s2, **kwargs):
-            if s1.dtype == "object" and s2.dtype == "object":
+            if (s1.dtype == "object" or pd.api.types.is_string_dtype(s1)) and (
+                s2.dtype == "object" or pd.api.types.is_string_dtype(s2)
+            ):
                 return s1.str.len() == s2.str.len()
             return None
 
