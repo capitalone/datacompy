@@ -37,6 +37,9 @@ jobs:
         python-version: ["3.10", "3.11"]
         spark-version: [3.5.7]
         pandas-version: ["2.3.3", "3.0.0"]
+        exclude:
+          - python-version: "3.10"
+            pandas-version: "3.0.0"
 
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
@@ -75,10 +78,15 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
         spark-version: [4.0.1]
+        pandas-version: ["2.3.3", "3.0.0"]
+        exclude:
+          - python-version: "3.10"
+            pandas-version: "3.0.0"
 
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SPARK_VERSION: ${{ matrix.spark-version }}
+      PANDAS_VERSION: ${{ matrix.pandas-version }}
 
     steps:
       - uses: actions/checkout@v3
@@ -94,6 +102,9 @@ jobs:
       - name: Install pyspark
         run: |
           python -m pip install pyspark[connect]==${{ matrix.spark-version }}
+      - name: Install pandas
+        run: |
+          python -m pip install pandas==${{ matrix.pandas-version }}
       - name: Install datacompy
         run: |
           python -m pip install ."[spark, qa, tests, tests-spark]"
