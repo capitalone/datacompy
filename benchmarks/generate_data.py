@@ -1,9 +1,14 @@
-import os  # noqa: D100
+"""Generate benchmark datasets of varying shapes using Polars LazyFrame and sink_parquet."""
+
+import logging
+import os
 import shutil
 import string
 
 import numpy as np
 import polars as pl
+
+logger = logging.getLogger(__name__)
 
 
 def generate_columns(num_columns: int, size: int, seed: int = 42) -> dict:
@@ -141,8 +146,14 @@ def generate_data(
     )
     pl.collect_all(sinks)
 
+
 # typically this is only needs to run once to generate the data
 if __name__ == "__main__":
+
+    logger.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
     folder = "data"
     # delete and recreate the folder
     shutil.rmtree(folder, ignore_errors=True)
@@ -158,5 +169,5 @@ if __name__ == "__main__":
 
     for size in sizes:
         for config in column_configs:
-            print(f"Generating data: size={size}, columns={config['num_base_columns']}")
+            logger.info(f"Generating data: size={size}, columns={config['num_base_columns']}")
             generate_data(size=size, folder=folder, **config)
