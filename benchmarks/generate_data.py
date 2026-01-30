@@ -132,16 +132,12 @@ def generate_data(
     sinks = []
     sinks.append(
         base_lf.sink_parquet(
-            f"{base_path}/data.parquet",
-            row_group_size=1_000_000,
-            lazy=True
+            f"{base_path}/data.parquet", row_group_size=1_000_000, lazy=True
         )
     )
     sinks.append(
         compare_lf.sink_parquet(
-            f"{compare_path}/data.parquet",
-            row_group_size=1_000_000,
-            lazy=True
+            f"{compare_path}/data.parquet", row_group_size=1_000_000, lazy=True
         )
     )
     pl.collect_all(sinks)
@@ -149,7 +145,6 @@ def generate_data(
 
 # typically this is only needs to run once to generate the data
 if __name__ == "__main__":
-
     logger.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s",
@@ -169,5 +164,7 @@ if __name__ == "__main__":
 
     for size in sizes:
         for config in column_configs:
-            logger.info(f"Generating data: size={size}, columns={config['num_base_columns']}")
+            logger.info(
+                f"Generating data: size={size}, columns={config['num_base_columns']}"
+            )
             generate_data(size=size, folder=folder, **config)
