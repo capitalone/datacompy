@@ -37,7 +37,7 @@ dependencies = [
   "jinja2>=3",
   "numpy>=1.26.4,<=2.4.1",
   "ordered-set>=4.0.2,<=4.1",
-  "pandas>=2.2,<=2.3.3",
+  "pandas>=2.2,<=3",
   "polars[pandas]>=0.20.4,<=1.37.1",
 ]
 optional-dependencies.build = [ "build", "twine", "wheel" ]

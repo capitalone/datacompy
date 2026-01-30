@@ -222,9 +222,18 @@ class PandasStringComparator(BaseComparator):
                 )
             except Exception:
                 try:
-                    return pd.Series(col1.astype(str) == col2.astype(str))
+                    # If fillna fails (e.g. Categorical), try casting to str first
+                    c1 = col1.astype("str")
+                    c2 = col2.astype("str")
+                    return pd.Series(
+                        (c1.fillna(DEFAULT_VALUE) == c2.fillna(DEFAULT_VALUE))
+                        | (c1.isnull() & c2.isnull())
+                    )
                 except Exception:
-                    return pd.Series(False * col1.index)
+                    try:
+                        return pd.Series(col1.astype("str") == col2.astype("str"))
+                    except Exception:
+                        return pd.Series(False * col1.index)
         # if both are mixed or dates
         elif (
             pd.api.types.infer_dtype(col1).startswith("mixed")
@@ -232,7 +241,10 @@ class PandasStringComparator(BaseComparator):
         ) or (col1_type in PANDAS_DATE_TYPES and col2_type in PANDAS_DATE_TYPES):
             # Handle mixed type columns by casting to a string and comparing
             try:
-                return pd.Series(col1.astype(str) == col2.astype(str))
+                return pd.Series(
+                    col1.astype("str").fillna(DEFAULT_VALUE)
+                    == col2.astype("str").fillna(DEFAULT_VALUE)
+                )
             except Exception:
                 return pd.Series(False * col1.index)
         else:  # if not one of the supported type usecases
@@ -552,7 +564,10 @@ def pandas_compare_string_and_date_columns(
             )
         except Exception:
             try:
-                return pd.Series(obj_column.astype(str) == date_column.astype(str))
+                return pd.Series(
+                    obj_column.astype(str).fillna(DEFAULT_VALUE)
+                    == date_column.astype(str).fillna(DEFAULT_VALUE)
+                )
             except Exception:
                 return pd.Series(False, index=col_1.index)
 
