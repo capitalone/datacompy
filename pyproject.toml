@@ -58,7 +58,7 @@ optional-dependencies.spark = [
   "pyspark[connect]>=3.5,!=4,<=4.1.1; python_version<='3.11'",
   "pyspark[connect]>=4; python_version>='3.12'",
 ]
-optional-dependencies.tests = [ "pytest", "pytest-cov" ]
+optional-dependencies.tests = [ "pytest", "pytest-cov", "pytest-benchmark", "pytest-profiling" ]
 optional-dependencies.tests-spark = [ "pytest-spark" ]
 urls."Bug Tracker" = "https://github.com/capitalone/datacompy/issues"
 urls.Documentation = "https://capitalone.github.io/datacompy/"

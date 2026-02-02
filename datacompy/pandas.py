@@ -382,6 +382,9 @@ class PandasCompare(BaseCompare):
         otherwise.
         """
         LOG.debug("Comparing intersection")
+
+        match_columns: Dict[str, pd.Series] = {}
+
         for column in self.intersect_columns():
             if column in self.join_columns:
                 col_match = column + "_match"
@@ -401,22 +404,17 @@ class PandasCompare(BaseCompare):
                 col_1 = column + "_" + self.df1_name
                 col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
-                self.intersect_rows = pd.concat(
-                    [
-                        self.intersect_rows,
-                        columns_equal(
-                            col_1=self.intersect_rows[col_1],
-                            col_2=self.intersect_rows[col_2],
-                            rel_tol=get_column_tolerance(column, self._rel_tol_dict),
-                            abs_tol=get_column_tolerance(column, self._abs_tol_dict),
-                            ignore_spaces=ignore_spaces,
-                            ignore_case=ignore_case,
-                            comparators=self._get_comparators(),
-                        ).to_frame(name=col_match),
-                    ],
-                    axis=1,
+                match_series = columns_equal(
+                    col_1=self.intersect_rows[col_1],
+                    col_2=self.intersect_rows[col_2],
+                    rel_tol=get_column_tolerance(column, self._rel_tol_dict),
+                    abs_tol=get_column_tolerance(column, self._abs_tol_dict),
+                    ignore_spaces=ignore_spaces,
+                    ignore_case=ignore_case,
+                    comparators=self._get_comparators(),
                 )
-                match_cnt = self.intersect_rows[col_match].sum()
+                match_columns[col_match] = match_series
+                match_cnt = match_series.sum()
                 max_diff = calculate_max_diff(
                     self.intersect_rows[col_1], self.intersect_rows[col_2]
                 )
@@ -454,6 +452,11 @@ class PandasCompare(BaseCompare):
                     "rel_tol": get_column_tolerance(column, self._rel_tol_dict),
                     "abs_tol": get_column_tolerance(column, self._abs_tol_dict),
                 }
+            )
+
+        if match_columns:
+            self.intersect_rows = pd.concat(
+                [self.intersect_rows, pd.DataFrame(match_columns)], axis=1
             )
 
     def all_columns_match(self) -> bool:
