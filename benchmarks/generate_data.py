@@ -11,6 +11,41 @@ import polars as pl
 
 logger = logging.getLogger(__name__)
 
+def write_partitioned_parquet(
+    df: pl.DataFrame,
+    output_path: str,
+    num_partitions: int = 20,
+) -> None:
+    """
+    Write a DataFrame to multiple parquet files, similar to Spark partitioning.
+
+    Parameters
+    ----------
+    df : pl.DataFrame
+        The DataFrame to write.
+    output_path : str
+        The output directory path.
+    num_partitions : int
+        Number of parquet files to create.
+    """
+    total_rows = df.height
+    rows_per_partition = max(1, total_rows // num_partitions)
+
+    for i in range(num_partitions):
+        start_idx = i * rows_per_partition
+        # Last partition gets remaining rows
+        if i == num_partitions - 1:
+            end_idx = total_rows
+        else:
+            end_idx = start_idx + rows_per_partition
+
+        if start_idx >= total_rows:
+            break
+
+        partition_df = df.slice(start_idx, end_idx - start_idx)
+        partition_file = f"{output_path}/part-{i:05d}.parquet"
+        partition_df.write_parquet(partition_file)
+ 
 
 def generate_base_and_compare_columns(
     size: int, num_base_columns, num_compare_columns, overlap_columns
@@ -108,9 +143,10 @@ def generate_data(
     num_base_columns: int = 9,
     num_compare_columns: int = 9,
     overlap_columns: int = 6,
+    num_partitions: int = 20,
 ) -> None:
     """
-    Generate two datasets for benchmarking using Polars LazyFrame.
+    Generate two datasets for benchmarking using Polars.
 
     Parameters
     ----------
@@ -124,6 +160,8 @@ def generate_data(
         Number of data columns for compare dataset (excluding id).
     overlap_columns : int
         Number of columns that overlap between base and compare datasets.
+    num_partitions : int
+        Number of parquet files to create per dataset (similar to Spark partitions).
     """
     base_columns, compare_columns = generate_base_and_compare_columns(
         size, num_base_columns, num_compare_columns, overlap_columns
@@ -134,22 +172,15 @@ def generate_data(
     os.makedirs(base_path, exist_ok=True)
     os.makedirs(compare_path, exist_ok=True)
 
-    # Use LazyFrame and sink_parquet to write data
-    base_lf = pl.LazyFrame(base_columns)
-    compare_lf = pl.LazyFrame(compare_columns)
+    # Collect and write parquet files with row_group_size for chunking
+    base_df = pl.DataFrame(base_columns)
+    compare_df = pl.DataFrame(compare_columns)
 
-    sinks = []
-    sinks.append(
-        base_lf.sink_parquet(
-            pl.PartitionBy(f"{base_path}/", max_rows_per_file=100_000), lazy=True
-        )
-    )
-    sinks.append(
-        compare_lf.sink_parquet(
-            pl.PartitionBy(f"{compare_path}/", max_rows_per_file=100_000), lazy=True
-        )
-    )
-    pl.collect_all(sinks)
+    # Adjust partitions for small datasets
+    effective_partitions = min(num_partitions, size)
+
+    write_partitioned_parquet(base_df, base_path, effective_partitions)
+    write_partitioned_parquet(compare_df, compare_path, effective_partitions)
 
 
 # typically this is only needs to run once to generate the data
