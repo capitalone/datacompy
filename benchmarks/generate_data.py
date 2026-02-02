@@ -11,6 +11,7 @@ import polars as pl
 
 logger = logging.getLogger(__name__)
 
+
 def write_partitioned_parquet(
     df: pl.DataFrame,
     output_path: str,
@@ -45,7 +46,7 @@ def write_partitioned_parquet(
         partition_df = df.slice(start_idx, end_idx - start_idx)
         partition_file = f"{output_path}/part-{i:05d}.parquet"
         partition_df.write_parquet(partition_file)
- 
+
 
 def generate_base_and_compare_columns(
     size: int, num_base_columns, num_compare_columns, overlap_columns
