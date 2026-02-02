@@ -46,3 +46,8 @@ def test_polars(benchmark, size, num_cols):  # noqa: D103
     base = pl.read_parquet(f"{data_path}/base/*.parquet")
     compare = pl.read_parquet(f"{data_path}/compare/*.parquet")
     benchmark.pedantic(target=run_polars, args=[base, compare], iterations=1, rounds=5)
+
+
+if __name__ == "__main__":
+    # make sure to install pytest-benchmark
+    retcode = pytest.main(["benchmark.py"])
