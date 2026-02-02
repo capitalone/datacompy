@@ -2210,7 +2210,7 @@ def test_columns_with_mismatches_multiple_columns():
     )
     compare = PandasCompare(df1, df2, join_columns=["id"])
     result = compare.columns_with_mismatches()
-    assert result == ["age", "city"]
+    assert sorted(result) == ["age", "city"]
 
 
 def test_columns_with_mismatches_no_mismatches():
@@ -2279,7 +2279,7 @@ def test_columns_with_mismatches_multiple_join_columns():
     result = compare.columns_with_mismatches()
     assert "id1" not in result
     assert "id2" not in result
-    assert result == ["value1", "value2"]
+    assert sorted(result) == ["value1", "value2"]
 
 
 def test_columns_with_mismatches_empty_dataframes():

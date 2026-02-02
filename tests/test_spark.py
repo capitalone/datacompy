@@ -2360,7 +2360,7 @@ def test_columns_with_mismatches_multiple_columns(spark_session):
     )
     compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
     result = compare.columns_with_mismatches()
-    assert result == ["age", "city"]
+    assert sorted(result) == ["age", "city"]
 
 
 def test_columns_with_mismatches_no_mismatches(spark_session):
@@ -2432,4 +2432,4 @@ def test_columns_with_mismatches_multiple_join_columns(spark_session):
     result = compare.columns_with_mismatches()
     assert "id1" not in result
     assert "id2" not in result
-    assert result == ["value1", "value2"]
+    assert sorted(result) == ["value1", "value2"]

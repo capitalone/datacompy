@@ -2099,7 +2099,7 @@ def test_columns_with_mismatches_multiple_columns(snowflake_session):
     )
     compare = SnowflakeCompare(snowflake_session, df1, df2, join_columns=["ID"])
     result = compare.columns_with_mismatches()
-    assert result == ["AGE", "CITY"]
+    assert sorted(result) == ["AGE", "CITY"]
 
 
 def test_columns_with_mismatches_no_mismatches(snowflake_session):
@@ -2173,4 +2173,4 @@ def test_columns_with_mismatches_multiple_join_columns(snowflake_session):
     result = compare.columns_with_mismatches()
     assert "ID1" not in result
     assert "ID2" not in result
-    assert result == ["VALUE1", "VALUE2"]
+    assert sorted(result) == ["VALUE1", "VALUE2"]

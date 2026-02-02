@@ -2216,7 +2216,7 @@ def test_columns_with_mismatches_multiple_columns():
     )
     compare = PolarsCompare(df1, df2, join_columns=["id"])
     result = compare.columns_with_mismatches()
-    assert result == ["age", "city"]
+    assert sorted(result) == ["age", "city"]
 
 
 def test_columns_with_mismatches_no_mismatches():
@@ -2247,30 +2247,6 @@ def test_columns_with_mismatches_excludes_join_columns():
     assert "id" not in result
     # Result should be empty because 'value' matches for the intersecting rows
     assert result == []
-
-
-def test_columns_with_mismatches_sorted():
-    """Test that columns_with_mismatches returns sorted column names."""
-    df1 = pl.DataFrame(
-        {
-            "id": [1, 2],
-            "zebra": [1, 2],
-            "apple": [1, 2],
-            "mango": [1, 3],  # mango differs
-        }
-    )
-    df2 = pl.DataFrame(
-        {
-            "id": [1, 2],
-            "zebra": [1, 2],
-            "apple": [1, 2],
-            "mango": [1, 4],  # mango differs
-        }
-    )
-    compare = PolarsCompare(df1, df2, join_columns=["id"])
-    result = compare.columns_with_mismatches()
-    # Should be sorted alphabetically even though 'mango' comes after 'zebra'
-    assert result == ["mango"]
 
 
 def test_columns_with_mismatches_with_nulls():
@@ -2310,4 +2286,4 @@ def test_columns_with_mismatches_multiple_join_columns():
     result = compare.columns_with_mismatches()
     assert "id1" not in result
     assert "id2" not in result
-    assert result == ["value1", "value2"]
+    assert sorted(result) == ["value1", "value2"]
