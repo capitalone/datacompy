@@ -2063,3 +2063,114 @@ def test_array_comparator_snowflake(snowflake_session):
     assert mismatch_df["ID"].iloc[2] == 6
     assert mismatch_df["ARRAY_COL_DF1"].iloc[2] == "[\n  1,\n  2\n]"
     assert mismatch_df["ARRAY_COL_DF2"].iloc[2] == "[\n  1,\n  2,\n  3\n]"
+
+
+def test_columns_with_mismatches_single_column(snowflake_session):
+    """Test columns_with_mismatches with a single mismatched column."""
+    df1 = snowflake_session.createDataFrame(
+        [(1, "Alice", 25), (2, "Bob", 30), (3, "Charlie", 35)], ["ID", "NAME", "AGE"]
+    )
+    df2 = snowflake_session.createDataFrame(
+        [
+            (1, "Alice", 25),
+            (2, "Bob", 31),  # age differs for id=2
+            (3, "Charlie", 35),
+        ],
+        ["ID", "NAME", "AGE"],
+    )
+    compare = SnowflakeCompare(snowflake_session, df1, df2, join_columns=["ID"])
+    result = compare.columns_with_mismatches()
+    assert result == ["AGE"]
+
+
+def test_columns_with_mismatches_multiple_columns(snowflake_session):
+    """Test columns_with_mismatches with multiple mismatched columns."""
+    df1 = snowflake_session.createDataFrame(
+        [(1, "Alice", 25, "NYC"), (2, "Bob", 30, "LA"), (3, "Charlie", 35, "Chicago")],
+        ["ID", "NAME", "AGE", "CITY"],
+    )
+    df2 = snowflake_session.createDataFrame(
+        [
+            (1, "Alice", 25, "NYC"),
+            (2, "Bob", 31, "LA"),  # age differs for id=2
+            (3, "Charlie", 35, "Boston"),  # city differs for id=3
+        ],
+        ["ID", "NAME", "AGE", "CITY"],
+    )
+    compare = SnowflakeCompare(snowflake_session, df1, df2, join_columns=["ID"])
+    result = compare.columns_with_mismatches()
+    assert result == ["AGE", "CITY"]
+
+
+def test_columns_with_mismatches_no_mismatches(snowflake_session):
+    """Test columns_with_mismatches when all columns match."""
+    df1 = snowflake_session.createDataFrame(
+        [(1, "Alice", 25), (2, "Bob", 30), (3, "Charlie", 35)], ["ID", "NAME", "AGE"]
+    )
+    df2 = snowflake_session.createDataFrame(
+        [(1, "Alice", 25), (2, "Bob", 30), (3, "Charlie", 35)], ["ID", "NAME", "AGE"]
+    )
+    compare = SnowflakeCompare(snowflake_session, df1, df2, join_columns=["ID"])
+    result = compare.columns_with_mismatches()
+    assert result == []
+
+
+def test_columns_with_mismatches_excludes_join_columns(snowflake_session):
+    """Test that join columns are excluded from the result."""
+    df1 = snowflake_session.createDataFrame(
+        [(1, "a"), (2, "b"), (3, "c")], ["ID", "VALUE"]
+    )
+    df2 = snowflake_session.createDataFrame(
+        [
+            (1, "a"),
+            (2, "b"),
+            (4, "d"),  # id=3 missing, id=4 added
+        ],
+        ["ID", "VALUE"],
+    )
+    compare = SnowflakeCompare(snowflake_session, df1, df2, join_columns=["ID"])
+    result = compare.columns_with_mismatches()
+    # 'ID' should not be in the result even though there are row mismatches
+    assert "ID" not in result
+    # Result should be empty because 'VALUE' matches for the intersecting rows
+    assert result == []
+
+
+def test_columns_with_mismatches_with_nulls(snowflake_session):
+    """Test columns_with_mismatches with null values."""
+    df1 = snowflake_session.createDataFrame(
+        [(1, "a"), (2, None), (3, "c")], ["ID", "VALUE"]
+    )
+    df2 = snowflake_session.createDataFrame(
+        [
+            (1, "a"),
+            (2, "b"),  # null differs to 'b' for id=2
+            (3, "c"),
+        ],
+        ["ID", "VALUE"],
+    )
+    compare = SnowflakeCompare(snowflake_session, df1, df2, join_columns=["ID"])
+    result = compare.columns_with_mismatches()
+    assert result == ["VALUE"]
+
+
+def test_columns_with_mismatches_multiple_join_columns(snowflake_session):
+    """Test columns_with_mismatches with multiple join columns."""
+    df1 = snowflake_session.createDataFrame(
+        [(1, "a", 10, 100), (1, "b", 20, 200), (2, "a", 30, 300), (2, "b", 40, 400)],
+        ["ID1", "ID2", "VALUE1", "VALUE2"],
+    )
+    df2 = snowflake_session.createDataFrame(
+        [
+            (1, "a", 10, 100),
+            (1, "b", 25, 200),  # value1 differs for (1, 'b')
+            (2, "a", 30, 305),  # value2 differs for (2, 'a')
+            (2, "b", 40, 400),
+        ],
+        ["ID1", "ID2", "VALUE1", "VALUE2"],
+    )
+    compare = SnowflakeCompare(snowflake_session, df1, df2, join_columns=["ID1", "ID2"])
+    result = compare.columns_with_mismatches()
+    assert "ID1" not in result
+    assert "ID2" not in result
+    assert result == ["VALUE1", "VALUE2"]

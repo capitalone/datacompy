@@ -2171,3 +2171,139 @@ def test_array_comparator_pandas():
     mismatches = compare.all_mismatch().sort_values("id").reset_index(drop=True)
     assert len(mismatches) == 3
     assert list(mismatches["id"]) == [2, 5, 6]
+
+
+def test_columns_with_mismatches_single_column():
+    """Test columns_with_mismatches with a single mismatched column."""
+    df1 = pd.DataFrame(
+        {"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]}
+    )
+    df2 = pd.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "name": ["Alice", "Bob", "Charlie"],
+            "age": [25, 31, 35],  # age differs for id=2
+        }
+    )
+    compare = PandasCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == ["age"]
+
+
+def test_columns_with_mismatches_multiple_columns():
+    """Test columns_with_mismatches with multiple mismatched columns."""
+    df1 = pd.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "name": ["Alice", "Bob", "Charlie"],
+            "age": [25, 30, 35],
+            "city": ["NYC", "LA", "Chicago"],
+        }
+    )
+    df2 = pd.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "name": ["Alice", "Bob", "Charlie"],
+            "age": [25, 31, 35],  # age differs for id=2
+            "city": ["NYC", "LA", "Boston"],  # city differs for id=3
+        }
+    )
+    compare = PandasCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == ["age", "city"]
+
+
+def test_columns_with_mismatches_no_mismatches():
+    """Test columns_with_mismatches when all columns match."""
+    df1 = pd.DataFrame(
+        {"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]}
+    )
+    df2 = pd.DataFrame(
+        {"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]}
+    )
+    compare = PandasCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == []
+
+
+def test_columns_with_mismatches_excludes_join_columns():
+    """Test that join columns are excluded from the result."""
+    df1 = pd.DataFrame({"id": [1, 2, 3], "value": ["a", "b", "c"]})
+    df2 = pd.DataFrame(
+        {
+            "id": [1, 2, 4],  # id=3 missing, id=4 added
+            "value": ["a", "b", "d"],
+        }
+    )
+    compare = PandasCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    # 'id' should not be in the result even though there are row mismatches
+    assert "id" not in result
+    # Result should be empty because 'value' matches for the intersecting rows
+    assert result == []
+
+
+def test_columns_with_mismatches_with_nulls():
+    """Test columns_with_mismatches with null values."""
+    df1 = pd.DataFrame({"id": [1, 2, 3], "value": ["a", None, "c"]})
+    df2 = pd.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "value": ["a", "b", "c"],  # null differs to 'b' for id=2
+        }
+    )
+    compare = PandasCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == ["value"]
+
+
+def test_columns_with_mismatches_multiple_join_columns():
+    """Test columns_with_mismatches with multiple join columns."""
+    df1 = pd.DataFrame(
+        {
+            "id1": [1, 1, 2, 2],
+            "id2": ["a", "b", "a", "b"],
+            "value1": [10, 20, 30, 40],
+            "value2": [100, 200, 300, 400],
+        }
+    )
+    df2 = pd.DataFrame(
+        {
+            "id1": [1, 1, 2, 2],
+            "id2": ["a", "b", "a", "b"],
+            "value1": [10, 25, 30, 40],  # value1 differs for (1, 'b')
+            "value2": [100, 200, 305, 400],  # value2 differs for (2, 'a')
+        }
+    )
+    compare = PandasCompare(df1, df2, join_columns=["id1", "id2"])
+    result = compare.columns_with_mismatches()
+    assert "id1" not in result
+    assert "id2" not in result
+    assert result == ["value1", "value2"]
+
+
+def test_columns_with_mismatches_empty_dataframes():
+    """Test columns_with_mismatches with empty dataframes."""
+    df1 = pd.DataFrame({"id": [], "value": []})
+    df2 = pd.DataFrame({"id": [], "value": []})
+    compare = PandasCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == []
+
+
+def test_columns_with_mismatches_on_index():
+    """Test columns_with_mismatches when comparing on index."""
+    df1 = pd.DataFrame(
+        {"name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]}, index=[1, 2, 3]
+    )
+    df2 = pd.DataFrame(
+        {
+            "name": ["Alice", "Bob", "Charlie"],
+            "age": [25, 31, 35],  # age differs for index=2
+        },
+        index=[1, 2, 3],
+    )
+    compare = PandasCompare(df1, df2, on_index=True)
+    result = compare.columns_with_mismatches()
+    # When on_index=True, join_columns is empty, so all mismatching columns should be returned
+    assert result == ["age"]

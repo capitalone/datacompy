@@ -186,6 +186,31 @@ class BaseCompare(ABC):
         """Boolean on if the only columns are the join columns."""
         return set(self.join_columns) == set(self.df1.columns) == set(self.df2.columns)
 
+    def columns_with_mismatches(self) -> list[str]:
+        """Return a list of column names where at least one row has a mismatch.
+
+        This method identifies columns that have differences between df1 and df2,
+        excluding the join columns. This is useful for identifying problematic
+        columns and potentially rerunning comparisons on a subset of the data.
+
+        Returns
+        -------
+        list[str]
+            A sorted list of column names that have at least one mismatch.
+
+        Examples
+        --------
+        >>> compare = PandasCompare(df1, df2, join_columns=['id'])
+        >>> mismatched_cols = compare.columns_with_mismatches()
+        >>> print(mismatched_cols)
+        ['col_a', 'col_b']
+        """
+        return [
+            col["column"]
+            for col in self.column_stats
+            if col["unequal_cnt"] > 0 and col["column"] not in self.join_columns
+        ]
+
 
 def _resolve_template_path(template_name: str) -> tuple[str, str]:
     """Resolve template path and return (template_dir, template_file).
