@@ -196,7 +196,7 @@ class BaseCompare(ABC):
         Returns
         -------
         list[str]
-            A sorted list of column names that have at least one mismatch.
+            A list of column names that have at least one mismatch.
 
         Examples
         --------
