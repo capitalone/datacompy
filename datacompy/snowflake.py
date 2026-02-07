@@ -129,13 +129,6 @@ class SnowflakeCompare(BaseCompare):
         Flag to ignore the case of string columns
     custom_comparators : list of ``BaseComparator``, optional
         A list of custom comparator classes to use to compare columns.
-
-    Attributes
-    ----------
-    df1_unq_rows : sp.DataFrame
-        All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : sp.DataFrame
-        All records that are only in df2 (based on a join on join_columns)
     """
 
     def __init__(
