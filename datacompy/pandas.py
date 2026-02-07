@@ -231,26 +231,36 @@ class PandasCompare(BaseCompare):
             dataframe.columns = pd.Index(
                 [str(col).lower() for col in dataframe.columns]
             )
-            sensitive_columns = [col.lower() for col in sensitive_columns]
+            if sensitive_columns:
+                sensitive_columns = [str(col).lower() for col in sensitive_columns]
         else:
             dataframe.columns = pd.Index([str(col) for col in dataframe.columns])
 
+        # Check if sensitive columns are unique and exist in the dataframe
+        if sensitive_columns:
+            if len(set(sensitive_columns)) < len(sensitive_columns):
+                raise ValueError(
+                    f"sensitive_columns_{index} must have unique column names"
+                )
+
+            if not set(sensitive_columns).issubset(set(dataframe.columns)):
+                missing_cols = set(sensitive_columns) - set(dataframe.columns)
+                raise ValueError(
+                    f"sensitive_columns_{index} contains columns not in {index}: {missing_cols}"
+                )
+
         # Hash sensitive solumns
         if sensitive_columns:
-            cols_to_hash = [
-                col for col in sensitive_columns if col in dataframe.columns
-            ]
-            if cols_to_hash:
-                for col_to_hash in cols_to_hash:
-                    dataframe[col_to_hash] = (
-                        dataframe[col_to_hash]
-                        .astype(str)
-                        .map(
-                            lambda v: hashlib.blake2b(
-                                v.encode("utf-8"), digest_size=32, salt=self.salt
-                            ).hexdigest()
-                        )
+            for col_to_hash in sensitive_columns:
+                dataframe[col_to_hash] = (
+                    dataframe[col_to_hash]
+                    .astype(str)
+                    .map(
+                        lambda v: hashlib.blake2b(
+                            v.encode("utf-8"), digest_size=32, salt=self.salt
+                        ).hexdigest()
                     )
+                )
 
         # Check if join_columns are present in the dataframe
         if not set(self.join_columns).issubset(set(dataframe.columns)):
