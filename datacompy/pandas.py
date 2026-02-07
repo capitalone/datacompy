@@ -21,6 +21,7 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
+import hashlib
 import logging
 from typing import Any, Dict, List, cast
 
@@ -97,6 +98,19 @@ class PandasCompare(BaseCompare):
         Boolean indicator that controls of column names will be cast into lower case
     custom_comparators : list of ``BaseComparator``, optional
         A list of custom comparator classes to use to compare columns.
+    sensitive_columns_df1: list[str], optional
+        A list of the columns in df1 that should have their values hashed to mask sensitive data.
+    sensitive_columns_df2: list[str], optional
+        A list of the columns in df2 that should have their values hashed to mask sensitive data.
+    salt: str, optional
+        An optional salt string, used to increase security during hashing.
+
+    Attributes
+    ----------
+    df1_unq_rows : pd.DataFrame
+        All records that are only in df1 (based on a join on join_columns)
+    df2_unq_rows : pd.DataFrame
+        All records that are only in df2 (based on a join on join_columns)
     """
 
     def __init__(
@@ -113,6 +127,9 @@ class PandasCompare(BaseCompare):
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
         custom_comparators: List[BaseComparator] | None = None,
+        sensitive_columns_df1: List[str] | None = None,
+        sensitive_columns_df2: List[str] | None = None,
+        salt: str = "",
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
@@ -149,6 +166,9 @@ class PandasCompare(BaseCompare):
             self.on_index = False
 
         self._any_dupes: bool = False
+        self.sensitive_columns_df1 = sensitive_columns_df1
+        self.sensitive_columns_df2 = sensitive_columns_df2
+        self.salt = salt
         self.df1 = df1
         self.df2 = df2
         self.df1_name = df1_name
@@ -177,7 +197,25 @@ class PandasCompare(BaseCompare):
 
     @df1.setter
     def df1(self, df1: pd.DataFrame) -> None:
-        """Check that it is a dataframe and has the join columns."""
+        """Set df1.
+
+        First, hash any sensitive columns
+        Then, that it is a dataframe and has the join columns.
+        """
+        if self.sensitive_columns_df1:
+            cols_to_hash = [
+                col for col in self.sensitive_columns_df1 if col in df1.columns
+            ]
+            if cols_to_hash:
+                df1.loc[:, cols_to_hash] = (
+                    df1.loc[:, cols_to_hash]
+                    .astype(str)
+                    .map(
+                        lambda v: hashlib.sha256(
+                            (v + self.salt).encode("utf-8")
+                        ).hexdigest()
+                    )
+                )
         self._df1 = df1
         self._validate_dataframe(
             "df1", cast_column_names_lower=self.cast_column_names_lower
@@ -190,7 +228,25 @@ class PandasCompare(BaseCompare):
 
     @df2.setter
     def df2(self, df2: pd.DataFrame) -> None:
-        """Check that it is a dataframe and has the join columns."""
+        """Set df2.
+
+        First, hash any sensitive columns
+        Then, that it is a dataframe and has the join columns.
+        """
+        if self.sensitive_columns_df2:
+            cols_to_hash = [
+                col for col in self.sensitive_columns_df2 if col in df2.columns
+            ]
+            if cols_to_hash:
+                df2.loc[:, cols_to_hash] = (
+                    df2.loc[:, cols_to_hash]
+                    .astype(str)
+                    .map(
+                        lambda v: hashlib.sha256(
+                            (v + self.salt).encode("utf-8")
+                        ).hexdigest()
+                    )
+                )
         self._df2 = df2
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower

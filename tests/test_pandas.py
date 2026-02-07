@@ -2171,3 +2171,73 @@ def test_array_comparator_pandas():
     mismatches = compare.all_mismatch().sort_values("id").reset_index(drop=True)
     assert len(mismatches) == 3
     assert list(mismatches["id"]) == [2, 5, 6]
+
+
+def test_sensitive_columns():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.Compare(
+        df1,
+        df2,
+        join_columns=["a"],
+        sensitive_columns_df1=["b"],
+        sensitive_columns_df2=["b"],
+    )
+    assert compare.df1.loc[0, "b"] != 2
+    assert compare.df1.loc[1, "b"] != 0
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_as_join_columns():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.Compare(
+        df1,
+        df2,
+        join_columns=["a"],
+        sensitive_columns_df1=["a"],
+        sensitive_columns_df2=["a"],
+    )
+    assert compare.df1.loc[0, "a"] != 1
+    assert compare.df1.loc[1, "a"] != 1
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_with_salt():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.Compare(
+        df1,
+        df2,
+        join_columns=["a"],
+        sensitive_columns_df1=["b"],
+        sensitive_columns_df2=["b"],
+        salt="test_salt",
+    )
+    assert compare.df1.loc[0, "b"] != 2
+    assert compare.df1.loc[1, "b"] != 0
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_as_join_columns_with_salt():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.Compare(
+        df1,
+        df2,
+        join_columns=["a"],
+        sensitive_columns_df1=["a"],
+        sensitive_columns_df2=["a"],
+        salt="test_salt",
+    )
+    assert compare.df1.loc[0, "a"] != 1
+    assert compare.df1.loc[1, "a"] != 1
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
