@@ -168,7 +168,7 @@ class PandasCompare(BaseCompare):
         self._any_dupes: bool = False
         self.sensitive_columns_df1 = sensitive_columns_df1
         self.sensitive_columns_df2 = sensitive_columns_df2
-        self.salt = salt
+        self.salt = salt.encode("utf-8")
         self.df1 = df1
         self.df2 = df2
         self.df1_name = df1_name
@@ -212,8 +212,8 @@ class PandasCompare(BaseCompare):
                         df1[col_to_hash]
                         .astype(str)
                         .map(
-                            lambda v: hashlib.sha256(
-                                (v + self.salt).encode("utf-8")
+                            lambda v: hashlib.blake2b(
+                                v.encode("utf-8"), digest_size=32, salt=self.salt
                             ).hexdigest()
                         )
                     )
@@ -244,8 +244,8 @@ class PandasCompare(BaseCompare):
                         df2[col_to_hash]
                         .astype(str)
                         .map(
-                            lambda v: hashlib.sha256(
-                                (v + self.salt).encode("utf-8")
+                            lambda v: hashlib.blake2b(
+                                v.encode("utf-8"), digest_size=32, salt=self.salt
                             ).hexdigest()
                         )
                     )
