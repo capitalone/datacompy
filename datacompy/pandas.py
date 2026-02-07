@@ -104,13 +104,6 @@ class PandasCompare(BaseCompare):
         A list of the columns in df2 that should have their values hashed to mask sensitive data.
     salt: str, optional
         An optional salt string, used to increase security during hashing.
-
-    Attributes
-    ----------
-    df1_unq_rows : pd.DataFrame
-        All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : pd.DataFrame
-        All records that are only in df2 (based on a join on join_columns)
     """
 
     def __init__(
