@@ -2176,7 +2176,7 @@ def test_array_comparator_pandas():
 def test_sensitive_columns():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
-    compare = datacompy.Compare(
+    compare = datacompy.PandasCompare(
         df1,
         df2,
         join_columns=["a"],
@@ -2193,7 +2193,7 @@ def test_sensitive_columns():
 def test_sensitive_columns_as_join_columns():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
-    compare = datacompy.Compare(
+    compare = datacompy.PandasCompare(
         df1,
         df2,
         join_columns=["a"],
@@ -2210,7 +2210,7 @@ def test_sensitive_columns_as_join_columns():
 def test_sensitive_columns_with_salt():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
-    compare = datacompy.Compare(
+    compare = datacompy.PandasCompare(
         df1,
         df2,
         join_columns=["a"],
@@ -2228,7 +2228,7 @@ def test_sensitive_columns_with_salt():
 def test_sensitive_columns_as_join_columns_with_salt():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
-    compare = datacompy.Compare(
+    compare = datacompy.PandasCompare(
         df1,
         df2,
         join_columns=["a"],
