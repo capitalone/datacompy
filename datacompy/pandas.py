@@ -226,6 +226,16 @@ class PandasCompare(BaseCompare):
             raise TypeError(f"{index} must be a pandas DataFrame")
 
         sensitive_columns = getattr(self, f"sensitive_columns_{index}")
+
+        if cast_column_names_lower:
+            dataframe.columns = pd.Index(
+                [str(col).lower() for col in dataframe.columns]
+            )
+            sensitive_columns = [col.lower() for col in sensitive_columns]
+        else:
+            dataframe.columns = pd.Index([str(col) for col in dataframe.columns])
+
+        # Hash sensitive solumns
         if sensitive_columns:
             cols_to_hash = [
                 col for col in sensitive_columns if col in dataframe.columns
@@ -242,12 +252,6 @@ class PandasCompare(BaseCompare):
                         )
                     )
 
-        if cast_column_names_lower:
-            dataframe.columns = pd.Index(
-                [str(col).lower() for col in dataframe.columns]
-            )
-        else:
-            dataframe.columns = pd.Index([str(col) for col in dataframe.columns])
         # Check if join_columns are present in the dataframe
         if not set(self.join_columns).issubset(set(dataframe.columns)):
             missing_cols = set(self.join_columns) - set(dataframe.columns)
