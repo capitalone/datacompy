@@ -190,26 +190,7 @@ class PandasCompare(BaseCompare):
 
     @df1.setter
     def df1(self, df1: pd.DataFrame) -> None:
-        """Set df1.
-
-        First, hash any sensitive columns
-        Then, that it is a dataframe and has the join columns.
-        """
-        if self.sensitive_columns_df1:
-            cols_to_hash = [
-                col for col in self.sensitive_columns_df1 if col in df1.columns
-            ]
-            if cols_to_hash:
-                for col_to_hash in cols_to_hash:
-                    df1[col_to_hash] = (
-                        df1[col_to_hash]
-                        .astype(str)
-                        .map(
-                            lambda v: hashlib.blake2b(
-                                v.encode("utf-8"), digest_size=32, salt=self.salt
-                            ).hexdigest()
-                        )
-                    )
+        """Set df1 and then validate it."""
         self._df1 = df1
         self._validate_dataframe(
             "df1", cast_column_names_lower=self.cast_column_names_lower
@@ -222,26 +203,7 @@ class PandasCompare(BaseCompare):
 
     @df2.setter
     def df2(self, df2: pd.DataFrame) -> None:
-        """Set df2.
-
-        First, hash any sensitive columns
-        Then, that it is a dataframe and has the join columns.
-        """
-        if self.sensitive_columns_df2:
-            cols_to_hash = [
-                col for col in self.sensitive_columns_df2 if col in df2.columns
-            ]
-            if cols_to_hash:
-                for col_to_hash in cols_to_hash:
-                    df2[col_to_hash] = (
-                        df2[col_to_hash]
-                        .astype(str)
-                        .map(
-                            lambda v: hashlib.blake2b(
-                                v.encode("utf-8"), digest_size=32, salt=self.salt
-                            ).hexdigest()
-                        )
-                    )
+        """Set df2 and then validate it."""
         self._df2 = df2
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
@@ -250,7 +212,7 @@ class PandasCompare(BaseCompare):
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
     ) -> None:
-        """Check that it is a dataframe and has the join columns.
+        """Check that it is a dataframe and has the join columns, hash any sensitve columns.
 
         Parameters
         ----------
@@ -262,6 +224,23 @@ class PandasCompare(BaseCompare):
         dataframe = getattr(self, index)
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError(f"{index} must be a pandas DataFrame")
+
+        sensitive_columns = getattr(self, f"sensitive_columns_{index}")
+        if sensitive_columns:
+            cols_to_hash = [
+                col for col in sensitive_columns if col in dataframe.columns
+            ]
+            if cols_to_hash:
+                for col_to_hash in cols_to_hash:
+                    dataframe[col_to_hash] = (
+                        dataframe[col_to_hash]
+                        .astype(str)
+                        .map(
+                            lambda v: hashlib.blake2b(
+                                v.encode("utf-8"), digest_size=32, salt=self.salt
+                            ).hexdigest()
+                        )
+                    )
 
         if cast_column_names_lower:
             dataframe.columns = pd.Index(
