@@ -2190,6 +2190,23 @@ def test_sensitive_columns():
     compare.report()
 
 
+def test_sensitive_columns_null():
+    df1 = pd.DataFrame([{"a": 1, "b": "hello"}, {"a": 1, "b": None}])
+    df2 = pd.DataFrame([{"a": 1, "b": "hello"}, {"a": 2, "b": "yo"}])
+    compare = datacompy.PandasCompare(
+        df1,
+        df2,
+        join_columns=["a"],
+        sensitive_columns_df1=["b"],
+        sensitive_columns_df2=["b"],
+    )
+    assert compare.df1.loc[0, "b"] != "hello"
+    assert pd.isna(compare.df1.loc[1, "b"])
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
 def test_sensitive_columns_lower():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
