@@ -251,15 +251,14 @@ class PandasCompare(BaseCompare):
 
         # Hash sensitive solumns
         if sensitive_columns:
-            for col_to_hash in sensitive_columns:
-                dataframe[col_to_hash] = (
-                    dataframe[col_to_hash]
-                    .astype(str)
-                    .map(
-                        lambda v: hashlib.blake2b(
-                            v.encode("utf-8"), digest_size=32, salt=self.salt
-                        ).hexdigest()
-                    )
+            for col in sensitive_columns:
+                dataframe[col] = dataframe[col].astype(str)
+                dataframe.loc[dataframe[col].notnull(), col] = dataframe.loc[
+                    dataframe[col].notnull(), col
+                ].map(
+                    lambda v: hashlib.blake2b(
+                        v.encode("utf-8"), digest_size=32, salt=self.salt
+                    ).hexdigest()
                 )
 
         # Check if join_columns are present in the dataframe
