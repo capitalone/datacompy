@@ -236,8 +236,9 @@ class PandasCompare(BaseCompare):
         else:
             dataframe.columns = pd.Index([str(col) for col in dataframe.columns])
 
-        # Check if sensitive columns are unique and exist in the dataframe
+        # Check if sensitive columns are unique and exist in the dataframe, then hash them
         if sensitive_columns:
+            # Validation
             if len(set(sensitive_columns)) < len(sensitive_columns):
                 raise ValueError(
                     f"sensitive_columns_{index} must have unique column names"
@@ -249,17 +250,22 @@ class PandasCompare(BaseCompare):
                     f"sensitive_columns_{index} contains columns not in {index}: {missing_cols}"
                 )
 
-        # Hash sensitive solumns
-        if sensitive_columns:
+            # Hashing (only runs if validation passes)
             for col in sensitive_columns:
+                # Preserve nulls before converting to string
+                # Note: In pandas 2.x, astype(str) converts None/NaN to strings
+                # "None"/"nan". This workaround is for pandas 2.x compatibility.
+                # In pandas 3+, astype(str) with the new string dtype would preserve
+                # nulls, and this explicit handling could be simplified.
+                is_null = dataframe[col].isnull()
                 dataframe[col] = dataframe[col].astype(str)
-                dataframe.loc[dataframe[col].notnull(), col] = dataframe.loc[
-                    dataframe[col].notnull(), col
-                ].map(
+                dataframe.loc[~is_null, col] = dataframe.loc[~is_null, col].map(
                     lambda v: hashlib.blake2b(
                         v.encode("utf-8"), digest_size=32, salt=self.salt
                     ).hexdigest()
                 )
+                # Restore nulls
+                dataframe.loc[is_null, col] = pd.NA
 
         # Check if join_columns are present in the dataframe
         if not set(self.join_columns).issubset(set(dataframe.columns)):
