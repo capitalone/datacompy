@@ -212,7 +212,7 @@ class PandasCompare(BaseCompare):
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
     ) -> None:
-        """Check that it is a dataframe and has the join columns, hash any sensitve columns.
+        """Check that it is a dataframe and has the join columns, hash any sensitive columns.
 
         Parameters
         ----------
