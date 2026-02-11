@@ -2177,11 +2177,7 @@ def test_sensitive_columns():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
     compare = datacompy.PandasCompare(
-        df1,
-        df2,
-        join_columns=["a"],
-        sensitive_columns_df1=["b"],
-        sensitive_columns_df2=["b"],
+        df1, df2, join_columns=["a"], sensitive_columns=["b"]
     )
     assert compare.df1.loc[0, "b"] != 2
     assert compare.df1.loc[1, "b"] != 0
@@ -2194,11 +2190,7 @@ def test_sensitive_columns_null():
     df1 = pd.DataFrame([{"a": 1, "b": "hello"}, {"a": 1, "b": None}])
     df2 = pd.DataFrame([{"a": 1, "b": "hello"}, {"a": 2, "b": "yo"}])
     compare = datacompy.PandasCompare(
-        df1,
-        df2,
-        join_columns=["a"],
-        sensitive_columns_df1=["b"],
-        sensitive_columns_df2=["b"],
+        df1, df2, join_columns=["a"], sensitive_columns=["b"]
     )
     assert compare.df1.loc[0, "b"] != "hello"
     assert pd.isna(compare.df1.loc[1, "b"])
@@ -2211,11 +2203,7 @@ def test_sensitive_columns_lower():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
     compare = datacompy.PandasCompare(
-        df1,
-        df2,
-        join_columns=["a"],
-        sensitive_columns_df1=["B"],
-        sensitive_columns_df2=["B"],
+        df1, df2, join_columns=["a"], sensitive_columns=["B"]
     )
     assert compare.df1.loc[0, "b"] != 2
     assert compare.df1.loc[1, "b"] != 0
@@ -2228,11 +2216,7 @@ def test_sensitive_columns_as_join_columns():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
     compare = datacompy.PandasCompare(
-        df1,
-        df2,
-        join_columns=["a"],
-        sensitive_columns_df1=["a"],
-        sensitive_columns_df2=["a"],
+        df1, df2, join_columns=["a"], sensitive_columns=["a"]
     )
     assert compare.df1.loc[0, "a"] != 1
     assert compare.df1.loc[1, "a"] != 1

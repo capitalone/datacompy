@@ -98,10 +98,8 @@ class PandasCompare(BaseCompare):
         Boolean indicator that controls of column names will be cast into lower case
     custom_comparators : list of ``BaseComparator``, optional
         A list of custom comparator classes to use to compare columns.
-    sensitive_columns_df1: list[str], optional
-        A list of the columns in df1 that should have their values hashed to mask sensitive data.
-    sensitive_columns_df2: list[str], optional
-        A list of the columns in df2 that should have their values hashed to mask sensitive data.
+    sensitive_columns: list[str], optional
+        A list of the columns in df1 or df2 that should have their values hashed to mask sensitive data.
     """
 
     def __init__(
@@ -118,8 +116,7 @@ class PandasCompare(BaseCompare):
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
         custom_comparators: List[BaseComparator] | None = None,
-        sensitive_columns_df1: List[str] | None = None,
-        sensitive_columns_df2: List[str] | None = None,
+        sensitive_columns: List[str] | None = None,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
@@ -156,8 +153,7 @@ class PandasCompare(BaseCompare):
             self.on_index = False
 
         self._any_dupes: bool = False
-        self.sensitive_columns_df1 = sensitive_columns_df1
-        self.sensitive_columns_df2 = sensitive_columns_df2
+        self.sensitive_columns = sensitive_columns
         self.df1 = df1
         self.df2 = df2
         self.df1_name = df1_name
@@ -221,7 +217,7 @@ class PandasCompare(BaseCompare):
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError(f"{index} must be a pandas DataFrame")
 
-        sensitive_columns = getattr(self, f"sensitive_columns_{index}")
+        sensitive_columns = self.sensitive_columns
 
         if cast_column_names_lower:
             dataframe.columns = pd.Index(
@@ -240,14 +236,12 @@ class PandasCompare(BaseCompare):
                     f"sensitive_columns_{index} must have unique column names"
                 )
 
-            if not set(sensitive_columns).issubset(set(dataframe.columns)):
-                missing_cols = set(sensitive_columns) - set(dataframe.columns)
-                raise ValueError(
-                    f"sensitive_columns_{index} contains columns not in {index}: {missing_cols}"
-                )
+            cols_to_hash = [
+                col for col in sensitive_columns if col in dataframe.columns
+            ]
 
             # Hashing (only runs if validation passes)
-            for col in sensitive_columns:
+            for col in cols_to_hash:
                 # Preserve nulls before converting to string
                 # Note: In pandas 2.x, astype(str) converts None/NaN to strings
                 # "None"/"nan". This workaround is for pandas 2.x compatibility.
