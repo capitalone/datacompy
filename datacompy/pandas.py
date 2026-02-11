@@ -232,8 +232,15 @@ class PandasCompare(BaseCompare):
         if sensitive_columns:
             # Validation
             if len(set(sensitive_columns)) < len(sensitive_columns):
+                seen = set()
+                duplicate_cols = set()
+                for col in sensitive_columns:
+                    if col in seen:
+                        duplicate_cols.add(col)
+                    else:
+                        seen.add(col)
                 raise ValueError(
-                    f"sensitive_columns_{index} must have unique column names"
+                    f"sensitive_columns must have unique column names, duplicate columns: {duplicate_cols}"
                 )
 
             cols_to_hash = [
