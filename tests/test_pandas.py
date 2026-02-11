@@ -2235,6 +2235,8 @@ def test_sensitive_columns_missing():
     assert compare.df1.loc[1, "b"] != "67"
     assert compare.df1.loc[0, "c"] != 3
     assert compare.df1.loc[1, "c"] != 6
+    assert compare.df2.loc[0, "d"] == 4
+    assert compare.df2.loc[1, "d"] == 7
     assert len(compare.df1_unq_rows) == 1
     # Just render the report to make sure it renders.
     compare.report()
