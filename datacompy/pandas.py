@@ -102,8 +102,6 @@ class PandasCompare(BaseCompare):
         A list of the columns in df1 that should have their values hashed to mask sensitive data.
     sensitive_columns_df2: list[str], optional
         A list of the columns in df2 that should have their values hashed to mask sensitive data.
-    salt: str, optional
-        An optional salt string, used to increase security during hashing.
     """
 
     def __init__(
@@ -122,7 +120,6 @@ class PandasCompare(BaseCompare):
         custom_comparators: List[BaseComparator] | None = None,
         sensitive_columns_df1: List[str] | None = None,
         sensitive_columns_df2: List[str] | None = None,
-        salt: str = "",
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
@@ -161,7 +158,6 @@ class PandasCompare(BaseCompare):
         self._any_dupes: bool = False
         self.sensitive_columns_df1 = sensitive_columns_df1
         self.sensitive_columns_df2 = sensitive_columns_df2
-        self.salt = salt.encode("utf-8")
         self.df1 = df1
         self.df2 = df2
         self.df1_name = df1_name
@@ -261,7 +257,7 @@ class PandasCompare(BaseCompare):
                 dataframe[col] = dataframe[col].astype(str)
                 dataframe.loc[~is_null, col] = dataframe.loc[~is_null, col].map(
                     lambda v: hashlib.blake2b(
-                        v.encode("utf-8"), digest_size=32, salt=self.salt
+                        v.encode("utf-8"), digest_size=32
                     ).hexdigest()
                 )
                 # Restore nulls
