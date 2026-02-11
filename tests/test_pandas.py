@@ -2223,3 +2223,18 @@ def test_sensitive_columns_as_join_columns():
     assert len(compare.df1_unq_rows) == 1
     # Just render the report to make sure it renders.
     compare.report()
+
+
+def test_sensitive_columns_missing():
+    df1 = pd.DataFrame([{"a": 1, "b": "hello", "c": 3}, {"a": 1, "b": "67", "c": 6}])
+    df2 = pd.DataFrame([{"a": 1, "b": "hello", "d": 4}, {"a": 2, "b": "yo", "d": 7}])
+    compare = datacompy.PandasCompare(
+        df1, df2, join_columns=["a"], sensitive_columns=["b", "c"]
+    )
+    assert compare.df1.loc[0, "b"] != "hello"
+    assert compare.df1.loc[1, "b"] != "67"
+    assert compare.df1.loc[0, "c"] != 3
+    assert compare.df1.loc[1, "c"] != 6
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
