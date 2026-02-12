@@ -2324,3 +2324,112 @@ def test_cache_intermediates_default_is_true(spark_session, caplog):
     assert compare.cache_intermediates is True
     assert "Caching intermediate dataframes" in caplog.text
     assert "Caching intersect_rows dataframe" in caplog.text
+
+
+def test_columns_with_mismatches_single_column(spark_session):
+    """Test columns_with_mismatches with a single mismatched column."""
+    df1 = spark_session.createDataFrame(
+        [(1, "Alice", 25), (2, "Bob", 30), (3, "Charlie", 35)], ["id", "name", "age"]
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            (1, "Alice", 25),
+            (2, "Bob", 31),  # age differs for id=2
+            (3, "Charlie", 35),
+        ],
+        ["id", "name", "age"],
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == ["age"]
+
+
+def test_columns_with_mismatches_multiple_columns(spark_session):
+    """Test columns_with_mismatches with multiple mismatched columns."""
+    df1 = spark_session.createDataFrame(
+        [(1, "Alice", 25, "NYC"), (2, "Bob", 30, "LA"), (3, "Charlie", 35, "Chicago")],
+        ["id", "name", "age", "city"],
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            (1, "Alice", 25, "NYC"),
+            (2, "Bob", 31, "LA"),  # age differs for id=2
+            (3, "Charlie", 35, "Boston"),  # city differs for id=3
+        ],
+        ["id", "name", "age", "city"],
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert sorted(result) == ["age", "city"]
+
+
+def test_columns_with_mismatches_no_mismatches(spark_session):
+    """Test columns_with_mismatches when all columns match."""
+    df1 = spark_session.createDataFrame(
+        [(1, "Alice", 25), (2, "Bob", 30), (3, "Charlie", 35)], ["id", "name", "age"]
+    )
+    df2 = spark_session.createDataFrame(
+        [(1, "Alice", 25), (2, "Bob", 30), (3, "Charlie", 35)], ["id", "name", "age"]
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == []
+
+
+def test_columns_with_mismatches_excludes_join_columns(spark_session):
+    """Test that join columns are excluded from the result."""
+    df1 = spark_session.createDataFrame([(1, "a"), (2, "b"), (3, "c")], ["id", "value"])
+    df2 = spark_session.createDataFrame(
+        [
+            (1, "a"),
+            (2, "b"),
+            (4, "d"),  # id=3 missing, id=4 added
+        ],
+        ["id", "value"],
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    # 'id' should not be in the result even though there are row mismatches
+    assert "id" not in result
+    # Result should be empty because 'value' matches for the intersecting rows
+    assert result == []
+
+
+def test_columns_with_mismatches_with_nulls(spark_session):
+    """Test columns_with_mismatches with null values."""
+    df1 = spark_session.createDataFrame(
+        [(1, "a"), (2, None), (3, "c")], ["id", "value"]
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            (1, "a"),
+            (2, "b"),  # null differs to 'b' for id=2
+            (3, "c"),
+        ],
+        ["id", "value"],
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == ["value"]
+
+
+def test_columns_with_mismatches_multiple_join_columns(spark_session):
+    """Test columns_with_mismatches with multiple join columns."""
+    df1 = spark_session.createDataFrame(
+        [(1, "a", 10, 100), (1, "b", 20, 200), (2, "a", 30, 300), (2, "b", 40, 400)],
+        ["id1", "id2", "value1", "value2"],
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            (1, "a", 10, 100),
+            (1, "b", 25, 200),  # value1 differs for (1, 'b')
+            (2, "a", 30, 305),  # value2 differs for (2, 'a')
+            (2, "b", 40, 400),
+        ],
+        ["id1", "id2", "value1", "value2"],
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id1", "id2"])
+    result = compare.columns_with_mismatches()
+    assert "id1" not in result
+    assert "id2" not in result
+    assert sorted(result) == ["value1", "value2"]
