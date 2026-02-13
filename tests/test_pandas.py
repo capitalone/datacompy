@@ -2199,7 +2199,7 @@ def test_sensitive_columns_null():
     compare.report()
 
 
-def test_sensitive_columns_lower():
+def test_sensitive_columns_cast_lower():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
     compare = datacompy.PandasCompare(
@@ -2207,6 +2207,25 @@ def test_sensitive_columns_lower():
     )
     assert compare.df1.loc[0, "b"] != 2
     assert compare.df1.loc[1, "b"] != 0
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_no_cast_lower():
+    df1 = pd.DataFrame([{"a": 1, "b": 2, "B": 2}, {"a": 1, "b": 0, "B": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2, "B": 2}, {"a": 2, "b": 0, "B": 0}])
+    compare = datacompy.PandasCompare(
+        df1,
+        df2,
+        join_columns=["a"],
+        sensitive_columns=["B"],
+        cast_column_names_lower=False,
+    )
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert compare.df1.loc[0, "B"] != 2
+    assert compare.df1.loc[1, "B"] != 0
     assert len(compare.df1_unq_rows) == 1
     # Just render the report to make sure it renders.
     compare.report()
