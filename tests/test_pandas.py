@@ -2240,6 +2240,8 @@ def test_sensitive_columns_missing():
     assert len(compare.df1_unq_rows) == 1
     # Just render the report to make sure it renders.
     compare.report()
+
+
 def test_columns_with_mismatches_single_column():
     """Test columns_with_mismatches with a single mismatched column."""
     df1 = pd.DataFrame(
