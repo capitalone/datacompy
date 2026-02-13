@@ -154,14 +154,15 @@ class PandasCompare(BaseCompare):
             ]
             self.on_index = False
 
-        if sensitive_columns:
+        self.sensitive_columns = sensitive_columns
+        if self.sensitive_columns:
             LOG.warning(
                 "[WARNING]: dataframes with columns in sensitive_columns will be modifed inplace."
             )
             if self.cast_column_names_lower:
-                self.sensitive_columns = [str(col).lower() for col in sensitive_columns]
-        else:
-            self.sensitive_columns = sensitive_columns
+                self.sensitive_columns = [
+                    str(col).lower() for col in self.sensitive_columns
+                ]
 
         self._any_dupes: bool = False
         self.df1 = df1
