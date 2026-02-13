@@ -100,6 +100,8 @@ class PandasCompare(BaseCompare):
         A list of custom comparator classes to use to compare columns.
     sensitive_columns: list[str], optional
         A list of the columns in df1 or df2 that should have their values hashed to mask sensitive data.
+        [WARNING]: dataframes with columns in sensitive_columns will be modifed inplace, it is advised
+        to manually copy any columns that may need to be later restored prior to using this parameter.
     """
 
     def __init__(
@@ -152,8 +154,12 @@ class PandasCompare(BaseCompare):
             ]
             self.on_index = False
 
-        if sensitive_columns and self.cast_column_names_lower:
-            self.sensitive_columns = [str(col).lower() for col in sensitive_columns]
+        if sensitive_columns:
+            LOG.warning(
+                "[WARNING]: dataframes with columns in sensitive_columns will be modifed inplace."
+            )
+            if self.cast_column_names_lower:
+                self.sensitive_columns = [str(col).lower() for col in sensitive_columns]
         else:
             self.sensitive_columns = sensitive_columns
 
