@@ -152,8 +152,12 @@ class PandasCompare(BaseCompare):
             ]
             self.on_index = False
 
+        if sensitive_columns and self.cast_column_names_lower:
+            self.sensitive_columns = [str(col).lower() for col in sensitive_columns]
+        else:
+            self.sensitive_columns = sensitive_columns
+
         self._any_dupes: bool = False
-        self.sensitive_columns = sensitive_columns
         self.df1 = df1
         self.df2 = df2
         self.df1_name = df1_name
@@ -223,8 +227,6 @@ class PandasCompare(BaseCompare):
             dataframe.columns = pd.Index(
                 [str(col).lower() for col in dataframe.columns]
             )
-            if sensitive_columns:
-                sensitive_columns = [str(col).lower() for col in sensitive_columns]
         else:
             dataframe.columns = pd.Index([str(col) for col in dataframe.columns])
 
