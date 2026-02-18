@@ -228,8 +228,6 @@ class PandasCompare(BaseCompare):
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError(f"{index} must be a pandas DataFrame")
 
-        sensitive_columns = self.sensitive_columns
-
         if cast_column_names_lower:
             dataframe.columns = pd.Index(
                 [str(col).lower() for col in dataframe.columns]
@@ -238,12 +236,12 @@ class PandasCompare(BaseCompare):
             dataframe.columns = pd.Index([str(col) for col in dataframe.columns])
 
         # Check if sensitive columns are unique and exist in the dataframe, then hash them
-        if sensitive_columns:
+        if self.sensitive_columns:
             # Validation
-            if len(set(sensitive_columns)) < len(sensitive_columns):
+            if len(set(self.sensitive_columns)) < len(self.sensitive_columns):
                 seen = set()
                 duplicate_cols = set()
-                for col in sensitive_columns:
+                for col in self.sensitive_columns:
                     if col in seen:
                         duplicate_cols.add(col)
                     else:
@@ -253,7 +251,7 @@ class PandasCompare(BaseCompare):
                 )
 
             cols_to_hash = [
-                col for col in sensitive_columns if col in dataframe.columns
+                col for col in self.sensitive_columns if col in dataframe.columns
             ]
 
             # Hashing (only runs if validation passes)
