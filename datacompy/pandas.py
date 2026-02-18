@@ -120,7 +120,10 @@ class PandasCompare(BaseCompare):
         custom_comparators: List[BaseComparator] | None = None,
         sensitive_columns: List[str] | None = None,
     ) -> None:
-        self.cast_column_names_lower = cast_column_names_lower
+        super().__init__(
+            cast_column_names_lower=cast_column_names_lower,
+            sensitive_columns=sensitive_columns,
+        )
         self.custom_comparators = custom_comparators or []
 
         # Validate tolerance parameters first
@@ -153,16 +156,6 @@ class PandasCompare(BaseCompare):
                 for col in cast(List[str], join_columns)
             ]
             self.on_index = False
-
-        self.sensitive_columns = sensitive_columns
-        if self.sensitive_columns:
-            LOG.warning(
-                "[WARNING]: dataframes with columns in sensitive_columns will be modified inplace."
-            )
-            if self.cast_column_names_lower:
-                self.sensitive_columns = [
-                    str(col).lower() for col in self.sensitive_columns
-                ]
 
         self._any_dupes: bool = False
         self.df1 = df1
