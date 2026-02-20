@@ -212,35 +212,40 @@ class PandasCompare(BaseCompare):
 
     @sensitive_columns.setter
     def sensitive_columns(self, sensitive_columns: List[str] | None) -> None:
-        if sensitive_columns is not None and not all(
-            isinstance(c, str) for c in sensitive_columns
-        ):
-            raise TypeError("sensitive_columns must be a list of strings")
+        """Set sensitive_columns and then validate if needed."""
         self._sensitive_columns = sensitive_columns
         if self._sensitive_columns:
-            LOG.warning(
-                "dataframes with columns in sensitive_columns will be modified inplace."
-            )
+            self._validate_sensitive_columns()
 
-    def _hash_sensitive_columns(self) -> None:
-        """Validate and hash sensitive columns in both dataframes."""
-        if not self.sensitive_columns:
-            return None
+    def _validate_sensitive_columns(self) -> None:
+        """Validate sensitive columns, assumes self.sensitive_columns is a list."""
+        if not all(isinstance(c, str) for c in self.sensitive_columns):
+            raise TypeError("sensitive_columns must be a list of strings")
+
+        # Cast to lowercase if applicable
+        if self.cast_column_names_lower:
+            # Need to directly modify _sensitive_columns here otherwise it will
+            # infinitely recurse in @sensitive_columns.setter
+            self._sensitive_columns = [col.lower() for col in self.sensitive_columns]
 
         # Check duplicates
         duplicates = {c for c, n in Counter(self.sensitive_columns).items() if n > 1}
         if duplicates:
             raise ValueError(f"duplicate columns: {duplicates}")
 
-        # Pre-determine target names once to avoid repeated logic in loops
-        target_cols = [
-            col.lower() if self.cast_column_names_lower else col
-            for col in self.sensitive_columns
-        ]
+    def _hash_sensitive_columns(self) -> None:
+        """Hash sensitive columns in both dataframes."""
+        if not self.sensitive_columns:
+            return None
+
+        # Logs warning only if sensitive columns is set and validation passes
+        LOG.warning(
+            "dataframes with columns in sensitive_columns will be modified inplace."
+        )
 
         for df in (self.df1, self.df2):
             # Process only the columns that actually exist in the current dataframe
-            cols_to_hash = [c for c in target_cols if c in df.columns]
+            cols_to_hash = [c for c in self.sensitive_columns if c in df.columns]
 
             for col in cols_to_hash:
                 is_null = df[col].isnull()
