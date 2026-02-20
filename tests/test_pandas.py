@@ -2279,7 +2279,7 @@ def test_sensitive_columns_duplicates():
     df1 = pd.DataFrame([{"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}])
     # Duplicate columns should raise ValueError during init/hashing
-    with pytest.raises(ValueError, match="duplicate columns: {'b'}"):
+    with pytest.raises(ValueError, match=r"duplicate columns: {'b'}"):
         datacompy.PandasCompare(
             df1, df2, join_columns=["a"], sensitive_columns=["b", "b"]
         )
