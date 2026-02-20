@@ -23,6 +23,7 @@ two dataframes.
 
 import hashlib
 import logging
+from collections import Counter
 from typing import Any, Dict, List, cast
 
 import pandas as pd
@@ -120,11 +121,9 @@ class PandasCompare(BaseCompare):
         custom_comparators: List[BaseComparator] | None = None,
         sensitive_columns: List[str] | None = None,
     ) -> None:
-        super().__init__(
-            cast_column_names_lower=cast_column_names_lower,
-            sensitive_columns=sensitive_columns,
-        )
+        self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
+        self.sensitive_columns = sensitive_columns
 
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
@@ -170,6 +169,7 @@ class PandasCompare(BaseCompare):
         self.df2_unq_rows: pd.DataFrame
         self.intersect_rows: pd.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
+        self._hash_sensitive_columns()
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
     def _get_comparators(self) -> List[BaseComparator]:
@@ -205,6 +205,64 @@ class PandasCompare(BaseCompare):
             "df2", cast_column_names_lower=self.cast_column_names_lower
         )
 
+    @property
+    def sensitive_columns(self) -> List[str] | None:
+        """Get the list of sensitive columns."""
+        return self._sensitive_columns
+
+    @sensitive_columns.setter
+    def sensitive_columns(self, sensitive_columns: List[str] | None) -> None:
+        if sensitive_columns is not None and not all(
+            isinstance(c, str) for c in sensitive_columns
+        ):
+            raise TypeError("sensitive_columns must be a list of strings")
+        self._sensitive_columns = sensitive_columns
+        if self._sensitive_columns:
+            LOG.warning(
+                "dataframes with columns in sensitive_columns will be modified inplace."
+            )
+
+    def _hash_sensitive_columns(self) -> None:
+        """Validate and hash sensitive columns in both dataframes."""
+        if not self.sensitive_columns:
+            return None
+
+        # Check duplicates
+        duplicates = {c for c, n in Counter(self.sensitive_columns).items() if n > 1}
+        if duplicates:
+            raise ValueError(f"duplicate columns: {duplicates}")
+
+        # Pre-determine target names once to avoid repeated logic in loops
+        target_cols = [
+            col.lower() if self.cast_column_names_lower else col
+            for col in self.sensitive_columns
+        ]
+
+        for df in (self.df1, self.df2):
+            # Process only the columns that actually exist in the current dataframe
+            cols_to_hash = [c for c in target_cols if c in df.columns]
+
+            for col in cols_to_hash:
+                is_null = df[col].isnull()
+
+                # Convert the column to object type before hashing to allow
+                # assignment of strings and pd.NA regardless of the original dtype.
+                df[col] = df[col].astype(str)
+
+                # Only process if there are non-null values to hash
+                if not is_null.all():
+                    # Hash non-null values. str(v) ensures compatibility regardless of original dtype.
+                    # We apply the transformation only to the relevant slice.
+                    df.loc[~is_null, col] = df.loc[~is_null, col].map(
+                        lambda v: hashlib.blake2b(
+                            v.encode("utf-8"), digest_size=32
+                        ).hexdigest()
+                    )
+
+                # Ensure all nulls are consistently represented as pd.NA in the hashed column
+                if is_null.any():
+                    df.loc[is_null, col] = pd.NA
+
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
     ) -> None:
@@ -227,42 +285,6 @@ class PandasCompare(BaseCompare):
             )
         else:
             dataframe.columns = pd.Index([str(col) for col in dataframe.columns])
-
-        # Check if sensitive columns are unique and exist in the dataframe, then hash them
-        if self.sensitive_columns:
-            # Validation
-            if len(set(self.sensitive_columns)) < len(self.sensitive_columns):
-                seen = set()
-                duplicate_cols = set()
-                for col in self.sensitive_columns:
-                    if col in seen:
-                        duplicate_cols.add(col)
-                    else:
-                        seen.add(col)
-                raise ValueError(
-                    f"sensitive_columns must have unique column names, duplicate columns: {duplicate_cols}"
-                )
-
-            cols_to_hash = [
-                col for col in self.sensitive_columns if col in dataframe.columns
-            ]
-
-            # Hashing (only runs if validation passes)
-            for col in cols_to_hash:
-                # Preserve nulls before converting to string
-                # Note: In pandas 2.x, astype(str) converts None/NaN to strings
-                # "None"/"nan". This workaround is for pandas 2.x compatibility.
-                # In pandas 3+, astype(str) with the new string dtype would preserve
-                # nulls, and this explicit handling could be simplified.
-                is_null = dataframe[col].isnull()
-                dataframe[col] = dataframe[col].astype(str)
-                dataframe.loc[~is_null, col] = dataframe.loc[~is_null, col].map(
-                    lambda v: hashlib.blake2b(
-                        v.encode("utf-8"), digest_size=32
-                    ).hexdigest()
-                )
-                # Restore nulls
-                dataframe.loc[is_null, col] = pd.NA
 
         # Check if join_columns are present in the dataframe
         if not set(self.join_columns).issubset(set(dataframe.columns)):

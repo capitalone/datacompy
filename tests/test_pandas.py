@@ -2261,6 +2261,46 @@ def test_sensitive_columns_missing():
     compare.report()
 
 
+def test_sensitive_columns_setter():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+
+    # Valid setter call
+    compare.sensitive_columns = ["b"]
+    assert compare.sensitive_columns == ["b"]
+
+    # Invalid setter call - not a list of strings
+    with pytest.raises(TypeError, match="sensitive_columns must be a list of strings"):
+        compare.sensitive_columns = [1, 2, 3]
+
+
+def test_sensitive_columns_duplicates():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}])
+    # Duplicate columns should raise ValueError during init/hashing
+    with pytest.raises(ValueError, match="duplicate columns: {'b'}"):
+        datacompy.PandasCompare(
+            df1, df2, join_columns=["a"], sensitive_columns=["b", "b"]
+        )
+
+
+def test_sensitive_columns_numeric_types():
+    """Verify that hashing works for different numeric types without LossySetitemError."""
+    df1 = pd.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.2]})
+    df2 = pd.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.2]})
+
+    compare = datacompy.PandasCompare(
+        df1, df2, join_columns=["a"], sensitive_columns=["b", "c"]
+    )
+
+    assert isinstance(compare.df1["b"].loc[0], str)
+    assert isinstance(compare.df1["c"].loc[0], str)
+    # blake2b with digest_size=32 returns 64 hex characters
+    assert len(compare.df1["b"].loc[0]) == 64
+    assert len(compare.df1["c"].loc[0]) == 64
+
+
 def test_columns_with_mismatches_single_column():
     """Test columns_with_mismatches with a single mismatched column."""
     df1 = pd.DataFrame(

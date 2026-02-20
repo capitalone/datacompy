@@ -24,7 +24,7 @@ two dataframes.
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ordered_set import OrderedSet
@@ -34,34 +34,6 @@ LOG = logging.getLogger(__name__)
 
 class BaseCompare(ABC):
     """Base comparison class."""
-
-    def __init__(
-        self,
-        cast_column_names_lower: bool = False,
-        sensitive_columns: List[str] | None = None,
-    ) -> None:
-        self._sensitive_columns: List[str] | None = None
-
-        self.cast_column_names_lower = cast_column_names_lower
-        self.sensitive_columns = sensitive_columns
-
-    @property
-    def sensitive_columns(self) -> List[str] | None:
-        """Get the list of sensitive columns."""
-        return self._sensitive_columns
-
-    @sensitive_columns.setter
-    def sensitive_columns(self, sensitive_columns: List[str] | None) -> None:
-        """Check that column names are unique and cast to lowercase if needed."""
-        self._sensitive_columns = sensitive_columns
-        if self._sensitive_columns:
-            LOG.warning(
-                "[WARNING]: dataframes with columns in sensitive_columns will be modified inplace."
-            )
-            if self.cast_column_names_lower:
-                self._sensitive_columns = [
-                    str(col).lower() for col in self._sensitive_columns
-                ]
 
     @property
     def df1(self) -> Any:
