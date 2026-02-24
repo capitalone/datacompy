@@ -438,14 +438,12 @@ class PyArrowNumericComparator(BaseComparator):
         if pyarrow_numeric(col1) and pyarrow_numeric(col2):
             try:
                 diff = pc.abs(pc.subtract(col1, col2))
-                tolerance = pc.add(
-                    pc.scalar(atol, pa.float64()),
-                    pc.multiply(
-                        pc.scalar(rtol, pa.float64()), pc.abs(col2.cast(pa.float64()))
-                    ),
-                )
-                close = pc.less_equal(diff.cast(pa.float64()), tolerance)
-                nulls_equal = pc.equal(col1, col2)
+                diff = pc.if_else(pc.is_nan(diff), 0.0, diff) # Cleaning for NaN values
+                scale_tol = pc.multiply(rtol, pc.abs(col2.cast(pa.float64())))
+                scale_tol = pc.if_else(pc.is_nan(scale_tol), 0.0, scale_tol) # Cleaning for NaN values
+                tolerance = pc.add(atol, scale_tol)
+                close = pc.less_equal(diff.cast(pa.float64()), tolerance).fill_null(False)
+                nulls_equal = pc.and_(pc.is_null(col1), pc.is_null(col2))
                 result = pc.or_(close, nulls_equal)
                 return result
             except Exception:

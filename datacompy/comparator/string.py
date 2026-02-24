@@ -451,19 +451,20 @@ class PyArrowStringComparator(BaseComparator):
         ):
             return pyarrow_compare_string_and_date_columns(col1, col2)
         # both are strings
-        elif pat.is_string(col1_type) and pat.is_string(col2_type):
+        elif (
+            (pat.is_string(col1_type) and pat.is_string(col2_type)) 
+            or (pat.is_temporal(col1_type) and pat.is_temporal(col2_type))
+        ):
             col1 = pyarrow_normalize_string_column(col1, ignore_space, ignore_case)
             col2 = pyarrow_normalize_string_column(col2, ignore_space, ignore_case)
             try:
-                return pc.equal_with_nulls(col1, col2)
+                result = pc.or_(
+                    pc.equal(pc.cast(col1, pa.string()), pc.cast(col2, pa.string())).fill_null(False),
+                    pc.and_(pc.is_null(col1), pc.is_null(col2)),
+                )
+                return result
             except Exception:
-                try:
-                    return pc.or_(
-                        pc.equal(pc.cast(col1, pa.string()), pc.cast(col2, pa.string())),
-                        pc.and_(pc.is_null(col1), pc.is_null(col2)),
-                    )
-                except Exception:
-                    return pa.array([False] * len(col1))
+                return pa.array([False] * len(col1))
         else:
             return None
 
@@ -714,14 +715,14 @@ def pyarrow_compare_string_and_date_columns(
 
     try:  # using date format
         return pc.or_(
-            pc.equal_with_nulls(pc.cast(str_column, pa.date32()), date_column),
+            pc.equal(pc.cast(str_column, pa.timestamp('ns'), safe=False), date_column).fill_null(False),
             pc.and_(pc.is_null(str_column), pc.is_null(date_column)),
         )
     except Exception:
         try:
             return pc.or_(
                 pc.equal(
-                    pc.cast(str_column, pa.string()), pc.cast(date_column, pa.string())
+                    pc.cast(str_column, pa.string()), pc.strftime(date_column, format="%Y-%m-%d")
                 ),
                 pc.and_(pc.is_null(str_column), pc.is_null(date_column)),
             )

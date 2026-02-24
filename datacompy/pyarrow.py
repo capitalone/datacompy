@@ -2,12 +2,14 @@
 
 
 from copy import deepcopy
+import functools
 import logging
 from typing import Any, Callable, Dict, Iterable, List, Tuple, cast
 
 from ordered_set import OrderedSet
 import pyarrow as pa
 import pyarrow.compute as pc
+import pyarrow.dataset as ds
 import pyarrow.types as pat
 import numpy as np
 from tomlkit import value
@@ -246,19 +248,19 @@ class PyArrowCompare(BaseCompare):
 
         LOG.debug("Selecting df1 unique rows")
         self.df1_unq_rows = outer_joined.filter(
-            outer_joined["_merge"] == "left_only"
+            pc.equal(outer_joined["_merge"], "left_only")
         ).select(df1_cols)
 
         LOG.debug("Selecting df2 unique rows")
         self.df2_unq_rows = outer_joined.filter(
-            outer_joined["_merge"] == "right_only"
+            pc.equal(outer_joined["_merge"], "right_only")
         ).select(df2_cols)
 
         LOG.info(f"Number of unique rows in df1: {len(self.df1_unq_rows)}")
         LOG.info(f"Number of unique rows in df2: {len(self.df2_unq_rows)}")
 
         LOG.debug("Selecting intersect rows")
-        self.intersect_rows = outer_joined.filter(outer_joined["_merge"] == "both")
+        self.intersect_rows = outer_joined.filter(ds.field("_merge") == "both")
         LOG.info(f"Number of intersecting rows (not necessarily equal): {len(self.intersect_rows)}")
 
     def _intersect_compare(self, ignore_spaces: bool = False, ignore_case: bool = False) -> None:
@@ -291,6 +293,8 @@ class PyArrowCompare(BaseCompare):
                     columns_equal(
                         self.intersect_rows[col_1],
                         self.intersect_rows[col_2],
+                        col_1_name=col_1,
+                        col_2_name=col_2,
                         rel_tol=get_column_tolerance(column, self._rel_tol_dict),
                         abs_tol=get_column_tolerance(column, self._abs_tol_dict),
                         ignore_spaces=ignore_spaces,
@@ -303,8 +307,8 @@ class PyArrowCompare(BaseCompare):
                     self.intersect_rows[col_1], self.intersect_rows[col_2]
                 )
                 null_diff = (
-                    (self.intersect_rows[col_1].is_null()) ^ (self.intersect_rows[col_2].is_null())
-                ).sum().as_py()
+                    pc.xor(self.intersect_rows[col_1].is_null(), self.intersect_rows[col_2].is_null())
+                ).combine_chunks().sum().as_py()
 
             if row_cnt > 0:
                 match_rate = float(match_cnt) / row_cnt
@@ -318,11 +322,11 @@ class PyArrowCompare(BaseCompare):
                     "match_column": col_match,
                     "match_cnt": match_cnt,
                     "unequal_cnt": row_cnt - match_cnt,
-                    "dtype1": str(self.df1[column].dtype),
-                    "dtype2": str(self.df2[column].dtype),
+                    "dtype1": str(self.df1[column].type),
+                    "dtype2": str(self.df2[column].type),
                     "all_match": all(
                         (
-                            self.df1[column].dtype == self.df2[column].dtype,
+                            self.df1[column].type == self.df2[column].type,
                             row_cnt == match_cnt,
                         )
                     ),
@@ -348,10 +352,10 @@ class PyArrowCompare(BaseCompare):
                 f"{index} is missing join columns: {missing_cols}"
             )
         
-        if set(len(dataframe.schema.names)) < len(dataframe.schema.names):
+        if len(set(dataframe.schema.names)) < len(dataframe.schema.names):
             raise ValueError(f"{index} must have unique column names")
         
-        if len(dataframe.groupby(self.join_columns)) < len(dataframe):
+        if dataframe.group_by(self.join_columns).aggregate([]).num_rows < dataframe.num_rows:
             LOG.warning(f"{index} has duplicate rows based on join columns")
             self._any_dupes = True
 
@@ -494,7 +498,8 @@ class PyArrowCompare(BaseCompare):
                 match_columns.append(column + "_match")
 
         if len(match_columns) > 0:
-            all_matches = pc.and_kleene(*[self.intersect_rows[col] for col in match_columns])
+            masks = [self.intersect_rows[match_col] for match_col in match_columns]
+            all_matches = functools.reduce(pc.and_kleene, masks)
             return pc.sum(all_matches).as_py()
         else:
             # corner case where it is just the join columns that make the dataframes
@@ -594,7 +599,7 @@ class PyArrowCompare(BaseCompare):
             match_cnt = pc.sum(col_match).as_py()
             sample_count = min(sample_count, row_cnt - match_cnt)
             sample_mismatch_mask = pc.invert(
-                pc.coalesce(self.intersect_rows[col_match], False)
+                pc.coalesce(self.intersect_rows[column + "_match"], False)
             )
             mismatch_rows = self.intersect_rows.filter(sample_mismatch_mask)
             sample = mismatch_rows.slice(0, sample_count)
@@ -708,13 +713,15 @@ def convert_to_arrow(data_object: ArrowStreamable) -> pa.Table:
     """Convert a streamable dataframe to pyarrow Table."""
     LOG.info(f"Validating {data_object} dataframe as PyArrow streamable")
     if hasattr(data_object, "__arrow_c_stream__"):
-        return pa.Table(data_object)
+        return pa.table(data_object)
     else:
         raise TypeError("Dataframe is not a pyarrow streamable object")
 
 def columns_equal(
     col_1: pa.Array,
     col_2: pa.Array,
+    col_1_name: str = "",
+    col_2_name: str = "",
     rel_tol: float = 0,
     abs_tol: float = 0,
     ignore_spaces: bool = False,
@@ -737,10 +744,14 @@ def columns_equal(
 
     Parameters
     ----------
-    col_1 : Polars.Series
+    col_1 : PyArrow.Array
         The first column to look at
-    col_2 : Polars.Series
+    col_2 : PyArrow.Array
         The second column
+    col_1_name : str
+        The name of the first column (for logging purposes)
+    col_2_name : str
+        The name of the second column (for logging purposes)
     rel_tol : float, optional
         Relative tolerance
     abs_tol : float, optional
@@ -781,11 +792,11 @@ def columns_equal(
 
         if compare is not None:
             LOG.info(
-                f"Using comparator: {comparator.__class__.__name__} for column ({col_1.name}, {col_2.name}) comparison."
+                f"Using comparator: {comparator.__class__.__name__} for column ({col_1_name}, {col_2_name}) comparison."
             )
             return compare
 
-    compare = pa.Array([False] * len(col_1))
+    compare = pa.array([False] * len(col_1))
 
 def get_merged_columns(
     original_df: ArrowStreamable,
