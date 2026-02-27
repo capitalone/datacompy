@@ -231,20 +231,24 @@ class PolarsCompare(BaseCompare):
             "dataframes with columns in sensitive_columns will be modified inplace."
         )
 
-        for df in (self.df1, self.df2):
+        for attr in ("df1", "df2"):
             # Process only the columns that actually exist in the current dataframe
+            df = getattr(self, attr)
             cols_to_hash = [c for c in self.sensitive_columns if c in df.columns]
 
             df = df.with_columns(
                 pl.col(cols_to_hash)
                 .cast(pl.String)
-                .map_elementsq(
+                .map_elements(
                     lambda v: hashlib.blake2b(
                         v.encode("utf-8"), digest_size=32
                     ).hexdigest(),
                     skip_nulls=True,
                 )
             )
+
+            # Polars df are immutable, must write back
+            setattr(self, attr, df)
 
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
