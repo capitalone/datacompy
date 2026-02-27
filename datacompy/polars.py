@@ -99,8 +99,8 @@ class PolarsCompare(BaseCompare):
         A list of custom comparator classes to use to compare columns.
     sensitive_columns: list[str], optional
         A list of the columns in df1 or df2 that should have their values hashed to mask sensitive data.
-        [WARNING]: dataframes with columns in sensitive_columns will be modified inplace, it is advised
-        to manually copy any columns that may need to be later restored prior to using this parameter.
+        [WARNING]: Polars dataframes are immutable. Comparing large dataframes may cause significant
+        memory pressure due to internal copying required for hashing sensitive columns.
     """
 
     def __init__(
@@ -228,13 +228,17 @@ class PolarsCompare(BaseCompare):
 
         # Logs warning only if sensitive columns is set and validation passes
         LOG.warning(
-            "dataframes with columns in sensitive_columns will be modified inplace."
+            "dataframes with sensitive columns will be copied internally for hashing operations."
         )
 
         for attr in ("df1", "df2"):
             # Process only the columns that actually exist in the current dataframe
             df = getattr(self, attr)
             cols_to_hash = [c for c in self.sensitive_columns if c in df.columns]
+
+            # Don't create an internal copy of the dataframe if no columns to hash
+            if len(cols_to_hash) == 0:
+                continue
 
             df = df.with_columns(
                 pl.col(cols_to_hash)
@@ -247,7 +251,7 @@ class PolarsCompare(BaseCompare):
                 )
             )
 
-            # Polars df are immutable, must write back
+            # Polars dataframes are immutable, must write back a copy
             setattr(self, attr, df)
 
     def _validate_dataframe(
