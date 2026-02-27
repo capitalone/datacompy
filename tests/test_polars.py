@@ -2327,7 +2327,8 @@ def test_sensitive_columns_nan():
         }
     )
     compare = PolarsCompare(df1, df2, join_columns=["a"], sensitive_columns=["b"])
-    assert compare.df1[0, "b"] != 1.1
+    assert isinstance(compare.df1[0, "b"], str)
+    assert len(compare.df1[0, "b"]) == 64
     assert isinstance(compare.df1[1, "b"], str)
     assert len(compare.df1[1, "b"]) == 64
     assert compare.all_mismatch().select(pl.len()).item() == 1
