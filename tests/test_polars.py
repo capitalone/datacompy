@@ -2287,3 +2287,141 @@ def test_columns_with_mismatches_multiple_join_columns():
     assert "id1" not in result
     assert "id2" not in result
     assert sorted(result) == ["value1", "value2"]
+
+
+def test_sensitive_columns():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"], sensitive_columns=["b"])
+    assert compare.df1[0, "b"] != 2
+    assert compare.df1[1, "b"] != 0
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_null():
+    df1 = pl.DataFrame([{"a": 1, "b": "hello"}, {"a": 1, "b": None}])
+    df2 = pl.DataFrame([{"a": 1, "b": "hello"}, {"a": 2, "b": "yo"}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"], sensitive_columns=["b"])
+    assert compare.df1[0, "b"] != "hello"
+    assert compare.df1[1, "b"] is None
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_nan():
+    df1 = pl.DataFrame(
+        {
+            "a": [1, 2],
+            "b": [1.1, float("nan")],
+            "c": [1.23, float("nan")],
+        }
+    )
+    df2 = pl.DataFrame(
+        {
+            "a": [1, 2],
+            "b": [1.2, float("nan")],
+            "c": [1.23, float("nan")],
+        }
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["a"], sensitive_columns=["b"])
+    assert compare.df1[0, "b"] != 1.1
+    assert isinstance(compare.df1[1, "b"], str)
+    assert len(compare.df1[1, "b"]) == 64
+    assert compare.all_mismatch().select(pl.len()).item() == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_cast_lower():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"], sensitive_columns=["B"])
+    assert compare.df1[0, "b"] != 2
+    assert compare.df1[1, "b"] != 0
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_no_cast_lower():
+    df1 = pl.DataFrame([{"a": 1, "b": 2, "B": 2}, {"a": 1, "b": 0, "B": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2, "B": 2}, {"a": 2, "b": 0, "B": 0}])
+    compare = PolarsCompare(
+        df1,
+        df2,
+        join_columns=["a"],
+        sensitive_columns=["B"],
+        cast_column_names_lower=False,
+    )
+    assert compare.df1[0, "b"] == 2
+    assert compare.df1[1, "b"] == 0
+    assert compare.df1[0, "B"] != 2
+    assert compare.df1[1, "B"] != 0
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_as_join_columns():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"], sensitive_columns=["a"])
+    assert compare.df1[0, "a"] != 1
+    assert compare.df1[1, "a"] != 1
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_missing():
+    df1 = pl.DataFrame([{"a": 1, "b": "hello", "c": 3}, {"a": 1, "b": "67", "c": 6}])
+    df2 = pl.DataFrame([{"a": 1, "b": "hello", "d": 4}, {"a": 2, "b": "yo", "d": 7}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"], sensitive_columns=["b", "c"])
+    assert compare.df1[0, "b"] != "hello"
+    assert compare.df1[1, "b"] != "67"
+    assert compare.df1[0, "c"] != 3
+    assert compare.df1[1, "c"] != 6
+    assert compare.df2[0, "d"] == 4
+    assert compare.df2[1, "d"] == 7
+    assert len(compare.df1_unq_rows) == 1
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_setter():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+
+    # Valid setter call
+    compare.sensitive_columns = ["b"]
+    assert compare.sensitive_columns == ["b"]
+
+    # Invalid setter call - not a list of strings
+    with pytest.raises(TypeError, match="sensitive_columns must be a list of strings"):
+        compare.sensitive_columns = [1, 2, 3]
+
+
+def test_sensitive_columns_duplicates():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}])
+    # Duplicate columns should raise ValueError during init/hashing
+    with pytest.raises(ValueError, match=r"duplicate columns: {'b'}"):
+        PolarsCompare(df1, df2, join_columns=["a"], sensitive_columns=["b", "b"])
+
+
+def test_sensitive_columns_numeric_types():
+    """Verify that hashing works for different numeric types without LossySetitemError."""
+    df1 = pl.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.2]})
+    df2 = pl.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.2]})
+
+    compare = PolarsCompare(df1, df2, join_columns=["a"], sensitive_columns=["b", "c"])
+
+    assert isinstance(compare.df1[0, "b"], str)
+    assert isinstance(compare.df1[0, "c"], str)
+    # blake2b with digest_size=32 returns 64 hex characters
+    assert len(compare.df1[0, "b"]) == 64
+    assert len(compare.df1[0, "c"]) == 64
