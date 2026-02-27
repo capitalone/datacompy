@@ -21,7 +21,9 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
+import hashlib
 import logging
+from collections import Counter
 from copy import deepcopy
 from typing import Any, Dict, List, cast
 
@@ -95,6 +97,10 @@ class PolarsCompare(BaseCompare):
         Boolean indicator that controls of column names will be cast into lower case
     custom_comparators : list of ``BaseComparator``, optional
         A list of custom comparator classes to use to compare columns.
+    sensitive_columns: list[str], optional
+        A list of the columns in df1 or df2 that should have their values hashed to mask sensitive data.
+        [WARNING]: dataframes with columns in sensitive_columns will be modified inplace, it is advised
+        to manually copy any columns that may need to be later restored prior to using this parameter.
     """
 
     def __init__(
@@ -110,9 +116,11 @@ class PolarsCompare(BaseCompare):
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
         custom_comparators: List[BaseComparator] | None = None,
+        sensitive_columns: List[str] | None = None,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
+        self.sensitive_columns = sensitive_columns
 
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
@@ -149,6 +157,7 @@ class PolarsCompare(BaseCompare):
         self.df2_unq_rows: pl.DataFrame
         self.intersect_rows: pl.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
+        self._hash_sensitive_columns()
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
     def _get_comparators(self) -> List[BaseComparator]:
@@ -183,6 +192,59 @@ class PolarsCompare(BaseCompare):
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
         )
+
+    @property
+    def sensitive_columns(self) -> List[str] | None:
+        """Get the list of sensitive columns."""
+        return self._sensitive_columns
+
+    @sensitive_columns.setter
+    def sensitive_columns(self, sensitive_columns: List[str] | None) -> None:
+        """Set sensitive_columns and then validate if needed."""
+        self._sensitive_columns = sensitive_columns
+        if self._sensitive_columns:
+            self._validate_sensitive_columns()
+
+    def _validate_sensitive_columns(self) -> None:
+        """Validate sensitive columns, assumes self.sensitive_columns is a list."""
+        if not all(isinstance(c, str) for c in self.sensitive_columns):
+            raise TypeError("sensitive_columns must be a list of strings")
+
+        # Cast to lowercase if applicable
+        if self.cast_column_names_lower:
+            # Need to directly modify _sensitive_columns here otherwise it will
+            # infinitely recurse in @sensitive_columns.setter
+            self._sensitive_columns = [col.lower() for col in self.sensitive_columns]
+
+        # Check duplicates
+        duplicates = {c for c, n in Counter(self.sensitive_columns).items() if n > 1}
+        if duplicates:
+            raise ValueError(f"duplicate columns: {duplicates}")
+
+    def _hash_sensitive_columns(self) -> None:
+        """Hash sensitive columns in both dataframes."""
+        if not self.sensitive_columns:
+            return None
+
+        # Logs warning only if sensitive columns is set and validation passes
+        LOG.warning(
+            "dataframes with columns in sensitive_columns will be modified inplace."
+        )
+
+        for df in (self.df1, self.df2):
+            # Process only the columns that actually exist in the current dataframe
+            cols_to_hash = [c for c in self.sensitive_columns if c in df.columns]
+
+            df = df.with_columns(
+                pl.col(cols_to_hash)
+                .cast(pl.String)
+                .map_elementsq(
+                    lambda v: hashlib.blake2b(
+                        v.encode("utf-8"), digest_size=32
+                    ).hexdigest(),
+                    skip_nulls=True,
+                )
+            )
 
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
