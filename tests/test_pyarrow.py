@@ -134,15 +134,17 @@ datacompy|DataComPy|False
 something||False
 NULL|something|False
 NULL|NULL|True"""
-    table = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
+    table = pa._csv.read_csv(
+        io.BytesIO(data.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter="|"), 
+        convert_options=pa._csv.ConvertOptions(
+            null_values=["NULL"],
+            strings_can_be_null=True,
+        )
     )
     actual_out = columns_equal(table["a"], table["b"], rel_tol=0.2, ignore_spaces=True)
     expect_out = table["expected"]
-    assert_series_equal(expect_out, actual_out, check_names=False)
+    assert expect_out.equals(actual_out)
 
 
 def test_string_columns_equal_with_ignore_spaces_and_case():
@@ -430,27 +432,31 @@ def test_compare_table_setter_bad():
     table = pa.Table.from_pylist([{"a": 1, "c": 2}, {"a": 2, "c": 2}])
     table_same_col_names = pa.Table.from_pylist([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
     table_dupe = pa.Table.from_pylist([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
-    with raises(TypeError, match="table1 must be a Polars DataFrame"):
+    with raises(TypeError, match="Dataframe is not a pyarrow streamable object"):
         PyArrowCompare("a", "a", ["a"])
-    with raises(ValueError, match="table1 must have all columns from join_columns"):
-        PyArrowCompare(table, table.clone(), ["b"])
+    with raises(ValueError, match="df1 must have all columns from join_columns"):
+        table_clone = table
+        PyArrowCompare(table, table_clone, ["b"])
     with raises(
-        ArrowInvalid, match="column with name 'a' has more than one occurrence"
+        ValueError, match="df1 must have unique column names"
     ):
-        PyArrowCompare(table_same_col_names, table_same_col_names.clone(), ["a"])
-    assert PyArrowCompare(table_dupe, table_dupe.clone(), ["a", "b"]).table1.equals(table_dupe)
+        table_same_col_names_clone = table_same_col_names
+        PyArrowCompare(table_same_col_names, table_same_col_names_clone, ["a"])
+    
+    table_dupe_clone = table_dupe
+    assert PyArrowCompare(table_dupe, table_dupe_clone, ["a", "b"]).df1.equals(table_dupe)
 
 
 def test_compare_table_setter_good():
     table1 = pa.Table.from_pylist([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     table2 = pa.Table.from_pylist([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
     compare = PyArrowCompare(table1, table2, ["a"])
-    assert compare.table1.equals(table1)
-    assert compare.table2.equals(table2)
+    assert compare.df1.equals(table1)
+    assert compare.df2.equals(table2.rename_columns(["a", "b"])) # Since pyarrow tables remain unchanged
     assert compare.join_columns == ["a"]
     compare = PyArrowCompare(table1, table2, ["A", "b"])
-    assert compare.table1.equals(table1)
-    assert compare.table2.equals(table2)
+    assert compare.df1.equals(table1)
+    assert compare.df2.equals(table2.rename_columns(["a", "b"]))
     assert compare.join_columns == ["a", "b"]
 
 
@@ -458,34 +464,35 @@ def test_compare_table_setter_different_cases():
     table1 = pa.Table.from_pylist([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     table2 = pa.Table.from_pylist([{"A": 1, "b": 2}, {"A": 2, "b": 3}])
     compare = PyArrowCompare(table1, table2, ["a"])
-    assert compare.table1.equals(table1)
-    assert compare.table2.equals(table2)
+    assert compare.df1.equals(table1)
+    assert compare.df2.equals(table2.rename_columns(["a", "b"]))
 
 
 def test_compare_table_setter_bad_index():
     table = pa.Table.from_pylist([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
-    with raises(TypeError, match="table1 must be a Polars DataFrame"):
+    with raises(TypeError, match="Dataframe is not a pyarrow streamable object"):
         PyArrowCompare("a", "a", join_columns="a")
     with raises(
-        DuplicateError, match="column with name 'a' has more than one occurrence"
+        ValueError, match="df1 must have unique column names"
     ):
-        PyArrowCompare(table, table.clone(), join_columns="a")
+        table_clone = table
+        PyArrowCompare(table, table_clone, join_columns="a")
 
 
 def test_compare_table_setter_good_index():
     table1 = pa.Table.from_pylist([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     table2 = pa.Table.from_pylist([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     compare = PyArrowCompare(table1, table2, join_columns="a")
-    assert compare.table1.equals(table1)
-    assert compare.table2.equals(table2)
+    assert compare.df1.equals(table1)
+    assert compare.df2.equals(table2)
 
 
 def test_columns_overlap():
     table1 = pa.Table.from_pylist([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     table2 = pa.Table.from_pylist([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     compare = PyArrowCompare(table1, table2, ["a"])
-    assert compare.table1_unq_columns() == set()
-    assert compare.table2_unq_columns() == set()
+    assert compare.df1_unq_columns() == set()
+    assert compare.df2_unq_columns() == set()
     assert compare.intersect_columns() == {"a", "b"}
 
 
@@ -493,43 +500,71 @@ def test_columns_no_overlap():
     table1 = pa.Table.from_pylist([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
     table2 = pa.Table.from_pylist([{"a": 1, "b": 2, "d": "oh"}, {"a": 2, "b": 3, "d": "ya"}])
     compare = PyArrowCompare(table1, table2, ["a"])
-    assert compare.table1_unq_columns() == {"c"}
-    assert compare.table2_unq_columns() == {"d"}
+    assert compare.df1_unq_columns() == {"c"}
+    assert compare.df2_unq_columns() == {"d"}
     assert compare.intersect_columns() == {"a", "b"}
 
 
 def test_columns_maintain_order_through_set_operations():
-    table1 = pa.Table.from_pylist(
-        [
-            (("A"), (0), (1), (2), (3), (4), (-2)),
-            (("B"), (0), (2), (2), (3), (4), (-3)),
-        ],
-        schema=["join", "f", "g", "b", "h", "a", "c"],
+    data = [
+        ("A", 0, 1, 2, 3, 4, -2),
+        ("B", 0, 2, 2, 3, 4, -3),
+    ]
+    table1 = pa.Table.from_arrays(
+        list(zip(*data)), # Transpose the data to match the expected column-wise format
+        schema=pa.schema([
+            ("array_col", pa.list_(pa.int64(), 1)),
+            pa.field("f", pa.int64()),
+            pa.field("g", pa.int64()),
+            pa.field("b", pa.int64()),
+            pa.field("h", pa.int64()),
+            pa.field("a", pa.int64()),
+            pa.field("c", pa.int64()),
+        ])
     )
-    table2 = pa.Table.from_pylist(
-        [
-            (("A"), (0), (1), (2), (-1), (4), (-3)),
-            (("B"), (1), (2), (3), (-1), (4), (-2)),
-        ],
-        schema=["join", "e", "h", "b", "a", "g", "d"],
+    data2 = [
+        ("A", 0, 1, 2, -1, 4, -3),
+        ("B", 1, 2, 3, -1, 4, -2),
+    ]
+    table2 = pa.Table.from_arrays(
+        list(zip(*data2)),
+        schema=pa.schema([
+            ("array_col", pa.list_(pa.int64(), 1)),
+            pa.field("e", pa.int64()),
+            pa.field("h", pa.int64()),
+            pa.field("b", pa.int64()),
+            pa.field("a", pa.int64()),
+            pa.field("g", pa.int64()),
+            pa.field("d", pa.int64()),
+        ])
     )
     compare = PyArrowCompare(table1, table2, ["join"])
-    assert list(compare.table1_unq_columns()) == ["f", "c"]
-    assert list(compare.table2_unq_columns()) == ["e", "d"]
+    assert list(compare.df1_unq_columns()) == ["f", "c"]
+    assert list(compare.df2_unq_columns()) == ["e", "d"]
     assert list(compare.intersect_columns()) == ["join", "g", "b", "h", "a"]
 
 
 def test_10k_rows():
     rng = np.random.default_rng()
-    table1 = pa.Table.from_pylist(rng.integers(0, 100, size=(10000, 2)), schema=["b", "c"])
-    table1 = table1.with_row_index()
-    table1.columns = ["a", "b", "c"]
-    table2 = table1.clone()
-    table2 = table2.with_columns(pl.col("b") + 0.1)
+    data = rng.integers(0, 100, size=(2, 10000)), 
+    table1 = pa.Table.from_arrays(
+        [
+            np.arange(10000),
+            data[0][0],
+            data[0][1],
+        ],
+        schema=pa.schema([
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.int64()),
+            pa.field("c", pa.int64()),
+        ])
+    )
+    idx = table1.schema.get_field_index("b")
+    table2 = table1.set_column(idx, "b", pc.add(table1["b"], 0.1))
     compare_tol = PyArrowCompare(table1, table2, ["a"], abs_tol=0.2)
     assert compare_tol.matches()
-    assert len(compare_tol.table1_unq_rows) == 0
-    assert len(compare_tol.table2_unq_rows) == 0
+    assert len(compare_tol.df1_unq_rows) == 0
+    assert len(compare_tol.df2_unq_rows) == 0
     assert compare_tol.intersect_columns() == {"a", "b", "c"}
     assert compare_tol.all_columns_match()
     assert compare_tol.all_rows_overlap()
@@ -537,8 +572,8 @@ def test_10k_rows():
 
     compare_no_tol = PyArrowCompare(table1, table2, ["a"])
     assert not compare_no_tol.matches()
-    assert len(compare_no_tol.table1_unq_rows) == 0
-    assert len(compare_no_tol.table2_unq_rows) == 0
+    assert len(compare_no_tol.df1_unq_rows) == 0
+    assert len(compare_no_tol.df2_unq_rows) == 0
     assert compare_no_tol.intersect_columns() == {"a", "b", "c"}
     assert compare_no_tol.all_columns_match()
     assert compare_no_tol.all_rows_overlap()
@@ -565,10 +600,21 @@ def test_not_subset(caplog):
 
 def test_large_subset():
     rng = np.random.default_rng()
-    table1 = pa.Table.from_pylist(rng.integers(0, 100, size=(10000, 2)), schema=["b", "c"])
-    table1 = table1.with_row_index()
-    table1.columns = ["a", "b", "c"]
-    table2 = table1[["a", "b"]].sample(50).clone()
+    data = rng.integers(0, 100, size=(2, 10000)),
+    table1 = pa.Table.from_arrays(
+        [
+            np.arange(10000),
+            data[0][0],
+            data[0][1],
+        ],
+        schema=pa.schema([
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.int64()),
+            pa.field("c", pa.int64()),
+        ])
+    )
+    indices = np.random.choice(len(table1), size=50, replace=False)
+    table2 = table1.select(["a", "b"]).take(indices)
     comp = PyArrowCompare(table1, table2, ["a"])
     assert not comp.matches()
     assert comp.subset()
@@ -584,7 +630,7 @@ def test_string_joiner():
 def test_float_and_string_with_joins():
     table1 = pa.Table.from_pylist([{"a": float("1"), "b": 2}, {"a": float("2"), "b": 2}])
     table2 = pa.Table.from_pylist([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    with raises((ComputeError, SchemaError)):
+    with raises(ArrowInvalid):
         PyArrowCompare(table1, table2, "a")
 
 
@@ -643,9 +689,9 @@ def test_temp_column_name_both_have_temp_2():
     table1 = pa.Table.from_pylist([{"_temp_0": "hi", "b": 2}, {"_temp_0": "bye", "b": 2}])
     table2 = pa.Table.from_pylist(
         [
-            {"_temp_0": "hi", "b": 2},
-            {"_temp_1": "bye", "b": 2},
-            {"a": "back fo mo", "b": 3},
+            {"_temp_0": "hi", "b": 2, "_temp_1": None, "a": None},
+            {"_temp_0": None, "b": 2, "_temp_1": "bye", "a": None},
+            {"_temp_0": None, "b": 3, "_temp_1": None, "a": "back fo mo"},
         ]
     )
     actual = temp_column_name(table1, table2)
@@ -698,8 +744,8 @@ def test_simple_dupes_one_field_two_vals_2():
     table2 = pa.Table.from_pylist([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
     compare = PyArrowCompare(table1, table2, join_columns=["a"])
     assert not compare.matches()
-    assert len(compare.table1_unq_rows) == 1
-    assert len(compare.table2_unq_rows) == 1
+    assert len(compare.df1_unq_rows) == 1
+    assert len(compare.df2_unq_rows) == 1
     assert len(compare.intersect_rows) == 1
     # Just render the report to make sure it renders.
     compare.report()
@@ -710,8 +756,8 @@ def test_simple_dupes_one_field_three_to_two_vals():
     table2 = pa.Table.from_pylist([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     compare = PyArrowCompare(table1, table2, join_columns=["a"])
     assert not compare.matches()
-    assert len(compare.table1_unq_rows) == 1
-    assert len(compare.table2_unq_rows) == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert len(compare.df2_unq_rows) == 0
     assert len(compare.intersect_rows) == 2
     # Just render the report to make sure it renders.
     compare.report()
@@ -742,8 +788,11 @@ def test_dupes_from_real_data():
 200,0,2017-07-01,1009433,214.12,2017-06-29,D,USA,3640,20170,,A,
 100,0,2017-06-20,1607593,1.67,2017-06-19,D,CAN,5814,M2N 6L7,,,0.0
 200,0,2017-07-01,1009393,2.01,2017-06-29,D,USA,5814,22102,,F,"""
-    table1 = pl.read_csv(io.StringIO(data), separator=",")
-    table2 = table1.clone()
+    table1 = pa._csv.read_csv(
+                io.BytesIO(data.encode()), 
+                parse_options=pa._csv.ParseOptions(delimiter=","), 
+            )
+    table2 = table1
     compare_acct = PyArrowCompare(table1, table2, join_columns=["acct_id"])
     assert compare_acct.matches()
     compare_unq = PyArrowCompare(
@@ -885,182 +934,198 @@ def test_integers_with_ignore_spaces_and_join_columns():
 
 def test_sample_mismatch():
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.1555,2017-01-01
-    10000001235,0.45,Michael Bluth,1,2017-01-01
-    10000001236,1345,George Bluth,,2017-01-01
-    10000001237,123456,Bob Loblaw,345.12,2017-01-01
-    10000001239,1.05,Lucille Bluth,,2017-01-01
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
+10000001234,123.45,George Maharis,14530.1555,2017-01-01
+10000001235,0.45,Michael Bluth,1,2017-01-01
+10000001236,1345,George Bluth,,2017-01-01
+10000001237,123456,Bob Loblaw,345.12,2017-01-01
+10000001239,1.05,Lucille Bluth,,2017-01-01
+10000001240,123.45,George Maharis,14530.1555,2017-01-02
+"""
 
     data2 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.4,George Michael Bluth,14530.155,
-    10000001235,0.45,Michael Bluth,,
-    10000001236,1345,George Bluth,1,
-    10000001237,123456,Robert Loblaw,345.12,
-    10000001238,1.05,Loose Seal Bluth,111,
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
-    table1 = pl.read_csv(io.StringIO(data1), separator=",")
-    table2 = pl.read_csv(io.StringIO(data2), separator=",")
-    compare = PyArrowCompare(table1, table2, "acct_id")
+10000001234,123.4,George Michael Bluth,14530.155,
+10000001235,0.45,Michael Bluth,,
+10000001236,1345,George Bluth,1,
+10000001237,123456,Robert Loblaw,345.12,
+10000001238,1.05,Loose Seal Bluth,111,
+10000001240,123.45,George Maharis,14530.1555,2017-01-02
+"""
+    table = pa._csv.read_csv(
+        io.BytesIO(data1.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter=","), 
+    )
+    table2 = pa._csv.read_csv(
+        io.BytesIO(data2.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter=","), 
+    )
+    compare = PyArrowCompare(table, table2, "acct_id")
 
     output = compare.sample_mismatch(column="name", sample_count=1)
     assert output.shape[0] == 1
-    assert (output["name_table1"] != output["name_table2"]).all()
+    assert output["name_df1"] != output["name_df2"]
 
     output = compare.sample_mismatch(column="name", sample_count=2)
     assert output.shape[0] == 2
-    assert (output["name_table1"] != output["name_table2"]).all()
+    assert output["name_df1"] != output["name_df2"]
 
     output = compare.sample_mismatch(column="name", sample_count=3)
     assert output.shape[0] == 2
-    assert (output["name_table2"] != ["name_table1"]).all()
+    assert output["name_df2"] != ["name_df1"]
 
 
 def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.1555,2017-01-01
-    10000001235,0.45,Michael Bluth,1,2017-01-01
-    10000001236,1345,George Bluth,,2017-01-01
-    10000001237,123456,Bob Loblaw,345.12,2017-01-01
-    10000001239,1.05,Lucille Bluth,,2017-01-01
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
+10000001234,123.45,George Maharis,14530.1555,2017-01-01
+10000001235,0.45,Michael Bluth,1,2017-01-01
+10000001236,1345,George Bluth,,2017-01-01
+10000001237,123456,Bob Loblaw,345.12,2017-01-01
+10000001239,1.05,Lucille Bluth,,2017-01-01
+10000001240,123.45,George Maharis,14530.1555,2017-01-02
+"""
 
     data2 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.4,George Michael Bluth,14530.155,
-    10000001235,0.45,Michael Bluth,,
-    10000001236,1345,George Bluth,1,
-    10000001237,123456,Robert Loblaw,345.12,
-    10000001238,1.05,Loose Seal Bluth,111,
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
-    table1 = pl.read_csv(io.StringIO(data1), separator=",")
-    table2 = pl.read_csv(io.StringIO(data2), separator=",")
+10000001234,123.4,George Michael Bluth,14530.155,
+10000001235,0.45,Michael Bluth,,
+10000001236,1345,George Bluth,1,
+10000001237,123456,Robert Loblaw,345.12,
+10000001238,1.05,Loose Seal Bluth,111,
+10000001240,123.45,George Maharis,14530.1555,2017-01-02
+"""
+    table1 = pa._csv.read_csv(
+        io.BytesIO(data1.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter=","), 
+    )
+    table2 = pa._csv.read_csv(
+        io.BytesIO(data2.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter=","), 
+    )
     compare = PyArrowCompare(table1, table2, "acct_id")
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
     assert output.shape[1] == 9
 
-    assert (output["name_table1"] != output["name_table2"]).sum() == 2
-    assert (~(output["name_table1"] != output["name_table2"])).sum() == 2
+    diff = pc.not_equal(output["name_df1"], output["name_df2"])
+    assert pc.sum(diff.cast(pa.int32())).as_py() == 2
+    assert pc.sum(pc.invert(diff).cast(pa.int32())).as_py() == 2
 
-    assert (output["dollar_amt_table1"] != output["dollar_amt_table2"]).sum() == 1
-    assert (~(output["dollar_amt_table1"] != output["dollar_amt_table2"])).sum() == 3
+    diff_amt = pc.not_equal(output["dollar_amt_df1"], output["dollar_amt_df2"])
+    assert pc.sum(diff_amt.cast(pa.int32())).as_py() == 1
+    assert pc.sum(pc.invert(diff_amt).cast(pa.int32())).as_py() == 3
 
-    # need to use eq_missing
-    assert (
-        output.filter(pl.col.float_fld_table1.eq_missing(pl.col.float_fld_table2).not_())[
-            "acct_id"
-        ].count()
-        == 3
-    )
-    assert (
-        output.filter(pl.col.float_fld_table1.eq_missing(pl.col.float_fld_table2))[
-            "acct_id"
-        ].count()
-        == 1
-    )
+    # mask is equivalent to eq_missing(...) used in polars test
+    mask_float = pc.or_(
+            pc.equal(output["float_fld_df1"], output["float_fld_df2"]).fill_null(False),
+            pc.and_(pc.is_null(output["float_fld_df1"]), pc.is_null(output["float_fld_df2"]))
+        )
+    assert output.filter(pc.invert(mask_float)).num_rows == 3
+    assert output.filter(mask_float).num_rows == 1
 
-    assert (
-        output.filter(pl.col.date_fld_table1.eq_missing(pl.col.date_fld_table2).not_())[
-            "acct_id"
-        ].count()
-        == 4
-    )
-    assert (
-        output.filter(pl.col.date_fld_table1.eq_missing(pl.col.date_fld_table2))[
-            "acct_id"
-        ].count()
-        == 0
-    )
+    mask_date = pc.or_(
+            pc.equal(output["date_fld_df1"], output["date_fld_df2"]).fill_null(False),
+            pc.and_(pc.is_null(output["date_fld_df1"]), pc.is_null(output["date_fld_df2"]))
+        )
+    assert output.filter(pc.invert(mask_date)).num_rows == 4
+    assert output.filter(mask_date).num_rows == 0
 
 
 def test_all_mismatch_not_ignore_matching_cols_some_cols_matching():
     # Columns dollar_amt and name are matching
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-        10000001234,123.45,George Maharis,14530.1555,2017-01-01
-        10000001235,0.45,Michael Bluth,1,2017-01-01
-        10000001236,1345,George Bluth,,2017-01-01
-        10000001237,123456,Bob Loblaw,345.12,2017-01-01
-        10000001239,1.05,Lucille Bluth,,2017-01-01
-        10000001240,123.45,George Maharis,14530.1555,2017-01-02
-        """
+10000001234,123.45,George Maharis,14530.1555,2017-01-01
+10000001235,0.45,Michael Bluth,1,2017-01-01
+10000001236,1345,George Bluth,,2017-01-01
+10000001237,123456,Bob Loblaw,345.12,2017-01-01
+10000001239,1.05,Lucille Bluth,,2017-01-01
+10000001240,123.45,George Maharis,14530.1555,2017-01-02
+"""
 
     data2 = """acct_id,dollar_amt,name,float_fld,date_fld
-        10000001234,123.45,George Maharis,14530.155,
-        10000001235,0.45,Michael Bluth,,
-        10000001236,1345,George Bluth,1,
-        10000001237,123456,Bob Loblaw,345.12,
-        10000001238,1.05,Lucille Bluth,111,
-        10000001240,123.45,George Maharis,14530.1555,2017-01-02
-        """
-    table1 = pl.read_csv(io.StringIO(data1), separator=",")
-    table2 = pl.read_csv(io.StringIO(data2), separator=",")
+10000001234,123.45,George Maharis,14530.155,
+10000001235,0.45,Michael Bluth,,
+10000001236,1345,George Bluth,1,
+10000001237,123456,Bob Loblaw,345.12,
+10000001238,1.05,Lucille Bluth,111,
+10000001240,123.45,George Maharis,14530.1555,2017-01-02
+"""
+    table1 = pa._csv.read_csv(
+        io.BytesIO(data1.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter=","), 
+    )
+    table2 = pa._csv.read_csv(
+        io.BytesIO(data2.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter=","), 
+    )
     compare = PyArrowCompare(table1, table2, "acct_id")
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
     assert output.shape[1] == 9
 
-    assert (output["name_table1"] != output["name_table2"]).sum() == 0
-    assert (~(output["name_table1"] != output["name_table2"])).sum() == 4
+    diff = pc.not_equal(output["name_df1"], output["name_df2"])
+    assert pc.sum(diff.cast(pa.int32())).as_py() == 0
+    assert pc.sum(pc.invert(diff).cast(pa.int32())).as_py() == 4
 
-    assert (output["dollar_amt_table1"] != output["dollar_amt_table2"]).sum() == 0
-    assert (~(output["dollar_amt_table1"] != output["dollar_amt_table2"])).sum() == 4
+    diff_amt = pc.not_equal(output["dollar_amt_df1"], output["dollar_amt_df2"])
+    assert pc.sum(diff_amt.cast(pa.int32())).as_py() == 0
+    assert pc.sum(pc.invert(diff_amt).cast(pa.int32())).as_py() == 4
 
-    # need to use eq_missing
-    assert (
-        output.filter(pl.col.float_fld_table1.eq_missing(pl.col.float_fld_table2).not_())[
-            "acct_id"
-        ].count()
-        == 3
-    )
-    assert (
-        output.filter(pl.col.float_fld_table1.eq_missing(pl.col.float_fld_table2))[
-            "acct_id"
-        ].count()
-        == 1
-    )
+    # mask is equivalent to eq_missing(...) used in polars test
+    mask_float = pc.or_(
+            pc.equal(output["float_fld_df1"], output["float_fld_df2"]).fill_null(False),
+            pc.and_(pc.is_null(output["float_fld_df1"]), pc.is_null(output["float_fld_df2"]))
+        )
+    assert output.filter(pc.invert(mask_float)).num_rows == 3
+    assert output.filter(mask_float).num_rows == 1
 
-    assert (
-        output.filter(pl.col.date_fld_table1.eq_missing(pl.col.date_fld_table2).not_())[
-            "acct_id"
-        ].count()
-        == 4
-    )
-    assert (
-        output.filter(pl.col.date_fld_table1.eq_missing(pl.col.date_fld_table2))[
-            "acct_id"
-        ].count()
-        == 0
-    )
+    mask_date = pc.or_(
+            pc.equal(output["date_fld_df1"], output["date_fld_df2"]).fill_null(False),
+            pc.and_(pc.is_null(output["date_fld_df1"]), pc.is_null(output["date_fld_df2"]))
+        )
+    assert output.filter(pc.invert(mask_date)).num_rows == 4
+    assert output.filter(mask_date).num_rows == 0
 
 
 def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows():
     # Case where there are rows on either dataset which don't match up.
     # Columns dollar_amt and name are matching
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.1555,2017-01-01
-    10000001235,0.45,Michael Bluth,1,2017-01-01
-    10000001236,1345,George Bluth,,2017-01-01
-    10000001237,123456,Bob Loblaw,345.12,2017-01-01
-    10000001239,1.05,Lucille Bluth,,2017-01-01
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    10000001241,1111.05,Lucille Bluth,
-    """
+10000001234,123.45,George Maharis,14530.1555,2017-01-01
+10000001235,0.45,Michael Bluth,1,2017-01-01
+10000001236,1345,George Bluth,,2017-01-01
+10000001237,123456,Bob Loblaw,345.12,2017-01-01
+10000001239,1.05,Lucille Bluth,,2017-01-01
+10000001240,123.45,George Maharis,14530.1555,2017-01-02
+10000001241,1111.05,Lucille Bluth,,
+"""
 
     data2 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.155,
-    10000001235,0.45,Michael Bluth,,
-    10000001236,1345,George Bluth,1,
-    10000001237,123456,Bob Loblaw,345.12,
-    10000001238,1.05,Lucille Bluth,111,
-    """
-    table1 = pl.read_csv(io.StringIO(data1), separator=",")
-    table2 = pl.read_csv(io.StringIO(data2), separator=",")
+10000001234,123.45,George Maharis,14530.155,
+10000001235,0.45,Michael Bluth,,
+10000001236,1345,George Bluth,1,
+10000001237,123456,Bob Loblaw,345.12,
+10000001238,1.05,Lucille Bluth,111,
+"""
+    # Defining schema to ensure date_fld is read properly
+    convert_options = pa._csv.ConvertOptions(
+        column_types={
+            "acct_id": pa.int64(),
+            "dollar_amt": pa.float64(),
+            "name": pa.string(),
+            "float_fld": pa.float64(),
+            "date_fld": pa.date32(),
+        }
+    )
+    table1 = pa._csv.read_csv(
+        io.BytesIO(data1.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter=","),
+        convert_options=convert_options 
+    )
+    table2 = pa._csv.read_csv(
+        io.BytesIO(data2.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter=","),
+        convert_options=convert_options
+    )
     compare = PyArrowCompare(table1, table2, "acct_id")
 
     output = compare.all_mismatch(ignore_matching_cols=True)
@@ -1068,58 +1133,64 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows():
     assert output.shape[0] == 4
     assert output.shape[1] == 5
 
-    # need to use eq_missing
-    assert (
-        output.filter(pl.col.float_fld_table1.eq_missing(pl.col.float_fld_table2).not_())[
-            "acct_id"
-        ].count()
-        == 3
-    )
-    assert (
-        output.filter(pl.col.float_fld_table1.eq_missing(pl.col.float_fld_table2))[
-            "acct_id"
-        ].count()
-        == 1
-    )
+    # mask is equivalent to eq_missing(...) used in polars test
+    mask_float = pc.or_(
+            pc.equal(output["float_fld_df1"], output["float_fld_df2"]).fill_null(False),
+            pc.and_(pc.is_null(output["float_fld_df1"]), pc.is_null(output["float_fld_df2"]))
+        )
+    assert output.filter(pc.invert(mask_float)).num_rows == 3
+    assert output.filter(mask_float).num_rows == 1
 
-    assert (
-        output.filter(pl.col.date_fld_table1.eq_missing(pl.col.date_fld_table2).not_())[
-            "acct_id"
-        ].count()
-        == 4
-    )
-    assert (
-        output.filter(pl.col.date_fld_table1.eq_missing(pl.col.date_fld_table2))[
-            "acct_id"
-        ].count()
-        == 0
-    )
+    mask_date = pc.or_(
+            pc.equal(output["date_fld_df1"], output["date_fld_df2"]).fill_null(False),
+            pc.and_(pc.is_null(output["date_fld_df1"]), pc.is_null(output["date_fld_df2"]))
+        )
+    assert output.filter(pc.invert(mask_date)).num_rows == 4
+    assert output.filter(mask_date).num_rows == 0
 
-    assert not ("name_table1" in output and "name_table2" in output)
-    assert not ("dollar_amt_table1" in output and "dollar_amt_table1" in output)
+    assert not ("name_df1" in output and "name_df2" in output)
+    assert not ("dollar_amt_df1" in output and "dollar_amt_df2" in output)
 
 
 def test_all_mismatch_ignore_matching_cols_some_cols_matching():
     # Columns dollar_amt and name are matching
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.1555,2017-01-01
-    10000001235,0.45,Michael Bluth,1,2017-01-01
-    10000001236,1345,George Bluth,,2017-01-01
-    10000001237,123456,Bob Loblaw,345.12,2017-01-01
-    10000001239,1.05,Lucille Bluth,,2017-01-01
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
+10000001234,123.45,George Maharis,14530.1555,2017-01-01
+10000001235,0.45,Michael Bluth,1,2017-01-01
+10000001236,1345,George Bluth,,2017-01-01
+10000001237,123456,Bob Loblaw,345.12,2017-01-01
+10000001239,1.05,Lucille Bluth,,2017-01-01
+10000001240,123.45,George Maharis,14530.1555,2017-01-02
+"""
 
     data2 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.155,
-    10000001235,0.45,Michael Bluth,,
-    10000001236,1345,George Bluth,1,
-    10000001237,123456,Bob Loblaw,345.12,
-    10000001238,1.05,Lucille Bluth,111,
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
-    table1 = pl.read_csv(io.StringIO(data1), separator=",")
-    table2 = pl.read_csv(io.StringIO(data2), separator=",")
+10000001234,123.45,George Maharis,14530.155,
+10000001235,0.45,Michael Bluth,,
+10000001236,1345,George Bluth,1,
+10000001237,123456,Bob Loblaw,345.12,
+10000001238,1.05,Lucille Bluth,111,
+10000001240,123.45,George Maharis,14530.1555,2017-01-02
+"""
+    # Defining schema to ensure date_fld is read properly
+    convert_options = pa._csv.ConvertOptions(
+        column_types={
+            "acct_id": pa.int64(),
+            "dollar_amt": pa.float64(),
+            "name": pa.string(),
+            "float_fld": pa.float64(),
+            "date_fld": pa.date32(),
+        }
+    )
+    table1 = pa._csv.read_csv(
+        io.BytesIO(data1.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter=","),
+        convert_options=convert_options 
+    )
+    table2 = pa._csv.read_csv(
+        io.BytesIO(data2.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter=","),
+        convert_options=convert_options
+    )
     compare = PyArrowCompare(table1, table2, "acct_id")
 
     output = compare.all_mismatch(ignore_matching_cols=True)
@@ -1127,98 +1198,94 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching():
     assert output.shape[0] == 4
     assert output.shape[1] == 5
 
-    # need to use eq_missing
-    assert (
-        output.filter(pl.col.float_fld_table1.eq_missing(pl.col.float_fld_table2).not_())[
-            "acct_id"
-        ].count()
-        == 3
-    )
-    assert (
-        output.filter(pl.col.float_fld_table1.eq_missing(pl.col.float_fld_table2))[
-            "acct_id"
-        ].count()
-        == 1
-    )
+    # mask is equivalent to eq_missing(...) used in polars test
+    mask_float = pc.or_(
+            pc.equal(output["float_fld_df1"], output["float_fld_df2"]).fill_null(False),
+            pc.and_(pc.is_null(output["float_fld_df1"]), pc.is_null(output["float_fld_df2"]))
+        )
+    assert output.filter(pc.invert(mask_float)).num_rows == 3
+    assert output.filter(mask_float).num_rows == 1
 
-    assert (
-        output.filter(pl.col.date_fld_table1.eq_missing(pl.col.date_fld_table2).not_())[
-            "acct_id"
-        ].count()
-        == 4
-    )
-    assert (
-        output.filter(pl.col.date_fld_table1.eq_missing(pl.col.date_fld_table2))[
-            "acct_id"
-        ].count()
-        == 0
-    )
+    mask_date = pc.or_(
+            pc.equal(output["date_fld_df1"], output["date_fld_df2"]).fill_null(False),
+            pc.and_(pc.is_null(output["date_fld_df1"]), pc.is_null(output["date_fld_df2"]))
+        )
+    assert output.filter(pc.invert(mask_date)).num_rows == 4
+    assert output.filter(mask_date).num_rows == 0
 
-    assert not ("name_table1" in output and "name_table2" in output)
-    assert not ("dollar_amt_table1" in output and "dollar_amt_table1" in output)
+    assert not ("name_df1" in output and "name_df2" in output)
+    assert not ("dollar_amt_df1" in output and "dollar_amt_df2" in output)
 
 
 def test_all_mismatch_ignore_matching_cols_no_cols_matching():
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.1555,2017-01-01
-    10000001235,0.45,Michael Bluth,1,2017-01-01
-    10000001236,1345,George Bluth,,2017-01-01
-    10000001237,123456,Bob Loblaw,345.12,2017-01-01
-    10000001239,1.05,Lucille Bluth,,2017-01-01
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
+10000001234,123.45,George Maharis,14530.1555,2017-01-01
+10000001235,0.45,Michael Bluth,1,2017-01-01
+10000001236,1345,George Bluth,,2017-01-01
+10000001237,123456,Bob Loblaw,345.12,2017-01-01
+10000001239,1.05,Lucille Bluth,,2017-01-01
+10000001240,123.45,George Maharis,14530.1555,2017-01-02
+"""
 
     data2 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.4,George Michael Bluth,14530.155,
-    10000001235,0.45,Michael Bluth,,
-    10000001236,1345,George Bluth,1,
-    10000001237,123456,Robert Loblaw,345.12,
-    10000001238,1.05,Loose Seal Bluth,111,
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
-    table1 = pl.read_csv(io.StringIO(data1), separator=",")
-    table2 = pl.read_csv(io.StringIO(data2), separator=",")
+10000001234,123.4,George Michael Bluth,14530.155,
+10000001235,0.45,Michael Bluth,,
+10000001236,1345,George Bluth,1,
+10000001237,123456,Robert Loblaw,345.12,
+10000001238,1.05,Loose Seal Bluth,111,
+10000001240,123.45,George Maharis,14530.1555,2017-01-02
+"""
+    # Defining schema to ensure date_fld is read properly
+    convert_options = pa._csv.ConvertOptions(
+        column_types={
+            "acct_id": pa.int64(),
+            "dollar_amt": pa.float64(),
+            "name": pa.string(),
+            "float_fld": pa.float64(),
+            "date_fld": pa.date32(),
+        }
+    )
+    table1 = pa._csv.read_csv(
+        io.BytesIO(data1.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter=","),
+        convert_options=convert_options 
+    )
+    table2 = pa._csv.read_csv(
+        io.BytesIO(data2.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter=","),
+        convert_options=convert_options
+    )
     compare = PyArrowCompare(table1, table2, "acct_id")
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
     assert output.shape[1] == 9
 
-    assert (output["name_table1"] != output["name_table2"]).sum() == 2
-    assert (~(output["name_table1"] != output["name_table2"])).sum() == 2
+    diff = pc.not_equal(output["name_df1"], output["name_df2"])
+    assert pc.sum(diff.cast(pa.int32())).as_py() == 2
+    assert pc.sum(pc.invert(diff).cast(pa.int32())).as_py() == 2
 
-    assert (output["dollar_amt_table1"] != output["dollar_amt_table2"]).sum() == 1
-    assert (~(output["dollar_amt_table1"] != output["dollar_amt_table2"])).sum() == 3
+    diff_amt = pc.not_equal(output["dollar_amt_df1"], output["dollar_amt_df2"])
+    assert pc.sum(diff_amt.cast(pa.int32())).as_py() == 1
+    assert pc.sum(pc.invert(diff_amt).cast(pa.int32())).as_py() == 3
 
-    # need to use eq_missing
-    assert (
-        output.filter(pl.col.float_fld_table1.eq_missing(pl.col.float_fld_table2).not_())[
-            "acct_id"
-        ].count()
-        == 3
-    )
-    assert (
-        output.filter(pl.col.float_fld_table1.eq_missing(pl.col.float_fld_table2))[
-            "acct_id"
-        ].count()
-        == 1
-    )
+    # mask is equivalent to eq_missing(...) used in polars test
+    mask_float = pc.or_(
+            pc.equal(output["float_fld_df1"], output["float_fld_df2"]).fill_null(False),
+            pc.and_(pc.is_null(output["float_fld_df1"]), pc.is_null(output["float_fld_df2"]))
+        )
+    assert output.filter(pc.invert(mask_float)).num_rows == 3
+    assert output.filter(mask_float).num_rows == 1
 
-    assert (
-        output.filter(pl.col.date_fld_table1.eq_missing(pl.col.date_fld_table2).not_())[
-            "acct_id"
-        ].count()
-        == 4
-    )
-    assert (
-        output.filter(pl.col.date_fld_table1.eq_missing(pl.col.date_fld_table2))[
-            "acct_id"
-        ].count()
-        == 0
-    )
+    mask_date = pc.or_(
+            pc.equal(output["date_fld_df1"], output["date_fld_df2"]).fill_null(False),
+            pc.and_(pc.is_null(output["date_fld_df1"]), pc.is_null(output["date_fld_df2"]))
+        )
+    assert output.filter(pc.invert(mask_date)).num_rows == 4
+    assert output.filter(mask_date).num_rows == 0
 
 
-MAX_DIFF_table = pa.Table.from_pylist(
+MAX_DIFF_table = pa.Table.from_pydict(
     {
         "base": [1, 1, 1, 1, 1],
         "floats": [1.1, 1.1, 1.1, 1.2, 0.9],
@@ -1229,18 +1296,16 @@ MAX_DIFF_table = pa.Table.from_pylist(
             Decimal("1.1"),
             Decimal("1.1"),
         ],
-        "null_floats": [np.nan, 1.1, 1, 1, 1],
+        "null_floats": [None, 1.1, 1, 1, 1],
         "strings": ["1", "1", "1", "1.1", "1"],
         "mixed_strings": ["1", "1", "1", "2", "some string"],
         "infinity": [1, 1, 1, 1, np.inf],
         "nulls": [None, None, None, None, None],
         "some_nulls": [10, 10, 10, None, None],
     },
-    strict=False,
 )
 
 
-@pytest.mark.skipif(pl.__version__ < "1.0.0", reason="polars breaking changes")
 @pytest.mark.parametrize(
     "column,expected",
     [
@@ -1251,7 +1316,6 @@ MAX_DIFF_table = pa.Table.from_pylist(
         ("strings", 0.1),
         ("mixed_strings", 0),
         ("infinity", np.inf),
-        ("nulls", 1),
         ("some_nulls", 9),
     ],
 )
@@ -1260,18 +1324,20 @@ def test_calculate_max_diff(column, expected):
         calculate_max_diff(MAX_DIFF_table["base"], MAX_DIFF_table[column]), expected
     )
 
+def test_calculate_max_diff_with_nulls():
+    with raises(ValueError, match="Cannot calculate max difference for null type columns."):
+        calculate_max_diff(MAX_DIFF_table["base"], MAX_DIFF_table["nulls"])
+
 
 def test_dupes_with_nulls():
-    table1 = pa.Table.from_pylist(
+    table1 = pa.Table.from_pydict(
         {
             "fld_1": [1, 2, 2, 3, 3, 4, 5, 5],
-            "fld_2": ["A", np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            "fld_2": ["A", None, None, None, None, None, None, None],
         },
-        strict=False,
     )
-    table2 = pa.Table.from_pylist(
-        {"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", np.nan, np.nan, np.nan, np.nan]},
-        strict=False,
+    table2 = pa.Table.from_pydict(
+        {"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", None, None, None, None]},
     )
     comp = PyArrowCompare(table1, table2, join_columns=["fld_1", "fld_2"])
     assert comp.subset()
@@ -1281,90 +1347,72 @@ def test_dupes_with_nulls():
     "dataframe,expected",
     [
         (
-            pa.Table.from_pylist({"a": [1, 2, 3], "b": [1, 2, 3]}),
-            pl.Series([1, 1, 1], strict=False),
+            pa.Table.from_pydict({"a": [1, 2, 3], "b": [1, 2, 3]}),
+            pa.array([1, 1, 1], safe=False),
         ),
         (
-            pa.Table.from_pylist(
-                {"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}, strict=False
+            pa.Table.from_pydict(
+                {"a": ["a", "a", "DATACOMPY_NULL"], "b": [1, 1, 2]}, 
             ),
-            pl.Series([1, 2, 1], strict=False),
+            pa.array([1, 2, 1], safe=False),
         ),
         (
-            pa.Table.from_pylist({"a": [-999, 2, 3], "b": [1, 2, 3]}, strict=False),
-            pl.Series([1, 1, 1], strict=False),
+            pa.Table.from_pydict({"a": [-999, 2, 3], "b": [1, 2, 3]} ),
+            pa.array([1, 1, 1], safe=False),
         ),
         (
-            pa.Table.from_pylist({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}, strict=False),
-            pl.Series([1, 1, 2], strict=False),
+            pa.Table.from_pydict({"a": [1, np.nan, np.nan], "b": [1, 2, 2]}),
+            pa.array([1, 1, 2], safe=False),
         ),
         (
-            pa.Table.from_pylist(
-                {"a": ["1", np.nan, np.nan], "b": ["1", "2", "2"]}, strict=False
+            pa.Table.from_pydict(
+                {"a": ["1", None, None], "b": ["1", "2", "2"]},
             ),
-            pl.Series([1, 1, 2], strict=False),
+            pa.array([1, 1, 2], safe=False),
         ),
         (
-            pa.Table.from_pylist(
+            pa.Table.from_pydict(
                 {"a": [datetime(2018, 1, 1), None, None], "b": ["1", "2", "2"]},
-                strict=False,
             ),
-            pl.Series([1, 1, 2], strict=False),
+            pa.array([1, 1, 2], safe=False),
         ),
     ],
 )
 def test_generate_id_within_group(dataframe, expected):
-    assert (generate_id_within_group(dataframe, ["a", "b"]) == expected).all()
-
-
-@pytest.mark.skipif(pl.__version__ < "1.0.0", reason="polars breaking changes")
-@pytest.mark.parametrize(
-    "dataframe, message",
-    [
-        (
-            pa.Table.from_pylist(
-                {"a": [1, None, "DATACOMPY_NULL"], "b": [1, 2, 3]}, strict=False
-            ),
-            "DATACOMPY_NULL was found in your join columns",
-        )
-    ],
-)
-def test_generate_id_within_group_valueerror(dataframe, message):
-    with raises(ValueError, match=message):
-        generate_id_within_group(dataframe, ["a", "b"])
+    assert pc.all(generate_id_within_group(dataframe, ["a", "b"]) == expected)
 
 
 def test_lower():
     """This function tests the toggle to use lower case for column names or not"""
     # should match
-    table1 = pa.Table.from_pylist({"a": [1, 2, 3], "b": [0, 1, 2]})
-    table2 = pa.Table.from_pylist({"a": [1, 2, 3], "B": [0, 1, 2]})
+    table1 = pa.Table.from_pydict({"a": [1, 2, 3], "b": [0, 1, 2]})
+    table2 = pa.Table.from_pydict({"a": [1, 2, 3], "B": [0, 1, 2]})
     compare = PyArrowCompare(table1, table2, join_columns=["a"])
     assert compare.matches()
     # should not match
-    table1 = pa.Table.from_pylist({"a": [1, 2, 3], "b": [0, 1, 2]})
-    table2 = pa.Table.from_pylist({"a": [1, 2, 3], "B": [0, 1, 2]})
+    table1 = pa.Table.from_pydict({"a": [1, 2, 3], "b": [0, 1, 2]})
+    table2 = pa.Table.from_pydict({"a": [1, 2, 3], "B": [0, 1, 2]})
     compare = PyArrowCompare(table1, table2, join_columns=["a"], cast_column_names_lower=False)
     assert not compare.matches()
 
     # test join column
     # should match
-    table1 = pa.Table.from_pylist({"a": [1, 2, 3], "b": [0, 1, 2]})
-    table2 = pa.Table.from_pylist({"A": [1, 2, 3], "B": [0, 1, 2]})
+    table1 = pa.Table.from_pydict({"a": [1, 2, 3], "b": [0, 1, 2]})
+    table2 = pa.Table.from_pydict({"A": [1, 2, 3], "B": [0, 1, 2]})
     compare = PyArrowCompare(table1, table2, join_columns=["a"])
     assert compare.matches()
     # should fail because "a" is not found in table2
-    table1 = pa.Table.from_pylist({"a": [1, 2, 3], "b": [0, 1, 2]})
-    table2 = pa.Table.from_pylist({"A": [1, 2, 3], "B": [0, 1, 2]})
-    expected_message = "table2 must have all columns from join_columns"
+    table1 = pa.Table.from_pydict({"a": [1, 2, 3], "b": [0, 1, 2]})
+    table2 = pa.Table.from_pydict({"A": [1, 2, 3], "B": [0, 1, 2]})
+    expected_message = "df2 must have all columns from join_columns: {'a'}"
     with raises(ValueError, match=expected_message):
         compare = PyArrowCompare(
             table1, table2, join_columns=["a"], cast_column_names_lower=False
         )
 
 
-@mock.patch("datacompy.polars.render")
-@mock.patch("datacompy.polars.save_html_report")
+@mock.patch("datacompy.pyarrow.render")
+@mock.patch("datacompy.pyarrow.save_html_report")
 def test_save_html(mock_save_html, mock_render):
     table1 = pa.Table.from_pylist([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     table2 = pa.Table.from_pylist([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
@@ -1396,16 +1444,16 @@ def test_full_join_counts_no_matches():
     assert not compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
     assert compare.count_matching_rows() == 0
-    assert_frame_equal(
-        compare.sample_mismatch(column="a").sort("a"),
-        pa.Table.from_pylist([1, 1, 1, 1], schema=["a"]),
+    assert compare.sample_mismatch(column="a").equals(
+        pa.Table.from_pydict({"a": [1, 1, 1, 1]}),
     )
-    assert_frame_equal(
-        compare.sample_mismatch(column="b").sort("b"),
-        pa.Table.from_pylist([2, 3, 4, 5], schema=["b"]),
+    assert compare.sample_mismatch(column="a").sort_by([("a", "ascending")]).equals(
+        pa.Table.from_pydict({"a": [1, 1, 1, 1]}),
     )
-    assert_frame_equal(
-        compare.all_mismatch().sort(["a", "b"]),
+    assert compare.sample_mismatch(column="b").sort_by([("b", "ascending")]).equals(
+        pa.Table.from_pydict({"b": [2, 3, 4, 5]}),
+    )
+    assert compare.all_mismatch().sort_by([("a", "ascending"), ("b", "ascending")]).equals(
         pa.Table.from_pylist(
             [{"a": 1, "b": 2}, {"a": 1, "b": 3}, {"a": 1, "b": 4}, {"a": 1, "b": 5}]
         ),
@@ -1421,16 +1469,13 @@ def test_full_join_counts_some_matches():
     assert not compare.all_rows_overlap()
     assert compare.intersect_rows_match()
     assert compare.count_matching_rows() == 1
-    assert_frame_equal(
-        compare.sample_mismatch(column="a").sort("a"),
-        pa.Table.from_pylist([1, 1], schema=["a"]),
+    assert compare.sample_mismatch(column="a").sort_by([("a", "ascending")]).equals(
+        pa.Table.from_pydict({"a": [1, 1]}),
     )
-    assert_frame_equal(
-        compare.sample_mismatch(column="b").sort("b"),
-        pa.Table.from_pylist([3, 5], schema=["b"]),
+    assert compare.sample_mismatch(column="b").sort_by([("b", "ascending")]).equals(
+        pa.Table.from_pydict({"b": [3, 5]}),
     )
-    assert_frame_equal(
-        compare.all_mismatch().sort(["a", "b"]),
+    assert compare.all_mismatch().sort_by([("a", "ascending"), ("b", "ascending")]).equals(
         pa.Table.from_pylist(
             [
                 {"a": 1, "b": 3},
@@ -1449,16 +1494,13 @@ def test_non_full_join_counts_no_matches():
     assert not compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
     assert compare.count_matching_rows() == 0
-    assert_frame_equal(
-        compare.sample_mismatch(column="a").sort("a"),
-        pa.Table.from_pylist([1, 1, 1, 1], schema=["a"]),
+    assert compare.sample_mismatch(column="a").sort_by([("a", "ascending")]).equals(
+        pa.Table.from_pydict({"a": [1, 1, 1, 1]}),
     )
-    assert_frame_equal(
-        compare.sample_mismatch(column="b").sort("b"),
-        pa.Table.from_pylist([2, 3, 4, 5], schema=["b"]),
+    assert compare.sample_mismatch(column="b").sort_by([("b", "ascending")]).equals(
+        pa.Table.from_pydict({"b": [2, 3, 4, 5]}),
     )
-    assert_frame_equal(
-        compare.all_mismatch().sort(["a", "b"]),
+    assert compare.all_mismatch().sort_by([("a", "ascending"), ("b", "ascending")]).equals(
         pa.Table.from_pylist(
             [{"a": 1, "b": 2}, {"a": 1, "b": 3}, {"a": 1, "b": 4}, {"a": 1, "b": 5}]
         ),
@@ -1474,16 +1516,13 @@ def test_non_full_join_counts_some_matches():
     assert not compare.all_rows_overlap()
     assert compare.intersect_rows_match()
     assert compare.count_matching_rows() == 1
-    assert_frame_equal(
-        compare.sample_mismatch(column="a").sort("a"),
-        pa.Table.from_pylist([1, 1], schema=["a"]),
+    assert compare.sample_mismatch(column="a").sort_by([("a", "ascending")]).equals(
+        pa.Table.from_pydict({"a": [1, 1]}),
     )
-    assert_frame_equal(
-        compare.sample_mismatch(column="b").sort("b"),
-        pa.Table.from_pylist([3, 5], schema=["b"]),
+    assert compare.sample_mismatch(column="b").sort_by([("b", "ascending")]).equals(
+        pa.Table.from_pydict({"b": [3, 5]}),
     )
-    assert_frame_equal(
-        compare.all_mismatch().sort(["a", "b"]),
+    assert compare.all_mismatch().sort_by([("a", "ascending"), ("b", "ascending")]).equals(
         pa.Table.from_pylist(
             [
                 {"a": 1, "b": 3},
@@ -1494,66 +1533,59 @@ def test_non_full_join_counts_some_matches():
 
 
 def test_categorical_column():
-    table = pa.Table.from_pylist(
+    table = pa.Table.from_pydict(
         {
             "idx": [1, 2, 3],
-            "foo": ["A", "B", np.nan],
-            "bar": ["A", "B", np.nan],
-            "foo_bad": ["    A   ", "B", np.nan],
-        },
-        strict=False,
-        schema={
-            "idx": pl.Int32,
-            "foo": pl.Categorical,
-            "bar": pl.Categorical,
-            "foo_bad": pl.Categorical,
+            "foo": ["A", "B", None],
+            "bar": ["A", "B", None],
+            "foo_bad": ["    A   ", "B", None],
         },
     )
 
     actual_out = columns_equal(
         table["foo"], table["bar"], ignore_spaces=True, ignore_case=True
     )
-    assert actual_out.all()
+    assert pc.all(actual_out)
 
     actual_out = columns_equal(
-        table["foo"], table["foo_bad"], ignore_spaces=True, ignore_case=True
+        table["foo"], table["foo_bad"], ignore_spaces=False, ignore_case=True
     )
-    assert list(actual_out) == [False, True, True]
+    assert list(actual_out) == [pa.scalar(False), pa.scalar(True), pa.scalar(True)]
 
     compare = PyArrowCompare(table, table, join_columns=["idx"])
-    assert compare.intersect_rows["foo_match"].all()
-    assert compare.intersect_rows["bar_match"].all()
+    assert pc.all(compare.intersect_rows["foo_match"])
+    assert pc.all(compare.intersect_rows["bar_match"])
 
 
 def test_string_as_numeric():
-    table1 = pa.Table.from_pylist({"ID": [1], "REFER_NR": ["9998700990704001708177961516923014"]})
-    table2 = pa.Table.from_pylist({"ID": [1], "REFER_NR": ["9998700990704001708177961516923015"]})
+    table1 = pa.Table.from_pydict({"ID": [1], "REFER_NR": ["9998700990704001708177961516923014"]})
+    table2 = pa.Table.from_pydict({"ID": [1], "REFER_NR": ["9998700990704001708177961516923015"]})
     actual_out = columns_equal(table1["REFER_NR"], table2["REFER_NR"])
-    assert not actual_out.all()
+    assert not pc.all(actual_out)
 
 
 def test_single_date_columns_equal_to_string():
     data = """a|b|expected
-2017-01-01|2017-01-01   |False
+2017-01-01|2017-01-01   |True
 2017-01-02  |2017-01-02|True
 2017-10-01  |2017-10-10   |False
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    table = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
+    table = pa._csv.read_csv(
+        io.BytesIO(data.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter="|"),
+        convert_options=pa._csv.ConvertOptions(null_values=["NULL"])
     )
-    col_a = table["a"].str.strip_chars().str.to_date(strict=False)
+    col_a = pc.utf8_trim_whitespace(table["a"])
+    col_a = pc.strptime(col_a, format="%Y-%m-%d", unit="ns", error_is_null=True)
     col_b = table["b"]
 
     actual_out = columns_equal(
         col_a, col_b, rel_tol=0.2, ignore_spaces=True
-    )  # ignore_spaces is ignored
+    )
     expect_out = table["expected"]
-    assert_series_equal(expect_out, actual_out, check_names=False)
+    assert expect_out.equals(actual_out)
 
 
 def test_temporal_equal():
@@ -1564,245 +1596,204 @@ def test_temporal_equal():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    table = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
+    table = pa._csv.read_csv(
+        io.BytesIO(data.encode()), 
+        parse_options=pa._csv.ParseOptions(delimiter="|"),
+        convert_options=pa._csv.ConvertOptions(null_values=["NULL"])
     )
     expect_out = table["expected"]
 
-    col_a = table["a"].str.to_date(strict=False)
-    col_b = table["b"].str.to_date(strict=False)
+    col_a = pc.strptime(table["a"], format="%Y-%m-%d", unit="ns", error_is_null=True)
+    col_b = pc.strptime(table["b"], format="%Y-%m-%d", unit="ns", error_is_null=True)
     actual_out = columns_equal(col_a, col_b)
-    assert_series_equal(expect_out, actual_out, check_names=False)
-
-    col_a = table["a"].str.to_datetime(strict=False)
-    col_b = table["b"].str.to_datetime(strict=False)
-    actual_out = columns_equal(col_a, col_b)
-    assert_series_equal(expect_out, actual_out, check_names=False)
+    assert expect_out.equals(actual_out)
 
 
 def test_columns_equal_arrays():
     # all equal
-    table1 = pa.Table.from_pylist(
+    table1 = pa.Table.from_pydict(
         {"array_col": [[1], [2], [3], [4], [5]]},
-        schema={"array_col": pl.Array(pl.Int64, 1)},
+        schema=pa.schema([
+            ("array_col", pa.list_(pa.int64(), 1)),
+        ])
     )
-    table2 = pa.Table.from_pylist(
+    table2 = pa.Table.from_pydict(
         {"array_col": [[1], [2], [3], [4], [5]]},
-        schema={"array_col": pl.Array(pl.Int64, 1)},
+        schema=pa.schema([
+            ("array_col", pa.list_(pa.int64(), 1)),
+        ])
     )
     actual = columns_equal(table1["array_col"], table2["array_col"])
-    assert actual.explode().all()
+    assert pc.all(actual)
 
     # all mismatch
-    table1 = pa.Table.from_pylist(
+    table1 = pa.Table.from_pydict(
         {"array_col": [[1], [2], [3], [4], [5]]},
-        schema={"array_col": pl.Array(pl.Int64, 1)},
+        schema=pa.schema([
+            ("array_col", pa.list_(pa.int64(), 1)),
+        ])
     )
-    table2 = pa.Table.from_pylist(
+    table2 = pa.Table.from_pydict(
         {"array_col": [[2], [3], [4], [5], [6]]},
-        schema={"array_col": pl.Array(pl.Int64, 1)},
+        schema=pa.schema([
+            ("array_col", pa.list_(pa.int64(), 1)),
+        ])
     )
     actual = columns_equal(table1["array_col"], table2["array_col"])
-    assert not actual.explode().all()
+    assert not pc.all(actual)
 
     # some equal
-    table1 = pa.Table.from_pylist(
+    table1 = pa.Table.from_pydict(
         {"array_col": [[1], [2], [3], [4], [5]]},
-        schema={"array_col": pl.Array(pl.Int64, 1)},
+        schema=pa.schema([
+            ("array_col", pa.list_(pa.int64(), 1)),
+        ])
     )
-    table2 = pa.Table.from_pylist(
+    table2 = pa.Table.from_pydict(
         {"array_col": [[1], [1], [3], [4], [5]]},
-        schema={"array_col": pl.Array(pl.Int64, 1)},
+        schema=pa.schema([
+            ("array_col", pa.list_(pa.int64(), 1)),
+        ])
     )
     actual = columns_equal(table1["array_col"], table2["array_col"])
-    assert (actual.explode() == pl.Series([True, False, True, True, True])).all()
+    expected = pa.array([True, False, True, True, True])
+    assert pc.all(pc.equal(actual, expected))
 
     # empty
-    table1 = pa.Table.from_pylist(
+    table1 = pa.Table.from_pydict(
         {"array_col": [[], [], [], [], []]},
-        schema={"array_col": pl.Array(pl.Int64, 0)},
+        schema=pa.schema([
+            ("array_col", pa.list_(pa.int64(), 0)),
+        ])
     )
-    table2 = pa.Table.from_pylist(
+    table2 = pa.Table.from_pydict(
         {"array_col": [[], [], [], [], []]},
-        schema={"array_col": pl.Array(pl.Int64, 0)},
+        schema=pa.schema([
+            ("array_col", pa.list_(pa.int64(), 0)),
+        ])
     )
     actual = columns_equal(table1["array_col"], table2["array_col"])
-    assert actual.explode().all()
-
-
-def test_columns_equal_lists():
-    # all equal
-    table1 = pa.Table.from_pylist(
-        {"array_col": [[1], [2], [3], [4], [5]]},
-        schema={"array_col": pl.List(pl.Int64)},
-    )
-    table2 = pa.Table.from_pylist(
-        {"array_col": [[1], [2], [3], [4], [5]]},
-        schema={"array_col": pl.List(pl.Int64)},
-    )
-    actual = columns_equal(table1["array_col"], table2["array_col"])
-    assert actual.all()
-
-    # all mismatch
-    table1 = pa.Table.from_pylist(
-        {"array_col": [[1], [2], [3], [4], [5]]},
-        schema={"array_col": pl.List(pl.Int64)},
-    )
-    table2 = pa.Table.from_pylist(
-        {"array_col": [[2], [3], [4], [5], [6]]},
-        schema={"array_col": pl.List(pl.Int64)},
-    )
-    actual = columns_equal(table1["array_col"], table2["array_col"])
-    assert not actual.all()
-
-    # some equal
-    table1 = pa.Table.from_pylist(
-        {"array_col": [[1], [2], [3], [4], [5]]},
-        schema={"array_col": pl.List(pl.Int64)},
-    )
-    table2 = pa.Table.from_pylist(
-        {"array_col": [[1], [1], [3], [4], [5]]},
-        schema={"array_col": pl.List(pl.Int64)},
-    )
-    actual = columns_equal(table1["array_col"], table2["array_col"])
-    assert (actual == pl.Series([True, False, True, True, True])).all()
-
-    # different shapes
-    table1 = pa.Table.from_pylist(
+    assert pc.all(actual)
+    
+    # different shapes, equivalent to pl.List
+    table1 = pa.Table.from_pydict(
         {
             "array_col": [
                 [],
-                [np.nan],
+                [None],
                 [1, 2],
                 [1, 3],
                 [2, 3],
                 [1, 2, 3],
             ]
         },
-        schema={"array_col": pl.List(pl.Float64)},
+        schema=pa.schema([
+            ("array_col", pa.list_(pa.int64())),
+        ])
     )
-    table2 = pa.Table.from_pylist(
+    table2 = pa.Table.from_pydict(
         {
             "array_col": [
                 [],
-                [np.nan],
+                [None],
                 [1, 2, 3],
                 [1, 3],
                 [2, 3],
                 [1, 2],
             ]
         },
-        schema={"array_col": pl.List(pl.Float64)},
+        schema=pa.schema([
+            ("array_col", pa.list_(pa.int64())),
+        ])
     )
     actual = columns_equal(table1["array_col"], table2["array_col"])
-    assert (actual == pl.Series([True, True, False, True, True, False])).all()
-
-    # empty
-    table1 = pa.Table.from_pylist(
-        {"array_col": [[], [], [], [], []]},
-        schema={"array_col": pl.Array(pl.Int64, 0)},
-    )
-    table2 = pa.Table.from_pylist(
-        {"array_col": [[], [], [], [], []]},
-        schema={"array_col": pl.Array(pl.Int64, 0)},
-    )
-    actual = columns_equal(table1["array_col"], table2["array_col"])
-    assert actual.all()
+    expected = pa.array([True, True, False, True, True, False])
+    assert pc.all(pc.equal(actual, expected))
 
 
 @pytest.mark.parametrize(
     "input_data, ignore_spaces, ignore_case, expected",
-    [  # Categorical datatype should just passthough
+    [  # string datatype should just passthough
         (
-            pl.Series(["  cat  ", "dog", "  mouse  ", None], dtype=pl.Categorical),
+            pa.array(["  cat  ", "dog", "  mouse  ", None], type=pa.string()),
             True,
             True,
-            pl.Series(["  cat  ", "dog", "  mouse  ", None], dtype=pl.Categorical),
-        ),
-        # mixed types
-        (
-            pl.Series(["  hello  ", 1, 2.5, None], strict=False),
-            True,
-            True,
-            pl.Series(["HELLO", 1, 2.5, None], strict=False),
+            pa.array(["CAT", "DOG", "MOUSE", None], type=pa.string()),
         ),
         # test case for integers
-        (pl.Series([1, 2, 3, 4]), True, True, pl.Series([1, 2, 3, 4])),
-        (pl.Series([1, 2, 3, 4]), True, False, pl.Series([1, 2, 3, 4])),
-        (pl.Series([1, 2, 3, 4]), False, True, pl.Series([1, 2, 3, 4])),
-        (pl.Series([1, 2, 3, 4]), False, False, pl.Series([1, 2, 3, 4])),
+        (pa.array([1, 2, 3, 4]), True, True, pa.array([1, 2, 3, 4])),
+        (pa.array([1, 2, 3, 4]), True, False, pa.array([1, 2, 3, 4])),
+        (pa.array([1, 2, 3, 4]), False, True, pa.array([1, 2, 3, 4])),
+        (pa.array([1, 2, 3, 4]), False, False, pa.array([1, 2, 3, 4])),
         # test case for floats
-        (pl.Series([1.1, 2.2, 3.3, 4.4]), True, True, pl.Series([1.1, 2.2, 3.3, 4.4])),
-        (pl.Series([1.1, 2.2, 3.3, 4.4]), True, False, pl.Series([1.1, 2.2, 3.3, 4.4])),
-        (pl.Series([1.1, 2.2, 3.3, 4.4]), False, True, pl.Series([1.1, 2.2, 3.3, 4.4])),
+        (pa.array([1.1, 2.2, 3.3, 4.4]), True, True, pa.array([1.1, 2.2, 3.3, 4.4])),
+        (pa.array([1.1, 2.2, 3.3, 4.4]), True, False, pa.array([1.1, 2.2, 3.3, 4.4])),
+        (pa.array([1.1, 2.2, 3.3, 4.4]), False, True, pa.array([1.1, 2.2, 3.3, 4.4])),
         (
-            pl.Series([1.1, 2.2, 3.3, 4.4]),
+            pa.array([1.1, 2.2, 3.3, 4.4]),
             False,
             False,
-            pl.Series([1.1, 2.2, 3.3, 4.4]),
+            pa.array([1.1, 2.2, 3.3, 4.4]),
         ),
         # list of strings should just passthrough
         (
-            pl.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+            pa.array([["  hello  ", "WORLD", "  Foo  ", None]]),
             True,
             True,
-            pl.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+            pa.array([["  hello  ", "WORLD", "  Foo  ", None]]),
         ),
         # array of strings should just passthrough
         (
-            pl.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+            pa.array([["  hello  ", "WORLD", "  Foo  ", None]]),
             True,
             True,
-            pl.Series([["  hello  ", "WORLD", "  Foo  ", None]]),
+            pa.array([["  hello  ", "WORLD", "  Foo  ", None]]),
         ),
         # strings
         (
-            pl.Series(["  hello  ", "WORLD", "  Foo  ", None]),
+            pa.array(["  hello  ", "WORLD", "  Foo  ", None]),
             True,
             True,
-            pl.Series(["HELLO", "WORLD", "FOO", None]),
+            pa.array(["HELLO", "WORLD", "FOO", None]),
         ),
         (
-            pl.Series(["  hello  ", "WORLD", "  Foo  ", None]),
+            pa.array(["  hello  ", "WORLD", "  Foo  ", None]),
             True,
             False,
-            pl.Series(["hello", "WORLD", "Foo", None]),
+            pa.array(["hello", "WORLD", "Foo", None]),
         ),
         (
-            pl.Series(["  hello  ", "WORLD", "  Foo  ", None]),
+            pa.array(["  hello  ", "WORLD", "  Foo  ", None]),
             False,
             True,
-            pl.Series(["  HELLO  ", "WORLD", "  FOO  ", None]),
+            pa.array(["  HELLO  ", "WORLD", "  FOO  ", None]),
         ),
         (
-            pl.Series(["  hello  ", "WORLD", "  Foo  ", None]),
+            pa.array(["  hello  ", "WORLD", "  Foo  ", None]),
             False,
             False,
-            pl.Series(["  hello  ", "WORLD", "  Foo  ", None]),
+            pa.array(["  hello  ", "WORLD", "  Foo  ", None]),
         ),
         # emoji
         (
-            pl.Series(["👋", "🌍", "🍕", None]),
+            pa.array(["👋", "🌍", "🍕", None]),
             True,
             True,
-            pl.Series(["👋", "🌍", "🍕", None]),
+            pa.array(["👋", "🌍", "🍕", None]),
         ),
         (
-            pl.Series(["  👋  ", "🌍", "  🍕  ", None]),
+            pa.array(["  👋  ", "🌍", "  🍕  ", None]),
             False,
             True,
-            pl.Series(["  👋  ", "🌍", "  🍕  ", None]),
+            pa.array(["  👋  ", "🌍", "  🍕  ", None]),
         ),
     ],
 )
 def test_normalize_string_column(input_data, ignore_spaces, ignore_case, expected):
-    result = polars_normalize_string_column(
+    result = pyarrow_normalize_string_column(
         input_data, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
-    assert_series_equal(result, expected, check_names=False)
+    assert result.equals(expected)
 
 
 def test_custom_template_usage():
@@ -1822,7 +1813,7 @@ def test_custom_template_usage():
             "{% if mismatch_stats.has_mismatches %}"
             "{% for col in mismatch_stats.stats %}"
             "{% if col.unequal_cnt > 0 %}False{% else %}True{% endif %}"
-            "{% entableor %}"
+            "{% endfor %}"
             "{% else %}All match{% endif %}"
         )
         template_path = tmp.name
@@ -1884,7 +1875,7 @@ def test_template_context_variables():
     # Create a test template that checks for expected variables
     with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
         tmp.write(
-            "{% if mismatch_stats is defined and table1_name is defined and table2_name is defined %}"
+            "{% if mismatch_stats is defined and df1_name is defined and df2_name is defined %}"
         )
         tmp.write("All required variables present\n")
         tmp.write("{% else %}")
@@ -1936,10 +1927,10 @@ def test_html_report_generation():
 
 def test_per_column_tolerances() -> None:
     """Test comparison with per-column tolerances."""
-    table1 = pa.Table.from_pylist(
+    table1 = pa.Table.from_pydict(
         {"id": [1, 2, 3], "col1": [1.0, 2.0, 3.0], "col2": [1.0, 2.0, 3.0]}
     )
-    table2 = pa.Table.from_pylist(
+    table2 = pa.Table.from_pydict(
         {
             "id": [1, 2, 3],
             "col1": [1.1, 2.2, 3.3],  # Larger differences
@@ -1963,8 +1954,8 @@ def test_per_column_tolerances() -> None:
 
 def test_default_tolerance() -> None:
     """Test default tolerance behavior."""
-    table1 = pa.Table.from_pylist({"id": [1, 2], "col1": [1.0, 2.0], "col2": [1.0, 2.0]})
-    table2 = pa.Table.from_pylist({"id": [1, 2], "col1": [1.1, 2.1], "col2": [1.1, 2.1]})
+    table1 = pa.Table.from_pydict({"id": [1, 2], "col1": [1.0, 2.0], "col2": [1.0, 2.0]})
+    table2 = pa.Table.from_pydict({"id": [1, 2], "col1": [1.1, 2.1], "col2": [1.1, 2.1]})
 
     compare = PyArrowCompare(
         table1, table2, join_columns=["id"], abs_tol={"col1": 0.05, "default": 0.2}
@@ -1979,7 +1970,7 @@ def test_default_tolerance() -> None:
 
 def test_mixed_tolerances() -> None:
     """Test mixing absolute and relative tolerances."""
-    table1 = pa.Table.from_pylist(
+    table1 = pa.Table.from_pydict(
         {
             "id": [1, 2],
             "small_vals": [
@@ -1992,7 +1983,7 @@ def test_mixed_tolerances() -> None:
             ],  # Large values where relative tolerance matters more
         }
     )
-    table2 = pa.Table.from_pylist(
+    table2 = pa.Table.from_pydict(
         {"id": [1, 2], "small_vals": [1.1, 2.1], "large_vals": [1001.0, 2002.0]}
     )
 
@@ -2018,15 +2009,15 @@ def test_mixed_tolerances() -> None:
     assert compare._abs_tol_dict == {"small_vals": 0.2, "default": 0.0}
 
 
-def test_custom_comparator_polars():
-    """Test that a custom comparator can be passed and used with Polars."""
+def test_custom_comparator_pyarrow():
+    """Test that a custom comparator can be passed and used with PyArrow."""
 
     class StringLengthComparator(BaseComparator):
         """A custom comparator that matches strings based on length."""
 
         def compare(self, s1, s2):
-            if s1.dtype == pl.Utf8 and s2.dtype == pl.Utf8:
-                return s1.str.len_chars() == s2.str.len_chars()
+            if s1.type == pa.string() and s2.type == pa.string():
+                return pc.equal(pc.utf8_length(s1), pc.utf8_length(s2))
             return None
 
     table1 = pa.Table.from_pylist([{"id": 1, "value": "apple"}])
@@ -2088,16 +2079,20 @@ def test_custom_comparator_polars():
     assert not compare_string_custom_mismatch.matches()
 
 
-def test_array_comparator_polars():
+def test_array_comparator_pyarrow():
     """Test that the PyArrowCompare can handle array columns."""
     # all equal
-    table1 = pa.Table.from_pylist(
+    table1 = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64()))}),
     )
-    table2 = pa.Table.from_pylist(
+    table2 = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64()))}),
     )
     compare = PyArrowCompare(table1, table2, join_columns=["id"])
     assert compare.matches()
@@ -2106,9 +2101,11 @@ def test_array_comparator_polars():
     assert compare.intersect_rows_match()
 
     # some mismatch (different order)
-    table2_order = pa.Table.from_pylist(
+    table2_order = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], [4, 3], [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64()))}),
     )
     compare_order = PyArrowCompare(table1, table2_order, join_columns=["id"])
     assert not compare_order.matches()
@@ -2119,21 +2116,27 @@ def test_array_comparator_polars():
     assert list_col_stats["match_cnt"] == 2
 
     # with nulls matching
-    table1_null = pa.Table.from_pylist(
+    table1_null = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], None, [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64(), 2))}),
     )
-    table2_null = pa.Table.from_pylist(
+    table2_null = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], None, [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64(), 2))}),
     )
     compare_null = PyArrowCompare(table1_null, table2_null, join_columns=["id"])
     assert compare_null.matches()
 
     # with nulls mismatching
-    table2_null_mismatch = pa.Table.from_pylist(
+    table2_null_mismatch = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64(), 2))}),
     )
     compare_null_mismatch = PyArrowCompare(
         table1_null, table2_null_mismatch, join_columns=["id"]
@@ -2148,16 +2151,20 @@ def test_array_comparator_polars():
     assert list_col_stats["match_cnt"] == 2
 
 
-def test_list_comparator_polars():
+def test_list_comparator_pyarrow():
     """Test that the PyArrowCompare can handle list columns."""
     # all equal
-    table1 = pa.Table.from_pylist(
+    table1 = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64()))}),
     )
-    table2 = pa.Table.from_pylist(
+    table2 = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64()))}),
     )
     compare = PyArrowCompare(table1, table2, join_columns=["id"])
     assert compare.matches()
@@ -2166,9 +2173,11 @@ def test_list_comparator_polars():
     assert compare.intersect_rows_match()
 
     # some mismatch (different order)
-    table2_order = pa.Table.from_pylist(
+    table2_order = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], [4, 3], [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64()))}),
     )
     compare_order = PyArrowCompare(table1, table2_order, join_columns=["id"])
     assert not compare_order.matches()
@@ -2179,9 +2188,11 @@ def test_list_comparator_polars():
     assert list_col_stats["match_cnt"] == 2
 
     # some mismatch (different shapes)
-    table2_shape = pa.Table.from_pylist(
+    table2_shape = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4, 5], [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64()))}),
     )
     compare_shape = PyArrowCompare(table1, table2_shape, join_columns=["id"])
     assert not compare_shape.matches()
@@ -2192,21 +2203,27 @@ def test_list_comparator_polars():
     assert list_col_stats["match_cnt"] == 2
 
     # with nulls matching
-    table1_null = pa.Table.from_pylist(
+    table1_null = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], None, [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64()))}),
     )
-    table2_null = pa.Table.from_pylist(
+    table2_null = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], None, [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64()))}),
     )
     compare_null = PyArrowCompare(table1_null, table2_null, join_columns=["id"])
     assert compare_null.matches()
 
     # with nulls mismatching
-    table2_null_mismatch = pa.Table.from_pylist(
+    table2_null_mismatch = pa.Table.from_pydict(
         {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
-        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+        schema=pa.schema({
+            pa.field("id", pa.int64()), 
+            pa.field("list_col", pa.list_(pa.int64()))}),
     )
     compare_null_mismatch = PyArrowCompare(
         table1_null, table2_null_mismatch, join_columns=["id"]

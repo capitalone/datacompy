@@ -20,6 +20,7 @@ import logging
 import numpy as np
 import pandas as pd
 import polars as pl
+from pre_commit import output
 import pyarrow as pa
 import pyarrow.compute as pc
 
@@ -28,6 +29,13 @@ from datacompy.comparator.base import BaseComparator
 LOG = logging.getLogger(__name__)
 
 POLARS_ARRAY_TYPE = ["List", "Array"]
+PYARROW_LIST_TYPE_IDS = [
+    pa.lib.Type_LIST,
+    pa.lib.Type_LARGE_LIST, 
+    pa.lib.Type_FIXED_SIZE_LIST,
+    pa.lib.Type_LIST_VIEW, 
+    pa.lib.Type_LARGE_LIST_VIEW
+]
 
 try:
     import pyspark as ps
@@ -226,8 +234,11 @@ class PyArrowArrayLikeComparator(BaseComparator):
         if len(col1) != len(col2):
             return None
 
-        if pa.types.is_list(col1.type) and pa.types.is_list(col2.type):
-            comparison = pc.equal_with_nulls(col1, col2)
-            return comparison
+        if col1.type.id in PYARROW_LIST_TYPE_IDS and col2.type.id in PYARROW_LIST_TYPE_IDS:
+            comparison = []
+            for c1, c2 in zip(col1, col2):
+                comparison.append(c1.equals(c2))
+
+            return pa.array(comparison)
         else:
             return None

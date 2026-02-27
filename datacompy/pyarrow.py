@@ -32,6 +32,7 @@ from datacompy.comparator import (
 from datacompy.comparator.base import BaseComparator
 from datacompy.comparator.string import pyarrow_normalize_string_column
 from datacompy.comparator.string import DEFAULT_VALUE
+from datacompy.comparator.array import PYARROW_LIST_TYPE_IDS
 
 LOG = logging.getLogger(__name__)
 
@@ -105,7 +106,11 @@ class PyArrowCompare(BaseCompare):
     @df1.setter
     def df1(self, df1: ArrowStreamable) -> None:
         self._df1 = convert_to_arrow(df1) if not isinstance(df1, pa.Table) else df1
-        self._validate_dataframe("df1", cast_column_names_lower=self.cast_column_names_lower)
+        if self.cast_column_names_lower: 
+            self._df1 = df1.rename_columns(
+                [col.lower() for col in self._df1.schema.names]
+            )
+        self._validate_dataframe("df1")
 
     @property
     def df2(self) -> ArrowStreamable:
@@ -114,7 +119,11 @@ class PyArrowCompare(BaseCompare):
     @df2.setter
     def df2(self, df2: ArrowStreamable) -> None:
         self._df2 = convert_to_arrow(df2) if not isinstance(df2, pa.Table) else df2
-        self._validate_dataframe("df2", cast_column_names_lower=self.cast_column_names_lower)
+        if self.cast_column_names_lower: 
+            self._df2 = df2.rename_columns(
+                [col.lower() for col in self._df2.schema.names]
+            )
+        self._validate_dataframe("df2")
 
     def _get_comparators(self) -> List[BaseComparator]:
         """Build and return the list of comparators to be used.
@@ -125,6 +134,7 @@ class PyArrowCompare(BaseCompare):
 
     def _compare(self, ignore_spaces: bool = False, ignore_case: bool = False) -> None:
         """Compare two pyarrow Tables."""
+        LOG.debug("Checking equality")
         if self.df1.equals(self.df2):
             LOG.info("df1 pyarrow.Table.equals df2")
         else:
@@ -168,6 +178,14 @@ class PyArrowCompare(BaseCompare):
         df2 = self.df2.slice(0)
         temp_join_columns = deepcopy(self.join_columns)
 
+        # Test schema compatibillity before join
+        for col in self.join_columns:
+            idx1 = df1.schema.get_field_index(col)
+            idx2 = df2.schema.get_field_index(col)
+
+            if df1.schema.types[idx1] != df2.schema.types[idx2]:
+                raise pa.ArrowInvalid("Join keys have different data types")
+
         if self._any_dupes:
             LOG.debug("Duplicate rows found, deduping by order of remaining fields")
             order_column = temp_column_name(df1, df2)
@@ -183,12 +201,16 @@ class PyArrowCompare(BaseCompare):
 
         if ignore_spaces:
             for column in self.join_columns:
-                df1 = df1.set_column(
-                    pyarrow_normalize_string_column(df1[column], ignore_space=True, ignore_case=False)
+                idx = df1.schema.get_field_index(column)
+                norm_array = pyarrow_normalize_string_column(
+                    df1[column], ignore_spaces=True, ignore_case=False
                 )
-                df2 = df2.set_column(
-                    pyarrow_normalize_string_column(df2[column], ignore_space=True, ignore_case=False)
+                df1 = df1.set_column(idx, column, norm_array)
+                idx2 = df2.schema.get_field_index(column)
+                norm_array2 = pyarrow_normalize_string_column(
+                    df2[column], ignore_spaces=True, ignore_case=False
                 )
+                df2 = df2.set_column(idx2, column, norm_array2)
 
         # merge indicator
         df1 = df1.append_column(
@@ -200,15 +222,87 @@ class PyArrowCompare(BaseCompare):
             pa.array([True] * len(df2))
         )
 
+        # Workaround to match nulls when joining
+        temp_val = "__datacompy_null__"
+        df1_col_types = df1.schema.types
+        df2_col_types = df2.schema.types
+        for col in temp_join_columns:
+            col1 = pc.cast(df1[col], pa.string())
+            imputed_col1 = pc.if_else(
+                pc.is_null(col1),
+                pa.scalar(temp_val),
+                col1
+            )
+            idx1 = df1.schema.get_field_index(col)
+            df1 = df1.set_column(idx1, col, imputed_col1)
+
+            col2 = pc.cast(df2[col], pa.string())
+            imputed_col2 = pc.if_else(
+                pc.is_null(col2),
+                pa.scalar(temp_val),
+                col2
+            )
+            idx2 = df2.schema.get_field_index(col)
+            df2 = df2.set_column(idx2, col, imputed_col2)
+
         # Perform outer join
-        outer_joined = df1.join(
-            df2, 
-            keys=temp_join_columns,
-            join_type="full outer",
-            left_suffix="_" + self.df1_name,
-            right_suffix="_" + self.df2_name,
-            coalesce_keys=True
-        )
+        try:
+            outer_joined = df1.join(
+                df2, 
+                keys=temp_join_columns,
+                join_type="full outer",
+                left_suffix="_" + self.df1_name,
+                right_suffix="_" + self.df2_name,
+                coalesce_keys=True
+            )
+        except pa.ArrowInvalid as e:
+            # Handle nested columns
+            df1_types = [field.type.id for field in df1.schema]
+            df2_types = [field.type.id for field in df2.schema]
+            has_list = any(t in PYARROW_LIST_TYPE_IDS for t in df1_types + df2_types)
+            if has_list:
+                df_idx1 = df1.append_column("_idx_a", pa.array(range(len(df1))))
+                df_idx2 = df2.append_column("_idx_b", pa.array(range(len(df2))))
+                # Removing nested columns before join to add them back after 
+                nested_a = [name for name in df1.schema.names if not pa.types.is_primitive(df1.schema.field(name).type) and name not in self.join_columns]
+                nested_b = [name for name in df2.schema.names if not pa.types.is_primitive(df2.schema.field(name).type) and name not in self.join_columns]
+
+                df1_flat = df_idx1.drop(nested_a)
+                df2_flat = df_idx2.drop(nested_b)
+                index_map = df1_flat.join(
+                    df2_flat, 
+                    keys=self.join_columns,
+                    join_type="full outer",
+                    left_suffix="_" + self.df1_name,
+                    right_suffix="_" + self.df2_name,
+                    coalesce_keys=True
+                )
+                outer_joined = index_map
+
+                for col_name in nested_a:
+                    col_data = df1.column(col_name).take(index_map.column("_idx_a"))
+                    outer_joined = outer_joined.append_column(col_name + "_" + self.df1_name, col_data)
+                    
+                for col_name in nested_b:
+                    col_data = df2.column(col_name).take(index_map.column("_idx_b"))
+                    outer_joined = outer_joined.append_column(col_name + "_" + self.df2_name, col_data)
+                    
+                outer_joined = outer_joined.drop_columns(["_idx_a", "_idx_b"])
+            else:
+                raise pa.ArrowInvalid(f"Failed to join tables: {e}") 
+
+        # Restore nulls afterwards
+        for col in temp_join_columns:
+            if col in outer_joined.schema.names:
+                arr = outer_joined[col]
+                restored = pc.if_else(
+                    pc.equal(arr, pa.scalar(temp_val)),
+                    pa.scalar(None),
+                    arr
+                )
+                restored = pc.cast(restored, df1_col_types[df1.schema.get_field_index(col)])
+                idx = outer_joined.schema.get_field_index(col)
+                outer_joined = outer_joined.set_column(idx, col, restored)
 
         # Setting up conditions
         cond_both = pc.and_(
@@ -302,7 +396,7 @@ class PyArrowCompare(BaseCompare):
                         comparators=self._get_comparators()
                     ),
                 )
-                match_cnt = pc.sum(self.intersect_rows[col_match]).as_py()
+                match_cnt = pc.fill_null(pc.sum(self.intersect_rows[col_match]), 0).as_py()
                 max_diff = calculate_max_diff(
                     self.intersect_rows[col_1], self.intersect_rows[col_2]
                 )
@@ -337,19 +431,14 @@ class PyArrowCompare(BaseCompare):
                 }
             )
     
-    def _validate_dataframe(self, index, cast_column_names_lower = True):
+    def _validate_dataframe(self, index):
         """Check if the dataframe is valid arrow table and has join columns."""
         dataframe = getattr(self, index)
-
-        if cast_column_names_lower:
-            dataframe = dataframe.rename_columns(
-                [col.lower() for col in dataframe.schema.names]
-            )
 
         if not set(self.join_columns).issubset(dataframe.schema.names):
             missing_cols = set(self.join_columns) - set(dataframe.schema.names)
             raise ValueError(
-                f"{index} is missing join columns: {missing_cols}"
+                f"{index} must have all columns from join_columns: {missing_cols}"
             )
         
         if len(set(dataframe.schema.names)) < len(dataframe.schema.names):
@@ -500,7 +589,7 @@ class PyArrowCompare(BaseCompare):
         if len(match_columns) > 0:
             masks = [self.intersect_rows[match_col] for match_col in match_columns]
             all_matches = functools.reduce(pc.and_kleene, masks)
-            return pc.sum(all_matches).as_py()
+            return pc.fill_null(pc.sum(all_matches), 0).as_py()
         else:
             # corner case where it is just the join columns that make the dataframes
             if self.intersect_rows.num_rows > 0:
@@ -625,9 +714,9 @@ class PyArrowCompare(BaseCompare):
                 + len(self.df2_unq_rows)
             )
             col_match = self.intersect_rows[column]
-            match_cnt = col_match.count()
+            match_cnt = col_match.length()
             sample_count = min(sample_count, row_cnt - match_cnt)
-            unique_rows = pa.concat_tables([self.df1_unq_rows[column], self.df2_unq_rows[column]])
+            unique_rows = pa.concat_tables([self.df1_unq_rows.select([column]), self.df2_unq_rows.select([column])])
             sample = unique_rows.slice(0, sample_count)
             return sample
 
@@ -669,7 +758,7 @@ class PyArrowCompare(BaseCompare):
                 )
 
                 if not ignore_matching_cols or (
-                    ignore_matching_cols and not col_comparison.all()
+                    ignore_matching_cols and not pc.all(col_comparison)
                 ):
                     LOG.debug(f"Adding column {orig_col_name} to the result.")
                     match_list.append(col)
@@ -694,7 +783,8 @@ class PyArrowCompare(BaseCompare):
             )
         
         # Get rows where any of the match columns is False
-        all_match = pc.and_kleene(*[self.intersect_rows[match_col] for match_col in match_list])
+        match_cols = [self.intersect_rows[match_col] for match_col in match_list]
+        all_match = functools.reduce(pc.and_kleene, match_cols)
         all_table = self.intersect_rows.append_column("__all", all_match)
         mismatch_mask = pc.invert(pc.fill_null(all_table["__all"], False))
         to_return = all_table.filter(mismatch_mask).select(self.join_columns + return_list)
@@ -797,6 +887,7 @@ def columns_equal(
             return compare
 
     compare = pa.array([False] * len(col_1))
+    return compare
 
 def get_merged_columns(
     original_df: ArrowStreamable,
@@ -820,18 +911,22 @@ def calculate_max_diff(col_1: pa.Array, col_2: pa.Array) -> float:
     if len(col_1) != len(col_2):
         raise ValueError("Columns must be of the same length to calculate max difference.")
     
+    # Raises an error if either column is of null type
+    if col_1.type == pa.null() or col_2.type == pa.null():
+        raise ValueError("Cannot calculate max difference for null type columns.")
+    
     try:
         col_1_float = pc.cast(col_1, pa.float64())
         col_2_float = pc.cast(col_2, pa.float64())
         diff = pc.abs(pc.subtract(col_1_float, col_2_float))
         return pc.cast(pc.max(diff), pa.float64()).as_py()
-    except (pa.ArrowInvalid, pa.ArrowNotImplementedError):
+    except Exception:
         return 0.0
 
 # Defining custom temp_column_name since base.py wouldn't be compatible with pyarrow Tables    
 def temp_column_name(*dataframes) -> str:
     """Generate a temporary column name that does not exist in either dataframe."""
-    counter = 1
+    counter = 0
     columns = []
     for df in dataframes:
         if df is not None:
@@ -871,7 +966,6 @@ def generate_id_within_group(
             group_key = pc.binary_join_element_wise(
                 pc.cast(group_key, pa.string()),
                 pc.cast(col, pa.string()),
-                separator="||"
             )
 
     # Get count with each group
@@ -879,7 +973,7 @@ def generate_id_within_group(
     sorted_keys = pc.take(group_key, indices)
     n = len(dataframe)
     counts = [0] * n
-    group_counts = dict[str, int] = {}
+    group_counts: dict[str, int] = {}
     sorted_keys_list = sorted_keys.to_pylist()
     indices_list = indices.to_pylist()
 

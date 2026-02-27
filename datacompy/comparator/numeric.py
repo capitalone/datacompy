@@ -24,7 +24,7 @@ import pyarrow as pa
 import pyarrow.compute as pc
 
 from datacompy.comparator.base import BaseComparator
-from datacompy._typing import ArrowArrayLike
+from datacompy.utility import pyarrow_numeric
 
 NUMERIC_PANDAS_TYPES = [
     "floating",
@@ -451,25 +451,3 @@ class PyArrowNumericComparator(BaseComparator):
         else:
             return None
         
-def pyarrow_numeric (col: ArrowArrayLike) -> bool:
-    """Check if a PyArrow Array is of numeric type.
-
-    Parameters
-    ----------
-    col : ArrowArrayLike
-        The PyArrow Array to check.
-
-    Returns
-    -------
-    bool
-        True if the Array is of numeric type, False otherwise.
-    """
-    if (
-        pa.types.is_integer(col.type)
-        or pa.types.is_floating(col.type)
-        or pa.types.is_decimal128(col.type)
-        or pa.types.is_decimal256(col.type)
-    ):
-        return True
-    else:
-        return False

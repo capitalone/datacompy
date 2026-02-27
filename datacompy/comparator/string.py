@@ -449,7 +449,10 @@ class PyArrowStringComparator(BaseComparator):
         ) or (pat.is_temporal(col2_type)) and pat.is_string(
             col1_type
         ):
-            return pyarrow_compare_string_and_date_columns(col1, col2)
+            return pyarrow_compare_string_and_date_columns(col1, 
+                                                           col2, 
+                                                           ignore_spaces=ignore_space,
+                                                           ignore_case=ignore_case)
         # both are strings
         elif (
             (pat.is_string(col1_type) and pat.is_string(col2_type)) 
@@ -687,7 +690,9 @@ def polars_compare_string_and_date_columns(
         
 def pyarrow_compare_string_and_date_columns(
     col_1: pa.Array,
-    col_2: pa.Array
+    col_2: pa.Array,
+    ignore_spaces: bool = False,
+    ignore_case: bool = False
 ) -> ArrowArrayLike:
     """Compare a string column and date column, value-wise.
 
@@ -712,6 +717,9 @@ def pyarrow_compare_string_and_date_columns(
     else:
         str_column = col_2
         date_column = col_1
+
+    str_column = pyarrow_normalize_string_column(str_column, ignore_spaces=ignore_spaces, ignore_case=ignore_case)
+    str_column = pc.if_else(pc.equal(str_column, ""), None, str_column)  # treat empty strings as nulls for comparison
 
     try:  # using date format
         return pc.or_(
