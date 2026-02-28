@@ -1037,15 +1037,6 @@ def columns_equal(
     - Non-numeric values (i.e. where np.isclose can't be used) will just trigger
       ``True`` on two nulls or exact matches.
 
-    Notes
-    -----
-    - As of version ``0.14.0`` If a column is of a mixed data type the compare
-      will default to returning ``False``.
-    - ``list`` and ``np.array`` types will be compared row wise using ``np.array_equal``.
-      Depending on the size of your data this might lead to performance issues.
-    - All the rows must be of the same type otherwise it is considered "mixed"
-      and will default to being ``False`` for everything.
-
     Parameters
     ----------
     col_1 : Pandas.Series
@@ -1070,6 +1061,15 @@ def columns_equal(
     pandas.Series
         A series of Boolean values.  True == the values match, False == the
         values don't match.
+
+    Notes
+    -----
+    - As of version ``0.14.0`` If a column is of a mixed data type the compare
+      will default to returning ``False``.
+    - ``list`` and ``np.array`` types will be compared row wise using ``np.array_equal``.
+      Depending on the size of your data this might lead to performance issues.
+    - All the rows must be of the same type otherwise it is considered "mixed"
+      and will default to being ``False`` for everything.
     """
     compare: pd.Series[bool] | None
 
