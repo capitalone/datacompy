@@ -336,6 +336,9 @@ def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) 
     """
     # Handle pandas DataFrame
     if hasattr(df, "to_string"):
+        # Handle PyArrow Table 
+        if isinstance(df, pa.Table):
+            df = df.to_pandas()
         if sample_count is not None and len(df) > sample_count:
             df = df.head(sample_count)
         if not on_index and hasattr(df, "reset_index"):

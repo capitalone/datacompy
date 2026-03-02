@@ -513,7 +513,7 @@ def test_columns_maintain_order_through_set_operations():
     table1 = pa.Table.from_arrays(
         list(zip(*data)), # Transpose the data to match the expected column-wise format
         schema=pa.schema([
-            ("array_col", pa.list_(pa.int64(), 1)),
+            ("join", pa.string()),
             pa.field("f", pa.int64()),
             pa.field("g", pa.int64()),
             pa.field("b", pa.int64()),
@@ -529,7 +529,7 @@ def test_columns_maintain_order_through_set_operations():
     table2 = pa.Table.from_arrays(
         list(zip(*data2)),
         schema=pa.schema([
-            ("array_col", pa.list_(pa.int64(), 1)),
+            ("join", pa.string()),
             pa.field("e", pa.int64()),
             pa.field("h", pa.int64()),
             pa.field("b", pa.int64()),

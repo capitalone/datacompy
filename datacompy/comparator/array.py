@@ -20,9 +20,7 @@ import logging
 import numpy as np
 import pandas as pd
 import polars as pl
-from pre_commit import output
 import pyarrow as pa
-import pyarrow.compute as pc
 
 from datacompy.comparator.base import BaseComparator
 
