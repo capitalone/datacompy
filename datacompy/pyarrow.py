@@ -4,15 +4,12 @@
 from copy import deepcopy
 import functools
 import logging
-from typing import Any, Callable, Dict, Iterable, List, Tuple, cast
+from typing import Any, Dict, List, cast
 
 from ordered_set import OrderedSet
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
-import pyarrow.types as pat
-import numpy as np
-from tomlkit import value
 from datacompy._typing import ArrowStreamable, ArrowArrayLike
 
 from datacompy.base import (
