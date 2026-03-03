@@ -2179,9 +2179,18 @@ def test_sensitive_columns():
     compare = datacompy.PandasCompare(
         df1, df2, join_columns=["a"], sensitive_columns=["b"]
     )
-    assert compare.df1.loc[0, "b"] != 2
-    assert compare.df1.loc[1, "b"] != 0
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
     assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] != 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] != 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] != 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] != 2
     # Just render the report to make sure it renders.
     compare.report()
 
@@ -2192,9 +2201,18 @@ def test_sensitive_columns_null():
     compare = datacompy.PandasCompare(
         df1, df2, join_columns=["a"], sensitive_columns=["b"]
     )
-    assert compare.df1.loc[0, "b"] != "hello"
+    assert compare.df1.loc[0, "b"] == "hello"
     assert pd.isna(compare.df1.loc[1, "b"])
     assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert pd.isna(compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"])
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] != "yo"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] != "hello"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] != "hello"
     # Just render the report to make sure it renders.
     compare.report()
 
@@ -2205,15 +2223,24 @@ def test_sensitive_columns_cast_lower():
     compare = datacompy.PandasCompare(
         df1, df2, join_columns=["a"], sensitive_columns=["B"]
     )
-    assert compare.df1.loc[0, "b"] != 2
-    assert compare.df1.loc[1, "b"] != 0
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
     assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] != 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] != 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] != 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] != 2
     # Just render the report to make sure it renders.
     compare.report()
 
 
 def test_sensitive_columns_no_cast_lower():
-    df1 = pd.DataFrame([{"a": 1, "b": 2, "B": 2}, {"a": 1, "b": 0, "B": 0}])
+    df1 = pd.DataFrame([{"a": 1, "b": 2, "B": 2}, {"a": 3, "b": 1, "B": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2, "B": 2}, {"a": 2, "b": 0, "B": 0}])
     compare = datacompy.PandasCompare(
         df1,
@@ -2223,10 +2250,19 @@ def test_sensitive_columns_no_cast_lower():
         cast_column_names_lower=False,
     )
     assert compare.df1.loc[0, "b"] == 2
-    assert compare.df1.loc[1, "b"] == 0
-    assert compare.df1.loc[0, "B"] != 2
-    assert compare.df1.loc[1, "B"] != 0
+    assert compare.df1.loc[1, "b"] == 1
+    assert compare.df1.loc[0, "B"] == 2
+    assert compare.df1.loc[1, "B"] == 0
     assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 3
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "B"] != 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "B"] != 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "B_df1"] != 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "B_df2"] != 2
     # Just render the report to make sure it renders.
     compare.report()
 
@@ -2237,26 +2273,44 @@ def test_sensitive_columns_as_join_columns():
     compare = datacompy.PandasCompare(
         df1, df2, join_columns=["a"], sensitive_columns=["a"]
     )
-    assert compare.df1.loc[0, "a"] != 1
-    assert compare.df1.loc[1, "a"] != 1
+    assert compare.df1.loc[0, "a"] == 1
+    assert compare.df1.loc[1, "a"] == 1
     assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] != 1
+    assert len(compare.sample_mismatch("a")) == 2
+    assert isinstance(
+        compare.sample_mismatch("a").reset_index(drop=True).loc[0, "a"], str
+    )
+    assert len(compare.sample_mismatch("a").reset_index(drop=True).loc[0, "a"]) == 64
+    assert isinstance(
+        compare.sample_mismatch("a").reset_index(drop=True).loc[1, "a"], str
+    )
+    assert len(compare.sample_mismatch("a").reset_index(drop=True).loc[1, "a"]) == 64
     # Just render the report to make sure it renders.
     compare.report()
 
 
 def test_sensitive_columns_missing():
-    df1 = pd.DataFrame([{"a": 1, "b": "hello", "c": 3}, {"a": 1, "b": "67", "c": 6}])
+    df1 = pd.DataFrame([{"a": 1, "b": "hello", "c": 3}, {"a": 3, "b": "67", "c": 6}])
     df2 = pd.DataFrame([{"a": 1, "b": "hello", "d": 4}, {"a": 2, "b": "yo", "d": 7}])
     compare = datacompy.PandasCompare(
         df1, df2, join_columns=["a"], sensitive_columns=["b", "c"]
     )
-    assert compare.df1.loc[0, "b"] != "hello"
-    assert compare.df1.loc[1, "b"] != "67"
-    assert compare.df1.loc[0, "c"] != 3
-    assert compare.df1.loc[1, "c"] != 6
+    assert compare.df1.loc[0, "b"] == "hello"
+    assert compare.df1.loc[1, "b"] == "67"
+    assert compare.df1.loc[0, "c"] == 3
+    assert compare.df1.loc[1, "c"] == 6
     assert compare.df2.loc[0, "d"] == 4
     assert compare.df2.loc[1, "d"] == 7
     assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 3
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] != "67"
+    assert isinstance(compare.df1_unq_rows.reset_index(drop=True).loc[0, "c"], str)
+    assert len(compare.df1_unq_rows.reset_index(drop=True).loc[0, "c"]) == 64
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] != "yo"
+    assert not isinstance(compare.df2_unq_rows.reset_index(drop=True).loc[0, "d"], str)
     # Just render the report to make sure it renders.
     compare.report()
 
@@ -2294,11 +2348,18 @@ def test_sensitive_columns_numeric_types():
         df1, df2, join_columns=["a"], sensitive_columns=["b", "c"]
     )
 
-    assert isinstance(compare.df1["b"].loc[0], str)
-    assert isinstance(compare.df1["c"].loc[0], str)
+    assert not isinstance(compare.df1["b"].loc[0], str)
+    assert not isinstance(compare.df1["c"].loc[0], str)
+    assert len(compare.df1_unq_rows) == 0
+    assert isinstance(
+        compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"], str
+    )
+    assert isinstance(
+        compare.intersect_rows.reset_index(drop=True).loc[0, "c_df1"], str
+    )
     # blake2b with digest_size=32 returns 64 hex characters
-    assert len(compare.df1["b"].loc[0]) == 64
-    assert len(compare.df1["c"].loc[0]) == 64
+    assert len(compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"]) == 64
+    assert len(compare.intersect_rows.reset_index(drop=True).loc[0, "c_df1"]) == 64
 
 
 def test_columns_with_mismatches_single_column():
