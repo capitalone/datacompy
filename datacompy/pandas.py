@@ -169,7 +169,6 @@ class PandasCompare(BaseCompare):
         self.df2_unq_rows: pd.DataFrame
         self.intersect_rows: pd.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
-        self._hash_sensitive_columns()
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
     def _get_comparators(self) -> List[BaseComparator]:
@@ -232,41 +231,6 @@ class PandasCompare(BaseCompare):
         duplicates = {c for c, n in Counter(self.sensitive_columns).items() if n > 1}
         if duplicates:
             raise ValueError(f"duplicate columns: {duplicates}")
-
-    def _hash_sensitive_columns(self) -> None:
-        """Hash sensitive columns in both dataframes."""
-        if not self.sensitive_columns:
-            return None
-
-        # Logs warning only if sensitive columns is set and validation passes
-        LOG.warning(
-            "dataframes with columns in sensitive_columns will be modified inplace."
-        )
-
-        for df in (self.df1, self.df2):
-            # Process only the columns that actually exist in the current dataframe
-            cols_to_hash = [c for c in self.sensitive_columns if c in df.columns]
-
-            for col in cols_to_hash:
-                is_null = df[col].isnull()
-
-                # Convert the column to object type before hashing to allow
-                # assignment of strings and pd.NA regardless of the original dtype.
-                df[col] = df[col].astype(str)
-
-                # Only process if there are non-null values to hash
-                if not is_null.all():
-                    # Hash non-null values. str(v) ensures compatibility regardless of original dtype.
-                    # We apply the transformation only to the relevant slice.
-                    df.loc[~is_null, col] = df.loc[~is_null, col].map(
-                        lambda v: hashlib.blake2b(
-                            v.encode("utf-8"), digest_size=32
-                        ).hexdigest()
-                    )
-
-                # Ensure all nulls are consistently represented as pd.NA in the hashed column
-                if is_null.any():
-                    df.loc[is_null, col] = pd.NA
 
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
@@ -414,6 +378,41 @@ class PandasCompare(BaseCompare):
             indicator=True,
             **params,
         )
+
+        # hash any sensitive columns in outer_join before moving on
+        if self.sensitive_columns:
+            LOG.debug("Hashing sensitive columns in outer_join")
+            sensitive = set(self.sensitive_columns)
+            common_cols = self.intersect_columns() - set(self.join_columns)
+            cols_to_hash = [
+                *[col for col in self.join_columns if col in sensitive],
+                *[col for col in self.df1_unq_columns() if col in sensitive],
+                *[col for col in self.df2_unq_columns() if col in sensitive],
+                *[f"{col}_{self.df1_name}" for col in common_cols if col in sensitive],
+                *[f"{col}_{self.df2_name}" for col in common_cols if col in sensitive],
+            ]
+
+            for col in cols_to_hash:
+                is_null = outer_join[col].isnull()
+
+                # Convert the column to object type before hashing to allow
+                # assignment of strings and pd.NA regardless of the original dtype.
+                outer_join[col] = outer_join[col].astype(str)
+
+                # Only process if there are non-null values to hash
+                if not is_null.all():
+                    # Hash non-null values. str(v) ensures compatibility regardless of original dtype.
+                    # We apply the transformation only to the relevant slice.
+                    outer_join.loc[~is_null, col] = outer_join.loc[~is_null, col].map(
+                        lambda v: hashlib.blake2b(
+                            v.encode("utf-8"), digest_size=32
+                        ).hexdigest()
+                    )
+
+                # Ensure all nulls are consistently represented as pd.NA in the hashed column
+                if is_null.any():
+                    outer_join.loc[is_null, col] = pd.NA
+
         # Clean up temp columns for duplicate row matching
         if self._any_dupes:
             if self.on_index:
