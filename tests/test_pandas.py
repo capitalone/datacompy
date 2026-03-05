@@ -2362,6 +2362,51 @@ def test_sensitive_columns_numeric_types():
     assert len(compare.intersect_rows.reset_index(drop=True).loc[0, "c_df1"]) == 64
 
 
+def test_sensitive_columns_numeric_types_with_tolerance():
+    """Verify that hashing works for different numeric types with tolerance."""
+    df1 = pd.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.1]})
+    df2 = pd.DataFrame({"a": [1, 3], "b": [10, 21], "c": [1.2, 2.1]})
+
+    compare = datacompy.PandasCompare(
+        df1,
+        df2,
+        join_columns=["a"],
+        sensitive_columns=["b", "c"],
+        abs_tol=0.1,
+    )
+    assert not isinstance(compare.df1["b"].loc[0], str)
+    assert not isinstance(compare.df1["c"].loc[0], str)
+    assert len(compare.df1_unq_rows) == 1
+    assert isinstance(compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"], str)
+    assert len(compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"]) == 64
+    assert isinstance(compare.df1_unq_rows.reset_index(drop=True).loc[0, "c"], str)
+    assert len(compare.df1_unq_rows.reset_index(drop=True).loc[0, "c"]) == 64
+    assert len(compare.df2_unq_rows) == 1
+    assert isinstance(compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"], str)
+    assert len(compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"]) == 64
+    assert isinstance(compare.df2_unq_rows.reset_index(drop=True).loc[0, "c"], str)
+    assert len(compare.df2_unq_rows.reset_index(drop=True).loc[0, "c"]) == 64
+    assert len(compare.intersect_rows) == 1
+    assert isinstance(
+        compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"], str
+    )
+    assert len(compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"]) == 64
+    assert isinstance(
+        compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"], str
+    )
+    assert len(compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"]) == 64
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    assert isinstance(
+        compare.intersect_rows.reset_index(drop=True).loc[0, "c_df1"], str
+    )
+    assert len(compare.intersect_rows.reset_index(drop=True).loc[0, "c_df1"]) == 64
+    assert isinstance(
+        compare.intersect_rows.reset_index(drop=True).loc[0, "c_df2"], str
+    )
+    assert len(compare.intersect_rows.reset_index(drop=True).loc[0, "c_df2"]) == 64
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c_match"]
+
+
 def test_columns_with_mismatches_single_column():
     """Test columns_with_mismatches with a single mismatched column."""
     df1 = pd.DataFrame(
