@@ -168,6 +168,7 @@ class PandasCompare(BaseCompare):
         self.intersect_rows: pd.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
+        self._hash_sensitive_columns()
 
     def _get_comparators(self) -> List[BaseComparator]:
         """Build and return the list of comparators to be used.
@@ -255,6 +256,30 @@ class PandasCompare(BaseCompare):
             if is_null.any():
                 df.loc[is_null, col] = pd.NA
 
+    def _hash_sensitive_columns(self) -> None:
+        """Hash sensitive columns if applicable."""
+        if self.sensitive_columns is None:
+            return None
+
+        sensitive = set(self.sensitive_columns)
+        common_cols = self.intersect_columns() - set(self.join_columns)
+
+        # hash columns in unq_rows
+        for df in (self.df1_unq_rows, self.df2_unq_rows):
+            LOG.debug(f"Hashing sensitive columns in {df}")
+
+            cols_to_hash = [col for col in df.columns if col in sensitive]
+            self._hash_df_sensitive_columns(df, cols_to_hash)
+
+        # hash columns in intersect_rows
+        LOG.debug("Hashing sensitive columns in self.intersect_rows")
+        cols_to_hash = [
+            *[col for col in self.join_columns if col in sensitive],
+            *[f"{col}_{self.df1_name}" for col in common_cols if col in sensitive],
+            *[f"{col}_{self.df2_name}" for col in common_cols if col in sensitive],
+        ]
+        self._hash_df_sensitive_columns(self.intersect_rows, cols_to_hash)
+
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
     ) -> None:
@@ -330,27 +355,6 @@ class PandasCompare(BaseCompare):
             LOG.info("df1 matches df2")
         else:
             LOG.info("df1 does not match df2")
-
-        # hash any sensitive columns in outer_join before moving on
-        if self.sensitive_columns:
-            sensitive = set(self.sensitive_columns)
-            common_cols = self.intersect_columns() - set(self.join_columns)
-
-            # hash columns in unq_rows
-            for df in (self.df1_unq_rows, self.df2_unq_rows):
-                LOG.debug(f"Hashing sensitive columns in {df}")
-
-                cols_to_hash = [col for col in df.columns if col in sensitive]
-                self._hash_df_sensitive_columns(df, cols_to_hash)
-
-            # hash columns in intersect_rows
-            LOG.debug("Hashing sensitive columns in self.intersect_rows")
-            cols_to_hash = [
-                *[col for col in self.join_columns if col in sensitive],
-                *[f"{col}_{self.df1_name}" for col in common_cols if col in sensitive],
-                *[f"{col}_{self.df2_name}" for col in common_cols if col in sensitive],
-            ]
-            self._hash_df_sensitive_columns(self.intersect_rows, cols_to_hash)
 
     def df1_unq_columns(self) -> OrderedSet[str]:
         """Get columns that are unique to df1."""
