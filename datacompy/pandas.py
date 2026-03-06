@@ -21,7 +21,6 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
-import hashlib
 import logging
 from collections import Counter
 from typing import Any, Dict, List, cast
@@ -99,10 +98,6 @@ class PandasCompare(BaseCompare):
         Boolean indicator that controls of column names will be cast into lower case
     custom_comparators : list of ``BaseComparator``, optional
         A list of custom comparator classes to use to compare columns.
-    sensitive_columns: list[str], optional
-        A list of the columns in df1 or df2 that should have their values hashed to mask sensitive data.
-        [WARNING]: dataframes with columns in sensitive_columns will be modified inplace, it is advised
-        to manually copy any columns that may need to be later restored prior to using this parameter.
     """
 
     def __init__(
@@ -119,11 +114,10 @@ class PandasCompare(BaseCompare):
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
         custom_comparators: List[BaseComparator] | None = None,
-        sensitive_columns: List[str] | None = None,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
-        self.sensitive_columns = sensitive_columns
+        self.sensitive_columns: List[str] | None = None
 
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
@@ -169,7 +163,6 @@ class PandasCompare(BaseCompare):
         self.df2_unq_rows: pd.DataFrame
         self.intersect_rows: pd.DataFrame
         self.column_stats: List[Dict[str, Any]] = []
-        self._hash_sensitive_columns()
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
     def _get_comparators(self) -> List[BaseComparator]:
@@ -233,40 +226,46 @@ class PandasCompare(BaseCompare):
         if duplicates:
             raise ValueError(f"duplicate columns: {duplicates}")
 
-    def _hash_sensitive_columns(self) -> None:
-        """Hash sensitive columns in both dataframes."""
-        if not self.sensitive_columns:
+    def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
+        """Hide sensitive columns of df1 or df2 if applicable in the compare."""
+        # don't allow hiding columns again before first revealing
+        if self.sensitive_columns:
+            raise ValueError(
+                "sensitive columns are already hidden, call reveal_sensitive_columns() first"
+            )
+
+        self.sensitive_columns = sensitive_columns  # validates through setter
+        sensitive = set(self.sensitive_columns)
+        common_cols = self.intersect_columns() - set(self.join_columns)
+
+        # hash columns in unq_rows
+        for df in (self.df1_unq_rows, self.df2_unq_rows):
+            LOG.debug(f"Hiding sensitive columns in {df}")
+            cols_to_hash = [col for col in df.columns if col in sensitive]
+            for col in cols_to_hash:
+                df[col] = "*******"
+
+        # hash columns in intersect_rows
+        LOG.debug("Hiding sensitive columns in self.intersect_rows")
+        cols_to_hash = [
+            *[col for col in self.join_columns if col in sensitive],
+            *[col for col in self.df1_unq_columns() if col in sensitive],
+            *[col for col in self.df2_unq_columns() if col in sensitive],
+            *[f"{col}_{self.df1_name}" for col in common_cols if col in sensitive],
+            *[f"{col}_{self.df2_name}" for col in common_cols if col in sensitive],
+        ]
+        for col in cols_to_hash:
+            self.intersect_rows[col] = "*******"
+
+    def reveal_sensitive_columns(self) -> None:
+        """Reveal all sensitive columns and re-compare."""
+        if self.sensitive_columns is None:
             return None
 
-        # Logs warning only if sensitive columns is set and validation passes
-        LOG.warning(
-            "dataframes with columns in sensitive_columns will be modified inplace."
-        )
-
-        for df in (self.df1, self.df2):
-            # Process only the columns that actually exist in the current dataframe
-            cols_to_hash = [c for c in self.sensitive_columns if c in df.columns]
-
-            for col in cols_to_hash:
-                is_null = df[col].isnull()
-
-                # Convert the column to object type before hashing to allow
-                # assignment of strings and pd.NA regardless of the original dtype.
-                df[col] = df[col].astype(str)
-
-                # Only process if there are non-null values to hash
-                if not is_null.all():
-                    # Hash non-null values. str(v) ensures compatibility regardless of original dtype.
-                    # We apply the transformation only to the relevant slice.
-                    df.loc[~is_null, col] = df.loc[~is_null, col].map(
-                        lambda v: hashlib.blake2b(
-                            v.encode("utf-8"), digest_size=32
-                        ).hexdigest()
-                    )
-
-                # Ensure all nulls are consistently represented as pd.NA in the hashed column
-                if is_null.any():
-                    df.loc[is_null, col] = pd.NA
+        LOG.debug("Revealing sensitive columns and re-comparing dfs")
+        self.sensitive_columns = None
+        self.column_stats.clear()
+        self._compare(ignore_spaces=self.ignore_spaces, ignore_case=self.ignore_case)
 
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
@@ -414,6 +413,7 @@ class PandasCompare(BaseCompare):
             indicator=True,
             **params,
         )
+
         # Clean up temp columns for duplicate row matching
         if self._any_dupes:
             if self.on_index:
