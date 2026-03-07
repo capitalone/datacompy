@@ -228,7 +228,7 @@ class PandasCompare(BaseCompare):
 
     def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
         """Hide sensitive columns of df1 or df2 if applicable in the compare."""
-        # don't allow hiding columns again before first revealing
+        # Don't allow hiding columns again before first revealing
         if self.sensitive_columns:
             raise ValueError(
                 "sensitive columns are already hidden, call reveal_sensitive_columns() first"
@@ -238,14 +238,14 @@ class PandasCompare(BaseCompare):
         sensitive = set(self.sensitive_columns)
         common_cols = self.intersect_columns() - set(self.join_columns)
 
-        # hash columns in unq_rows
+        # Hide columns in unq_rows
         for df in (self.df1_unq_rows, self.df2_unq_rows):
             LOG.debug(f"Hiding sensitive columns in {df}")
             cols_to_hash = [col for col in df.columns if col in sensitive]
             for col in cols_to_hash:
                 df[col] = "*******"
 
-        # hash columns in intersect_rows
+        # Hide columns in intersect_rows
         LOG.debug("Hiding sensitive columns in self.intersect_rows")
         cols_to_hash = [
             *[col for col in self.join_columns if col in sensitive],
