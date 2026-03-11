@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="datacompy" href="api/modules.html"><link rel="prev" title="Benchmarks" href="benchmark.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Template Customization Guide" href="template_guide.html"><link rel="prev" title="Polars Usage" href="polars_usage.html">
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2025.12.19 -->
-        <title>Developer Instructions - datacompy 0.19.3 documentation</title>
+        <title>Fugue Detail - datacompy 0.19.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -196,10 +196,10 @@
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="snowflake_usage.html">Snowflake Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fugue_usage.html">Fugue Usage</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Fugue Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="template_guide.html">Template Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmarks</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Developer Instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -231,7 +231,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/developer_instructions.rst.txt" title="View this page">
+  <a class="muted-link" href="_sources/fugue_usage.rst.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -249,126 +249,103 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="developer-instructions">
-<h1>Developer Instructions<a class="headerlink" href="#developer-instructions" title="Link to this heading">¶</a></h1>
-<p>Guidance for developers.</p>
-<section id="pre-commit-hooks">
-<h2>Pre-Commit Hooks<a class="headerlink" href="#pre-commit-hooks" title="Link to this heading">¶</a></h2>
-<p>We use the excellent <a class="reference external" href="https://pre-commit.com/">pre-commit</a> to run several hooks on all changes before commits.
-<code class="docutils literal notranslate"><span class="pre">pre-commit</span></code> is included in the <code class="docutils literal notranslate"><span class="pre">dev</span></code> extra installs. You’ll have to run <code class="docutils literal notranslate"><span class="pre">pre-commit</span> <span class="pre">install</span></code> once per environment
-before committing changes.</p>
-<p>The reason behind running black, isort, and others as a pre-commit hook is to let a machine make style decisions, based
-on the collective wisdom of the Python community.</p>
-</section>
-<section id="generating-documentation">
-<h2>Generating Documentation<a class="headerlink" href="#generating-documentation" title="Link to this heading">¶</a></h2>
-<p>You will need to <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> the <code class="docutils literal notranslate"><span class="pre">dev</span></code> requirements:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span><span class="p">[</span><span class="n">dev</span><span class="p">]</span>
+          <section id="fugue-detail">
+<h1>Fugue Detail<a class="headerlink" href="#fugue-detail" title="Link to this heading">¶</a></h1>
+<p><a class="reference external" href="https://github.com/fugue-project/fugue">Fugue</a> is a Python library that provides a unified interface
+for data processing on Pandas, DuckDB, Polars, Arrow, Spark, Dask, Ray, and many other backends.
+DataComPy integrates with Fugue to provide a simple way to compare data across these backends.</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span><span class="p">[</span><span class="n">fugue</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>Then from the root of the repo you can type:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">sphinx</span>
-</pre></div>
-</div>
-<p>This will automatically regenerate the api documentation using <code class="docutils literal notranslate"><span class="pre">sphinx-apidoc</span></code>. The rendered documentation will be
-stored in the <code class="docutils literal notranslate"><span class="pre">/docs/build</span></code> directory. The generated documentation is served from the <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> branch. Make sure
-that the branch is clean and then to push to gh-pages you can type:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">ghpages</span>
-</pre></div>
-</div>
-<p>Note about documentation: The <a class="reference external" href="http://sphinx-doc.org/latest/ext/napoleon.html">Numpy and Google style docstrings</a> are activated by default.
-Just make sure Sphinx 1.3 or above is installed.</p>
 </section>
-<section id="run-unit-tests">
-<h2>Run unit tests<a class="headerlink" href="#run-unit-tests" title="Link to this heading">¶</a></h2>
-<p>Run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pytest</span></code> to run all unittests defined in the subfolder
-<code class="docutils literal notranslate"><span class="pre">tests</span></code> with the help of <a class="reference external" href="http://pytest.org/">py.test</a> and
-<a class="reference external" href="https://pypi.python.org/pypi/pytest-runner">pytest-runner</a>.</p>
-</section>
-<section id="snowflake-testing">
-<h2>Snowflake testing<a class="headerlink" href="#snowflake-testing" title="Link to this heading">¶</a></h2>
-<p>Testing the Snowflake compare requires the use of a Snowflake cluster, as Snowflake does not support local running.
-This means that Snowflake tests do not get run in CICD, and changes to the Snowflake Compare must be validated by
-the process of running these tests locally.</p>
-<p>Note that you must have the following environment variables set in order to instantiate a Snowflake Connection (for testing purposes):</p>
+<section id="basic-usage">
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">¶</a></h2>
+<p>The Fugue implementation can be accessed via the:</p>
 <ul class="simple">
-<li><p>“SF_ACCOUNT”: with your SF account</p></li>
-<li><p>“SF_UID”: with your SF username</p></li>
-<li><p>“SF_PWD”: with your SF password</p></li>
-<li><p>“SF_WAREHOUSE”: with your desired SF warehouse</p></li>
-<li><p>“SF_DATABASE”: with a valid database with which you have access</p></li>
-<li><p>“SF_SCHEMA”: with a valid schema belonging to the provided database</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.fugue.unq_columns</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.fugue.intersect_columns</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.fugue.all_columns_match</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.fugue.all_rows_overlap</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">datacompy.fugue.is_match</span></code></p></li>
+<li><p>and <code class="docutils literal notranslate"><span class="pre">datacompy.fugue.report</span></code> functions</p></li>
 </ul>
-<p>Once these are set, you are free to run the suite of Snowflake tests.</p>
-</section>
-<section id="management-of-requirements">
-<h2>Management of Requirements<a class="headerlink" href="#management-of-requirements" title="Link to this heading">¶</a></h2>
-<p>Requirements of the project should be added to <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>.  Optional requirements used only for testing,
-documentation, or code quality are added to <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> in the <code class="docutils literal notranslate"><span class="pre">project.optional-dependencies</span></code> section.</p>
-</section>
-<section id="edgetest">
-<h2>edgetest<a class="headerlink" href="#edgetest" title="Link to this heading">¶</a></h2>
-<p>edgetest is a utility to help keep requirements up to date and ensure a subset of testing requirements still work.
-More on edgetest <a class="reference external" href="https://github.com/capitalone/edgetest">here</a>.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> has configuration details on how to run edgetest. This process can be automated via GitHub Actions.
-(A future addition, which will come soon).</p>
-<p>In order to execute edgetest locally you can run the following after install <code class="docutils literal notranslate"><span class="pre">edgetest</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>edgetest<span class="w"> </span>-c<span class="w"> </span>pyproject.toml<span class="w"> </span>--export
-</pre></div>
-</div>
-<p>This should return output like the following and also updating <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">=============</span><span class="w">  </span><span class="o">===============</span><span class="w">  </span><span class="o">===================</span><span class="w">  </span><span class="o">=================</span>
-Environment<span class="w">    </span>Passing<span class="w"> </span>tests<span class="w">    </span>Upgraded<span class="w"> </span>packages<span class="w">    </span>Package<span class="w"> </span><span class="nv">version</span>
-<span class="o">=============</span><span class="w">  </span><span class="o">===============</span><span class="w">  </span><span class="o">===================</span><span class="w">  </span><span class="o">=================</span>
-core<span class="w">           </span>True<span class="w">             </span>boto3<span class="w">                </span><span class="m">1</span>.21.7
-core<span class="w">           </span>True<span class="w">             </span>pandas<span class="w">               </span><span class="m">1</span>.3.5
-core<span class="w">           </span>True<span class="w">             </span>PyYAML<span class="w">               </span><span class="m">6</span>.0
-<span class="o">=============</span><span class="w">  </span><span class="o">===============</span><span class="w">  </span><span class="o">===================</span><span class="w">  </span><span class="o">=================</span>
-</pre></div>
-</div>
-</section>
-<section id="release-guide">
-<h2>Release Guide<a class="headerlink" href="#release-guide" title="Link to this heading">¶</a></h2>
-<p>For <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> we want to use a simple workflow branching style and follow
-<a class="reference external" href="https://semver.org/">Semantic Versioning</a> for each release.</p>
-<p><code class="docutils literal notranslate"><span class="pre">develop</span></code> is the default branch where most people will work with day to day. All features must be squash merged into
-this branch. The reason we squash merge is to prevent the develop branch from being polluted with endless commit messages
-when people are developing. Squashing collapses all the commits into one single new commit. It will also make it much easier to
-back out changes if something breaks.</p>
-<p><code class="docutils literal notranslate"><span class="pre">main</span></code> is where official releases will go. Each release on <code class="docutils literal notranslate"><span class="pre">main</span></code> should be tagged properly to denote a “version”
-that will have the corresponding artifact on pypi for users to <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code>.</p>
-<p><code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> is where official documentation will go. After each release you should build the docs and push the HTML to
-the pages branch. When first setting up the repo you want to make sure your gh-pages is a orphaned branch since it is
-disconnected and independent from the code: <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">checkout</span> <span class="pre">--orphan</span> <span class="pre">gh-pages</span></code>.</p>
-<p>The repo has a <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> in the root folder which has helper commands such as <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">sphinx</span></code>, and
-<code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">ghpages</span></code> to help streamline building and pushing docs once they are setup right.</p>
-</section>
-<section id="generating-distribution-archives-pypi">
-<h2>Generating distribution archives (PyPI)<a class="headerlink" href="#generating-distribution-archives-pypi" title="Link to this heading">¶</a></h2>
-<p>After each release the package will need to be uploaded to PyPi. The instructions below are taken
-from <a class="reference external" href="https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives">packaging.python.org</a></p>
-<p>Update / Install <code class="docutils literal notranslate"><span class="pre">build</span></code>, <code class="docutils literal notranslate"><span class="pre">wheel</span></code>, and <code class="docutils literal notranslate"><span class="pre">twine</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">build</span> <span class="n">wheel</span> <span class="n">twine</span>
-</pre></div>
-</div>
-<p>Generate distributions:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">build</span>
-</pre></div>
-</div>
-<p>Under the <code class="docutils literal notranslate"><span class="pre">dist</span></code> folder you should have something as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dist</span><span class="o">/</span>
-<span class="n">datacompy</span><span class="o">-</span><span class="mf">0.1.0</span><span class="o">-</span><span class="n">py3</span><span class="o">-</span><span class="n">none</span><span class="o">-</span><span class="nb">any</span><span class="o">.</span><span class="n">whl</span>
-<span class="n">datacompy</span><span class="o">-</span><span class="mf">0.1.0</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
-</pre></div>
-</div>
-<p>Finally upload to PyPi:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># test pypi</span>
-<span class="n">twine</span> <span class="n">upload</span> <span class="o">--</span><span class="n">repository</span><span class="o">-</span><span class="n">url</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">test</span><span class="o">.</span><span class="n">pypi</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">legacy</span><span class="o">/</span> <span class="n">dist</span><span class="o">/*</span>
+<p>Please note this is different than the native Pandas implementation which can be accessed via the <code class="docutils literal notranslate"><span class="pre">Compare</span></code> class,
+the Fugue implementation is using the <code class="docutils literal notranslate"><span class="pre">Compare</span></code> class in the background though.</p>
+<p>The following usage example compares two Pandas dataframes, it is equivalent to the Pandas usage example.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datacompy.fugue</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_match</span><span class="p">,</span> <span class="n">report</span>
 
-<span class="c1"># real pypi</span>
-<span class="n">twine</span> <span class="n">upload</span> <span class="n">dist</span><span class="o">/*</span>
+<span class="n">data1</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld,date_fld</span>
+<span class="s2">10000001234,123.45,George Maharis,14530.1555,2017-01-01</span>
+<span class="s2">10000001235,0.45,Michael Bluth,1,2017-01-01</span>
+<span class="s2">10000001236,1345,George Bluth,,2017-01-01</span>
+<span class="s2">10000001237,123456,Bob Loblaw,345.12,2017-01-01</span>
+<span class="s2">10000001239,1.05,Lucille Bluth,,2017-01-01</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">data2</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld</span>
+<span class="s2">10000001234,123.4,George Michael Bluth,14530.155</span>
+<span class="s2">10000001235,0.45,Michael Bluth,</span>
+<span class="s2">10000001236,1345,George Bluth,1</span>
+<span class="s2">10000001237,123456,Robert Loblaw,345.12</span>
+<span class="s2">10000001238,1.05,Loose Seal Bluth,111</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">df1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data1</span><span class="p">))</span>
+<span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data2</span><span class="p">))</span>
+
+<span class="n">is_match</span><span class="p">(</span>
+    <span class="n">df1</span><span class="p">,</span>
+    <span class="n">df2</span><span class="p">,</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1">#You can also specify a list of columns</span>
+    <span class="n">abs_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Optional, defaults to 0</span>
+    <span class="n">rel_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Optional, defaults to 0</span>
+    <span class="n">df1_name</span><span class="o">=</span><span class="s1">&#39;Original&#39;</span><span class="p">,</span> <span class="c1">#Optional, defaults to &#39;df1&#39;</span>
+    <span class="n">df2_name</span><span class="o">=</span><span class="s1">&#39;New&#39;</span> <span class="c1">#Optional, defaults to &#39;df2&#39;</span>
+<span class="p">)</span>
+<span class="c1"># False</span>
+
+<span class="c1"># This method prints out a human-readable report summarizing and sampling differences</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="p">(</span>
+    <span class="n">df1</span><span class="p">,</span>
+    <span class="n">df2</span><span class="p">,</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1">#You can also specify a list of columns</span>
+    <span class="n">abs_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Optional, defaults to 0</span>
+    <span class="n">rel_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Optional, defaults to 0</span>
+    <span class="n">df1_name</span><span class="o">=</span><span class="s1">&#39;Original&#39;</span><span class="p">,</span> <span class="c1">#Optional, defaults to &#39;df1&#39;</span>
+    <span class="n">df2_name</span><span class="o">=</span><span class="s1">&#39;New&#39;</span> <span class="c1">#Optional, defaults to &#39;df2&#39;</span>
+<span class="p">))</span>
 </pre></div>
 </div>
+</section>
+<section id="cross-comparing">
+<h2>Cross Comparing<a class="headerlink" href="#cross-comparing" title="Link to this heading">¶</a></h2>
+<p>In order to compare dataframes of different backends, you just need to replace <code class="docutils literal notranslate"><span class="pre">df1</span></code> and <code class="docutils literal notranslate"><span class="pre">df2</span></code> with
+dataframes of different backends. Just pass in Dataframes such as Pandas dataframes, DuckDB relations,
+Polars dataframes, Arrow tables, Spark dataframes, Dask dataframes or Ray datasets. For example,
+to compare a Pandas dataframe with a Spark dataframe:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyspark.sql</span><span class="w"> </span><span class="kn">import</span> <span class="n">SparkSession</span>
+
+<span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+<span class="n">spark_df2</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">df2</span><span class="p">)</span>
+<span class="n">datacompy</span><span class="o">.</span><span class="n">is_match</span><span class="p">(</span>
+    <span class="n">df1</span><span class="p">,</span>
+    <span class="n">spark_df2</span><span class="p">,</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="how-it-works">
+<h2>How it works<a class="headerlink" href="#how-it-works" title="Link to this heading">¶</a></h2>
+<p>DataComPy uses Fugue to partition the two dataframes into chunks, and then compare each chunk in parallel
+using the Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code>. The comparison results are then aggregated to produce the final result.
+Different from the join operation used in <code class="docutils literal notranslate"><span class="pre">SparkCompare</span></code>, the Fugue version uses the <code class="docutils literal notranslate"><span class="pre">cogroup</span> <span class="pre">-&gt;</span> <span class="pre">map</span></code>
+like semantic (not exactly the same, Fugue adopts a coarse version to achieve great performance), which
+guarantees full data comparison with consistent result compared to Pandas-based <code class="docutils literal notranslate"><span class="pre">Compare</span></code>.</p>
 </section>
 </section>
 
@@ -377,23 +354,23 @@ from <a class="reference external" href="https://packaging.python.org/tutorials/
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="api/modules.html">
+          <a class="next-page" href="template_guide.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">datacompy</div>
+                <div class="title">Template Customization Guide</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="benchmark.html">
+          <a class="prev-page" href="polars_usage.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Benchmarks</div>
+                <div class="title">Polars Usage</div>
                 
               </div>
             </a>
@@ -427,15 +404,11 @@ from <a class="reference external" href="https://packaging.python.org/tutorials/
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Developer Instructions</a><ul>
-<li><a class="reference internal" href="#pre-commit-hooks">Pre-Commit Hooks</a></li>
-<li><a class="reference internal" href="#generating-documentation">Generating Documentation</a></li>
-<li><a class="reference internal" href="#run-unit-tests">Run unit tests</a></li>
-<li><a class="reference internal" href="#snowflake-testing">Snowflake testing</a></li>
-<li><a class="reference internal" href="#management-of-requirements">Management of Requirements</a></li>
-<li><a class="reference internal" href="#edgetest">edgetest</a></li>
-<li><a class="reference internal" href="#release-guide">Release Guide</a></li>
-<li><a class="reference internal" href="#generating-distribution-archives-pypi">Generating distribution archives (PyPI)</a></li>
+<li><a class="reference internal" href="#">Fugue Detail</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li><a class="reference internal" href="#cross-comparing">Cross Comparing</a></li>
+<li><a class="reference internal" href="#how-it-works">How it works</a></li>
 </ul>
 </li>
 </ul>

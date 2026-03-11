@@ -7,7 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   datacompy.comparator
+   datacompy.spark
 
 Submodules
 ----------
@@ -17,53 +17,53 @@ datacompy.base module
 
 .. automodule:: datacompy.base
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
-datacompy.pandas module
------------------------
+datacompy.core module
+---------------------
 
-.. automodule:: datacompy.pandas
+.. automodule:: datacompy.core
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
+
+datacompy.fugue module
+----------------------
+
+.. automodule:: datacompy.fugue
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 datacompy.polars module
 -----------------------
 
 .. automodule:: datacompy.polars
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 datacompy.snowflake module
 --------------------------
 
 .. automodule:: datacompy.snowflake
    :members:
-   :show-inheritance:
    :undoc-members:
-
-datacompy.spark module
-----------------------
-
-.. automodule:: datacompy.spark
-   :members:
    :show-inheritance:
-   :undoc-members:
 
 datacompy.utility module
 ------------------------
 
 .. automodule:: datacompy.utility
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 Module contents
 ---------------
 
 .. automodule:: datacompy
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
