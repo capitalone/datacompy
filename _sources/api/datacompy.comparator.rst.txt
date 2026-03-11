@@ -1,0 +1,53 @@
+datacompy.comparator package
+============================
+
+Submodules
+----------
+
+datacompy.comparator.array module
+---------------------------------
+
+.. automodule:: datacompy.comparator.array
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+datacompy.comparator.base module
+--------------------------------
+
+.. automodule:: datacompy.comparator.base
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+datacompy.comparator.numeric module
+-----------------------------------
+
+.. automodule:: datacompy.comparator.numeric
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+datacompy.comparator.string module
+----------------------------------
+
+.. automodule:: datacompy.comparator.string
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+datacompy.comparator.utility module
+-----------------------------------
+
+.. automodule:: datacompy.comparator.utility
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: datacompy.comparator
+   :members:
+   :show-inheritance:
+   :undoc-members:
