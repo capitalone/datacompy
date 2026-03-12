@@ -2392,7 +2392,10 @@ def test_sensitive_columns_unused(caplog):
     compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
     with caplog.at_level(logging.WARNING):
         compare.hide_sensitive_columns(["c"])
-        assert "sensitive columns not found in both df1 and df2 will be ignored: ['c']" in caplog.text
+        assert (
+            "sensitive columns not found in both df1 and df2 will be ignored: ['c']"
+            in caplog.text
+        )
 
     assert compare.df1.loc[0, "b"] == 2
     assert compare.df1.loc[1, "b"] == 0
