@@ -225,6 +225,16 @@ class PandasCompare(BaseCompare):
         duplicates = {c for c, n in Counter(self.sensitive_columns).items() if n > 1}
         if duplicates:
             raise ValueError(f"duplicate columns: {duplicates}")
+        
+        # Warn if column not in both df1 and df2
+        unused = [
+            c for c in self.sensitive_columns 
+            if (c not in self.df1.columns) and (c not in self.df2.columns)
+        ]
+        if unused:
+            LOG.warning(
+                 f"sensitive columns not found in both df1 and df2 will be ignored: {unused}"
+            )
 
     def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
         """Hide sensitive columns of df1 or df2 if applicable in the compare."""
