@@ -518,6 +518,8 @@ class SnowflakeCompare(BaseCompare):
             match_cnt = match_cnt.result()
             try:
                 max_diff = max_diff.result()[0][0]
+                if max_diff is None:
+                    max_diff = 0
             except (ProgrammingError, DatabaseError):
                 max_diff = 0
             try:
