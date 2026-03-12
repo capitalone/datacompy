@@ -2411,6 +2411,53 @@ def test_sensitive_columns_unused(caplog):
     compare.report()
 
 
+def test_sensitive_columns_hide_empty():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns([])
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_empty():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns([])
+    compare.reveal_sensitive_columns()
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
 def test_sensitive_columns_setter():
     df1 = pd.DataFrame([{"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}])

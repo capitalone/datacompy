@@ -237,7 +237,7 @@ class PandasCompare(BaseCompare):
             )
 
     def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
-        """Hide sensitive columns of df1 or df2 if applicable in the compare."""
+        """Hides sensitive columns of df1 or df2 if applicable in the compare."""
         # Don't allow hiding columns again before first revealing
         if self.sensitive_columns:
             raise ValueError(
@@ -268,8 +268,16 @@ class PandasCompare(BaseCompare):
             self.intersect_rows[col] = "*******"
 
     def reveal_sensitive_columns(self) -> None:
-        """Reveal all sensitive columns and re-compare."""
-        if self.sensitive_columns is None:
+        """Reveals all sensitive columns.
+        
+        Notes
+        -----
+        - This re-runs the full comparison to restore original values.
+        - Revealing sensitive columns when there aren't any is treated as a NOP
+          to avoid redundant computations.
+        """
+        # Don't do anything if there aren't any sensitive columns
+        if not self.sensitive_columns:
             return None
 
         LOG.debug("Revealing sensitive columns and re-comparing dfs")
