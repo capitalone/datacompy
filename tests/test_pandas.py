@@ -2464,12 +2464,12 @@ def test_sensitive_columns_setter():
     compare = PandasCompare(df1, df2, join_columns=["a"])
 
     # Valid setter call
-    compare.sensitive_columns = ["b"]
+    compare._set_sensitive_columns(["b"])
     assert compare.sensitive_columns == ["b"]
 
     # Invalid setter call - not a list of strings
     with pytest.raises(TypeError, match="sensitive_columns must be a list of strings"):
-        compare.sensitive_columns = [1, 2, 3]
+        compare._set_sensitive_columns([1, 2, 3])
 
 
 def test_sensitive_columns_duplicates():

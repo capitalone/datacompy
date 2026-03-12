@@ -117,7 +117,7 @@ class PandasCompare(BaseCompare):
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
-        self.sensitive_columns: List[str] | None = None
+        self._set_sensitive_columns(None)
 
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
@@ -203,8 +203,7 @@ class PandasCompare(BaseCompare):
         """Get the list of sensitive columns."""
         return self._sensitive_columns
 
-    @sensitive_columns.setter
-    def sensitive_columns(self, sensitive_columns: List[str] | None) -> None:
+    def _set_sensitive_columns(self, sensitive_columns: List[str] | None) -> None:
         """Set sensitive_columns and then validate if needed."""
         self._sensitive_columns = sensitive_columns
         if self._sensitive_columns:
@@ -217,8 +216,6 @@ class PandasCompare(BaseCompare):
 
         # Cast to lowercase if applicable
         if self.cast_column_names_lower:
-            # Need to directly modify _sensitive_columns here otherwise it will
-            # infinitely recurse in @sensitive_columns.setter
             self._sensitive_columns = [col.lower() for col in self.sensitive_columns]
 
         # Check duplicates
@@ -244,7 +241,7 @@ class PandasCompare(BaseCompare):
                 "sensitive columns are already hidden, call reveal_sensitive_columns() first"
             )
 
-        self.sensitive_columns = sensitive_columns  # validates through setter
+        self._set_sensitive_columns(sensitive_columns)  # validates through private setter
         sensitive = set(self.sensitive_columns)
         common_cols = self.intersect_columns() - set(self.join_columns)
 
@@ -281,7 +278,7 @@ class PandasCompare(BaseCompare):
             return None
 
         LOG.debug("Revealing sensitive columns and re-comparing dfs")
-        self.sensitive_columns = None
+        self._set_sensitive_columns(None)
         self.column_stats.clear()
         self._compare(ignore_spaces=self.ignore_spaces, ignore_case=self.ignore_case)
 
