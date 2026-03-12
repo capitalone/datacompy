@@ -35,10 +35,10 @@ dynamic = [ "version" ]
 
 dependencies = [
   "jinja2>=3",
-  "numpy>=1.26.4,<=2.4.1",
+  "numpy>=1.26.4,<=2.4.3",
   "ordered-set>=4.0.2,<=4.1",
-  "pandas>=2.2,<=3",
-  "polars[pandas]>=0.20.4,<=1.37.1",
+  "pandas>=2.2,<=3.0.1",
+  "polars[pandas]>=0.20.4,<=1.38.1",
 ]
 optional-dependencies.build = [ "build", "twine", "wheel" ]
 optional-dependencies.dev = [
@@ -53,7 +53,7 @@ optional-dependencies.dev = [
 optional-dependencies.docs = [ "furo", "myst-parser", "sphinx" ]
 optional-dependencies.edgetest = [ "edgetest", "edgetest-conda" ]
 optional-dependencies.qa = [ "mypy", "pandas-stubs", "pre-commit", "ruff" ]
-optional-dependencies.snowflake = [ "snowflake-snowpark-python>=1.26,<=1.33" ]
+optional-dependencies.snowflake = [ "snowflake-snowpark-python>=1.26,<=1.47" ]
 optional-dependencies.spark = [
   "pyspark[connect]>=3.5,!=4,<=4.1.1; python_version<='3.11'",
   "pyspark[connect]>=4; python_version>='3.12'",
