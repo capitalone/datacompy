@@ -222,15 +222,16 @@ class PandasCompare(BaseCompare):
         duplicates = {c for c, n in Counter(self.sensitive_columns).items() if n > 1}
         if duplicates:
             raise ValueError(f"duplicate columns: {duplicates}")
-        
+
         # Warn if column not in both df1 and df2
         unused = [
-            c for c in self.sensitive_columns 
-            if (c not in self.df1.columns) and (c not in self.df2.columns)
+            col
+            for col in self.sensitive_columns
+            if (col not in self.df1.columns) and (col not in self.df2.columns)
         ]
         if unused:
             LOG.warning(
-                 f"sensitive columns not found in both df1 and df2 will be ignored: {unused}"
+                f"sensitive columns not found in both df1 and df2 will be ignored: {unused}"
             )
 
     def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
@@ -241,7 +242,8 @@ class PandasCompare(BaseCompare):
                 "sensitive columns are already hidden, call reveal_sensitive_columns() first"
             )
 
-        self._set_sensitive_columns(sensitive_columns)  # validates through private setter
+        # validates through private setter
+        self._set_sensitive_columns(sensitive_columns)
         sensitive = set(self.sensitive_columns)
         common_cols = self.intersect_columns() - set(self.join_columns)
 
@@ -266,7 +268,7 @@ class PandasCompare(BaseCompare):
 
     def reveal_sensitive_columns(self) -> None:
         """Reveals all sensitive columns.
-        
+
         Notes
         -----
         - This re-runs the full comparison to restore original values.
