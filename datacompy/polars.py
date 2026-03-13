@@ -222,6 +222,47 @@ class PolarsCompare(BaseCompare):
                 f"sensitive columns not found in both df1 and df2 will be ignored: {unused}"
             )
 
+    def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
+        """Hides sensitive columns of df1 or df2 if applicable in the compare."""
+        # Don't allow hiding columns again before first revealing
+        if self.sensitive_columns:
+            raise ValueError(
+                "sensitive columns are already hidden, call reveal_sensitive_columns() first"
+            )
+
+        # validates through private setter
+        self._set_sensitive_columns(sensitive_columns)
+        sensitive = set(self.sensitive_columns)
+        common_cols = self.intersect_columns() - set(self.join_columns)
+
+        # Hide columns in unq_rows
+        for df_name in ("df1_unq_rows", "df2_unq_rows"):
+            df = getattr(self, df_name)
+            LOG.debug("Hiding sensitive columns in unq_rows")
+            cols_to_hide = [col for col in df.columns if col in sensitive]
+            if not cols_to_hide:  # skip if empty
+                continue
+            setattr(
+                self,
+                df_name,
+                df.with_columns([pl.lit("*******").alias(col) for col in cols_to_hide]),
+            )
+
+        # Hide columns in intersect_rows
+        LOG.debug("Hiding sensitive columns in intersect_rows")
+        cols_to_hide = [
+            *[col for col in self.join_columns if col in sensitive],
+            *[col for col in self.df1_unq_columns() if col in sensitive],
+            *[col for col in self.df2_unq_columns() if col in sensitive],
+            *[f"{col}_{self.df1_name}" for col in common_cols if col in sensitive],
+            *[f"{col}_{self.df2_name}" for col in common_cols if col in sensitive],
+        ]
+        if not cols_to_hide:  # skip if empty
+            return None
+        self.intersect_rows = self.intersect_rows.with_columns(
+            [pl.lit("*******").alias(col) for col in cols_to_hide]
+        )
+
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
     ) -> None:
