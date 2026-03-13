@@ -22,6 +22,7 @@ two dataframes.
 """
 
 import logging
+from collections import Counter
 from copy import deepcopy
 from typing import Any, Dict, List, cast
 
@@ -113,6 +114,7 @@ class PolarsCompare(BaseCompare):
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
+        self._set_sensitive_columns(None)
 
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
@@ -183,6 +185,42 @@ class PolarsCompare(BaseCompare):
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
         )
+
+    @property
+    def sensitive_columns(self) -> List[str] | None:
+        """Get the list of sensitive columns."""
+        return self._sensitive_columns
+
+    def _set_sensitive_columns(self, sensitive_columns: List[str] | None) -> None:
+        """Set sensitive_columns and then validate if needed."""
+        self._sensitive_columns = sensitive_columns
+        if self._sensitive_columns:
+            self._validate_sensitive_columns()
+
+    def _validate_sensitive_columns(self) -> None:
+        """Validate sensitive columns, assumes self.sensitive_columns is a list."""
+        if not all(isinstance(c, str) for c in self.sensitive_columns):
+            raise TypeError("sensitive_columns must be a list of strings")
+
+        # Cast to lowercase if applicable
+        if self.cast_column_names_lower:
+            self._sensitive_columns = [col.lower() for col in self.sensitive_columns]
+
+        # Check duplicates
+        duplicates = {c for c, n in Counter(self.sensitive_columns).items() if n > 1}
+        if duplicates:
+            raise ValueError(f"duplicate columns: {duplicates}")
+
+        # Warn if column not in both df1 and df2
+        unused = [
+            col
+            for col in self.sensitive_columns
+            if (col not in self.df1.columns) and (col not in self.df2.columns)
+        ]
+        if unused:
+            LOG.warning(
+                f"sensitive columns not found in both df1 and df2 will be ignored: {unused}"
+            )
 
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
