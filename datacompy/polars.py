@@ -238,7 +238,7 @@ class PolarsCompare(BaseCompare):
         # Hide columns in unq_rows
         for df_name in ("df1_unq_rows", "df2_unq_rows"):
             df = getattr(self, df_name)
-            LOG.debug("Hiding sensitive columns in unq_rows")
+            LOG.debug(f"Hiding sensitive columns in unq_rows: {df.columns}")
             cols_to_hide = [col for col in df.columns if col in sensitive]
             if not cols_to_hide:  # skip if empty
                 continue
@@ -249,7 +249,9 @@ class PolarsCompare(BaseCompare):
             )
 
         # Hide columns in intersect_rows
-        LOG.debug("Hiding sensitive columns in intersect_rows")
+        LOG.debug(
+            f"Hiding sensitive columns in intersect_rows {self.intersect_rows.columns}"
+        )
         cols_to_hide = [
             *[col for col in self.join_columns if col in sensitive],
             *[col for col in self.df1_unq_columns() if col in sensitive],
@@ -262,6 +264,24 @@ class PolarsCompare(BaseCompare):
         self.intersect_rows = self.intersect_rows.with_columns(
             [pl.lit("*******").alias(col) for col in cols_to_hide]
         )
+
+    def reveal_sensitive_columns(self) -> None:
+        """Reveals all sensitive columns.
+
+        Notes
+        -----
+        - This re-runs the full comparison to restore original values.
+        - Revealing sensitive columns when there aren't any is treated as a NOP
+          to avoid redundant computations.
+        """
+        # Don't do anything if there aren't any sensitive columns
+        if not self.sensitive_columns:
+            return None
+
+        LOG.debug("Revealing sensitive columns and re-comparing dfs")
+        self._set_sensitive_columns(None)
+        self.column_stats.clear()
+        self._compare(ignore_spaces=self.ignore_spaces, ignore_case=self.ignore_case)
 
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
