@@ -254,8 +254,8 @@ class PolarsCompare(BaseCompare):
         )
         cols_to_hide = [
             *[col for col in self.join_columns if col in sensitive],
-            *[col for col in self.df1_unq_columns() if col in sensitive],
-            *[col for col in self.df2_unq_columns() if col in sensitive],
+            *[f"{c}_{self.df1_name}" for c in self.df1_unq_columns() if c in sensitive],
+            *[f"{c}_{self.df2_name}" for c in self.df2_unq_columns() if c in sensitive],
             *[f"{col}_{self.df1_name}" for col in common_cols if col in sensitive],
             *[f"{col}_{self.df2_name}" for col in common_cols if col in sensitive],
         ]
