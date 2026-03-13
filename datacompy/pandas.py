@@ -249,21 +249,23 @@ class PandasCompare(BaseCompare):
 
         # Hide columns in unq_rows
         for df in (self.df1_unq_rows, self.df2_unq_rows):
-            LOG.debug("Hiding sensitive columns in unq_rows")
-            cols_to_hash = [col for col in df.columns if col in sensitive]
-            for col in cols_to_hash:
+            LOG.debug(f"Hiding sensitive columns in unq_rows: {df.columns}")
+            cols_to_hide = [col for col in df.columns if col in sensitive]
+            for col in cols_to_hide:
                 df[col] = "*******"
 
         # Hide columns in intersect_rows
-        LOG.debug("Hiding sensitive columns in intersect_rows")
-        cols_to_hash = [
+        LOG.debug(
+            f"Hiding sensitive columns in intersect_rows: {self.intersect_rows.columns}"
+        )
+        cols_to_hide = [
             *[col for col in self.join_columns if col in sensitive],
             *[col for col in self.df1_unq_columns() if col in sensitive],
             *[col for col in self.df2_unq_columns() if col in sensitive],
             *[f"{col}_{self.df1_name}" for col in common_cols if col in sensitive],
             *[f"{col}_{self.df2_name}" for col in common_cols if col in sensitive],
         ]
-        for col in cols_to_hash:
+        for col in cols_to_hide:
             self.intersect_rows[col] = "*******"
 
     def reveal_sensitive_columns(self) -> None:
