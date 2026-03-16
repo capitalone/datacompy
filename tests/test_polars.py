@@ -2506,7 +2506,7 @@ def test_sensitive_columns_unused(caplog):
     with caplog.at_level(logging.WARNING):
         compare.hide_sensitive_columns(["c"])
         assert (
-            "sensitive columns not found in both df1 and df2 will be ignored: ['c']"
+            "sensitive columns not found in either df1 or df2 will be ignored: ['c']"
             in caplog.text
         )
 

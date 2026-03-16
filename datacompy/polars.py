@@ -211,7 +211,7 @@ class PolarsCompare(BaseCompare):
         if duplicates:
             raise ValueError(f"duplicate columns: {duplicates}")
 
-        # Warn if column not in both df1 and df2
+        # Warn if column not found in either dataframe
         unused = [
             col
             for col in self.sensitive_columns
@@ -219,7 +219,7 @@ class PolarsCompare(BaseCompare):
         ]
         if unused:
             LOG.warning(
-                f"sensitive columns not found in both df1 and df2 will be ignored: {unused}"
+                f"sensitive columns not found in either df1 or df2 will be ignored: {unused}"
             )
 
     def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
