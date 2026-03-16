@@ -2464,7 +2464,7 @@ def test_sensitive_columns_hide_reveal_empty():
 def test_sensitive_columns_setter():
     df1 = pd.DataFrame([{"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}])
-    compare = PandasCompare(df1, df2, join_columns=["a"])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
 
     # Valid setter call
     compare._set_sensitive_columns(["b"])
