@@ -117,7 +117,7 @@ class PandasCompare(BaseCompare):
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
-        self._set_sensitive_columns(None)
+        self._set_and_validate_sensitive_columns(None)
 
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
@@ -203,14 +203,18 @@ class PandasCompare(BaseCompare):
         """Get the list of sensitive columns."""
         return self._sensitive_columns
 
-    def _set_sensitive_columns(self, sensitive_columns: List[str] | None) -> None:
-        """Set sensitive_columns and then validate if needed."""
-        self._sensitive_columns = sensitive_columns
-        if self._sensitive_columns:
-            self._validate_sensitive_columns()
+    def _set_and_validate_sensitive_columns(
+        self, sensitive_columns: List[str] | None
+    ) -> None:
+        """Set and validate sensitive columns.
 
-    def _validate_sensitive_columns(self) -> None:
-        """Validate sensitive columns, assumes self.sensitive_columns is a list."""
+        Normalizes empty lists to None so there is only one representation
+        for "no sensitive columns".
+        """
+        self._sensitive_columns = sensitive_columns or None
+        if not self._sensitive_columns:
+            return
+
         if not all(isinstance(c, str) for c in self.sensitive_columns):
             raise TypeError("sensitive_columns must be a list of strings")
 
@@ -242,9 +246,11 @@ class PandasCompare(BaseCompare):
                 "sensitive columns are already hidden, call reveal_sensitive_columns() first"
             )
 
-        # validates through private setter
-        self._set_sensitive_columns(sensitive_columns)
-        sensitive = set(self.sensitive_columns)
+        self._set_and_validate_sensitive_columns(sensitive_columns)
+        # Don't do anything if [] is passed (normalized to None)
+        if not self.sensitive_columns:
+            return
+        sensitive = set(self.sensitive_columns)  # Otherwise this fails due to None
         common_cols = self.intersect_columns() - set(self.join_columns)
 
         # Hide columns in unq_rows
@@ -282,7 +288,7 @@ class PandasCompare(BaseCompare):
             return None
 
         LOG.debug("Revealing sensitive columns and re-comparing dfs")
-        self._set_sensitive_columns(None)
+        self._set_and_validate_sensitive_columns(None)
         self.column_stats.clear()
         self._compare(ignore_spaces=self.ignore_spaces, ignore_case=self.ignore_case)
 
