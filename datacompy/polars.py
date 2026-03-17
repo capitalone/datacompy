@@ -248,7 +248,7 @@ class PolarsCompare(BaseCompare):
         # Hide columns in unq_rows
         for df_name in ("df1_unq_rows", "df2_unq_rows"):
             df = getattr(self, df_name)
-            LOG.debug(f"Hiding sensitive columns in unq_rows: {df.columns}")
+            LOG.debug(f"Hiding sensitive columns in {df_name}")
             cols_to_hide = [col for col in df.columns if col in sensitive]
             if not cols_to_hide:  # skip if empty
                 continue
@@ -259,9 +259,7 @@ class PolarsCompare(BaseCompare):
             )
 
         # Hide columns in intersect_rows
-        LOG.debug(
-            f"Hiding sensitive columns in intersect_rows {self.intersect_rows.columns}"
-        )
+        LOG.debug("Hiding sensitive columns in intersect_rows")
         cols_to_hide = [
             col for col in self.intersect_rows.columns if col in sensitive_with_suffixes
         ]
