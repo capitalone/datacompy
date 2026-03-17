@@ -239,7 +239,11 @@ class PolarsCompare(BaseCompare):
         if not self.sensitive_columns:
             return
         sensitive = set(self.sensitive_columns)  # Otherwise this fails due to None
-        common_cols = self.intersect_columns() - set(self.join_columns)
+        sensitive_with_suffixes = (
+            sensitive
+            | {f"{c}_{self.df1_name}" for c in sensitive}
+            | {f"{c}_{self.df2_name}" for c in sensitive}
+        )
 
         # Hide columns in unq_rows
         for df_name in ("df1_unq_rows", "df2_unq_rows"):
@@ -259,11 +263,7 @@ class PolarsCompare(BaseCompare):
             f"Hiding sensitive columns in intersect_rows {self.intersect_rows.columns}"
         )
         cols_to_hide = [
-            *[col for col in self.join_columns if col in sensitive],
-            *[f"{c}_{self.df1_name}" for c in self.df1_unq_columns() if c in sensitive],
-            *[f"{c}_{self.df2_name}" for c in self.df2_unq_columns() if c in sensitive],
-            *[f"{col}_{self.df1_name}" for col in common_cols if col in sensitive],
-            *[f"{col}_{self.df2_name}" for col in common_cols if col in sensitive],
+            col for col in self.intersect_rows.columns if col in sensitive_with_suffixes
         ]
         if not cols_to_hide:  # skip if empty
             return
