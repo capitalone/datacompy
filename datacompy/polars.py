@@ -266,7 +266,7 @@ class PolarsCompare(BaseCompare):
             *[f"{col}_{self.df2_name}" for col in common_cols if col in sensitive],
         ]
         if not cols_to_hide:  # skip if empty
-            return None
+            return
         self.intersect_rows = self.intersect_rows.with_columns(
             [pl.lit("*******").alias(col) for col in cols_to_hide]
         )
@@ -282,7 +282,7 @@ class PolarsCompare(BaseCompare):
         """
         # Don't do anything if there aren't any sensitive columns
         if not self.sensitive_columns:
-            return None
+            return
 
         LOG.debug("Revealing sensitive columns and re-comparing dfs")
         self._set_and_validate_sensitive_columns(None)
