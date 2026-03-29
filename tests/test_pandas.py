@@ -20,6 +20,7 @@ Testing out the datacompy functionality
 import io
 import logging
 import os
+import re
 import sys
 import tempfile
 from datetime import date, datetime
@@ -2173,28 +2174,89 @@ def test_array_comparator_pandas():
     assert list(mismatches["id"]) == [2, 5, 6]
 
 
-def test_sensitive_columns():
+def test_sensitive_columns_hide():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
-    compare = datacompy.PandasCompare(
-        df1, df2, join_columns=["a"], sensitive_columns=["b"]
-    )
-    assert compare.df1.loc[0, "b"] != 2
-    assert compare.df1.loc[1, "b"] != 0
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
     assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
     # Just render the report to make sure it renders.
     compare.report()
 
 
-def test_sensitive_columns_null():
-    df1 = pd.DataFrame([{"a": 1, "b": "hello"}, {"a": 1, "b": None}])
-    df2 = pd.DataFrame([{"a": 1, "b": "hello"}, {"a": 2, "b": "yo"}])
-    compare = datacompy.PandasCompare(
-        df1, df2, join_columns=["a"], sensitive_columns=["b"]
-    )
-    assert compare.df1.loc[0, "b"] != "hello"
-    assert pd.isna(compare.df1.loc[1, "b"])
+def test_sensitive_columns_hide_hide():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "sensitive columns are already hidden, call reveal_sensitive_columns() first"
+        ),
+    ):
+        compare.hide_sensitive_columns(["c"])
+
+
+def test_sensitive_columns_hide_reveal():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+    compare.reveal_sensitive_columns()
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
     assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_hide():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+    compare.reveal_sensitive_columns()
+    compare.hide_sensitive_columns(["b"])
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
     # Just render the report to make sure it renders.
     compare.report()
 
@@ -2202,61 +2264,199 @@ def test_sensitive_columns_null():
 def test_sensitive_columns_cast_lower():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
-    compare = datacompy.PandasCompare(
-        df1, df2, join_columns=["a"], sensitive_columns=["B"]
-    )
-    assert compare.df1.loc[0, "b"] != 2
-    assert compare.df1.loc[1, "b"] != 0
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["B"])
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
     assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
     # Just render the report to make sure it renders.
     compare.report()
 
 
 def test_sensitive_columns_no_cast_lower():
-    df1 = pd.DataFrame([{"a": 1, "b": 2, "B": 2}, {"a": 1, "b": 0, "B": 0}])
+    df1 = pd.DataFrame([{"a": 1, "b": 2, "B": 1}, {"a": 3, "b": 1, "B": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2, "B": 2}, {"a": 2, "b": 0, "B": 0}])
     compare = datacompy.PandasCompare(
         df1,
         df2,
         join_columns=["a"],
-        sensitive_columns=["B"],
         cast_column_names_lower=False,
     )
+    compare.hide_sensitive_columns(["B"])
+
     assert compare.df1.loc[0, "b"] == 2
-    assert compare.df1.loc[1, "b"] == 0
-    assert compare.df1.loc[0, "B"] != 2
-    assert compare.df1.loc[1, "B"] != 0
+    assert compare.df1.loc[1, "b"] == 1
+    assert compare.df1.loc[0, "B"] == 1
+    assert compare.df1.loc[1, "B"] == 0
     assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 3
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "B"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "B"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "B_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "B_df2"] == "*******"
+    assert not compare.intersect_rows.reset_index(drop=True).loc[0, "B_match"]
     # Just render the report to make sure it renders.
     compare.report()
 
 
-def test_sensitive_columns_as_join_columns():
+def test_sensitive_columns_hide_join_columns():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
-    compare = datacompy.PandasCompare(
-        df1, df2, join_columns=["a"], sensitive_columns=["a"]
-    )
-    assert compare.df1.loc[0, "a"] != 1
-    assert compare.df1.loc[1, "a"] != 1
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["a"])
+
+    assert compare.df1.loc[0, "a"] == 1
+    assert compare.df1.loc[1, "a"] == 1
     assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == "*******"
+    assert len(compare.sample_mismatch("a")) == 2
+    assert compare.sample_mismatch("a").reset_index(drop=True).loc[0, "a"] == "*******"
+    assert compare.sample_mismatch("a").reset_index(drop=True).loc[1, "a"] == "*******"
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_join_columns():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["a"])
+    compare.reveal_sensitive_columns()
+
+    assert compare.df1.loc[0, "a"] == 1
+    assert compare.df1.loc[1, "a"] == 1
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert len(compare.sample_mismatch("a")) == 2
+    assert (
+        compare.sample_mismatch("a").sort_values("a").reset_index(drop=True).loc[0, "a"]
+        == 1
+    )
+    assert (
+        compare.sample_mismatch("a").sort_values("a").reset_index(drop=True).loc[1, "a"]
+        == 2
+    )
     # Just render the report to make sure it renders.
     compare.report()
 
 
 def test_sensitive_columns_missing():
-    df1 = pd.DataFrame([{"a": 1, "b": "hello", "c": 3}, {"a": 1, "b": "67", "c": 6}])
+    df1 = pd.DataFrame([{"a": 1, "b": "bruh", "c": 3}, {"a": 3, "b": "67", "c": 6}])
     df2 = pd.DataFrame([{"a": 1, "b": "hello", "d": 4}, {"a": 2, "b": "yo", "d": 7}])
-    compare = datacompy.PandasCompare(
-        df1, df2, join_columns=["a"], sensitive_columns=["b", "c"]
-    )
-    assert compare.df1.loc[0, "b"] != "hello"
-    assert compare.df1.loc[1, "b"] != "67"
-    assert compare.df1.loc[0, "c"] != 3
-    assert compare.df1.loc[1, "c"] != 6
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b", "c"])
+
+    assert compare.df1.loc[0, "b"] == "bruh"
+    assert compare.df1.loc[1, "b"] == "67"
+    assert compare.df1.loc[0, "c"] == 3
+    assert compare.df1.loc[1, "c"] == 6
     assert compare.df2.loc[0, "d"] == 4
     assert compare.df2.loc[1, "d"] == 7
     assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 3
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "c"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "d"] == 7
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c"] == "*******"
+    assert not compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_unused(caplog):
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    with caplog.at_level(logging.WARNING):
+        compare.hide_sensitive_columns(["c"])
+        assert (
+            "sensitive columns not found in either df1 or df2 will be ignored: ['c']"
+            in caplog.text
+        )
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_empty():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns([])
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_empty():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns([])
+    compare.reveal_sensitive_columns()
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
     # Just render the report to make sure it renders.
     compare.report()
 
@@ -2267,22 +2467,22 @@ def test_sensitive_columns_setter():
     compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
 
     # Valid setter call
-    compare.sensitive_columns = ["b"]
+    compare._set_and_validate_sensitive_columns(["b"])
     assert compare.sensitive_columns == ["b"]
 
     # Invalid setter call - not a list of strings
     with pytest.raises(TypeError, match="sensitive_columns must be a list of strings"):
-        compare.sensitive_columns = [1, 2, 3]
+        compare._set_and_validate_sensitive_columns([1, 2, 3])
 
 
 def test_sensitive_columns_duplicates():
     df1 = pd.DataFrame([{"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}])
-    # Duplicate columns should raise ValueError during init/hashing
+
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    # Duplicate columns should raise ValueError during hide_sensitive_columns()
     with pytest.raises(ValueError, match=r"duplicate columns: {'b'}"):
-        datacompy.PandasCompare(
-            df1, df2, join_columns=["a"], sensitive_columns=["b", "b"]
-        )
+        compare.hide_sensitive_columns(["b", "b"])
 
 
 def test_sensitive_columns_numeric_types():
@@ -2290,15 +2490,41 @@ def test_sensitive_columns_numeric_types():
     df1 = pd.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.2]})
     df2 = pd.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.2]})
 
-    compare = datacompy.PandasCompare(
-        df1, df2, join_columns=["a"], sensitive_columns=["b", "c"]
-    )
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b", "c"])
 
-    assert isinstance(compare.df1["b"].loc[0], str)
-    assert isinstance(compare.df1["c"].loc[0], str)
-    # blake2b with digest_size=32 returns 64 hex characters
-    assert len(compare.df1["b"].loc[0]) == 64
-    assert len(compare.df1["c"].loc[0]) == 64
+    assert not isinstance(compare.df1["b"].loc[0], str)
+    assert not isinstance(compare.df1["c"].loc[0], str)
+    assert len(compare.df1_unq_rows) == 0
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c_df2"] == "*******"
+
+
+def test_sensitive_columns_numeric_types_with_tolerance():
+    """Verify that hashing works for different numeric types with tolerance."""
+    df1 = pd.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.1]})
+    df2 = pd.DataFrame({"a": [1, 3], "b": [10, 21], "c": [1.2, 2.1]})
+
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"], abs_tol=0.1)
+    compare.hide_sensitive_columns(["b", "c"])
+
+    assert not isinstance(compare.df1["b"].loc[0], str)
+    assert not isinstance(compare.df1["c"].loc[0], str)
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "c"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "c"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c_match"]
 
 
 def test_columns_with_mismatches_single_column():
