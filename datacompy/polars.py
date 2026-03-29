@@ -22,7 +22,6 @@ two dataframes.
 """
 
 import logging
-from collections import Counter
 from copy import deepcopy
 from typing import Any, Dict, List, cast
 
@@ -186,46 +185,6 @@ class PolarsCompare(BaseCompare):
             "df2", cast_column_names_lower=self.cast_column_names_lower
         )
 
-    @property
-    def sensitive_columns(self) -> List[str] | None:
-        """Get the list of sensitive columns."""
-        return self._sensitive_columns
-
-    def _set_and_validate_sensitive_columns(
-        self, sensitive_columns: List[str] | None
-    ) -> None:
-        """Set and validate sensitive columns.
-
-        Normalizes empty lists to None so there is only one representation
-        for "no sensitive columns".
-        """
-        self._sensitive_columns = sensitive_columns or None
-        if not self._sensitive_columns:
-            return
-
-        if not all(isinstance(c, str) for c in self.sensitive_columns):
-            raise TypeError("sensitive_columns must be a list of strings")
-
-        # Cast to lowercase if applicable
-        if self.cast_column_names_lower:
-            self._sensitive_columns = [col.lower() for col in self.sensitive_columns]
-
-        # Check duplicates
-        duplicates = {c for c, n in Counter(self.sensitive_columns).items() if n > 1}
-        if duplicates:
-            raise ValueError(f"duplicate columns: {duplicates}")
-
-        # Warn if column not found in either dataframe
-        unused = [
-            col
-            for col in self.sensitive_columns
-            if (col not in self.df1.columns) and (col not in self.df2.columns)
-        ]
-        if unused:
-            LOG.warning(
-                f"sensitive columns not found in either df1 or df2 will be ignored: {unused}"
-            )
-
     def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
         """Hides sensitive columns of df1 or df2 if applicable in the compare."""
         # Don't allow hiding columns again before first revealing
@@ -268,24 +227,6 @@ class PolarsCompare(BaseCompare):
         self.intersect_rows = self.intersect_rows.with_columns(
             [pl.lit("*******").alias(col) for col in cols_to_hide]
         )
-
-    def reveal_sensitive_columns(self) -> None:
-        """Reveals all sensitive columns.
-
-        Notes
-        -----
-        - This re-runs the full comparison to restore original values.
-        - Revealing sensitive columns when there aren't any is treated as a NOP
-          to avoid redundant computations.
-        """
-        # Don't do anything if there aren't any sensitive columns
-        if not self.sensitive_columns:
-            return
-
-        LOG.debug("Revealing sensitive columns and re-comparing dfs")
-        self._set_and_validate_sensitive_columns(None)
-        self.column_stats.clear()
-        self._compare(ignore_spaces=self.ignore_spaces, ignore_case=self.ignore_case)
 
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
