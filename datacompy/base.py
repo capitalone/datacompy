@@ -23,8 +23,9 @@ two dataframes.
 
 import logging
 from abc import ABC, abstractmethod
+from collections import Counter
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ordered_set import OrderedSet
@@ -56,6 +57,46 @@ class BaseCompare(ABC):
     def df2(self, df2: Any) -> None:
         """Check that it is a dataframe and has the join columns."""
         pass
+
+    @property
+    def sensitive_columns(self) -> List[str] | None:
+        """Get the list of sensitive columns."""
+        return self._sensitive_columns
+
+    def _set_and_validate_sensitive_columns(
+        self, sensitive_columns: List[str] | None
+    ) -> None:
+        """Set and validate sensitive columns.
+
+        Normalizes empty lists to None so there is only one representation
+        for "no sensitive columns".
+        """
+        self._sensitive_columns = sensitive_columns or None
+        if not self._sensitive_columns:
+            return
+
+        if not all(isinstance(c, str) for c in self.sensitive_columns):
+            raise TypeError("sensitive_columns must be a list of strings")
+
+        # Cast to lowercase if applicable
+        if self.cast_column_names_lower:
+            self._sensitive_columns = [col.lower() for col in self.sensitive_columns]
+
+        # Check duplicates
+        duplicates = {c for c, n in Counter(self.sensitive_columns).items() if n > 1}
+        if duplicates:
+            raise ValueError(f"duplicate columns: {duplicates}")
+
+        # Warn if column not found in either dataframe
+        unused = [
+            col
+            for col in self.sensitive_columns
+            if (col not in self.df1.columns) and (col not in self.df2.columns)
+        ]
+        if unused:
+            LOG.warning(
+                f"sensitive columns not found in either df1 or df2 will be ignored: {unused}"
+            )
 
     @abstractmethod
     def _validate_dataframe(
@@ -181,6 +222,24 @@ class BaseCompare(ABC):
             The report, formatted according to the template.
         """
         pass
+
+    def reveal_sensitive_columns(self) -> None:
+        """Reveals all sensitive columns.
+
+        Notes
+        -----
+        - This re-runs the full comparison to restore original values.
+        - Revealing sensitive columns when there aren't any is treated as a NOP
+          to avoid redundant computations.
+        """
+        # Don't do anything if there aren't any sensitive columns
+        if not self.sensitive_columns:
+            return
+
+        LOG.debug("Revealing sensitive columns and re-comparing dfs")
+        self._set_and_validate_sensitive_columns(None)
+        self.column_stats.clear()
+        self._compare(ignore_spaces=self.ignore_spaces, ignore_case=self.ignore_case)
 
     def only_join_columns(self) -> bool:
         """Boolean on if the only columns are the join columns."""
