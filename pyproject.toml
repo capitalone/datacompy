@@ -69,7 +69,7 @@ optional-dependencies.fugue = [ "duckdb<1.4", "fugue[dask,duckdb,ray]>=0.8.7,<=0
 optional-dependencies.qa = [ "mypy", "pandas-stubs", "pre-commit", "ruff==0.5.7" ]
 optional-dependencies.snowflake = [
   "snowflake-connector-python",
-  "snowflake-snowpark-python",
+  "snowflake-snowpark-python>=1.37,<=1.47",
 ]
 optional-dependencies.spark = [ "pyspark[connect]>=3.4,<=3.5.6" ]
 optional-dependencies.tests = [ "pytest", "pytest-cov" ]
