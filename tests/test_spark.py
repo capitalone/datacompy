@@ -19,6 +19,7 @@ Testing out the datacompy functionality
 
 import logging
 import os
+import re
 import tempfile
 from datetime import datetime
 from decimal import Decimal
@@ -2433,3 +2434,428 @@ def test_columns_with_mismatches_multiple_join_columns(spark_session):
     assert "id1" not in result
     assert "id2" not in result
     assert sorted(result) == ["value1", "value2"]
+
+
+def test_sensitive_columns_hide(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == "*******"
+    assert intersect_rows.loc[0, "b_df2"] == "*******"
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_hide(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "sensitive columns are already hidden, call reveal_sensitive_columns() first"
+        ),
+    ):
+        compare.hide_sensitive_columns(["c"])
+
+
+def test_sensitive_columns_hide_reveal(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+    compare.reveal_sensitive_columns()
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == 0
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == 0
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == 2
+    assert intersect_rows.loc[0, "b_df2"] == 2
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_hide(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+    compare.reveal_sensitive_columns()
+    compare.hide_sensitive_columns(["b"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == "*******"
+    assert intersect_rows.loc[0, "b_df2"] == "*******"
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_cast_lower(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["B"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == "*******"
+    assert intersect_rows.loc[0, "b_df2"] == "*******"
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_no_cast_lower(spark_session):
+    df1 = spark_session.createDataFrame(
+        [{"a": 1, "b": 2, "B": 1}, {"a": 3, "b": 1, "B": 0}]
+    )
+    df2 = spark_session.createDataFrame(
+        [{"a": 1, "b": 2, "B": 2}, {"a": 2, "b": 0, "B": 0}]
+    )
+    compare = SparkSQLCompare(
+        spark_session,
+        df1,
+        df2,
+        join_columns=["a"],
+        cast_column_names_lower=False,
+    )
+    compare.hide_sensitive_columns(["B"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 1
+    assert compare.df1.toPandas().loc[0, "B"] == 1
+    assert compare.df1.toPandas().loc[1, "B"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 3
+    assert df1_unq_rows.loc[0, "B_df1"] == "*******"
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "B_df2"] == "*******"
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == 2
+    assert intersect_rows.loc[0, "b_df2"] == 2
+    assert intersect_rows.loc[0, "B_df1"] == "*******"
+    assert intersect_rows.loc[0, "B_df2"] == "*******"
+    assert not intersect_rows.loc[0, "B_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_join_columns(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["a"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    sample_mismatch = compare.sample_mismatch("a").toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "a"] == 1
+    assert compare.df1.toPandas().loc[1, "a"] == 1
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == "*******"
+    assert len(sample_mismatch) == 2
+    assert sample_mismatch.loc[0, "a"] == "*******"
+    assert sample_mismatch.loc[1, "a"] == "*******"
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_join_columns(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["a"])
+    compare.reveal_sensitive_columns()
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    sample_mismatch = compare.sample_mismatch("a").toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "a"] == 1
+    assert compare.df1.toPandas().loc[1, "a"] == 1
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert len(sample_mismatch) == 2
+    assert sample_mismatch.sort_values("a").reset_index(drop=True).loc[0, "a"] == 1
+    assert sample_mismatch.sort_values("a").reset_index(drop=True).loc[1, "a"] == 2
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_missing(spark_session):
+    df1 = spark_session.createDataFrame(
+        [{"a": 1, "b": "bruh", "c": 3}, {"a": 3, "b": "67", "c": 6}]
+    )
+    df2 = spark_session.createDataFrame(
+        [{"a": 1, "b": "hello", "d": 4}, {"a": 2, "b": "yo", "d": 7}]
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b", "c"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == "bruh"
+    assert compare.df1.toPandas().loc[1, "b"] == "67"
+    assert compare.df1.toPandas().loc[0, "c"] == 3
+    assert compare.df1.toPandas().loc[1, "c"] == 6
+    assert compare.df2.toPandas().loc[0, "d"] == 4
+    assert compare.df2.toPandas().loc[1, "d"] == 7
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 3
+    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert df1_unq_rows.loc[0, "c_df1"] == "*******"
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert df2_unq_rows.loc[0, "d_df2"] == 7
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "b_df1"] == "*******"
+    assert intersect_rows.loc[0, "b_df2"] == "*******"
+    assert intersect_rows.loc[0, "c_df1"] == "*******"
+    assert not intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_unused(spark_session, caplog):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    with caplog.at_level(logging.WARNING):
+        compare.hide_sensitive_columns(["c"])
+        assert (
+            "sensitive columns not found in either df1 or df2 will be ignored: ['c']"
+            in caplog.text
+        )
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == 0
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == 0
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == 2
+    assert intersect_rows.loc[0, "b_df2"] == 2
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_empty(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns([])
+    compare.reveal_sensitive_columns()
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == 0
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == 0
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == 2
+    assert intersect_rows.loc[0, "b_df2"] == 2
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_empty(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns([])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == 0
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == 0
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == 2
+    assert intersect_rows.loc[0, "b_df2"] == 2
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_setter(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+
+    # Valid setter call
+    compare._set_and_validate_sensitive_columns(["b"])
+    assert compare.sensitive_columns == ["b"]
+
+    # Invalid setter call - not a list of strings
+    with pytest.raises(TypeError, match="sensitive_columns must be a list of strings"):
+        compare._set_and_validate_sensitive_columns([1, 2, 3])
+
+
+def test_sensitive_columns_duplicates(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}])
+
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    # Duplicate columns should raise ValueError during hide_sensitive_columns()
+    with pytest.raises(ValueError, match=r"duplicate columns: {'b'}"):
+        compare.hide_sensitive_columns(["b", "b"])
+
+
+def test_sensitive_columns_numeric_types(spark_session):
+    """Verify that hashing works for different numeric types without LossySetitemError."""
+    df1 = spark_session.createDataFrame(
+        [
+            {"a": 1, "b": 10, "c": 1.1},
+            {"a": 2, "b": 20, "c": 2.2},
+        ]
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            {"a": 1, "b": 10, "c": 1.1},
+            {"a": 2, "b": 20, "c": 2.2},
+        ]
+    )
+
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b", "c"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert not isinstance(compare.df1.toPandas()["b"].loc[0], str)
+    assert not isinstance(compare.df1.toPandas()["c"].loc[0], str)
+    assert len(df1_unq_rows) == 0
+    assert intersect_rows.loc[0, "b_df1"] == "*******"
+    assert intersect_rows.loc[0, "b_df2"] == "*******"
+    assert intersect_rows.loc[0, "c_df1"] == "*******"
+    assert intersect_rows.loc[0, "c_df2"] == "*******"
+
+
+def test_sensitive_columns_numeric_types_with_tolerance(spark_session):
+    """Verify that hashing works for different numeric types with tolerance."""
+    df1 = spark_session.createDataFrame(
+        [
+            {"a": 1, "b": 10, "c": 1.1},
+            {"a": 2, "b": 20, "c": 2.1},
+        ]
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            {"a": 1, "b": 10, "c": 1.2},
+            {"a": 3, "b": 21, "c": 2.1},
+        ]
+    )
+
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"], abs_tol=0.1)
+    compare.hide_sensitive_columns(["b", "c"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert not isinstance(compare.df1.toPandas()["b"].loc[0], str)
+    assert not isinstance(compare.df1.toPandas()["c"].loc[0], str)
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert df1_unq_rows.loc[0, "c_df1"] == "*******"
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert df2_unq_rows.loc[0, "c_df2"] == "*******"
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "b_df1"] == "*******"
+    assert intersect_rows.loc[0, "b_df2"] == "*******"
+    assert intersect_rows.loc[0, "b_match"]
+    assert intersect_rows.loc[0, "c_df1"] == "*******"
+    assert intersect_rows.loc[0, "c_df2"] == "*******"
+    assert intersect_rows.loc[0, "c_match"]
