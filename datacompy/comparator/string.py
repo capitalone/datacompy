@@ -20,7 +20,11 @@ from typing import Any
 
 import pandas as pd
 import polars as pl
+import pyarrow as pa
+import pyarrow.compute as pc
+import pyarrow.types as pat
 
+from datacompy._typing import ArrowStreamable, ArrowArrayLike
 from datacompy.comparator.base import BaseComparator
 
 LOG = logging.getLogger(__name__)
@@ -404,6 +408,80 @@ class SnowflakeStringComparator(BaseComparator):
                 return dataframe.withColumn(col_match, spf.lit(False))
         else:
             return None
+        
+class PyArrowStringComparator(BaseComparator):
+    """Comparator for string / date / mixed columns in PyArrow."""
+
+    def compare(
+        self,
+        col1: ArrowArrayLike,
+        col2: ArrowArrayLike,
+        ignore_space: bool = True,
+        ignore_case: bool = True,
+    ) -> ArrowArrayLike | None:
+        """Compare two PyArrow Arrays column-wise, taking into account optional normalization for spaces and case sensitivity.
+
+        Parameters
+        ----------
+        col1 : ArrowArrayLike
+            The first PyArrow Array to compare.
+        col2 : ArrowArrayLike
+            The second PyArrow Array to compare.
+        ignore_space : bool
+            Whether to ignore leading and trailing whitespace when comparing strings.
+        ignore_case : bool
+            Whether to ignore case when comparing strings.
+
+        Returns
+        -------
+        ArrowArrayLike
+            A PyArrow Array of boolean values where each element indicates
+            whether the corresponding elements in `col1` and `col2` are equal.
+            Handles missing values by treating nulls as equal.
+        None
+            if the columns are not comparable.
+
+        Raises
+        ------
+        Exception
+            If the comparison fails due to incompatible types or other issues,
+            attempts to cast both columns to strings for comparison. If this
+            also fails, returns a Array of `False` values with the same length
+            as `col1`.
+        """
+        if len(col1) != len(col2):
+            return None
+
+        col1_type = col1.type
+        col2_type = col2.type
+
+        # if one is a string and another is a date
+        if (pat.is_temporal(col1_type)) and pat.is_string(
+            col2_type
+        ) or (pat.is_temporal(col2_type)) and pat.is_string(
+            col1_type
+        ):
+            return pyarrow_compare_string_and_date_columns(col1, 
+                                                           col2, 
+                                                           ignore_spaces=ignore_space,
+                                                           ignore_case=ignore_case)
+        # both are strings
+        elif (
+            (pat.is_string(col1_type) and pat.is_string(col2_type)) 
+            or (pat.is_temporal(col1_type) and pat.is_temporal(col2_type))
+        ):
+            col1 = pyarrow_normalize_string_column(col1, ignore_space, ignore_case)
+            col2 = pyarrow_normalize_string_column(col2, ignore_space, ignore_case)
+            try:
+                result = pc.or_(
+                    pc.equal(pc.cast(col1, pa.string()), pc.cast(col2, pa.string())).fill_null(False),
+                    pc.and_(pc.is_null(col1), pc.is_null(col2)),
+                )
+                return result
+            except Exception:
+                return pa.array([False] * len(col1))
+        else:
+            return None
 
 
 def pandas_normalize_string_column(
@@ -467,6 +545,19 @@ def polars_normalize_string_column(
         if ignore_case:
             column = column.str.to_uppercase()
     return column
+
+def pyarrow_normalize_string_column(
+    col: ArrowStreamable,
+    ignore_spaces: bool = False,
+    ignore_case: bool = False
+) -> ArrowArrayLike:
+    """Normalize a string column based on ignore_spaces and ignore_case flags."""
+    if pat.is_string(col.type):
+        if ignore_spaces:
+            col = pc.replace_substring_regex(col, r"\s+", "")
+        if ignore_case:
+            col = pc.utf8_upper(col)
+    return col
 
 
 def spark_normalize_string_column(
@@ -611,3 +702,52 @@ def polars_compare_string_and_date_columns(
             )
         except Exception:
             return pl.Series([False] * col_1.shape[0])
+        
+def pyarrow_compare_string_and_date_columns(
+    col_1: pa.Array,
+    col_2: pa.Array,
+    ignore_spaces: bool = False,
+    ignore_case: bool = False
+) -> ArrowArrayLike:
+    """Compare a string column and date column, value-wise.
+
+    This tries to convert a string column to a date column and compare that way.
+
+    Parameters
+    ----------
+    col_1 : pa.Array
+        The first column to look at
+    col_2 : pa.Array
+        The second column
+
+    Returns
+    -------
+    ArrowArrayLike
+        A array of Boolean values.  True == the values match, False == the
+        values don't match.
+    """
+    if pat.is_string(col_1.type):
+        str_column = col_1
+        date_column = col_2
+    else:
+        str_column = col_2
+        date_column = col_1
+
+    str_column = pyarrow_normalize_string_column(str_column, ignore_spaces=ignore_spaces, ignore_case=ignore_case)
+    str_column = pc.if_else(pc.equal(str_column, ""), None, str_column)  # treat empty strings as nulls for comparison
+
+    try:  # using date format
+        return pc.or_(
+            pc.equal(pc.cast(str_column, pa.timestamp('ns'), safe=False), date_column).fill_null(False),
+            pc.and_(pc.is_null(str_column), pc.is_null(date_column)),
+        )
+    except Exception:
+        try:
+            return pc.or_(
+                pc.equal(
+                    pc.cast(str_column, pa.string()), pc.strftime(date_column, format="%Y-%m-%d")
+                ),
+                pc.and_(pc.is_null(str_column), pc.is_null(date_column)),
+            )
+        except Exception:
+            return pa.array([False] * len(col_1))

@@ -20,12 +20,20 @@ import logging
 import numpy as np
 import pandas as pd
 import polars as pl
+import pyarrow as pa
 
 from datacompy.comparator.base import BaseComparator
 
 LOG = logging.getLogger(__name__)
 
 POLARS_ARRAY_TYPE = ["List", "Array"]
+PYARROW_LIST_TYPE_IDS = [
+    pa.lib.Type_LIST,
+    pa.lib.Type_LARGE_LIST, 
+    pa.lib.Type_FIXED_SIZE_LIST,
+    pa.lib.Type_LIST_VIEW, 
+    pa.lib.Type_LARGE_LIST_VIEW
+]
 
 try:
     import pyspark as ps
@@ -196,5 +204,39 @@ class SnowflakeArrayLikeComparator(BaseComparator):
                 col_match,
                 spf.when(when_clause, spf.lit(True)).otherwise(spf.lit(False)),
             )
+        else:
+            return None
+
+class PyArrowArrayLikeComparator(BaseComparator):
+    """Comparator for array-like columns in PyArrow."""
+
+    def compare(self, col1: pa.Array, col2: pa.Array) -> pa.Array | None:
+        """
+        Compare two array like columns for equality.
+
+        Parameters
+        ----------
+        col1 : pa.Array
+            The first PyArrow Array to compare.
+        col2 : pa.Array
+            The second PyArrow Array to compare.
+
+        Returns
+        -------
+        pa.Array
+            A PyArrow Array of booleans indicating whether the values in `col1` and `col2`
+            are equal.
+        None
+            if the columns are not comparable.
+        """
+        if len(col1) != len(col2):
+            return None
+
+        if col1.type.id in PYARROW_LIST_TYPE_IDS and col2.type.id in PYARROW_LIST_TYPE_IDS:
+            comparison = []
+            for c1, c2 in zip(col1, col2):
+                comparison.append(c1.equals(c2))
+
+            return pa.array(comparison)
         else:
             return None

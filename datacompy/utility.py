@@ -16,6 +16,8 @@
 """Contains utilities for datacompy."""
 
 from functools import wraps
+from datacompy._typing import ArrowArrayLike
+import pyarrow as pa
 
 
 def check_module_available(module_available, extra_name):
@@ -37,3 +39,26 @@ def check_module_available(module_available, extra_name):
         return wrapper
 
     return decorator
+
+def pyarrow_numeric (col: ArrowArrayLike) -> bool:
+    """Check if a PyArrow Array is of numeric type.
+
+    Parameters
+    ----------
+    col : ArrowArrayLike
+        The PyArrow Array to check.
+
+    Returns
+    -------
+    bool
+        True if the Array is of numeric type, False otherwise.
+    """
+    if (
+        pa.types.is_integer(col.type)
+        or pa.types.is_floating(col.type)
+        or pa.types.is_decimal128(col.type)
+        or pa.types.is_decimal256(col.type)
+    ):
+        return True
+    else:
+        return False

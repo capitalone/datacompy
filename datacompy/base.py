@@ -25,6 +25,7 @@ import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict
+import pyarrow as pa
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ordered_set import OrderedSet
@@ -184,7 +185,10 @@ class BaseCompare(ABC):
 
     def only_join_columns(self) -> bool:
         """Boolean on if the only columns are the join columns."""
-        return set(self.join_columns) == set(self.df1.columns) == set(self.df2.columns)
+        if isinstance(self.df1, pa.Table) or isinstance(self.df2, pa.Table):
+            return set(self.join_columns) == set(self.df1.schema.names) == set(self.df2.schema.names)
+        else:
+            return set(self.join_columns) == set(self.df1.columns) == set(self.df2.columns)
 
     def columns_with_mismatches(self) -> list[str]:
         """Return a list of column names where at least one row has a mismatch.
@@ -357,6 +361,9 @@ def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) 
     """
     # Handle pandas DataFrame
     if hasattr(df, "to_string"):
+        # Handle PyArrow Table 
+        if isinstance(df, pa.Table):
+            df = df.to_pandas()
         if sample_count is not None and len(df) > sample_count:
             df = df.head(sample_count)
         if not on_index and hasattr(df, "reset_index"):

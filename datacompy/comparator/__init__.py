@@ -20,18 +20,21 @@ from datacompy.comparator.array import (
     PolarsArrayLikeComparator,
     SnowflakeArrayLikeComparator,
     SparkArrayLikeComparator,
+    PyArrowArrayLikeComparator,
 )
 from datacompy.comparator.numeric import (
     PandasNumericComparator,
     PolarsNumericComparator,
     SnowflakeNumericComparator,
     SparkNumericComparator,
+    PyArrowNumericComparator,
 )
 from datacompy.comparator.string import (
     PandasStringComparator,
     PolarsStringComparator,
     SnowflakeStringComparator,
     SparkStringComparator,
+    PyArrowStringComparator,
 )
 
 __all__ = [
@@ -47,4 +50,7 @@ __all__ = [
     "SparkArrayLikeComparator",
     "SparkNumericComparator",
     "SparkStringComparator",
+    "PyArrowArrayLikeComparator",
+    "PyArrowNumericComparator",
+    "PyArrowStringComparator",
 ]
