@@ -2433,3 +2433,29 @@ def test_columns_with_mismatches_multiple_join_columns(spark_session):
     assert "id1" not in result
     assert "id2" not in result
     assert sorted(result) == ["value1", "value2"]
+
+
+def test_forbid_case_sensitvive_columns(spark_session):
+    """Test error case for case sensitive columns in dataframes."""
+    df1 = spark_session.createDataFrame(
+        [{"a": 1, "b": 2, "B": 1}, {"a": 3, "b": 1, "B": 0}]
+    )
+    df2 = spark_session.createDataFrame(
+        [{"a": 1, "b": 2, "B": 2}, {"a": 2, "b": 0, "B": 0}]
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"df1 has columns that differ only by case: {'b', 'B'}. "
+        r"Spark strongly discourages use of case sensitive column names. "
+        r"Rename columns to be unique regardless of case. "
+        r"See: https://spark.apache.org/docs/latest/api/python/tutorial/"
+        r"pandas_on_spark/best_practices.html#do-not-use-duplicated-column-names",
+    ):
+        SparkSQLCompare(
+            spark_session,
+            df1,
+            df2,
+            join_columns=["a"],
+            cast_column_names_lower=False,
+        )
