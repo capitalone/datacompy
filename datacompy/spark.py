@@ -300,6 +300,20 @@ class SparkSQLCompare(BaseCompare):
                 self._df1 = dataframe.toDF(*[str(c).lower() for c in dataframe.columns])
             if index == "df2":
                 self._df2 = dataframe.toDF(*[str(c).lower() for c in dataframe.columns])
+        else:
+            # Don't allow case sensitive columns
+            lower_cols = [c.lower() for c in dataframe.columns]
+            if len(set(lower_cols)) < len(lower_cols):
+                dupes = {
+                    c for c in dataframe.columns if lower_cols.count(c.lower()) > 1
+                }
+                raise ValueError(
+                    f"{index} has columns that differ only by case: {dupes}. "
+                    "Spark strongly discourages use of case sensitive column names. "
+                    "Rename columns to be unique regardless of case. "
+                    "See: https://spark.apache.org/docs/latest/api/python/tutorial/"
+                    "pandas_on_spark/best_practices.html#do-not-use-duplicated-column-names"
+                )
 
         # Check if join_columns are present in the dataframe
         dataframe = getattr(self, index)  # refresh

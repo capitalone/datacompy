@@ -2818,3 +2818,29 @@ def test_sensitive_columns_numeric_types_with_tolerance(spark_session):
     assert intersect_rows.loc[0, "c_df1"] == "*******"
     assert intersect_rows.loc[0, "c_df2"] == "*******"
     assert intersect_rows.loc[0, "c_match"]
+
+
+def test_forbid_case_sensitive_columns(spark_session):
+    """Test error case for case sensitive columns in dataframes."""
+    df1 = spark_session.createDataFrame(
+        [{"a": 1, "b": 2, "B": 1}, {"a": 3, "b": 1, "B": 0}]
+    )
+    df2 = spark_session.createDataFrame(
+        [{"a": 1, "b": 2, "B": 2}, {"a": 2, "b": 0, "B": 0}]
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"df1 has columns that differ only by case: \{(?:'b', 'B'|'B', 'b')\}. "
+        "Spark strongly discourages use of case sensitive column names. "
+        "Rename columns to be unique regardless of case. "
+        "See: https://spark.apache.org/docs/latest/api/python/tutorial/"
+        "pandas_on_spark/best_practices.html#do-not-use-duplicated-column-names",
+    ):
+        SparkSQLCompare(
+            spark_session,
+            df1,
+            df2,
+            join_columns=["a"],
+            cast_column_names_lower=False,
+        )
