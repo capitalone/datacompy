@@ -113,7 +113,7 @@ class PolarsCompare(BaseCompare):
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
-        self._set_and_validate_sensitive_columns(None)
+        self._sensitive_columns: List[str] | None = None
 
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
