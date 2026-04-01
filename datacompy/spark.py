@@ -258,8 +258,8 @@ class SparkSQLCompare(BaseCompare):
                 }
                 raise ValueError(
                     f"{index} has columns that differ only by case: {dupes}. "
-                    "Spark strongly discourages use of case sensitive column names."
-                    " Rename columns to be unique regardless of case. "
+                    "Spark strongly discourages use of case sensitive column names. "
+                    "Rename columns to be unique regardless of case. "
                     "See: https://spark.apache.org/docs/latest/api/python/tutorial/"
                     "pandas_on_spark/best_practices.html#do-not-use-duplicated-column-names"
                 )

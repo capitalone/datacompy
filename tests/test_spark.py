@@ -2446,11 +2446,11 @@ def test_forbid_case_sensitvive_columns(spark_session):
 
     with pytest.raises(
         ValueError,
-        match=r"df1 has columns that differ only by case: {'b', 'B'}. "
-        r"Spark strongly discourages use of case sensitive column names. "
-        r"Rename columns to be unique regardless of case. "
-        r"See: https://spark.apache.org/docs/latest/api/python/tutorial/"
-        r"pandas_on_spark/best_practices.html#do-not-use-duplicated-column-names",
+        match=r"df1 has columns that differ only by case: \{(?:'b', 'B'|'B', 'b')\}. "
+        "Spark strongly discourages use of case sensitive column names. "
+        "Rename columns to be unique regardless of case. "
+        "See: https://spark.apache.org/docs/latest/api/python/tutorial/"
+        "pandas_on_spark/best_practices.html#do-not-use-duplicated-column-names",
     ):
         SparkSQLCompare(
             spark_session,
