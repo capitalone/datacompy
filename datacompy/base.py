@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Compare two Pandas DataFrames.
+Base module for comparing two DataFrames.
 
 Originally this package was meant to provide similar functionality to
 PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
