@@ -248,12 +248,10 @@ class SparkSQLCompare(BaseCompare):
             if not cols_to_hide:  # skip if empty
                 continue
             # Maintains column ordering for the hide
-            select_cols = []
-            for col in df.columns:
-                if col in cols_to_hide:
-                    select_cols.append(F.lit("*******").alias(col))
-                else:
-                    select_cols.append(F.col(col))
+            select_cols = [
+                F.lit("*******").alias(col) if col in cols_to_hide else F.col(col)
+                for col in df.columns
+            ]
             setattr(self, df_name, df.select(select_cols))
 
         # Hide columns in intersect_rows
@@ -263,12 +261,10 @@ class SparkSQLCompare(BaseCompare):
         ]
         if not cols_to_hide:  # skip if empty
             return
-        select_cols = []
-        for col in self.intersect_rows.columns:
-            if col in cols_to_hide:
-                select_cols.append(F.lit("*******").alias(col))
-            else:
-                select_cols.append(F.col(col))
+        select_cols = [
+            F.lit("*******").alias(col) if col in cols_to_hide else F.col(col)
+            for col in self.intersect_rows.columns
+        ]
         self.intersect_rows = self.intersect_rows.select(select_cols)
 
     def _validate_dataframe(
