@@ -2466,4 +2466,4 @@ def test_sensitive_columns_placeholder(spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}])
     compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
-    _ = compare._sensitive_columns  # this shouldn't crash
+    _ = compare.sensitive_columns  # this shouldn't crash

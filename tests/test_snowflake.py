@@ -2181,4 +2181,4 @@ def test_sensitive_columns_placeholder(snowflake_session):
     df1 = snowflake_session.createDataFrame([{"a": 1, "b": 2}])
     df2 = snowflake_session.createDataFrame([{"a": 1, "b": 2}])
     compare = SnowflakeCompare(snowflake_session, df1, df2, join_columns=["a"])
-    _ = compare._sensitive_columns  # this shouldn't crash
+    _ = compare.sensitive_columns  # this shouldn't crash
