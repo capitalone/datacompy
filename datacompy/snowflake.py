@@ -153,6 +153,7 @@ class SnowflakeCompare(BaseCompare):
         self._rel_tol_dict = validate_tolerance_parameter(
             rel_tol, "rel_tol", case_mode="upper"
         )
+        self._sensitive_columns: List[str] | None = None
 
         if join_columns is None:
             errmsg = "join_columns cannot be None"
