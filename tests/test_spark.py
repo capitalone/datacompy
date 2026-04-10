@@ -2435,7 +2435,7 @@ def test_columns_with_mismatches_multiple_join_columns(spark_session):
     assert sorted(result) == ["value1", "value2"]
 
 
-def test_forbid_case_sensitvive_columns(spark_session):
+def test_forbid_case_sensitive_columns(spark_session):
     """Test error case for case sensitive columns in dataframes."""
     df1 = spark_session.createDataFrame(
         [{"a": 1, "b": 2, "B": 1}, {"a": 3, "b": 1, "B": 0}]
