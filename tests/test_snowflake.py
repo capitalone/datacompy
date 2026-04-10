@@ -2174,3 +2174,11 @@ def test_columns_with_mismatches_multiple_join_columns(snowflake_session):
     assert "ID1" not in result
     assert "ID2" not in result
     assert sorted(result) == ["VALUE1", "VALUE2"]
+
+
+def test_sensitive_columns_placeholder(snowflake_session):
+    """Check compare won't crash trying to access _sensitive_columns (to be removed later)."""
+    df1 = snowflake_session.createDataFrame([{"a": 1, "b": 2}])
+    df2 = snowflake_session.createDataFrame([{"a": 1, "b": 2}])
+    compare = SnowflakeCompare(snowflake_session, df1, df2, join_columns=["a"])
+    _ = compare._sensitive_columns  # this shouldn't crash
