@@ -153,6 +153,7 @@ class SnowflakeCompare(BaseCompare):
         self._rel_tol_dict = validate_tolerance_parameter(
             rel_tol, "rel_tol", case_mode="upper"
         )
+        self._sensitive_columns: List[str] | None = None
 
         if join_columns is None:
             errmsg = "join_columns cannot be None"
@@ -229,6 +230,52 @@ class SnowflakeCompare(BaseCompare):
             self._df2 = df
             self.df2_name = df_name.upper() if df_name else "DF2"
         self._validate_dataframe(self.df2_name, "df2")
+
+    def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
+        """Hides sensitive columns of df1 or df2 if applicable in the compare."""
+        # Don't allow hiding columns again before first revealing
+        if self.sensitive_columns:
+            raise ValueError(
+                "sensitive columns are already hidden, call reveal_sensitive_columns() first"
+            )
+
+        self._set_and_validate_sensitive_columns(sensitive_columns)
+        # Don't do anything if [] is passed (normalized to None)
+        if not self.sensitive_columns:
+            return
+        sensitive = set(self.sensitive_columns)  # Otherwise this fails due to None
+        sensitive_with_suffixes = (
+            sensitive
+            | {f"{c}_{self.df1_name}" for c in sensitive}
+            | {f"{c}_{self.df2_name}" for c in sensitive}
+        )
+
+        # Hide columns in unq_rows
+        for df_name in ("df1_unq_rows", "df2_unq_rows"):
+            df = getattr(self, df_name)
+            LOG.debug(f"Hiding sensitive columns in {df_name}")
+            cols_to_hide = [col for col in df.columns if col in sensitive_with_suffixes]
+            if not cols_to_hide:  # skip if empty
+                continue
+            # Maintains column ordering for the hide
+            select_cols = [
+                lit("*******").alias(c) if c in cols_to_hide else col(c)
+                for c in df.columns
+            ]
+            setattr(self, df_name, df.select(select_cols))
+
+        # Hide columns in intersect_rows
+        LOG.debug("Hiding sensitive columns in intersect_rows")
+        cols_to_hide = [
+            col for col in self.intersect_rows.columns if col in sensitive_with_suffixes
+        ]
+        if not cols_to_hide:  # skip if empty
+            return
+        select_cols = [
+            lit("*******").alias(c) if c in cols_to_hide else col(c)
+            for c in self.intersect_rows.columns
+        ]
+        self.intersect_rows = self.intersect_rows.select(select_cols)
 
     def _validate_dataframe(self, df_name: str, index: str) -> None:
         """Validate the provided Snowpark dataframe.
