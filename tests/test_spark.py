@@ -2752,7 +2752,7 @@ def test_sensitive_columns_duplicates(spark_session):
 
 
 def test_sensitive_columns_numeric_types(spark_session):
-    """Verify that hashing works for different numeric types without LossySetitemError."""
+    """Verify that hiding works for different numeric types without LossySetitemError."""
     df1 = spark_session.createDataFrame(
         [
             {"a": 1, "b": 10, "c": 1.1},
@@ -2782,7 +2782,7 @@ def test_sensitive_columns_numeric_types(spark_session):
 
 
 def test_sensitive_columns_numeric_types_with_tolerance(spark_session):
-    """Verify that hashing works for different numeric types with tolerance."""
+    """Verify that hiding works for different numeric types with tolerance."""
     df1 = spark_session.createDataFrame(
         [
             {"a": 1, "b": 10, "c": 1.1},
