@@ -2599,7 +2599,7 @@ def test_sensitive_columns_duplicates():
 
 
 def test_sensitive_columns_numeric_types():
-    """Verify that hashing works for different numeric types without LossySetitemError."""
+    """Verify that hiding works for different numeric types without LossySetitemError."""
     df1 = pl.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.2]})
     df2 = pl.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.2]})
 
