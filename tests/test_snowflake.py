@@ -2561,3 +2561,11 @@ def test_sensitive_columns_numeric_types_with_tolerance(snowflake_session):
     assert intersect_rows.loc[0, "C_DF1"] == "*******"
     assert intersect_rows.loc[0, "C_DF2"] == "*******"
     assert intersect_rows.loc[0, "C_MATCH"]
+
+
+def test_sensitive_columns_placeholder(snowflake_session):
+    """Check compare won't crash trying to access _sensitive_columns (to be removed later)."""
+    df1 = snowflake_session.createDataFrame([{"a": 1, "b": 2}])
+    df2 = snowflake_session.createDataFrame([{"a": 1, "b": 2}])
+    compare = SnowflakeCompare(snowflake_session, df1, df2, join_columns=["a"])
+    _ = compare.sensitive_columns  # this shouldn't crash
