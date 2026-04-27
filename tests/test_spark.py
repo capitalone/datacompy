@@ -2844,11 +2844,3 @@ def test_forbid_case_sensitive_columns(spark_session):
             join_columns=["a"],
             cast_column_names_lower=False,
         )
-
-
-def test_sensitive_columns_placeholder(spark_session):
-    """Check compare won't crash trying to access _sensitive_columns (to be removed later)."""
-    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}])
-    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}])
-    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
-    _ = compare.sensitive_columns  # this shouldn't crash
