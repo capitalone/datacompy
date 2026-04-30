@@ -447,14 +447,6 @@ class SparkSQLCompare(BaseCompare):
             {c: f"{c}_{self.df2_name}" for c in temp_join_columns}
         )
 
-        # cache only if enabled
-        if self.cache_intermediates:
-            LOG.debug("Caching intermediate dataframes")
-            df1.cache()
-            df2.cache()
-        else:
-            LOG.debug("Caching disabled - skipping cache() calls")
-
         # NULL SAFE Outer join using ON
         df1.createOrReplaceTempView("df1")
         df2.createOrReplaceTempView("df2")
