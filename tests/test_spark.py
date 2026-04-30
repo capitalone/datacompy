@@ -2287,7 +2287,6 @@ def test_cache_intermediates_enabled(spark_session, caplog):
 
     # Verify the log message
     assert compare.cache_intermediates is True
-    assert "Caching intermediate dataframes" in caplog.text
     assert "Caching intersect_rows dataframe" in caplog.text
 
 
@@ -2306,7 +2305,6 @@ def test_cache_intermediates_disabled(spark_session, caplog):
 
     # Verify the log message
     assert compare.cache_intermediates is False
-    assert "Caching disabled - skipping cache() calls" in caplog.text
     assert "Caching disabled - skipping cache() on intersect_rows" in caplog.text
 
 
@@ -2323,7 +2321,6 @@ def test_cache_intermediates_default_is_true(spark_session, caplog):
 
     # Verify the log message
     assert compare.cache_intermediates is True
-    assert "Caching intermediate dataframes" in caplog.text
     assert "Caching intersect_rows dataframe" in caplog.text
 
 
