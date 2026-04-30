@@ -265,6 +265,9 @@ class SparkSQLCompare(BaseCompare):
             F.lit("*******").alias(col) if col in cols_to_hide else F.col(col)
             for col in self.intersect_rows.columns
         ]
+        # avoid orphaned cached data (incl. unmasked sensitive vals) in executor memory
+        if self.cache_intermediates:
+            self.intersect_rows.unpersist()
         self.intersect_rows = self.intersect_rows.select(select_cols)
 
     def _validate_dataframe(
