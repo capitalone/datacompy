@@ -275,7 +275,15 @@ class SnowflakeCompare(BaseCompare):
             )
 
     def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
-        """Hides sensitive columns of df1 or df2 if applicable in the compare."""
+        """Hides sensitive columns of df1 or df2 if applicable in the compare.
+
+        Parameters
+        ----------
+        sensitive_columns : List[str]
+            List of column names to hide. Column names are case-insensitive and
+            will be normalized to uppercase. Quoted identifiers (e.g. '"col"')
+            will have quotes stripped before matching.
+        """
         # Don't allow hiding columns again before first revealing
         if self.sensitive_columns:
             raise ValueError(
