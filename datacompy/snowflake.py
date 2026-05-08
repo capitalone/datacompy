@@ -265,9 +265,9 @@ class SnowflakeCompare(BaseCompare):
 
         # Warn if column not found in either dataframe
         unused = [
-            col
-            for col in self.sensitive_columns
-            if (col not in self.df1.columns) and (col not in self.df2.columns)
+            c
+            for c in self.sensitive_columns
+            if (c not in self.df1.columns) and (c not in self.df2.columns)
         ]
         if unused:
             LOG.warning(
@@ -305,7 +305,7 @@ class SnowflakeCompare(BaseCompare):
         for df_name in ("df1_unq_rows", "df2_unq_rows"):
             df = getattr(self, df_name)
             LOG.debug(f"Hiding sensitive columns in {df_name}")
-            cols_to_hide = [col for col in df.columns if col in sensitive_with_suffixes]
+            cols_to_hide = [c for c in df.columns if c in sensitive_with_suffixes]
             if not cols_to_hide:  # skip if empty
                 continue
             # Maintains column ordering for the hide
@@ -318,7 +318,7 @@ class SnowflakeCompare(BaseCompare):
         # Hide columns in intersect_rows
         LOG.debug("Hiding sensitive columns in intersect_rows")
         cols_to_hide = [
-            col for col in self.intersect_rows.columns if col in sensitive_with_suffixes
+            c for c in self.intersect_rows.columns if c in sensitive_with_suffixes
         ]
         if not cols_to_hide:  # skip if empty
             return
@@ -961,12 +961,12 @@ class SnowflakeCompare(BaseCompare):
         return {
             "column_comparison": {
                 "unequal_columns": len(
-                    [col for col in self.column_stats if col["unequal_cnt"] > 0]
+                    [c for c in self.column_stats if c["unequal_cnt"] > 0]
                 ),
                 "equal_columns": len(
-                    [col for col in self.column_stats if col["unequal_cnt"] == 0]
+                    [c for c in self.column_stats if c["unequal_cnt"] == 0]
                 ),
-                "unequal_values": sum(col["unequal_cnt"] for col in self.column_stats),
+                "unequal_values": sum(c["unequal_cnt"] for c in self.column_stats),
             }
         }
 
