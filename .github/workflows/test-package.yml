@@ -36,10 +36,10 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11"]
         spark-version: [3.5.7]
-        pandas-version: ["2.3.3", "3.0.0"]
+        pandas-version: ["2.3.3", "3.0.3"]
         exclude:
           - python-version: "3.10"
-            pandas-version: "3.0.0"
+            pandas-version: "3.0.3"
 
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
@@ -78,10 +78,10 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
         spark-version: [4.0.1]
-        pandas-version: ["2.3.3", "3.0.0"]
+        pandas-version: ["2.3.3", "3.0.3"]
         exclude:
           - python-version: "3.10"
-            pandas-version: "3.0.0"
+            pandas-version: "3.0.3"
 
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
