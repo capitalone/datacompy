@@ -19,9 +19,9 @@ and lets you tweak how accurate matches have to be). Supported types include:
 - Snowflake
 
 > [!IMPORTANT]
-> datacompy is progressing towards a `v1` release. During this transition, a `support/0.19.x` branch will be maintained solely for `v0.19.x` users.
-> This branch will only receive dependency updates and critical bug fixes; no new features will be added.
-> All new feature development should target the `v1` branches (`develop` and eventually `main`).
+> datacompy has released `v1`. The `v0.19.x` line is no longer supported — users should upgrade to `v1` going forward.
+> The `support/0.19.x` branch is archived and will only receive critical security fixes on a best-effort basis; no new features or regular maintenance will be provided.
+> All active development targets the `v1` branches (`develop` and `main`).
 
 
 ## Quick Installation
