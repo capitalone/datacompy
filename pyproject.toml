@@ -33,7 +33,7 @@ classifiers = [
 dynamic = [ "version" ]
 dependencies = [
   "jinja2>=3",
-  "numpy<2.5>=1.26.4",
+  "numpy<2.5,>=1.26.4",
   "ordered-set<=4.1,>=4.0.2",
   "pandas<3.1,>=2.2",
   "polars[pandas]<1.41,>=0.20.4",
