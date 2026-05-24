@@ -2251,9 +2251,9 @@ def test_array_comparator_spark(spark_session):
     compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
     assert not compare.matches()
     assert compare.df1_unq_rows.count() == 1
-    assert compare.df1_unq_rows.toPandas()["id_df1"].iloc[0] == 3
+    assert compare.df1_unq_rows.toPandas()["id"].iloc[0] == 3
     assert compare.df2_unq_rows.count() == 1
-    assert compare.df2_unq_rows.toPandas()["id_df2"].iloc[0] == 4
+    assert compare.df2_unq_rows.toPandas()["id"].iloc[0] == 4
     assert compare.intersect_rows.count() == 6
     assert not compare.intersect_rows_match()
     assert compare.count_matching_rows() == 3
@@ -2446,11 +2446,11 @@ def test_sensitive_columns_hide(spark_session):
     assert compare.df1.toPandas().loc[0, "b"] == 2
     assert compare.df1.toPandas().loc[1, "b"] == 0
     assert len(df1_unq_rows) == 1
-    assert df1_unq_rows.loc[0, "a_df1"] == 1
-    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert df1_unq_rows.loc[0, "a"] == 1
+    assert df1_unq_rows.loc[0, "b"] == "*******"
     assert len(df2_unq_rows) == 1
-    assert df2_unq_rows.loc[0, "a_df2"] == 2
-    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert df2_unq_rows.loc[0, "a"] == 2
+    assert df2_unq_rows.loc[0, "b"] == "*******"
     assert len(intersect_rows) == 1
     assert intersect_rows.loc[0, "a_df1"] == 1
     assert intersect_rows.loc[0, "b_df1"] == "*******"
@@ -2489,11 +2489,11 @@ def test_sensitive_columns_hide_reveal(spark_session):
     assert compare.df1.toPandas().loc[0, "b"] == 2
     assert compare.df1.toPandas().loc[1, "b"] == 0
     assert len(df1_unq_rows) == 1
-    assert df1_unq_rows.loc[0, "a_df1"] == 1
-    assert df1_unq_rows.loc[0, "b_df1"] == 0
+    assert df1_unq_rows.loc[0, "a"] == 1
+    assert df1_unq_rows.loc[0, "b"] == 0
     assert len(df2_unq_rows) == 1
-    assert df2_unq_rows.loc[0, "a_df2"] == 2
-    assert df2_unq_rows.loc[0, "b_df2"] == 0
+    assert df2_unq_rows.loc[0, "a"] == 2
+    assert df2_unq_rows.loc[0, "b"] == 0
     assert len(intersect_rows) == 1
     assert intersect_rows.loc[0, "a_df1"] == 1
     assert intersect_rows.loc[0, "b_df1"] == 2
@@ -2518,11 +2518,11 @@ def test_sensitive_columns_hide_reveal_hide(spark_session):
     assert compare.df1.toPandas().loc[0, "b"] == 2
     assert compare.df1.toPandas().loc[1, "b"] == 0
     assert len(df1_unq_rows) == 1
-    assert df1_unq_rows.loc[0, "a_df1"] == 1
-    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert df1_unq_rows.loc[0, "a"] == 1
+    assert df1_unq_rows.loc[0, "b"] == "*******"
     assert len(df2_unq_rows) == 1
-    assert df2_unq_rows.loc[0, "a_df2"] == 2
-    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert df2_unq_rows.loc[0, "a"] == 2
+    assert df2_unq_rows.loc[0, "b"] == "*******"
     assert len(intersect_rows) == 1
     assert intersect_rows.loc[0, "a_df1"] == 1
     assert intersect_rows.loc[0, "b_df1"] == "*******"
@@ -2545,11 +2545,11 @@ def test_sensitive_columns_cast_lower(spark_session):
     assert compare.df1.toPandas().loc[0, "b"] == 2
     assert compare.df1.toPandas().loc[1, "b"] == 0
     assert len(df1_unq_rows) == 1
-    assert df1_unq_rows.loc[0, "a_df1"] == 1
-    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert df1_unq_rows.loc[0, "a"] == 1
+    assert df1_unq_rows.loc[0, "b"] == "*******"
     assert len(df2_unq_rows) == 1
-    assert df2_unq_rows.loc[0, "a_df2"] == 2
-    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert df2_unq_rows.loc[0, "a"] == 2
+    assert df2_unq_rows.loc[0, "b"] == "*******"
     assert len(intersect_rows) == 1
     assert intersect_rows.loc[0, "a_df1"] == 1
     assert intersect_rows.loc[0, "b_df1"] == "*******"
@@ -2571,7 +2571,7 @@ def test_sensitive_columns_hide_join_columns(spark_session):
     assert compare.df1.toPandas().loc[0, "a"] == 1
     assert compare.df1.toPandas().loc[1, "a"] == 1
     assert len(df1_unq_rows) == 1
-    assert df1_unq_rows.loc[0, "a_df1"] == "*******"
+    assert df1_unq_rows.loc[0, "a"] == "*******"
     assert len(sample_mismatch) == 2
     assert sample_mismatch.loc[0, "a"] == "*******"
     assert sample_mismatch.loc[1, "a"] == "*******"
@@ -2592,7 +2592,7 @@ def test_sensitive_columns_hide_reveal_join_columns(spark_session):
     assert compare.df1.toPandas().loc[0, "a"] == 1
     assert compare.df1.toPandas().loc[1, "a"] == 1
     assert len(df1_unq_rows) == 1
-    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "a"] == 1
     assert len(sample_mismatch) == 2
     assert sample_mismatch.sort_values("a").reset_index(drop=True).loc[0, "a"] == 1
     assert sample_mismatch.sort_values("a").reset_index(drop=True).loc[1, "a"] == 2
@@ -2621,13 +2621,13 @@ def test_sensitive_columns_missing(spark_session):
     assert compare.df2.toPandas().loc[0, "d"] == 4
     assert compare.df2.toPandas().loc[1, "d"] == 7
     assert len(df1_unq_rows) == 1
-    assert df1_unq_rows.loc[0, "a_df1"] == 3
-    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
-    assert df1_unq_rows.loc[0, "c_df1"] == "*******"
+    assert df1_unq_rows.loc[0, "a"] == 3
+    assert df1_unq_rows.loc[0, "b"] == "*******"
+    assert df1_unq_rows.loc[0, "c"] == "*******"
     assert len(df2_unq_rows) == 1
-    assert df2_unq_rows.loc[0, "a_df2"] == 2
-    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
-    assert df2_unq_rows.loc[0, "d_df2"] == 7
+    assert df2_unq_rows.loc[0, "a"] == 2
+    assert df2_unq_rows.loc[0, "b"] == "*******"
+    assert df2_unq_rows.loc[0, "d"] == 7
     assert len(intersect_rows) == 1
     assert intersect_rows.loc[0, "b_df1"] == "*******"
     assert intersect_rows.loc[0, "b_df2"] == "*******"
@@ -2655,11 +2655,11 @@ def test_sensitive_columns_unused(spark_session, caplog):
     assert compare.df1.toPandas().loc[0, "b"] == 2
     assert compare.df1.toPandas().loc[1, "b"] == 0
     assert len(df1_unq_rows) == 1
-    assert df1_unq_rows.loc[0, "a_df1"] == 1
-    assert df1_unq_rows.loc[0, "b_df1"] == 0
+    assert df1_unq_rows.loc[0, "a"] == 1
+    assert df1_unq_rows.loc[0, "b"] == 0
     assert len(df2_unq_rows) == 1
-    assert df2_unq_rows.loc[0, "a_df2"] == 2
-    assert df2_unq_rows.loc[0, "b_df2"] == 0
+    assert df2_unq_rows.loc[0, "a"] == 2
+    assert df2_unq_rows.loc[0, "b"] == 0
     assert len(intersect_rows) == 1
     assert intersect_rows.loc[0, "a_df1"] == 1
     assert intersect_rows.loc[0, "b_df1"] == 2
@@ -2683,11 +2683,11 @@ def test_sensitive_columns_hide_reveal_empty(spark_session):
     assert compare.df1.toPandas().loc[0, "b"] == 2
     assert compare.df1.toPandas().loc[1, "b"] == 0
     assert len(df1_unq_rows) == 1
-    assert df1_unq_rows.loc[0, "a_df1"] == 1
-    assert df1_unq_rows.loc[0, "b_df1"] == 0
+    assert df1_unq_rows.loc[0, "a"] == 1
+    assert df1_unq_rows.loc[0, "b"] == 0
     assert len(df2_unq_rows) == 1
-    assert df2_unq_rows.loc[0, "a_df2"] == 2
-    assert df2_unq_rows.loc[0, "b_df2"] == 0
+    assert df2_unq_rows.loc[0, "a"] == 2
+    assert df2_unq_rows.loc[0, "b"] == 0
     assert len(intersect_rows) == 1
     assert intersect_rows.loc[0, "a_df1"] == 1
     assert intersect_rows.loc[0, "b_df1"] == 2
@@ -2710,11 +2710,11 @@ def test_sensitive_columns_hide_empty(spark_session):
     assert compare.df1.toPandas().loc[0, "b"] == 2
     assert compare.df1.toPandas().loc[1, "b"] == 0
     assert len(df1_unq_rows) == 1
-    assert df1_unq_rows.loc[0, "a_df1"] == 1
-    assert df1_unq_rows.loc[0, "b_df1"] == 0
+    assert df1_unq_rows.loc[0, "a"] == 1
+    assert df1_unq_rows.loc[0, "b"] == 0
     assert len(df2_unq_rows) == 1
-    assert df2_unq_rows.loc[0, "a_df2"] == 2
-    assert df2_unq_rows.loc[0, "b_df2"] == 0
+    assert df2_unq_rows.loc[0, "a"] == 2
+    assert df2_unq_rows.loc[0, "b"] == 0
     assert len(intersect_rows) == 1
     assert intersect_rows.loc[0, "a_df1"] == 1
     assert intersect_rows.loc[0, "b_df1"] == 2
@@ -2803,11 +2803,11 @@ def test_sensitive_columns_numeric_types_with_tolerance(spark_session):
     assert not isinstance(compare.df1.toPandas()["b"].loc[0], str)
     assert not isinstance(compare.df1.toPandas()["c"].loc[0], str)
     assert len(df1_unq_rows) == 1
-    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
-    assert df1_unq_rows.loc[0, "c_df1"] == "*******"
+    assert df1_unq_rows.loc[0, "b"] == "*******"
+    assert df1_unq_rows.loc[0, "c"] == "*******"
     assert len(df2_unq_rows) == 1
-    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
-    assert df2_unq_rows.loc[0, "c_df2"] == "*******"
+    assert df2_unq_rows.loc[0, "b"] == "*******"
+    assert df2_unq_rows.loc[0, "c"] == "*******"
     assert len(intersect_rows) == 1
     assert intersect_rows.loc[0, "b_df1"] == "*******"
     assert intersect_rows.loc[0, "b_df2"] == "*******"
@@ -2841,3 +2841,40 @@ def test_forbid_case_sensitive_columns(spark_session):
             join_columns=["a"],
             cast_column_names_lower=False,
         )
+
+
+def test_unq_rows_clean_columns_regression_288(spark_session):
+    """Regression test for #288: df1_unq_rows and df2_unq_rows should have the
+    original column names without _df1/_df2 suffixes and without leaking the
+    internal _merge_left/_merge_right indicator columns.
+    """
+    pdf1 = pd.DataFrame(
+        {
+            "id": [1, 2, 3, 4, 5],
+            "a": [2, 3, 2, 3, 2],
+            "b": ["a", "b", "c", "d", ""],
+        }
+    )
+    pdf2 = pd.DataFrame(
+        {
+            "id": [1, 2, 3, 4, 5, 6],
+            "a": [2, 3, 2, 3, 2, np.nan],
+            "b": ["a", "b", "c", "d", "", None],
+        }
+    )
+    df1 = spark_session.createDataFrame(pdf1)
+    df2 = spark_session.createDataFrame(pdf2)
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns="id")
+
+    # df2 has an extra row (id=6) only in df2
+    assert compare.df2_unq_rows.count() == 1
+    # Columns should match df2's original schema, no _df2 suffixes, no _merge_right leak
+    assert set(compare.df2_unq_rows.columns) == set(df2.columns)
+    assert "_merge_right" not in compare.df2_unq_rows.columns
+    assert "_merge_left" not in compare.df2_unq_rows.columns
+
+    # df1_unq_rows is empty here but should still have a clean schema
+    assert compare.df1_unq_rows.count() == 0
+    assert set(compare.df1_unq_rows.columns) == set(df1.columns)
+    assert "_merge_right" not in compare.df1_unq_rows.columns
+    assert "_merge_left" not in compare.df1_unq_rows.columns
