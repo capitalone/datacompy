@@ -1,5 +1,5 @@
 #
-# Copyright 2025 Capital One Services, LLC
+# Copyright 2026 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,21 +20,24 @@ Testing out the datacompy functionality
 import io
 import logging
 import os
+import re
 import sys
 import tempfile
 from datetime import date, datetime
 from decimal import Decimal
 from unittest import mock
 
+import datacompy
 import numpy as np
 import pandas as pd
 import pytest
-from datacompy.core import (
-    Compare,
+from datacompy.comparator.base import BaseComparator
+from datacompy.comparator.string import pandas_normalize_string_column
+from datacompy.pandas import (
+    PandasCompare,
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
-    normalize_string_column,
     temp_column_name,
 )
 from pandas.testing import assert_frame_equal, assert_series_equal
@@ -262,14 +265,12 @@ def test_date_columns_unequal():
 
 
 def test_bad_date_columns():
-    """If strings can't be coerced into dates then it should be false for the
-    whole column.
-    """
+    """If strings can't be coerced into dates then fall back to just checking the string version as a last resort."""
     df = pd.DataFrame(
         [{"a": "2017-01-01", "b": "2017-01-01"}, {"a": "2017-01-01", "b": "217-01-01"}]
     )
     df["a_dt"] = pd.to_datetime(df["a"])
-    assert not columns_equal(df.a_dt, df.b).any()
+    assert columns_equal(df.a_dt, df.b).tolist() == [True, False]
 
 
 def test_rounded_date_columns():
@@ -392,11 +393,11 @@ def test_infinity_and_beyond():
 def test_mixed_column():
     df = pd.DataFrame(
         [
-            {"a": "hi", "b": "hi", "expected": False},
-            {"a": 1, "b": 1, "expected": False},
-            {"a": np.inf, "b": np.inf, "expected": False},
-            {"a": Decimal("1"), "b": Decimal("1"), "expected": False},
-            {"a": 1, "b": "1", "expected": False},
+            {"a": "hi", "b": "hi", "expected": True},
+            {"a": 1, "b": 1, "expected": True},
+            {"a": np.inf, "b": np.inf, "expected": True},
+            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
+            {"a": 1, "b": "1", "expected": True},
             {"a": 1, "b": "yo", "expected": False},
         ]
     )
@@ -409,9 +410,9 @@ def test_mixed_column_with_ignore_spaces():
     df = pd.DataFrame(
         [
             {"a": "hi", "b": "hi ", "expected": False},
-            {"a": 1, "b": 1, "expected": False},
-            {"a": np.inf, "b": np.inf, "expected": False},
-            {"a": Decimal("1"), "b": Decimal("1"), "expected": False},
+            {"a": 1, "b": 1, "expected": True},
+            {"a": np.inf, "b": np.inf, "expected": True},
+            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
             {"a": 1, "b": "1 ", "expected": False},
             {"a": 1, "b": "yo ", "expected": False},
         ]
@@ -425,9 +426,9 @@ def test_mixed_column_with_ignore_spaces_and_case():
     df = pd.DataFrame(
         [
             {"a": "hi", "b": "hi ", "expected": False},
-            {"a": 1, "b": 1, "expected": False},
-            {"a": np.inf, "b": np.inf, "expected": False},
-            {"a": Decimal("1"), "b": Decimal("1"), "expected": False},
+            {"a": 1, "b": 1, "expected": True},
+            {"a": np.inf, "b": np.inf, "expected": True},
+            {"a": Decimal("1"), "b": Decimal("1"), "expected": True},
             {"a": 1, "b": "1 ", "expected": False},
             {"a": 1, "b": "yo ", "expected": False},
             {"a": "Hi", "b": "hI ", "expected": False},
@@ -454,11 +455,7 @@ def test_categorical_column():
 
     actual_out = columns_equal(df.foo, df.bar, ignore_spaces=True, ignore_case=True)
     assert actual_out.all()
-
-    actual_out = columns_equal(df.foo, df.foo_bad, ignore_spaces=True, ignore_case=True)
-    assert list(actual_out) == [False, True, True]
-
-    compare = Compare(df, df, join_columns=["idx"])
+    compare = datacompy.PandasCompare(df, df, join_columns=["idx"])
     assert compare.intersect_rows["foo_match"].all()
     assert compare.intersect_rows["bar_match"].all()
 
@@ -466,23 +463,25 @@ def test_categorical_column():
 def test_compare_df_setter_bad():
     df = pd.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
     with raises(TypeError, match="df1 must be a pandas DataFrame"):
-        Compare("a", "a", ["a"])
+        datacompy.PandasCompare("a", "a", ["a"])
     with raises(ValueError, match="df1 must have all columns from join_columns"):
-        Compare(df, df.copy(), ["b"])
+        datacompy.PandasCompare(df, df.copy(), ["b"])
     with raises(ValueError, match="df1 must have unique column names"):
-        Compare(df, df.copy(), ["a"])
+        datacompy.PandasCompare(df, df.copy(), ["a"])
     df_dupe = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
-    assert Compare(df_dupe, df_dupe.copy(), ["a", "b"]).df1.equals(df_dupe)
+    assert datacompy.PandasCompare(df_dupe, df_dupe.copy(), ["a", "b"]).df1.equals(
+        df_dupe
+    )
 
 
 def test_compare_df_setter_good():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = pd.DataFrame([{"A": 1, "B": 2}, {"A": 2, "B": 3}])
-    compare = Compare(df1, df2, ["a"])
+    compare = datacompy.PandasCompare(df1, df2, ["a"])
     assert compare.df1.equals(df1)
     assert compare.df2.equals(df2)
     assert compare.join_columns == ["a"]
-    compare = Compare(df1, df2, ["A", "b"])
+    compare = datacompy.PandasCompare(df1, df2, ["A", "b"])
     assert compare.df1.equals(df1)
     assert compare.df2.equals(df2)
     assert compare.join_columns == ["a", "b"]
@@ -491,7 +490,7 @@ def test_compare_df_setter_good():
 def test_compare_df_setter_different_cases():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = pd.DataFrame([{"A": 1, "b": 2}, {"A": 2, "b": 3}])
-    compare = Compare(df1, df2, ["a"])
+    compare = datacompy.PandasCompare(df1, df2, ["a"])
     assert compare.df1.equals(df1)
     assert compare.df2.equals(df2)
 
@@ -499,21 +498,26 @@ def test_compare_df_setter_different_cases():
 def test_compare_df_setter_bad_index():
     df = pd.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
     with raises(TypeError, match="df1 must be a pandas DataFrame"):
-        Compare("a", "a", on_index=True)
+        datacompy.PandasCompare("a", "a", on_index=True)
     with raises(ValueError, match="df1 must have unique column names"):
-        Compare(df, df.copy(), on_index=True)
+        datacompy.PandasCompare(df, df.copy(), on_index=True)
 
 
 def test_compare_on_index_and_join_columns():
     df = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     with raises(Exception, match="Only provide on_index or join_columns"):
-        Compare(df, df.copy(), on_index=True, join_columns=["a"])
+        datacompy.PandasCompare(df, df.copy(), on_index=True, join_columns=["a"])
+
+    with raises(
+        ValueError, match="Either join_columns must be provide or on_index must be True"
+    ):
+        datacompy.PandasCompare(df, df.copy(), on_index=False, join_columns=None)
 
 
 def test_compare_df_setter_good_index():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
-    compare = Compare(df1, df2, on_index=True)
+    compare = datacompy.PandasCompare(df1, df2, on_index=True)
     assert compare.df1.equals(df1)
     assert compare.df2.equals(df2)
 
@@ -521,7 +525,7 @@ def test_compare_df_setter_good_index():
 def test_columns_overlap():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
-    compare = Compare(df1, df2, ["a"])
+    compare = datacompy.PandasCompare(df1, df2, ["a"])
     assert compare.df1_unq_columns() == set()
     assert compare.df2_unq_columns() == set()
     assert compare.intersect_columns() == {"a", "b"}
@@ -530,7 +534,7 @@ def test_columns_overlap():
 def test_columns_no_overlap():
     df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
     df2 = pd.DataFrame([{"a": 1, "b": 2, "d": "oh"}, {"a": 2, "b": 3, "d": "ya"}])
-    compare = Compare(df1, df2, ["a"])
+    compare = datacompy.PandasCompare(df1, df2, ["a"])
     assert compare.df1_unq_columns() == {"c"}
     assert compare.df2_unq_columns() == {"d"}
     assert compare.intersect_columns() == {"a", "b"}
@@ -551,7 +555,7 @@ def test_columns_maintain_order_through_set_operations():
         ],
         columns=["join", "e", "h", "b", "a", "g", "d"],
     )
-    compare = Compare(df1, df2, ["join"])
+    compare = datacompy.PandasCompare(df1, df2, ["join"])
     assert list(compare.df1_unq_columns()) == ["f", "c"]
     assert list(compare.df2_unq_columns()) == ["e", "d"]
     assert list(compare.intersect_columns()) == ["join", "g", "b", "h", "a"]
@@ -564,7 +568,7 @@ def test_10k_rows():
     df1.columns = ["a", "b", "c"]
     df2 = df1.copy()
     df2["b"] = df2["b"] + 0.1
-    compare_tol = Compare(df1, df2, ["a"], abs_tol=0.2)
+    compare_tol = datacompy.PandasCompare(df1, df2, ["a"], abs_tol=0.2)
     assert compare_tol.matches()
     assert len(compare_tol.df1_unq_rows) == 0
     assert len(compare_tol.df2_unq_rows) == 0
@@ -573,7 +577,7 @@ def test_10k_rows():
     assert compare_tol.all_rows_overlap()
     assert compare_tol.intersect_rows_match()
 
-    compare_no_tol = Compare(df1, df2, ["a"])
+    compare_no_tol = datacompy.PandasCompare(df1, df2, ["a"])
     assert not compare_no_tol.matches()
     assert len(compare_no_tol.df1_unq_rows) == 0
     assert len(compare_no_tol.df2_unq_rows) == 0
@@ -587,7 +591,7 @@ def test_subset(caplog):
     caplog.set_level(logging.DEBUG)
     df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
     df2 = pd.DataFrame([{"a": 1, "c": "hi"}])
-    comp = Compare(df1, df2, ["a"])
+    comp = datacompy.PandasCompare(df1, df2, ["a"])
     assert comp.subset()
     assert "Checking equality" in caplog.text
 
@@ -596,7 +600,7 @@ def test_not_subset(caplog):
     caplog.set_level(logging.INFO)
     df1 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "yo"}])
     df2 = pd.DataFrame([{"a": 1, "b": 2, "c": "hi"}, {"a": 2, "b": 2, "c": "great"}])
-    comp = Compare(df1, df2, ["a"])
+    comp = datacompy.PandasCompare(df1, df2, ["a"])
     assert not comp.subset()
     assert "c: 1 / 2 (50.00%) match" in caplog.text
 
@@ -607,7 +611,7 @@ def test_large_subset():
     df1.reset_index(inplace=True)
     df1.columns = ["a", "b", "c"]
     df2 = df1[["a", "b"]].sample(50).copy()
-    comp = Compare(df1, df2, ["a"])
+    comp = datacompy.PandasCompare(df1, df2, ["a"])
     assert not comp.matches()
     assert comp.subset()
 
@@ -615,14 +619,14 @@ def test_large_subset():
 def test_string_joiner():
     df1 = pd.DataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
     df2 = pd.DataFrame([{"ab": 1, "bc": 2}, {"ab": 2, "bc": 2}])
-    compare = Compare(df1, df2, "ab")
+    compare = datacompy.PandasCompare(df1, df2, "ab")
     assert compare.matches()
 
 
 def test_decimal_with_joins():
     df1 = pd.DataFrame([{"a": Decimal("1"), "b": 2}, {"a": Decimal("2"), "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}])
-    compare = Compare(df1, df2, "a")
+    compare = datacompy.PandasCompare(df1, df2, "a")
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -632,7 +636,7 @@ def test_decimal_with_joins():
 def test_decimal_with_nulls():
     df1 = pd.DataFrame([{"a": 1, "b": Decimal("2")}, {"a": 2, "b": Decimal("2")}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 2}, {"a": 3, "b": 2}])
-    compare = Compare(df1, df2, "a")
+    compare = datacompy.PandasCompare(df1, df2, "a")
     assert not compare.matches()
     assert compare.all_columns_match()
     assert not compare.all_rows_overlap()
@@ -642,7 +646,7 @@ def test_decimal_with_nulls():
 def test_strings_with_joins():
     df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
     df2 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    compare = Compare(df1, df2, "a")
+    compare = datacompy.PandasCompare(df1, df2, "a")
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -652,7 +656,7 @@ def test_strings_with_joins():
 def test_index_joining():
     df1 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
     df2 = pd.DataFrame([{"a": "hi", "b": 2}, {"a": "bye", "b": 2}])
-    compare = Compare(df1, df2, on_index=True)
+    compare = datacompy.PandasCompare(df1, df2, on_index=True)
     assert compare.matches()
 
 
@@ -662,7 +666,7 @@ def test_index_joining_strings_i_guess():
     df1.index = df1["a"]
     df2.index = df2["a"]
     df1.index.name = df2.index.name = None
-    compare = Compare(df1, df2, on_index=True)
+    compare = datacompy.PandasCompare(df1, df2, on_index=True)
     assert compare.matches()
 
 
@@ -671,7 +675,7 @@ def test_index_joining_non_overlapping():
     df2 = pd.DataFrame(
         [{"a": "hi", "b": 2}, {"a": "bye", "b": 2}, {"a": "back fo mo", "b": 3}]
     )
-    compare = Compare(df1, df2, on_index=True)
+    compare = datacompy.PandasCompare(df1, df2, on_index=True)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.intersect_rows_match()
@@ -741,7 +745,7 @@ def test_temp_column_name_one_already():
 def test_simple_dupes_one_field():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    compare = Compare(df1, df2, join_columns=["a"])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     compare.report()
@@ -750,7 +754,7 @@ def test_simple_dupes_one_field():
 def test_simple_dupes_two_fields():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 2}])
-    compare = Compare(df1, df2, join_columns=["a", "b"])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a", "b"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     compare.report()
@@ -762,7 +766,7 @@ def test_simple_dupes_index():
     df1.index = df1["a"]
     df2.index = df2["a"]
     df1.index.name = df2.index.name = None
-    compare = Compare(df1, df2, on_index=True)
+    compare = datacompy.PandasCompare(df1, df2, on_index=True)
     assert compare.matches()
     # Just render the report to make sure it renders.
     compare.report()
@@ -771,7 +775,7 @@ def test_simple_dupes_index():
 def test_simple_dupes_one_field_two_vals_1():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
-    compare = Compare(df1, df2, join_columns=["a"])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # Just render the report to make sure it renders.
     compare.report()
@@ -780,7 +784,7 @@ def test_simple_dupes_one_field_two_vals_1():
 def test_simple_dupes_one_field_two_vals_2():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
-    compare = Compare(df1, df2, join_columns=["a"])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
     assert not compare.matches()
     assert len(compare.df1_unq_rows) == 1
     assert len(compare.df2_unq_rows) == 1
@@ -792,7 +796,7 @@ def test_simple_dupes_one_field_two_vals_2():
 def test_simple_dupes_one_field_three_to_two_vals():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
-    compare = Compare(df1, df2, join_columns=["a"])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
     assert not compare.matches()
     assert len(compare.df1_unq_rows) == 1
     assert len(compare.df2_unq_rows) == 0
@@ -828,9 +832,9 @@ def test_dupes_from_real_data():
 200,0,2017-07-01,1009393,2.01,2017-06-29,D,USA,5814,22102,,F,"""
     df1 = pd.read_csv(io.StringIO(data), sep=",")
     df2 = df1.copy()
-    compare_acct = Compare(df1, df2, join_columns=["acct_id"])
+    compare_acct = datacompy.PandasCompare(df1, df2, join_columns=["acct_id"])
     assert compare_acct.matches()
-    compare_unq = Compare(
+    compare_unq = datacompy.PandasCompare(
         df1,
         df2,
         join_columns=["acct_id", "acct_sfx_num", "trxn_post_dt", "trxn_post_seq_num"],
@@ -844,13 +848,13 @@ def test_dupes_from_real_data():
 def test_strings_with_joins_with_ignore_spaces():
     df1 = pd.DataFrame([{"a": "hi", "b": " A"}, {"a": "bye", "b": "A"}])
     df2 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A "}])
-    compare = Compare(df1, df2, "a", ignore_spaces=False)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = Compare(df1, df2, "a", ignore_spaces=True)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -860,13 +864,13 @@ def test_strings_with_joins_with_ignore_spaces():
 def test_strings_with_joins_with_ignore_case():
     df1 = pd.DataFrame([{"a": "hi", "b": "a"}, {"a": "bye", "b": "A"}])
     df2 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "a"}])
-    compare = Compare(df1, df2, "a", ignore_case=False)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_case=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = Compare(df1, df2, "a", ignore_case=True)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_case=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -876,13 +880,13 @@ def test_strings_with_joins_with_ignore_case():
 def test_decimal_with_joins_with_ignore_spaces():
     df1 = pd.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
     df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
-    compare = Compare(df1, df2, "a", ignore_spaces=False)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = Compare(df1, df2, "a", ignore_spaces=True)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -892,13 +896,13 @@ def test_decimal_with_joins_with_ignore_spaces():
 def test_decimal_with_joins_with_ignore_case():
     df1 = pd.DataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
     df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
-    compare = Compare(df1, df2, "a", ignore_case=False)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_case=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = Compare(df1, df2, "a", ignore_case=True)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_case=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -908,13 +912,13 @@ def test_decimal_with_joins_with_ignore_case():
 def test_index_with_joins_with_ignore_spaces():
     df1 = pd.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
     df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
-    compare = Compare(df1, df2, on_index=True, ignore_spaces=False)
+    compare = datacompy.PandasCompare(df1, df2, on_index=True, ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = Compare(df1, df2, "a", ignore_spaces=True)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -924,13 +928,13 @@ def test_index_with_joins_with_ignore_spaces():
 def test_index_with_joins_with_ignore_case():
     df1 = pd.DataFrame([{"a": 1, "b": "a"}, {"a": 2, "b": "A"}])
     df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "a"}])
-    compare = Compare(df1, df2, on_index=True, ignore_case=False)
+    compare = datacompy.PandasCompare(df1, df2, on_index=True, ignore_case=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert not compare.intersect_rows_match()
 
-    compare = Compare(df1, df2, "a", ignore_case=True)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_case=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -940,20 +944,20 @@ def test_index_with_joins_with_ignore_case():
 def test_full_join_counts_all_matches():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
-    compare = Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    compare = datacompy.PandasCompare(df1, df2, ["a", "b"], ignore_spaces=False)
     assert compare.count_matching_rows() == 2
 
 
 def test_strings_with_ignore_spaces_and_join_columns():
     df1 = pd.DataFrame([{"a": "hi", "b": "A"}, {"a": "bye", "b": "A"}])
     df2 = pd.DataFrame([{"a": " hi ", "b": "A"}, {"a": " bye ", "b": "A"}])
-    compare = Compare(df1, df2, "a", ignore_spaces=False)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert not compare.all_rows_overlap()
     assert compare.count_matching_rows() == 0
 
-    compare = Compare(df1, df2, "a", ignore_spaces=True)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -964,14 +968,14 @@ def test_strings_with_ignore_spaces_and_join_columns():
 def test_integers_with_ignore_spaces_and_join_columns():
     df1 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
     df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A"}])
-    compare = Compare(df1, df2, "a", ignore_spaces=False)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_spaces=False)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
     assert compare.intersect_rows_match()
     assert compare.count_matching_rows() == 2
 
-    compare = Compare(df1, df2, "a", ignore_spaces=True)
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_spaces=True)
     assert compare.matches()
     assert compare.all_columns_match()
     assert compare.all_rows_overlap()
@@ -999,7 +1003,7 @@ def test_sample_mismatch():
     """
     df1 = pd.read_csv(io.StringIO(data1), sep=",")
     df2 = pd.read_csv(io.StringIO(data2), sep=",")
-    compare = Compare(df1, df2, "acct_id")
+    compare = datacompy.PandasCompare(df1, df2, "acct_id")
 
     output = compare.sample_mismatch(column="name", sample_count=1)
     assert output.shape[0] == 1
@@ -1041,7 +1045,7 @@ def test_sample_mismatch_with_nans():
 
     df2.set_index("acct_id", inplace=True)
 
-    report = Compare(df1=df1, df2=df2, on_index=True).report()
+    report = datacompy.PandasCompare(df1=df1, df2=df2, on_index=True).report()
 
     assert "Tobias Funke" in report
 
@@ -1066,7 +1070,7 @@ def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():
     """
     df1 = pd.read_csv(io.StringIO(data1), sep=",")
     df2 = pd.read_csv(io.StringIO(data2), sep=",")
-    compare = Compare(df1, df2, "acct_id")
+    compare = datacompy.PandasCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
@@ -1106,7 +1110,7 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching():
         """
     df1 = pd.read_csv(io.StringIO(data1), sep=",")
     df2 = pd.read_csv(io.StringIO(data2), sep=",")
-    compare = Compare(df1, df2, "acct_id")
+    compare = datacompy.PandasCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
@@ -1147,7 +1151,7 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows():
     """
     df1 = pd.read_csv(io.StringIO(data1), sep=",")
     df2 = pd.read_csv(io.StringIO(data2), sep=",")
-    compare = Compare(df1, df2, "acct_id")
+    compare = datacompy.PandasCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch(ignore_matching_cols=True)
 
@@ -1185,7 +1189,7 @@ def test_all_mismatch_ignore_matching_cols_some_calls_matching():
     """
     df1 = pd.read_csv(io.StringIO(data1), sep=",")
     df2 = pd.read_csv(io.StringIO(data2), sep=",")
-    compare = Compare(df1, df2, "acct_id")
+    compare = datacompy.PandasCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch(ignore_matching_cols=True)
 
@@ -1222,7 +1226,7 @@ def test_all_mismatch_ignore_matching_cols_no_cols_matching():
     """
     df1 = pd.read_csv(io.StringIO(data1), sep=",")
     df2 = pd.read_csv(io.StringIO(data2), sep=",")
-    compare = Compare(df1, df2, "acct_id")
+    compare = datacompy.PandasCompare(df1, df2, "acct_id")
 
     output = compare.all_mismatch()
     assert output.shape[0] == 4
@@ -1288,7 +1292,7 @@ def test_dupes_with_nulls():
     df2 = pd.DataFrame(
         {"fld_1": [1, 2, 3, 4, 5], "fld_2": ["A", np.nan, np.nan, np.nan, np.nan]}
     )
-    comp = Compare(df1, df2, join_columns=["fld_1", "fld_2"])
+    comp = datacompy.PandasCompare(df1, df2, join_columns=["fld_1", "fld_2"])
     assert comp.subset()
 
 
@@ -1340,42 +1344,46 @@ def test_lower():
     # should match
     df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
     df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
-    compare = Compare(df1, df2, join_columns=["a"])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # should not match
     df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
     df2 = pd.DataFrame({"a": [1, 2, 3], "B": [0, 1, 2]})
-    compare = Compare(df1, df2, join_columns=["a"], cast_column_names_lower=False)
+    compare = datacompy.PandasCompare(
+        df1, df2, join_columns=["a"], cast_column_names_lower=False
+    )
     assert not compare.matches()
 
     # test join column
     # should match
     df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
     df2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
-    compare = Compare(df1, df2, join_columns=["a"])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
     assert compare.matches()
     # should fail because "a" is not found in df2
     df1 = pd.DataFrame({"a": [1, 2, 3], "b": [0, 1, 2]})
     df2 = pd.DataFrame({"A": [1, 2, 3], "B": [0, 1, 2]})
     expected_message = "df2 must have all columns from join_columns"
     with raises(ValueError, match=expected_message):
-        compare = Compare(df1, df2, join_columns=["a"], cast_column_names_lower=False)
+        compare = PandasCompare(
+            df1, df2, join_columns=["a"], cast_column_names_lower=False
+        )
 
 
 def test_integer_column_names():
     """This function tests that integer column names would also work"""
     df1 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
     df2 = pd.DataFrame({1: [1, 2, 3], 2: [0, 1, 2]})
-    compare = Compare(df1, df2, join_columns=[1])
+    compare = PandasCompare(df1, df2, join_columns=[1])
     assert compare.matches()
 
 
-@mock.patch("datacompy.core.render")
-@mock.patch("datacompy.core.save_html_report")
+@mock.patch("datacompy.pandas.render")
+@mock.patch("datacompy.pandas.save_html_report")
 def test_save_html(mock_save_html, mock_render):
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
-    compare = Compare(df1, df2, ["a"])
+    compare = PandasCompare(df1, df2, ["a"])
     mock_render.return_value = "<html>test</html>"
     result = compare.report(html_file="test.html")
 
@@ -1411,7 +1419,7 @@ def test_custom_template_usage():
     """Test using a custom template with template_path parameter."""
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
-    compare = Compare(df1, df2, ["a"])
+    compare = PandasCompare(df1, df2, ["a"])
 
     # Create a simple test template
     with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
@@ -1441,7 +1449,7 @@ def test_template_without_extension():
     """Test that template files without .j2 extension still work."""
     df1 = pd.DataFrame([{"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}])
-    compare = Compare(df1, df2, ["a"])
+    compare = PandasCompare(df1, df2, ["a"])
 
     # Create a test template without extension
     with tempfile.NamedTemporaryFile(delete=False, mode="w") as tmp:
@@ -1465,7 +1473,7 @@ def test_nonexistent_template():
     """Test that a clear error is raised when template file doesn't exist."""
     df1 = pd.DataFrame([{"a": 1, "b": 2}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}])
-    compare = Compare(df1, df2, ["a"])
+    compare = PandasCompare(df1, df2, ["a"])
 
     with pytest.raises(FileNotFoundError):
         compare.report(template_path="/nonexistent/path/template.j2")
@@ -1475,7 +1483,7 @@ def test_template_context_variables():
     """Test that all expected context variables are available in the template."""
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
-    compare = Compare(df1, df2, ["a"])
+    compare = PandasCompare(df1, df2, ["a"])
 
     # Create a test template that checks for expected variables
     with tempfile.NamedTemporaryFile(suffix=".j2", delete=False, mode="w") as tmp:
@@ -1505,7 +1513,7 @@ def test_html_report_generation():
     """Test that HTML report is properly generated and saved."""
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
-    compare = Compare(df1, df2, ["a"])
+    compare = PandasCompare(df1, df2, ["a"])
 
     # Create a temporary directory for the test
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -1533,7 +1541,7 @@ def test_html_report_generation():
 def test_full_join_counts_no_matches():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
     df2 = pd.DataFrame([{"a": 1, "b": 4}, {"a": 1, "b": 5}])
-    compare = Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    compare = datacompy.PandasCompare(df1, df2, ["a", "b"], ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert not compare.all_rows_overlap()
@@ -1558,7 +1566,7 @@ def test_full_join_counts_no_matches():
 def test_full_join_counts_some_matches():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 3}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 5}])
-    compare = Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    compare = datacompy.PandasCompare(df1, df2, ["a", "b"], ignore_spaces=False)
     assert not compare.matches()
     assert compare.all_columns_match()
     assert not compare.all_rows_overlap()
@@ -1586,7 +1594,7 @@ def test_full_join_counts_some_matches():
 def test_non_full_join_counts_no_matches():
     df1 = pd.DataFrame([{"a": 1, "b": 2, "c": 4}, {"a": 1, "b": 3, "c": 4}])
     df2 = pd.DataFrame([{"a": 1, "b": 4, "d": 5}, {"a": 1, "b": 5, "d": 5}])
-    compare = Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    compare = datacompy.PandasCompare(df1, df2, ["a", "b"], ignore_spaces=False)
     assert not compare.matches()
     assert not compare.all_columns_match()
     assert not compare.all_rows_overlap()
@@ -1611,7 +1619,7 @@ def test_non_full_join_counts_no_matches():
 def test_non_full_join_counts_some_matches():
     df1 = pd.DataFrame([{"a": 1, "b": 2, "c": 4}, {"a": 1, "b": 3, "c": 4}])
     df2 = pd.DataFrame([{"a": 1, "b": 2, "d": 5}, {"a": 1, "b": 5, "d": 5}])
-    compare = Compare(df1, df2, ["a", "b"], ignore_spaces=False)
+    compare = datacompy.PandasCompare(df1, df2, ["a", "b"], ignore_spaces=False)
     assert not compare.matches()
     assert not compare.all_columns_match()
     assert not compare.all_rows_overlap()
@@ -1685,7 +1693,7 @@ def test_merge_date_ignore_spaces():
             ["D  ", 462638.37, 4, date(year=2025, month=1, day=4)],
         ],
     )
-    compare = Compare(
+    compare = datacompy.PandasCompare(
         df1=df1,
         df2=df2,
         df1_name="df1",
@@ -1960,7 +1968,7 @@ def test_columns_equal_lists():
     ],
 )
 def test_normalize_string_column(data, ignore_spaces, ignore_case, expected):
-    result = normalize_string_column(
+    result = pandas_normalize_string_column(
         data, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
     assert_series_equal(result, expected, check_names=False)
@@ -1979,7 +1987,7 @@ def test_per_column_tolerances() -> None:
         }
     )
 
-    compare = Compare(
+    compare = datacompy.pandas.PandasCompare(
         df1,
         df2,
         join_columns=["id"],
@@ -1998,7 +2006,7 @@ def test_default_tolerance() -> None:
     df1 = pd.DataFrame({"id": [1, 2], "col1": [1.0, 2.0], "col2": [1.0, 2.0]})
     df2 = pd.DataFrame({"id": [1, 2], "col1": [1.1, 2.1], "col2": [1.1, 2.1]})
 
-    compare = Compare(
+    compare = datacompy.pandas.PandasCompare(
         df1, df2, join_columns=["id"], abs_tol={"col1": 0.05, "default": 0.2}
     )
 
@@ -2028,7 +2036,7 @@ def test_mixed_tolerances() -> None:
         {"id": [1, 2], "small_vals": [1.1, 2.1], "large_vals": [1001.0, 2002.0]}
     )
 
-    compare = Compare(
+    compare = datacompy.pandas.PandasCompare(
         df1,
         df2,
         join_columns=["id"],
@@ -2048,3 +2056,608 @@ def test_mixed_tolerances() -> None:
     )  # large_vals should match (rel_tol 0.001 = 0.1%)
     assert compare._rel_tol_dict == {"large_vals": 0.001, "default": 0.0}
     assert compare._abs_tol_dict == {"small_vals": 0.2, "default": 0.0}
+
+
+def test_custom_comparator_pandas():
+    """Test that a custom comparator can be passed and used with Pandas."""
+
+    class StringLengthComparator(BaseComparator):
+        """A custom comparator that matches strings based on length."""
+
+        def compare(self, s1, s2, **kwargs):
+            if (s1.dtype == "object" or pd.api.types.is_string_dtype(s1)) and (
+                s2.dtype == "object" or pd.api.types.is_string_dtype(s2)
+            ):
+                return s1.str.len() == s2.str.len()
+            return None
+
+    df1 = pd.DataFrame([{"id": 1, "value": "apple"}])
+    df2 = pd.DataFrame([{"id": 1, "value": "grape"}])
+
+    # With custom comparator, it should match because 'apple' and 'grape' have the same length
+    compare_custom = PandasCompare(
+        df1, df2, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert compare_custom.matches()
+
+    # Without custom comparator, it should not match
+    compare_default = PandasCompare(df1, df2, join_columns=["id"])
+    assert not compare_default.matches()
+
+    # Test case where custom comparator does not apply (returns None)
+    # and default comparison should be used.
+    df3 = pd.DataFrame([{"id": 1, "value": 10}])
+    df4 = pd.DataFrame([{"id": 1, "value": 20}])
+
+    # With custom comparator, but it won't apply to integer 'value' column
+    # so default comparison for integers should kick in, resulting in a mismatch.
+    compare_custom_fallback = PandasCompare(
+        df3, df4, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert not compare_custom_fallback.matches()
+
+    # Test case where custom comparator does not apply (returns None)
+    # and default comparison should be used.
+    df5 = pd.DataFrame([{"id": 1, "value": 10}])
+    df6 = pd.DataFrame([{"id": 1, "value": 10}])
+
+    # With custom comparator, but it won't apply to integer 'value' column
+    # so default comparison for integers should kick in, resulting in a match.
+    compare_custom_fallback = PandasCompare(
+        df5, df6, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert compare_custom_fallback.matches()
+
+    # Ensure the StringLengthComparator is actually used for string columns
+    df7 = pd.DataFrame([{"id": 1, "value": "test"}])
+    df8 = pd.DataFrame([{"id": 1, "value": "abcd"}])
+
+    compare_string_custom = PandasCompare(
+        df7, df8, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert compare_string_custom.matches()
+
+    compare_string_default = PandasCompare(df7, df8, join_columns=["id"])
+    assert not compare_string_default.matches()
+
+    # StringLengthComparator mismatch case
+    df9 = pd.DataFrame([{"id": 1, "value": "test"}])
+    df10 = pd.DataFrame([{"id": 1, "value": "abcde"}])
+
+    compare_string_custom_mismatch = PandasCompare(
+        df9, df10, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert not compare_string_custom_mismatch.matches()
+
+
+def test_array_comparator_pandas():
+    """Test dedicated array comparator for pandas."""
+    df1 = pd.DataFrame(
+        {
+            "id": [1, 2, 5, 6, 7, 8],
+            "array_col": [
+                [1, 2, 3],  # Exact match
+                [4, 5, 6],  # Mismatch value
+                [1, 3, 2],  # Mismatch order
+                [1, 2],  # Mismatch length
+                None,  # Match null
+                [1, np.nan],  # Match with nan
+            ],
+        }
+    )
+    df1["array_col"] = df1["array_col"].astype(object)
+
+    df2 = pd.DataFrame(
+        {
+            "id": [1, 2, 5, 6, 7, 8],
+            "array_col": [
+                [1, 2, 3],
+                [4, 5, 7],
+                [1, 2, 3],
+                [1, 2, 3],
+                None,
+                [1, np.nan],
+            ],
+        }
+    )
+    df2["array_col"] = df2["array_col"].astype(object)
+
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["id"])
+
+    assert not compare.matches()
+    assert len(compare.intersect_rows) == 6
+    assert not compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 3  # ids 1, 7, 8
+
+    mismatches = compare.all_mismatch().sort_values("id").reset_index(drop=True)
+    assert len(mismatches) == 3
+    assert list(mismatches["id"]) == [2, 5, 6]
+
+
+def test_sensitive_columns_hide():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_hide():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "sensitive columns are already hidden, call reveal_sensitive_columns() first"
+        ),
+    ):
+        compare.hide_sensitive_columns(["c"])
+
+
+def test_sensitive_columns_hide_reveal():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+    compare.reveal_sensitive_columns()
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_hide():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+    compare.reveal_sensitive_columns()
+    compare.hide_sensitive_columns(["b"])
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_cast_lower():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["B"])
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_no_cast_lower():
+    df1 = pd.DataFrame([{"a": 1, "b": 2, "B": 1}, {"a": 3, "b": 1, "B": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2, "B": 2}, {"a": 2, "b": 0, "B": 0}])
+    compare = datacompy.PandasCompare(
+        df1,
+        df2,
+        join_columns=["a"],
+        cast_column_names_lower=False,
+    )
+    compare.hide_sensitive_columns(["B"])
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 1
+    assert compare.df1.loc[0, "B"] == 1
+    assert compare.df1.loc[1, "B"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 3
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "B"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "B"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "B_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "B_df2"] == "*******"
+    assert not compare.intersect_rows.reset_index(drop=True).loc[0, "B_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_join_columns():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["a"])
+
+    assert compare.df1.loc[0, "a"] == 1
+    assert compare.df1.loc[1, "a"] == 1
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == "*******"
+    assert len(compare.sample_mismatch("a")) == 2
+    assert compare.sample_mismatch("a").reset_index(drop=True).loc[0, "a"] == "*******"
+    assert compare.sample_mismatch("a").reset_index(drop=True).loc[1, "a"] == "*******"
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_join_columns():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["a"])
+    compare.reveal_sensitive_columns()
+
+    assert compare.df1.loc[0, "a"] == 1
+    assert compare.df1.loc[1, "a"] == 1
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert len(compare.sample_mismatch("a")) == 2
+    assert (
+        compare.sample_mismatch("a").sort_values("a").reset_index(drop=True).loc[0, "a"]
+        == 1
+    )
+    assert (
+        compare.sample_mismatch("a").sort_values("a").reset_index(drop=True).loc[1, "a"]
+        == 2
+    )
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_missing():
+    df1 = pd.DataFrame([{"a": 1, "b": "bruh", "c": 3}, {"a": 3, "b": "67", "c": 6}])
+    df2 = pd.DataFrame([{"a": 1, "b": "hello", "d": 4}, {"a": 2, "b": "yo", "d": 7}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b", "c"])
+
+    assert compare.df1.loc[0, "b"] == "bruh"
+    assert compare.df1.loc[1, "b"] == "67"
+    assert compare.df1.loc[0, "c"] == 3
+    assert compare.df1.loc[1, "c"] == 6
+    assert compare.df2.loc[0, "d"] == 4
+    assert compare.df2.loc[1, "d"] == 7
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 3
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "c"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "d"] == 7
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c"] == "*******"
+    assert not compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_unused(caplog):
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    with caplog.at_level(logging.WARNING):
+        compare.hide_sensitive_columns(["c"])
+        assert (
+            "sensitive columns not found in either df1 or df2 will be ignored: ['c']"
+            in caplog.text
+        )
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_empty():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns([])
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_empty():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns([])
+    compare.reveal_sensitive_columns()
+
+    assert compare.df1.loc[0, "b"] == 2
+    assert compare.df1.loc[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "a"] == 2
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "a"] == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == 2
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_setter():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}])
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+
+    # Valid setter call
+    compare._set_and_validate_sensitive_columns(["b"])
+    assert compare.sensitive_columns == ["b"]
+
+    # Invalid setter call - not a list of strings
+    with pytest.raises(TypeError, match="sensitive_columns must be a list of strings"):
+        compare._set_and_validate_sensitive_columns([1, 2, 3])
+
+
+def test_sensitive_columns_duplicates():
+    df1 = pd.DataFrame([{"a": 1, "b": 2}])
+    df2 = pd.DataFrame([{"a": 1, "b": 2}])
+
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    # Duplicate columns should raise ValueError during hide_sensitive_columns()
+    with pytest.raises(ValueError, match=r"duplicate columns: {'b'}"):
+        compare.hide_sensitive_columns(["b", "b"])
+
+
+def test_sensitive_columns_numeric_types():
+    """Verify that hiding works for different numeric types without LossySetitemError."""
+    df1 = pd.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.2]})
+    df2 = pd.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.2]})
+
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b", "c"])
+
+    assert not isinstance(compare.df1["b"].loc[0], str)
+    assert not isinstance(compare.df1["c"].loc[0], str)
+    assert len(compare.df1_unq_rows) == 0
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c_df2"] == "*******"
+
+
+def test_sensitive_columns_numeric_types_with_tolerance():
+    """Verify that hiding works for different numeric types with tolerance."""
+    df1 = pd.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.1]})
+    df2 = pd.DataFrame({"a": [1, 3], "b": [10, 21], "c": [1.2, 2.1]})
+
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["a"], abs_tol=0.1)
+    compare.hide_sensitive_columns(["b", "c"])
+
+    assert not isinstance(compare.df1["b"].loc[0], str)
+    assert not isinstance(compare.df1["c"].loc[0], str)
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert compare.df1_unq_rows.reset_index(drop=True).loc[0, "c"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "b"] == "*******"
+    assert compare.df2_unq_rows.reset_index(drop=True).loc[0, "c"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "b_match"]
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c_df1"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c_df2"] == "*******"
+    assert compare.intersect_rows.reset_index(drop=True).loc[0, "c_match"]
+
+
+def test_columns_with_mismatches_single_column():
+    """Test columns_with_mismatches with a single mismatched column."""
+    df1 = pd.DataFrame(
+        {"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]}
+    )
+    df2 = pd.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "name": ["Alice", "Bob", "Charlie"],
+            "age": [25, 31, 35],  # age differs for id=2
+        }
+    )
+    compare = PandasCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == ["age"]
+
+
+def test_columns_with_mismatches_multiple_columns():
+    """Test columns_with_mismatches with multiple mismatched columns."""
+    df1 = pd.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "name": ["Alice", "Bob", "Charlie"],
+            "age": [25, 30, 35],
+            "city": ["NYC", "LA", "Chicago"],
+        }
+    )
+    df2 = pd.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "name": ["Alice", "Bob", "Charlie"],
+            "age": [25, 31, 35],  # age differs for id=2
+            "city": ["NYC", "LA", "Boston"],  # city differs for id=3
+        }
+    )
+    compare = PandasCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert sorted(result) == ["age", "city"]
+
+
+def test_columns_with_mismatches_no_mismatches():
+    """Test columns_with_mismatches when all columns match."""
+    df1 = pd.DataFrame(
+        {"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]}
+    )
+    df2 = pd.DataFrame(
+        {"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]}
+    )
+    compare = PandasCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == []
+
+
+def test_columns_with_mismatches_excludes_join_columns():
+    """Test that join columns are excluded from the result."""
+    df1 = pd.DataFrame({"id": [1, 2, 3], "value": ["a", "b", "c"]})
+    df2 = pd.DataFrame(
+        {
+            "id": [1, 2, 4],  # id=3 missing, id=4 added
+            "value": ["a", "b", "d"],
+        }
+    )
+    compare = PandasCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    # 'id' should not be in the result even though there are row mismatches
+    assert "id" not in result
+    # Result should be empty because 'value' matches for the intersecting rows
+    assert result == []
+
+
+def test_columns_with_mismatches_with_nulls():
+    """Test columns_with_mismatches with null values."""
+    df1 = pd.DataFrame({"id": [1, 2, 3], "value": ["a", None, "c"]})
+    df2 = pd.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "value": ["a", "b", "c"],  # null differs to 'b' for id=2
+        }
+    )
+    compare = PandasCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == ["value"]
+
+
+def test_columns_with_mismatches_multiple_join_columns():
+    """Test columns_with_mismatches with multiple join columns."""
+    df1 = pd.DataFrame(
+        {
+            "id1": [1, 1, 2, 2],
+            "id2": ["a", "b", "a", "b"],
+            "value1": [10, 20, 30, 40],
+            "value2": [100, 200, 300, 400],
+        }
+    )
+    df2 = pd.DataFrame(
+        {
+            "id1": [1, 1, 2, 2],
+            "id2": ["a", "b", "a", "b"],
+            "value1": [10, 25, 30, 40],  # value1 differs for (1, 'b')
+            "value2": [100, 200, 305, 400],  # value2 differs for (2, 'a')
+        }
+    )
+    compare = PandasCompare(df1, df2, join_columns=["id1", "id2"])
+    result = compare.columns_with_mismatches()
+    assert "id1" not in result
+    assert "id2" not in result
+    assert sorted(result) == ["value1", "value2"]
+
+
+def test_columns_with_mismatches_empty_dataframes():
+    """Test columns_with_mismatches with empty dataframes."""
+    df1 = pd.DataFrame({"id": [], "value": []})
+    df2 = pd.DataFrame({"id": [], "value": []})
+    compare = PandasCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == []
+
+
+def test_columns_with_mismatches_on_index():
+    """Test columns_with_mismatches when comparing on index."""
+    df1 = pd.DataFrame(
+        {"name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]}, index=[1, 2, 3]
+    )
+    df2 = pd.DataFrame(
+        {
+            "name": ["Alice", "Bob", "Charlie"],
+            "age": [25, 31, 35],  # age differs for index=2
+        },
+        index=[1, 2, 3],
+    )
+    compare = PandasCompare(df1, df2, on_index=True)
+    result = compare.columns_with_mismatches()
+    # When on_index=True, join_columns is empty, so all mismatching columns should be returned
+    assert result == ["age"]

@@ -1,5 +1,5 @@
 #
-# Copyright 2025 Capital One Services, LLC
+# Copyright 2026 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ Testing out the datacompy functionality
 import io
 import logging
 import os
+import re
 import sys
 import tempfile
 from datetime import datetime
@@ -27,22 +28,20 @@ from decimal import Decimal
 from unittest import mock
 
 import numpy as np
-import pytest
-from pytest import raises
-
-pytest.importorskip("polars")
-
 import polars as pl
+import pytest
+from datacompy.comparator.base import BaseComparator
+from datacompy.comparator.string import polars_normalize_string_column
 from datacompy.polars import (
     PolarsCompare,
     calculate_max_diff,
     columns_equal,
     generate_id_within_group,
-    normalize_string_column,
     temp_column_name,
 )
 from polars.exceptions import ComputeError, DuplicateError, SchemaError
 from polars.testing import assert_frame_equal, assert_series_equal
+from pytest import raises
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -1494,7 +1493,7 @@ def test_string_as_numeric():
 
 def test_single_date_columns_equal_to_string():
     data = """a|b|expected
-2017-01-01|2017-01-01   |True
+2017-01-01|2017-01-01   |False
 2017-01-02  |2017-01-02|True
 2017-10-01  |2017-10-10   |False
 2017-01-01||False
@@ -1509,7 +1508,9 @@ def test_single_date_columns_equal_to_string():
     col_a = df["a"].str.strip_chars().str.to_date(strict=False)
     col_b = df["b"]
 
-    actual_out = columns_equal(col_a, col_b, rel_tol=0.2, ignore_spaces=True)
+    actual_out = columns_equal(
+        col_a, col_b, rel_tol=0.2, ignore_spaces=True
+    )  # ignore_spaces is ignored
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -1757,7 +1758,7 @@ def test_columns_equal_lists():
     ],
 )
 def test_normalize_string_column(input_data, ignore_spaces, ignore_case, expected):
-    result = normalize_string_column(
+    result = polars_normalize_string_column(
         input_data, ignore_spaces=ignore_spaces, ignore_case=ignore_case
     )
     assert_series_equal(result, expected, check_names=False)
@@ -1974,3 +1975,666 @@ def test_mixed_tolerances() -> None:
     )  # large_vals should match (rel_tol 0.001 = 0.1%)
     assert compare._rel_tol_dict == {"large_vals": 0.001, "default": 0.0}
     assert compare._abs_tol_dict == {"small_vals": 0.2, "default": 0.0}
+
+
+def test_custom_comparator_polars():
+    """Test that a custom comparator can be passed and used with Polars."""
+
+    class StringLengthComparator(BaseComparator):
+        """A custom comparator that matches strings based on length."""
+
+        def compare(self, s1, s2):
+            if s1.dtype == pl.Utf8 and s2.dtype == pl.Utf8:
+                return s1.str.len_chars() == s2.str.len_chars()
+            return None
+
+    df1 = pl.DataFrame([{"id": 1, "value": "apple"}])
+    df2 = pl.DataFrame([{"id": 1, "value": "grape"}])
+
+    # With custom comparator, it should match because 'apple' and 'grape' have the same length
+    compare_custom = PolarsCompare(
+        df1, df2, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert compare_custom.matches()
+
+    # Without custom comparator, it should not match
+    compare_default = PolarsCompare(df1, df2, join_columns=["id"])
+    assert not compare_default.matches()
+
+    # Test case where custom comparator does not apply (returns None)
+    # and default comparison should be used.
+    df3 = pl.DataFrame([{"id": 1, "value": 10}])
+    df4 = pl.DataFrame([{"id": 1, "value": 20}])
+
+    # With custom comparator, but it won't apply to integer 'value' column
+    # so default comparison for integers should kick in, resulting in a mismatch.
+    compare_custom_fallback = PolarsCompare(
+        df3, df4, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert not compare_custom_fallback.matches()
+
+    # Test case where custom comparator does not apply (returns None)
+    # and default comparison should be used.
+    df5 = pl.DataFrame([{"id": 1, "value": 10}])
+    df6 = pl.DataFrame([{"id": 1, "value": 10}])
+
+    # With custom comparator, but it won't apply to integer 'value' column
+    # so default comparison for integers should kick in, resulting in a match.
+    compare_custom_fallback = PolarsCompare(
+        df5, df6, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert compare_custom_fallback.matches()
+
+    # Ensure the StringLengthComparator is actually used for string columns
+    df7 = pl.DataFrame([{"id": 1, "value": "test"}])
+    df8 = pl.DataFrame([{"id": 1, "value": "abcd"}])
+
+    compare_string_custom = PolarsCompare(
+        df7, df8, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert compare_string_custom.matches()
+
+    compare_string_default = PolarsCompare(df7, df8, join_columns=["id"])
+    assert not compare_string_default.matches()
+
+    # StringLengthComparator mismatch case
+    df9 = pl.DataFrame([{"id": 1, "value": "test"}])
+    df10 = pl.DataFrame([{"id": 1, "value": "abcde"}])
+
+    compare_string_custom_mismatch = PolarsCompare(
+        df9, df10, join_columns=["id"], custom_comparators=[StringLengthComparator()]
+    )
+    assert not compare_string_custom_mismatch.matches()
+
+
+def test_array_comparator_polars():
+    """Test that the PolarsCompare can handle array columns."""
+    # all equal
+    df1 = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+    )
+    df2 = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+
+    # some mismatch (different order)
+    df2_order = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [4, 3], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+    )
+    compare_order = PolarsCompare(df1, df2_order, join_columns=["id"])
+    assert not compare_order.matches()
+    list_col_stats = next(
+        stat for stat in compare_order.column_stats if stat["column"] == "list_col"
+    )
+    assert list_col_stats["unequal_cnt"] == 1
+    assert list_col_stats["match_cnt"] == 2
+
+    # with nulls matching
+    df1_null = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], None, [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+    )
+    df2_null = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], None, [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+    )
+    compare_null = PolarsCompare(df1_null, df2_null, join_columns=["id"])
+    assert compare_null.matches()
+
+    # with nulls mismatching
+    df2_null_mismatch = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.Array(pl.Int64, 2)},
+    )
+    compare_null_mismatch = PolarsCompare(
+        df1_null, df2_null_mismatch, join_columns=["id"]
+    )
+    assert not compare_null_mismatch.matches()
+    list_col_stats = next(
+        stat
+        for stat in compare_null_mismatch.column_stats
+        if stat["column"] == "list_col"
+    )
+    assert list_col_stats["unequal_cnt"] == 1
+    assert list_col_stats["match_cnt"] == 2
+
+
+def test_list_comparator_polars():
+    """Test that the PolarsCompare can handle list columns."""
+    # all equal
+    df1 = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    df2 = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    assert compare.matches()
+    assert compare.all_columns_match()
+    assert compare.all_rows_overlap()
+    assert compare.intersect_rows_match()
+
+    # some mismatch (different order)
+    df2_order = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [4, 3], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    compare_order = PolarsCompare(df1, df2_order, join_columns=["id"])
+    assert not compare_order.matches()
+    list_col_stats = next(
+        stat for stat in compare_order.column_stats if stat["column"] == "list_col"
+    )
+    assert list_col_stats["unequal_cnt"] == 1
+    assert list_col_stats["match_cnt"] == 2
+
+    # some mismatch (different shapes)
+    df2_shape = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4, 5], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    compare_shape = PolarsCompare(df1, df2_shape, join_columns=["id"])
+    assert not compare_shape.matches()
+    list_col_stats = next(
+        stat for stat in compare_shape.column_stats if stat["column"] == "list_col"
+    )
+    assert list_col_stats["unequal_cnt"] == 1
+    assert list_col_stats["match_cnt"] == 2
+
+    # with nulls matching
+    df1_null = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], None, [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    df2_null = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], None, [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    compare_null = PolarsCompare(df1_null, df2_null, join_columns=["id"])
+    assert compare_null.matches()
+
+    # with nulls mismatching
+    df2_null_mismatch = pl.DataFrame(
+        {"id": [1, 2, 3], "list_col": [[1, 2], [3, 4], [5, 6]]},
+        schema={"id": pl.Int64, "list_col": pl.List(pl.Int64)},
+    )
+    compare_null_mismatch = PolarsCompare(
+        df1_null, df2_null_mismatch, join_columns=["id"]
+    )
+    assert not compare_null_mismatch.matches()
+    list_col_stats = next(
+        stat
+        for stat in compare_null_mismatch.column_stats
+        if stat["column"] == "list_col"
+    )
+    assert list_col_stats["unequal_cnt"] == 1
+    assert list_col_stats["match_cnt"] == 2
+
+
+def test_columns_with_mismatches_single_column():
+    """Test columns_with_mismatches with a single mismatched column."""
+    df1 = pl.DataFrame(
+        {"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]}
+    )
+    df2 = pl.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "name": ["Alice", "Bob", "Charlie"],
+            "age": [25, 31, 35],  # age differs for id=2
+        }
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == ["age"]
+
+
+def test_columns_with_mismatches_multiple_columns():
+    """Test columns_with_mismatches with multiple mismatched columns."""
+    df1 = pl.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "name": ["Alice", "Bob", "Charlie"],
+            "age": [25, 30, 35],
+            "city": ["NYC", "LA", "Chicago"],
+        }
+    )
+    df2 = pl.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "name": ["Alice", "Bob", "Charlie"],
+            "age": [25, 31, 35],  # age differs for id=2
+            "city": ["NYC", "LA", "Boston"],  # city differs for id=3
+        }
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert sorted(result) == ["age", "city"]
+
+
+def test_columns_with_mismatches_no_mismatches():
+    """Test columns_with_mismatches when all columns match."""
+    df1 = pl.DataFrame(
+        {"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]}
+    )
+    df2 = pl.DataFrame(
+        {"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]}
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == []
+
+
+def test_columns_with_mismatches_excludes_join_columns():
+    """Test that join columns are excluded from the result."""
+    df1 = pl.DataFrame({"id": [1, 2, 3], "value": ["a", "b", "c"]})
+    df2 = pl.DataFrame(
+        {
+            "id": [1, 2, 4],  # id=3 missing, id=4 added
+            "value": ["a", "b", "d"],
+        }
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    # 'id' should not be in the result even though there are row mismatches
+    assert "id" not in result
+    # Result should be empty because 'value' matches for the intersecting rows
+    assert result == []
+
+
+def test_columns_with_mismatches_with_nulls():
+    """Test columns_with_mismatches with null values."""
+    df1 = pl.DataFrame({"id": [1, 2, 3], "value": ["a", None, "c"]}, strict=False)
+    df2 = pl.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "value": ["a", "b", "c"],  # null differs to 'b' for id=2
+        },
+        strict=False,
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == ["value"]
+
+
+def test_columns_with_mismatches_multiple_join_columns():
+    """Test columns_with_mismatches with multiple join columns."""
+    df1 = pl.DataFrame(
+        {
+            "id1": [1, 1, 2, 2],
+            "id2": ["a", "b", "a", "b"],
+            "value1": [10, 20, 30, 40],
+            "value2": [100, 200, 300, 400],
+        }
+    )
+    df2 = pl.DataFrame(
+        {
+            "id1": [1, 1, 2, 2],
+            "id2": ["a", "b", "a", "b"],
+            "value1": [10, 25, 30, 40],  # value1 differs for (1, 'b')
+            "value2": [100, 200, 305, 400],  # value2 differs for (2, 'a')
+        }
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["id1", "id2"])
+    result = compare.columns_with_mismatches()
+    assert "id1" not in result
+    assert "id2" not in result
+    assert sorted(result) == ["value1", "value2"]
+
+
+def test_sensitive_columns_hide():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+
+    assert compare.df1[0, "b"] == 2
+    assert compare.df1[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows[0, "a"] == 1
+    assert compare.df1_unq_rows[0, "b"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows[0, "a"] == 2
+    assert compare.df2_unq_rows[0, "b"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows[0, "a"] == 1
+    assert compare.intersect_rows[0, "b_df1"] == "*******"
+    assert compare.intersect_rows[0, "b_df2"] == "*******"
+    assert compare.intersect_rows[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_hide():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "sensitive columns are already hidden, call reveal_sensitive_columns() first"
+        ),
+    ):
+        compare.hide_sensitive_columns(["c"])
+
+
+def test_sensitive_columns_hide_reveal():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+    compare.reveal_sensitive_columns()
+
+    assert compare.df1[0, "b"] == 2
+    assert compare.df1[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows[0, "a"] == 1
+    assert compare.df1_unq_rows[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows[0, "a"] == 2
+    assert compare.df2_unq_rows[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows[0, "a"] == 1
+    assert compare.intersect_rows[0, "b_df1"] == 2
+    assert compare.intersect_rows[0, "b_df2"] == 2
+    assert compare.intersect_rows[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_hide():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+    compare.reveal_sensitive_columns()
+    compare.hide_sensitive_columns(["b"])
+
+    assert compare.df1[0, "b"] == 2
+    assert compare.df2[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows[0, "a"] == 1
+    assert compare.df1_unq_rows[0, "b"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows[0, "a"] == 2
+    assert compare.df2_unq_rows[0, "b"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows[0, "a"] == 1
+    assert compare.intersect_rows[0, "b_df1"] == "*******"
+    assert compare.intersect_rows[0, "b_df2"] == "*******"
+    assert compare.intersect_rows[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_cast_lower():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["B"])
+
+    assert compare.df1[0, "b"] == 2
+    assert compare.df1[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows[0, "a"] == 1
+    assert compare.df1_unq_rows[0, "b"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows[0, "a"] == 2
+    assert compare.df2_unq_rows[0, "b"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows[0, "a"] == 1
+    assert compare.intersect_rows[0, "b_df1"] == "*******"
+    assert compare.intersect_rows[0, "b_df2"] == "*******"
+    assert compare.intersect_rows[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_no_cast_lower():
+    df1 = pl.DataFrame([{"a": 1, "b": 2, "B": 1}, {"a": 3, "b": 1, "B": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2, "B": 2}, {"a": 2, "b": 0, "B": 0}])
+    compare = PolarsCompare(
+        df1,
+        df2,
+        join_columns=["a"],
+        cast_column_names_lower=False,
+    )
+    compare.hide_sensitive_columns(["B"])
+
+    assert compare.df1[0, "b"] == 2
+    assert compare.df1[1, "b"] == 1
+    assert compare.df1[0, "B"] == 1
+    assert compare.df1[1, "B"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows[0, "a"] == 3
+    assert compare.df1_unq_rows[0, "B"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows[0, "a"] == 2
+    assert compare.df2_unq_rows[0, "B"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows[0, "a"] == 1
+    assert compare.intersect_rows[0, "b_df1"] == 2
+    assert compare.intersect_rows[0, "b_df2"] == 2
+    assert compare.intersect_rows[0, "B_df1"] == "*******"
+    assert compare.intersect_rows[0, "B_df2"] == "*******"
+    assert not compare.intersect_rows[0, "B_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_join_columns():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["a"])
+
+    assert compare.df1[0, "a"] == 1
+    assert compare.df1[1, "a"] == 1
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows[0, "a"] == "*******"
+    assert len(compare.sample_mismatch("a")) == 2
+    assert compare.sample_mismatch("a")[0, "a"] == "*******"
+    assert compare.sample_mismatch("a")[1, "a"] == "*******"
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_join_columns():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["a"])
+    compare.reveal_sensitive_columns()
+
+    assert compare.df1[0, "a"] == 1
+    assert compare.df1[1, "a"] == 1
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows[0, "a"] == 1
+    assert len(compare.sample_mismatch("a")) == 2
+    assert compare.sample_mismatch("a").sort("a")[0, "a"] == 1
+    assert compare.sample_mismatch("a").sort("a")[1, "a"] == 2
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_missing():
+    df1 = pl.DataFrame([{"a": 1, "b": "bruh", "c": 3}, {"a": 3, "b": "67", "c": 6}])
+    df2 = pl.DataFrame([{"a": 1, "b": "hello", "d": 4}, {"a": 2, "b": "yo", "d": 7}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b", "c"])
+
+    assert compare.df1[0, "b"] == "bruh"
+    assert compare.df1[1, "b"] == "67"
+    assert compare.df1[0, "c"] == 3
+    assert compare.df1[1, "c"] == 6
+    assert compare.df2[0, "d"] == 4
+    assert compare.df2[1, "d"] == 7
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows[0, "a"] == 3
+    assert compare.df1_unq_rows[0, "b"] == "*******"
+    assert compare.df1_unq_rows[0, "c"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows[0, "a"] == 2
+    assert compare.df2_unq_rows[0, "b"] == "*******"
+    assert compare.df2_unq_rows[0, "d"] == 7
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows[0, "b_df1"] == "*******"
+    assert compare.intersect_rows[0, "b_df2"] == "*******"
+    assert compare.intersect_rows[0, "c_df1"] == "*******"
+    assert compare.intersect_rows[0, "d_df2"] == 4
+    assert "c" not in compare.intersect_rows.columns
+    assert "d" not in compare.intersect_rows.columns
+    assert not compare.intersect_rows[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_unused(caplog):
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    with caplog.at_level(logging.WARNING):
+        compare.hide_sensitive_columns(["c"])
+        assert (
+            "sensitive columns not found in either df1 or df2 will be ignored: ['c']"
+            in caplog.text
+        )
+
+    assert compare.df1[0, "b"] == 2
+    assert compare.df1[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows[0, "a"] == 1
+    assert compare.df1_unq_rows[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows[0, "a"] == 2
+    assert compare.df2_unq_rows[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows[0, "a"] == 1
+    assert compare.intersect_rows[0, "b_df1"] == 2
+    assert compare.intersect_rows[0, "b_df2"] == 2
+    assert compare.intersect_rows[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_empty():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns([])
+
+    assert compare.df1[0, "b"] == 2
+    assert compare.df1[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows[0, "a"] == 1
+    assert compare.df1_unq_rows[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows[0, "a"] == 2
+    assert compare.df2_unq_rows[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows[0, "a"] == 1
+    assert compare.intersect_rows[0, "b_df1"] == 2
+    assert compare.intersect_rows[0, "b_df2"] == 2
+    assert compare.intersect_rows[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_empty():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns([])
+    compare.reveal_sensitive_columns()
+
+    assert compare.df1[0, "b"] == 2
+    assert compare.df1[1, "b"] == 0
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows[0, "a"] == 1
+    assert compare.df1_unq_rows[0, "b"] == 0
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows[0, "a"] == 2
+    assert compare.df2_unq_rows[0, "b"] == 0
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows[0, "a"] == 1
+    assert compare.intersect_rows[0, "b_df1"] == 2
+    assert compare.intersect_rows[0, "b_df2"] == 2
+    assert compare.intersect_rows[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_setter():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}])
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+
+    # Valid setter call
+    compare._set_and_validate_sensitive_columns(["b"])
+    assert compare.sensitive_columns == ["b"]
+
+    # Invalid setter call - not a list of strings
+    with pytest.raises(TypeError, match="sensitive_columns must be a list of strings"):
+        compare._set_and_validate_sensitive_columns([1, 2, 3])
+
+
+def test_sensitive_columns_duplicates():
+    df1 = pl.DataFrame([{"a": 1, "b": 2}])
+    df2 = pl.DataFrame([{"a": 1, "b": 2}])
+
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    # Duplicate columns should raise ValueError during hide_sensitive_columns()
+    with pytest.raises(ValueError, match=r"duplicate columns: {'b'}"):
+        compare.hide_sensitive_columns(["b", "b"])
+
+
+def test_sensitive_columns_numeric_types():
+    """Verify that hiding works for different numeric types without LossySetitemError."""
+    df1 = pl.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.2]})
+    df2 = pl.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.2]})
+
+    compare = PolarsCompare(df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b", "c"])
+
+    assert not isinstance(compare.df1[0, "b"], str)
+    assert not isinstance(compare.df1[0, "c"], str)
+    assert len(compare.df1_unq_rows) == 0
+    assert compare.intersect_rows[0, "b_df1"] == "*******"
+    assert compare.intersect_rows[0, "b_df2"] == "*******"
+    assert compare.intersect_rows[0, "c_df1"] == "*******"
+    assert compare.intersect_rows[0, "c_df2"] == "*******"
+
+
+def test_sensitive_columns_numeric_types_with_tolerance():
+    """Verify that hiding works for different numeric types with tolerance."""
+    df1 = pl.DataFrame({"a": [1, 2], "b": [10, 20], "c": [1.1, 2.1]})
+    df2 = pl.DataFrame({"a": [1, 3], "b": [10, 21], "c": [1.2, 2.1]})
+
+    compare = PolarsCompare(df1, df2, join_columns=["a"], abs_tol=0.1)
+    compare.hide_sensitive_columns(["b", "c"])
+
+    assert not isinstance(compare.df1[0, "b"], str)
+    assert not isinstance(compare.df1[0, "c"], str)
+    assert len(compare.df1_unq_rows) == 1
+    assert compare.df1_unq_rows[0, "b"] == "*******"
+    assert compare.df1_unq_rows[0, "c"] == "*******"
+    assert len(compare.df2_unq_rows) == 1
+    assert compare.df2_unq_rows[0, "b"] == "*******"
+    assert compare.df2_unq_rows[0, "c"] == "*******"
+    assert len(compare.intersect_rows) == 1
+    assert compare.intersect_rows[0, "b_df1"] == "*******"
+    assert compare.intersect_rows[0, "b_df2"] == "*******"
+    assert compare.intersect_rows[0, "b_match"]
+    assert compare.intersect_rows[0, "c_df1"] == "*******"
+    assert compare.intersect_rows[0, "c_df2"] == "*******"
+    assert compare.intersect_rows[0, "c_match"]

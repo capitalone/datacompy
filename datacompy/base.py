@@ -1,5 +1,5 @@
 #
-# Copyright 2025 Capital One Services, LLC
+# Copyright 2026 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Compare two Pandas DataFrames.
+Base module for comparing two DataFrames.
 
 Originally this package was meant to provide similar functionality to
 PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
@@ -23,8 +23,9 @@ two dataframes.
 
 import logging
 from abc import ABC, abstractmethod
+from collections import Counter
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ordered_set import OrderedSet
@@ -56,6 +57,46 @@ class BaseCompare(ABC):
     def df2(self, df2: Any) -> None:
         """Check that it is a dataframe and has the join columns."""
         pass
+
+    @property
+    def sensitive_columns(self) -> List[str] | None:
+        """Get the list of sensitive columns."""
+        return self._sensitive_columns
+
+    def _set_and_validate_sensitive_columns(
+        self, sensitive_columns: List[str] | None
+    ) -> None:
+        """Set and validate sensitive columns.
+
+        Normalizes empty lists to None so there is only one representation
+        for "no sensitive columns".
+        """
+        self._sensitive_columns = sensitive_columns or None
+        if not self._sensitive_columns:
+            return
+
+        if not all(isinstance(c, str) for c in self.sensitive_columns):
+            raise TypeError("sensitive_columns must be a list of strings")
+
+        # Cast to lowercase if applicable
+        if self.cast_column_names_lower:
+            self._sensitive_columns = [col.lower() for col in self.sensitive_columns]
+
+        # Check duplicates
+        duplicates = {c for c, n in Counter(self.sensitive_columns).items() if n > 1}
+        if duplicates:
+            raise ValueError(f"duplicate columns: {duplicates}")
+
+        # Warn if column not found in either dataframe
+        unused = [
+            col
+            for col in self.sensitive_columns
+            if (col not in self.df1.columns) and (col not in self.df2.columns)
+        ]
+        if unused:
+            LOG.warning(
+                f"sensitive columns not found in either df1 or df2 will be ignored: {unused}"
+            )
 
     @abstractmethod
     def _validate_dataframe(
@@ -182,9 +223,52 @@ class BaseCompare(ABC):
         """
         pass
 
+    def reveal_sensitive_columns(self) -> None:
+        """Reveals all sensitive columns.
+
+        Notes
+        -----
+        - This re-runs the full comparison to restore original values.
+        - Revealing sensitive columns when there aren't any is treated as a NOP
+          to avoid redundant computations.
+        """
+        # Don't do anything if there aren't any sensitive columns
+        if not self.sensitive_columns:
+            return
+
+        LOG.debug("Revealing sensitive columns and re-comparing dfs")
+        self._set_and_validate_sensitive_columns(None)
+        self.column_stats.clear()
+        self._compare(ignore_spaces=self.ignore_spaces, ignore_case=self.ignore_case)
+
     def only_join_columns(self) -> bool:
         """Boolean on if the only columns are the join columns."""
         return set(self.join_columns) == set(self.df1.columns) == set(self.df2.columns)
+
+    def columns_with_mismatches(self) -> list[str]:
+        """Return a list of column names where at least one row has a mismatch.
+
+        This method identifies columns that have differences between df1 and df2,
+        excluding the join columns. This is useful for identifying problematic
+        columns and potentially rerunning comparisons on a subset of the data.
+
+        Returns
+        -------
+        list[str]
+            A list of column names that have at least one mismatch.
+
+        Examples
+        --------
+        >>> compare = PandasCompare(df1, df2, join_columns=['id'])
+        >>> mismatched_cols = compare.columns_with_mismatches()
+        >>> print(mismatched_cols)
+        ['col_a', 'col_b']
+        """
+        return [
+            col["column"]
+            for col in self.column_stats
+            if col["unequal_cnt"] > 0 and col["column"] not in self.join_columns
+        ]
 
 
 def _resolve_template_path(template_name: str) -> tuple[str, str]:
@@ -375,7 +459,7 @@ def get_column_tolerance(column: str, tol_dict: Dict[str, float]) -> float:
     return tol_dict.get(column, tol_dict.get("default", 0.0))
 
 
-def _validate_tolerance_parameter(
+def validate_tolerance_parameter(
     param_value: float | Dict[str, float],
     param_name: str,
     case_mode: str = "lower",

@@ -1,5 +1,5 @@
 #
-# Copyright 2025 Capital One Services, LLC
+# Copyright 2026 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,24 +24,37 @@ two dataframes.
 import logging
 from typing import Any, Dict, List, cast
 
-import numpy as np
 import pandas as pd
 from ordered_set import OrderedSet
 
 from datacompy.base import (
     BaseCompare,
-    _validate_tolerance_parameter,
     df_to_str,
     get_column_tolerance,
     render,
     save_html_report,
     temp_column_name,
+    validate_tolerance_parameter,
 )
+from datacompy.comparator import (
+    PandasArrayLikeComparator,
+    PandasNumericComparator,
+    PandasStringComparator,
+)
+from datacompy.comparator.base import BaseComparator
+from datacompy.comparator.string import pandas_normalize_string_column
 
 LOG = logging.getLogger(__name__)
 
 
-class Compare(BaseCompare):
+_PANDAS_DEFAULT_COMPARATORS = [
+    PandasArrayLikeComparator(),
+    PandasNumericComparator(),
+    PandasStringComparator(),
+]
+
+
+class PandasCompare(BaseCompare):
     """Comparison class to be used to compare whether two dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
@@ -55,10 +68,10 @@ class Compare(BaseCompare):
     df2 : pandas ``DataFrame``
         Second dataframe to check
     join_columns : list or str, optional
-        Column(s) to join dataframes on.  If a string is passed in, that one
-        column will be used.
+        Column(s) to join dataframes on. If a string is passed in, that one
+        column will be used. ``join_columns`` or ``on_index`` must be set, but not both.
     on_index : bool, optional
-        If True, the index will be used to join the two dataframes.  If both
+        If True, the index will be used to join the two dataframes. If both
         ``join_columns`` and ``on_index`` are provided, an exception will be
         raised.
     abs_tol : float or dict, optional
@@ -82,13 +95,8 @@ class Compare(BaseCompare):
         Flag to ignore the case of string columns. Excludes categoricals.
     cast_column_names_lower: bool, optional
         Boolean indicator that controls of column names will be cast into lower case
-
-    Attributes
-    ----------
-    df1_unq_rows : pandas ``DataFrame``
-        All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : pandas ``DataFrame``
-        All records that are only in df2 (based on a join on join_columns)
+    custom_comparators : list of ``BaseComparator``, optional
+        A list of custom comparator classes to use to compare columns.
     """
 
     def __init__(
@@ -104,19 +112,26 @@ class Compare(BaseCompare):
         ignore_spaces: bool = False,
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
+        custom_comparators: List[BaseComparator] | None = None,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
+        self.custom_comparators = custom_comparators or []
+        self._sensitive_columns: List[str] | None = None
 
         # Validate tolerance parameters first
-        self._abs_tol_dict = _validate_tolerance_parameter(
+        self._abs_tol_dict = validate_tolerance_parameter(
             abs_tol, "abs_tol", "lower" if cast_column_names_lower else "preserve"
         )
-        self._rel_tol_dict = _validate_tolerance_parameter(
+        self._rel_tol_dict = validate_tolerance_parameter(
             rel_tol, "rel_tol", "lower" if cast_column_names_lower else "preserve"
         )
 
         if on_index and join_columns is not None:
-            raise Exception("Only provide on_index or join_columns")
+            raise ValueError("Only provide on_index or join_columns")
+        elif not on_index and join_columns is None:
+            raise ValueError(
+                "Either join_columns must be provide or on_index must be True"
+            )
         elif on_index:
             self.on_index = True
             self.join_columns = []
@@ -149,6 +164,13 @@ class Compare(BaseCompare):
         self.column_stats: List[Dict[str, Any]] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
+    def _get_comparators(self) -> List[BaseComparator]:
+        """Build and return the list of comparators to be used.
+
+        Custom comparators are placed first, followed by the default ones.
+        """
+        return self.custom_comparators + _PANDAS_DEFAULT_COMPARATORS
+
     @property
     def df1(self) -> pd.DataFrame:
         """Get the first dataframe."""
@@ -156,7 +178,7 @@ class Compare(BaseCompare):
 
     @df1.setter
     def df1(self, df1: pd.DataFrame) -> None:
-        """Check that it is a dataframe and has the join columns."""
+        """Set df1 and then validate it."""
         self._df1 = df1
         self._validate_dataframe(
             "df1", cast_column_names_lower=self.cast_column_names_lower
@@ -169,11 +191,46 @@ class Compare(BaseCompare):
 
     @df2.setter
     def df2(self, df2: pd.DataFrame) -> None:
-        """Check that it is a dataframe and has the join columns."""
+        """Set df2 and then validate it."""
         self._df2 = df2
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
         )
+
+    def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
+        """Hides sensitive columns of df1 or df2 if applicable in the compare."""
+        # Don't allow hiding columns again before first revealing
+        if self.sensitive_columns:
+            raise ValueError(
+                "sensitive columns are already hidden, call reveal_sensitive_columns() first"
+            )
+
+        self._set_and_validate_sensitive_columns(sensitive_columns)
+        # Don't do anything if [] is passed (normalized to None)
+        if not self.sensitive_columns:
+            return
+        sensitive = set(self.sensitive_columns)  # Otherwise this fails due to None
+        sensitive_with_suffixes = (
+            sensitive
+            | {f"{c}_{self.df1_name}" for c in sensitive}
+            | {f"{c}_{self.df2_name}" for c in sensitive}
+        )
+
+        # Hide columns in unq_rows
+        for df_name in ("df1_unq_rows", "df2_unq_rows"):
+            df = getattr(self, df_name)
+            LOG.debug(f"Hiding sensitive columns in {df_name}")
+            cols_to_hide = [col for col in df.columns if col in sensitive]
+            for col in cols_to_hide:
+                df[col] = "*******"
+
+        # Hide columns in intersect_rows
+        LOG.debug("Hiding sensitive columns in intersect_rows")
+        cols_to_hide = [
+            col for col in self.intersect_rows.columns if col in sensitive_with_suffixes
+        ]
+        for col in cols_to_hide:
+            self.intersect_rows[col] = "*******"
 
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
@@ -197,6 +254,7 @@ class Compare(BaseCompare):
             )
         else:
             dataframe.columns = pd.Index([str(col) for col in dataframe.columns])
+
         # Check if join_columns are present in the dataframe
         if not set(self.join_columns).issubset(set(dataframe.columns)):
             missing_cols = set(self.join_columns) - set(dataframe.columns)
@@ -306,10 +364,10 @@ class Compare(BaseCompare):
             params = {"on": self.join_columns}
 
         for column in self.join_columns:
-            self.df1[column] = normalize_string_column(
+            self.df1[column] = pandas_normalize_string_column(
                 self.df1[column], ignore_spaces=ignore_spaces, ignore_case=False
             )
-            self.df2[column] = normalize_string_column(
+            self.df2[column] = pandas_normalize_string_column(
                 self.df2[column], ignore_spaces=ignore_spaces, ignore_case=False
             )
 
@@ -320,6 +378,7 @@ class Compare(BaseCompare):
             indicator=True,
             **params,
         )
+
         # Clean up temp columns for duplicate row matching
         if self._any_dupes:
             if self.on_index:
@@ -361,6 +420,9 @@ class Compare(BaseCompare):
         otherwise.
         """
         LOG.debug("Comparing intersection")
+
+        match_columns: Dict[str, pd.Series] = {}
+
         for column in self.intersect_columns():
             if column in self.join_columns:
                 col_match = column + "_match"
@@ -380,21 +442,17 @@ class Compare(BaseCompare):
                 col_1 = column + "_" + self.df1_name
                 col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
-                self.intersect_rows = pd.concat(
-                    [
-                        self.intersect_rows,
-                        columns_equal(
-                            col_1=self.intersect_rows[col_1],
-                            col_2=self.intersect_rows[col_2],
-                            rel_tol=get_column_tolerance(column, self._rel_tol_dict),
-                            abs_tol=get_column_tolerance(column, self._abs_tol_dict),
-                            ignore_spaces=ignore_spaces,
-                            ignore_case=ignore_case,
-                        ).to_frame(name=col_match),
-                    ],
-                    axis=1,
+                match_series = columns_equal(
+                    col_1=self.intersect_rows[col_1],
+                    col_2=self.intersect_rows[col_2],
+                    rel_tol=get_column_tolerance(column, self._rel_tol_dict),
+                    abs_tol=get_column_tolerance(column, self._abs_tol_dict),
+                    ignore_spaces=ignore_spaces,
+                    ignore_case=ignore_case,
+                    comparators=self._get_comparators(),
                 )
-                match_cnt = self.intersect_rows[col_match].sum()
+                match_columns[col_match] = match_series
+                match_cnt = match_series.sum()
                 max_diff = calculate_max_diff(
                     self.intersect_rows[col_1], self.intersect_rows[col_2]
                 )
@@ -432,6 +490,11 @@ class Compare(BaseCompare):
                     "rel_tol": get_column_tolerance(column, self._rel_tol_dict),
                     "abs_tol": get_column_tolerance(column, self._abs_tol_dict),
                 }
+            )
+
+        if match_columns:
+            self.intersect_rows = pd.concat(
+                [self.intersect_rows, pd.DataFrame(match_columns)], axis=1
             )
 
     def all_columns_match(self) -> bool:
@@ -612,6 +675,7 @@ class Compare(BaseCompare):
                     abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
                     ignore_spaces=self.ignore_spaces,
                     ignore_case=self.ignore_case,
+                    comparators=self._get_comparators(),
                 )
 
                 if not ignore_matching_cols or (
@@ -923,31 +987,20 @@ def columns_equal(
     abs_tol: float = 0,
     ignore_spaces: bool = False,
     ignore_case: bool = False,
+    comparators: List[BaseComparator] | None = None,
+    **kwargs,
 ) -> "pd.Series[bool]":
     """Compare two columns from a dataframe.
 
-    Returns a True/False series,
-    with the same index as column 1.
+    Returns a ``True```/``/False`` series, with the same index as column 1.
 
-    - Two nulls (np.nan) will evaluate to True.
-    - A null and a non-null value will evaluate to False.
+    - Two nulls (``np.nan``) will evaluate to ``True``.
+    - A null and a non-null value will evaluate to ``False``.
     - Numeric values will use the relative and absolute tolerances.
-    - Decimal values (decimal.Decimal) will attempt to be converted to floats
-      before comparing
-    - Non-numeric values (i.e. where np.isclose can't be used) will just
-      trigger True on two nulls or exact matches.
-
-    Notes
-    -----
-    As of version ``0.14.0`` If a column is of a mixed data type the compare will
-    default to returning ``False``.
-
-    Notes
-    -----
-    - ``list`` and ``np.array`` types will be compared row wise using ``np.array_equal``.
-      Depending on the size of your data this might lead to performance issues.
-    - All the rows must be of the same type otherwise it is considered "mixed"
-      and will default to being ``False`` for everything.
+    - Decimal values (``decimal.Decimal``) will attempt to be converted
+      to floats before comparing.
+    - Non-numeric values (i.e. where np.isclose can't be used) will just trigger
+      ``True`` on two nulls or exact matches.
 
     Parameters
     ----------
@@ -963,114 +1016,57 @@ def columns_equal(
         Flag to strip whitespace (including newlines) from string columns
     ignore_case : bool, optional
         Flag to ignore the case of string columns
+    comparators : list of ``BaseComparator``, optional
+        A list of custom comparator classes to use to compare columns.
+    **kwargs
+        Additional keyword arguments to pass to custom comparators.
 
     Returns
     -------
     pandas.Series
         A series of Boolean values.  True == the values match, False == the
         values don't match.
+
+    Notes
+    -----
+    - As of version ``0.14.0`` If a column is of a mixed data type the compare
+      will default to returning ``False``.
+    - ``list`` and ``np.array`` types will be compared row wise using ``np.array_equal``.
+      Depending on the size of your data this might lead to performance issues.
+    - All the rows must be of the same type otherwise it is considered "mixed"
+      and will default to being ``False`` for everything.
     """
-    default_value = "DATACOMPY_NULL"
-    compare: pd.Series[bool]
+    compare: pd.Series[bool] | None
 
-    col_1 = normalize_string_column(
-        col_1, ignore_spaces=ignore_spaces, ignore_case=ignore_case
-    )
-    col_2 = normalize_string_column(
-        col_2, ignore_spaces=ignore_spaces, ignore_case=ignore_case
-    )
+    comparators_ = comparators
+    if not comparators_:
+        # If no comparators are passed, behave as before.
+        comparators_ = _PANDAS_DEFAULT_COMPARATORS
 
-    # Rest of comparison logic using rel_tol and abs_tol
-    # short circuit if comparing mixed type columns. Check list/arrrays or just return false for everything else.
-    if pd.api.types.infer_dtype(col_1).startswith("mixed") or pd.api.types.infer_dtype(
-        col_2
-    ).startswith("mixed"):
-        if all(isinstance(item, list | np.ndarray) for item in col_1) and all(
-            isinstance(item, list | np.ndarray) for item in col_2
-        ):  # compare list like
-            # join together and apply np.array_equal
-            temp_df = pd.DataFrame({"col_1": col_1, "col_2": col_2})
-            compare = temp_df.apply(
-                lambda row: np.array_equal(row.col_1, row.col_2, equal_nan=True), axis=1
+    for comparator in comparators_:
+        if isinstance(comparator, PandasNumericComparator):
+            compare = comparator.compare(col_1, col_2, rtol=rel_tol, atol=abs_tol)
+        elif isinstance(comparator, PandasStringComparator):
+            compare = comparator.compare(
+                col_1, col_2, ignore_space=ignore_spaces, ignore_case=ignore_case
             )
+        elif isinstance(comparator, PandasArrayLikeComparator):
+            compare = comparator.compare(col_1, col_2)
         else:
-            compare = pd.Series(False, index=col_1.index)
-    elif pd.api.types.is_string_dtype(col_1) and pd.api.types.is_string_dtype(col_2):
-        try:
-            compare = pd.Series(
-                (col_1.fillna(default_value) == col_2.fillna(default_value))
-                | (col_1.isnull() & col_2.isnull())
+            # for custom comparators pass all the available parameters
+            # custom comparators can ignore what they don't need.
+            compare = comparator.compare(col_1, col_2, **kwargs)
+
+        if compare is not None:
+            compare.index = col_1.index
+            LOG.info(
+                f"Using comparator: {comparator.__class__.__name__} for column ({col_1.name}, {col_2.name}) comparison."
             )
-        except TypeError:
-            compare = pd.Series(col_1.astype(str) == col_2.astype(str))
-    elif {col_1.dtype.kind, col_2.dtype.kind} == {"M", "O"}:
-        compare = compare_string_and_date_columns(col_1, col_2)
-    else:
-        try:
-            compare = pd.Series(
-                np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
-            )
-        except TypeError:
-            try:
-                compare = pd.Series(
-                    np.isclose(
-                        col_1.astype(float),
-                        col_2.astype(float),
-                        rtol=rel_tol,
-                        atol=abs_tol,
-                        equal_nan=True,
-                    )
-                )
-            except Exception:
-                try:  # last check where we just cast to strings
-                    compare = pd.Series(col_1.astype(str) == col_2.astype(str))
-                except Exception:  # Blanket exception should just return all False
-                    compare = pd.Series(False, index=col_1.index)
+            return compare
+
+    compare = pd.Series(False, index=col_1.index)
     compare.index = col_1.index
     return compare
-
-
-def compare_string_and_date_columns(
-    col_1: "pd.Series[Any]", col_2: "pd.Series[Any]"
-) -> "pd.Series[bool]":
-    """Compare a string column and date column, value-wise.
-
-    This tries to
-    convert a string column to a date column and compare that way.
-
-    Parameters
-    ----------
-    col_1 : Pandas.Series
-        The first column to look at
-    col_2 : Pandas.Series
-        The second column
-
-    Returns
-    -------
-    pandas.Series
-        A series of Boolean values.  True == the values match, False == the
-        values don't match.
-    """
-    if col_1.dtype.kind == "O":
-        obj_column = col_1
-        date_column = col_2
-    else:
-        obj_column = col_2
-        date_column = col_1
-
-    try:
-        return pd.Series(
-            (pd.to_datetime(obj_column) == date_column)
-            | (obj_column.isnull() & date_column.isnull())
-        )
-    except Exception:
-        try:
-            return pd.Series(
-                (pd.to_datetime(obj_column, format="mixed") == date_column)
-                | (obj_column.isnull() & date_column.isnull())
-            )
-        except Exception:
-            return pd.Series(False, index=col_1.index)
 
 
 def get_merged_columns(
@@ -1153,35 +1149,3 @@ def generate_id_within_group(
         )
     else:
         return dataframe[join_columns].groupby(join_columns).cumcount()
-
-
-def normalize_string_column(
-    column: pd.Series, ignore_spaces: bool, ignore_case: bool
-) -> pd.Series:
-    """Normalize a string column by converting to upper case and stripping whitespace.
-
-    Parameters
-    ----------
-    column : pd.Series
-        The column to normalize
-    ignore_spaces : bool
-        Whether to ignore spaces when normalizing
-    ignore_case : bool
-        Whether to ignore case when normalizing
-
-    Returns
-    -------
-    pd.Series
-        The normalized column
-
-    Notes
-    -----
-    Will not operate on categorical columns.
-    """
-    if (column.dtype.kind == "O" and pd.api.types.infer_dtype(column) == "string") or (
-        pd.api.types.is_string_dtype(column)
-        and not isinstance(column.dtype, pd.CategoricalDtype)
-    ):
-        column = column.str.strip() if ignore_spaces else column
-        column = column.str.upper() if ignore_case else column
-    return column

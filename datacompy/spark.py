@@ -1,5 +1,5 @@
 #
-# Copyright 2025 Capital One Services, LLC
+# Copyright 2026 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,69 +26,61 @@ from copy import deepcopy
 from typing import Any, Dict, List, Tuple
 
 import pandas as pd
+import pyspark.sql
+import pyspark.sql.functions as F
 from ordered_set import OrderedSet
+from pyspark.sql import Window
+from pyspark.sql.connect.dataframe import DataFrame
 
 from datacompy.base import (
     BaseCompare,
-    _validate_tolerance_parameter,
     df_to_str,
     get_column_tolerance,
     render,
     save_html_report,
     temp_column_name,
+    validate_tolerance_parameter,
 )
-from datacompy.utility import check_module_available
+from datacompy.comparator import (
+    SparkArrayLikeComparator,
+    SparkNumericComparator,
+    SparkStringComparator,
+)
+from datacompy.comparator.base import BaseComparator
+from datacompy.comparator.utility import get_spark_column_dtypes
 
 LOG = logging.getLogger(__name__)
 
-try:
-    import pyspark.sql
-    import pyspark.sql.connect.dataframe
-    from pyspark.sql import Window
-    from pyspark.sql import functions as F
-    from pyspark.sql.functions import (
-        abs,
-        array,
-        array_contains,
-        col,
-        isnan,
-        isnull,
-        lit,
-        monotonically_increasing_id,
-        row_number,
-        trim,
-        upper,
-        when,
-    )
 
-    def decimal_comparator():
-        """Check equality with decimal(X, Y) types.
-
-        Otherwise treated as the string "decimal".
-        """
-
-        class DecimalComparator(str):
-            def __eq__(self, other):
-                return len(other) >= 7 and other[0:7] == "decimal"
-
-        return DecimalComparator("decimal")
-
-    NUMERIC_SPARK_TYPES = [
-        "tinyint",
-        "smallint",
-        "int",
-        "bigint",
-        "float",
-        "double",
-        decimal_comparator(),
-    ]
-    _SPARK_AVAILABLE = True
-except ImportError:
-    NUMERIC_SPARK_TYPES = []
-    _SPARK_AVAILABLE = False
+_SPARK_DEFAULT_COMPARATORS = [
+    SparkArrayLikeComparator(),
+    SparkNumericComparator(),
+    SparkStringComparator(),
+]
 
 
-check_spark_available = check_module_available(_SPARK_AVAILABLE, "spark")
+def decimal_comparator():
+    """Check equality with decimal(X, Y) types.
+
+    Otherwise treated as the string "decimal".
+    """
+
+    class DecimalComparator(str):
+        def __eq__(self, other):
+            return len(other) >= 7 and other[0:7] == "decimal"
+
+    return DecimalComparator("decimal")
+
+
+NUMERIC_SPARK_TYPES = [
+    "tinyint",
+    "smallint",
+    "int",
+    "bigint",
+    "float",
+    "double",
+    decimal_comparator(),
+]
 
 
 class SparkSQLCompare(BaseCompare):
@@ -130,18 +122,13 @@ class SparkSQLCompare(BaseCompare):
         Flag to ignore the case of string columns
     cast_column_names_lower: bool, optional
         Boolean indicator that controls of column names will be cast into lower case
-
-    Attributes
-    ----------
-    df1_unq_rows : pyspark.sql.DataFrame
-        All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : pyspark.sql.DataFrame
-        All records that are only in df2 (based on a join on join_columns)
-    intersect_rows : pyspark.sql.DataFrame
-        All records that are in both df1 and df2
+    custom_comparators : list of ``BaseComparator``, optional
+        A list of custom comparator classes to use to compare columns.
+    cache_intermediates : bool, optional
+        Flag to enable/disable caching of intermediate DataFrames. Set to False when using
+        Databricks Serverless or other environments that don't support caching. Defaults to True.
     """
 
-    @check_spark_available
     def __init__(
         self,
         spark_session: "pyspark.sql.SparkSession",
@@ -155,14 +142,19 @@ class SparkSQLCompare(BaseCompare):
         ignore_spaces: bool = False,
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
+        custom_comparators: List[BaseComparator] | None = None,
+        cache_intermediates: bool = True,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
+        self.custom_comparators = custom_comparators or []
+        self.cache_intermediates = cache_intermediates
+        self._sensitive_columns: List[str] | None = None
 
         # Validate tolerance parameters first
-        self._abs_tol_dict = _validate_tolerance_parameter(
+        self._abs_tol_dict = validate_tolerance_parameter(
             abs_tol, "abs_tol", "lower" if cast_column_names_lower else "preserve"
         )
-        self._rel_tol_dict = _validate_tolerance_parameter(
+        self._rel_tol_dict = validate_tolerance_parameter(
             rel_tol, "rel_tol", "lower" if cast_column_names_lower else "preserve"
         )
 
@@ -176,8 +168,8 @@ class SparkSQLCompare(BaseCompare):
             ]
         else:
             self.join_columns = [
-                str(col).lower() if self.cast_column_names_lower else str(col)
-                for col in join_columns
+                str(c).lower() if self.cast_column_names_lower else str(c)
+                for c in join_columns
             ]
 
         self.spark_session = spark_session
@@ -195,6 +187,13 @@ class SparkSQLCompare(BaseCompare):
         self.intersect_rows: pyspark.sql.DataFrame
         self.column_stats: List = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
+
+    def _get_comparators(self) -> List[BaseComparator]:
+        """Build and return the list of comparators to be used.
+
+        Custom comparators are placed first, followed by the default ones.
+        """
+        return self.custom_comparators + _SPARK_DEFAULT_COMPARATORS
 
     @property
     def df1(self) -> "pyspark.sql.DataFrame":
@@ -222,6 +221,55 @@ class SparkSQLCompare(BaseCompare):
             "df2", cast_column_names_lower=self.cast_column_names_lower
         )
 
+    def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
+        """Hides sensitive columns of df1 or df2 if applicable in the compare."""
+        # Don't allow hiding columns again before first revealing
+        if self.sensitive_columns:
+            raise ValueError(
+                "sensitive columns are already hidden, call reveal_sensitive_columns() first"
+            )
+
+        self._set_and_validate_sensitive_columns(sensitive_columns)
+        # Don't do anything if [] is passed (normalized to None)
+        if not self.sensitive_columns:
+            return
+        sensitive = set(self.sensitive_columns)  # Otherwise this fails due to None
+        sensitive_with_suffixes = (
+            sensitive
+            | {f"{c}_{self.df1_name}" for c in sensitive}
+            | {f"{c}_{self.df2_name}" for c in sensitive}
+        )
+
+        # Hide columns in unq_rows
+        for df_name in ("df1_unq_rows", "df2_unq_rows"):
+            df = getattr(self, df_name)
+            LOG.debug(f"Hiding sensitive columns in {df_name}")
+            cols_to_hide = [col for col in df.columns if col in sensitive_with_suffixes]
+            if not cols_to_hide:  # skip if empty
+                continue
+            # Maintains column ordering for the hide
+            select_cols = [
+                F.lit("*******").alias(col) if col in cols_to_hide else F.col(col)
+                for col in df.columns
+            ]
+            setattr(self, df_name, df.select(select_cols))
+
+        # Hide columns in intersect_rows
+        LOG.debug("Hiding sensitive columns in intersect_rows")
+        cols_to_hide = [
+            col for col in self.intersect_rows.columns if col in sensitive_with_suffixes
+        ]
+        if not cols_to_hide:  # skip if empty
+            return
+        select_cols = [
+            F.lit("*******").alias(col) if col in cols_to_hide else F.col(col)
+            for col in self.intersect_rows.columns
+        ]
+        # avoid orphaned cached data (incl. unmasked sensitive vals) in executor memory
+        if self.cache_intermediates:
+            self.intersect_rows.unpersist()
+        self.intersect_rows = self.intersect_rows.select(select_cols)
+
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
     ) -> None:
@@ -239,7 +287,7 @@ class SparkSQLCompare(BaseCompare):
         None
         """
         dataframe = getattr(self, index)
-        instances = (pyspark.sql.DataFrame, pyspark.sql.connect.dataframe.DataFrame)
+        instances = (pyspark.sql.DataFrame, DataFrame)
 
         if not isinstance(dataframe, instances):
             raise TypeError(
@@ -248,12 +296,22 @@ class SparkSQLCompare(BaseCompare):
 
         if cast_column_names_lower:
             if index == "df1":
-                self._df1 = dataframe.toDF(
-                    *[str(col).lower() for col in dataframe.columns]
-                )
+                self._df1 = dataframe.toDF(*[str(c).lower() for c in dataframe.columns])
             if index == "df2":
-                self._df2 = dataframe.toDF(
-                    *[str(col).lower() for col in dataframe.columns]
+                self._df2 = dataframe.toDF(*[str(c).lower() for c in dataframe.columns])
+        else:
+            # Don't allow case sensitive columns
+            lower_cols = [c.lower() for c in dataframe.columns]
+            if len(set(lower_cols)) < len(lower_cols):
+                dupes = {
+                    c for c in dataframe.columns if lower_cols.count(c.lower()) > 1
+                }
+                raise ValueError(
+                    f"{index} has columns that differ only by case: {dupes}. "
+                    "Spark strongly discourages use of case sensitive column names. "
+                    "Rename columns to be unique regardless of case. "
+                    "See: https://spark.apache.org/docs/latest/api/python/tutorial/"
+                    "pandas_on_spark/best_practices.html#do-not-use-duplicated-column-names"
                 )
 
         # Check if join_columns are present in the dataframe
@@ -284,13 +342,13 @@ class SparkSQLCompare(BaseCompare):
         """
         LOG.info(f"Number of columns in common: {len(self.intersect_columns())}")
         LOG.debug("Checking column overlap")
-        for col in self.df1_unq_columns():
-            LOG.info(f"Column in df1 and not in df2: {col}")
+        for c in self.df1_unq_columns():
+            LOG.info(f"Column in df1 and not in df2: {c}")
         LOG.info(
             f"Number of columns in df1 and not in df2: {len(self.df1_unq_columns())}"
         )
-        for col in self.df2_unq_columns():
-            LOG.info(f"Column in df2 and not in df1: {col}")
+        for c in self.df2_unq_columns():
+            LOG.info(f"Column in df2 and not in df1: {c}")
         LOG.info(
             f"Number of columns in df2 and not in df1: {len(self.df2_unq_columns())}"
         )
@@ -331,8 +389,8 @@ class SparkSQLCompare(BaseCompare):
             LOG.debug("Duplicate rows found, deduping by order of remaining fields")
             # setting internal index
             LOG.info("Adding internal index to dataframes")
-            df1 = df1.withColumn("__index", monotonically_increasing_id())
-            df2 = df2.withColumn("__index", monotonically_increasing_id())
+            df1 = df1.withColumn("__index", F.monotonically_increasing_id())
+            df2 = df2.withColumn("__index", F.monotonically_increasing_id())
 
             # Create order column for uniqueness of match
             order_column = temp_column_name(df1, df2)
@@ -361,12 +419,12 @@ class SparkSQLCompare(BaseCompare):
                     next(dtype for name, dtype in df1.dtypes if name == column)
                     == "string"
                 ):
-                    df1 = df1.withColumn(column, trim(col(column)))
+                    df1 = df1.withColumn(column, F.trim(F.col(column)))
                 if (
                     next(dtype for name, dtype in df2.dtypes if name == column)
                     == "string"
                 ):
-                    df2 = df2.withColumn(column, trim(col(column)))
+                    df2 = df2.withColumn(column, F.trim(F.col(column)))
 
         df1_non_join_columns = OrderedSet(df1.columns) - OrderedSet(temp_join_columns)
         df2_non_join_columns = OrderedSet(df2.columns) - OrderedSet(temp_join_columns)
@@ -379,8 +437,8 @@ class SparkSQLCompare(BaseCompare):
         )
 
         # generate merge indicator
-        df1 = df1.withColumn("_merge_left", lit(True))
-        df2 = df2.withColumn("_merge_right", lit(True))
+        df1 = df1.withColumn("_merge_left", F.lit(True))
+        df2 = df2.withColumn("_merge_right", F.lit(True))
 
         df1 = df1.withColumnsRenamed(
             {c: f"{c}_{self.df1_name}" for c in temp_join_columns}
@@ -388,10 +446,6 @@ class SparkSQLCompare(BaseCompare):
         df2 = df2.withColumnsRenamed(
             {c: f"{c}_{self.df2_name}" for c in temp_join_columns}
         )
-
-        # cache
-        df1.cache()
-        df2.cache()
 
         # NULL SAFE Outer join using ON
         df1.createOrReplaceTempView("df1")
@@ -411,18 +465,18 @@ class SparkSQLCompare(BaseCompare):
             + on
         )
 
-        outer_join = outer_join.withColumn("_merge", lit(None))  # initialize col
+        outer_join = outer_join.withColumn("_merge", F.lit(None))  # initialize col
 
         # process merge indicator
         outer_join = outer_join.withColumn(
             "_merge",
-            when(
+            F.when(
                 (outer_join["_merge_left"] == True)  # noqa: E712
-                & (isnull(outer_join["_merge_right"])),
+                & (F.isnull(outer_join["_merge_right"])),
                 "left_only",
             )
             .when(
-                (isnull(outer_join["_merge_left"]))
+                (F.isnull(outer_join["_merge_left"]))
                 & (outer_join["_merge_right"] == True),  # noqa: E712
                 "right_only",
             )
@@ -467,8 +521,12 @@ class SparkSQLCompare(BaseCompare):
         LOG.info(
             f"Number of rows in df1 and df2 (not necessarily equal): {self.intersect_rows.count()}"
         )
-        # cache
-        self.intersect_rows.cache()
+        # cache only if enabled
+        if self.cache_intermediates:
+            LOG.debug("Caching intersect_rows dataframe")
+            self.intersect_rows.cache()
+        else:
+            LOG.debug("Caching disabled - skipping cache() on intersect_rows")
 
     def _intersect_compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
         """Run the comparison on the intersect dataframe.
@@ -498,6 +556,7 @@ class SparkSQLCompare(BaseCompare):
                 abs_tol=get_column_tolerance(column, self._abs_tol_dict),
                 ignore_spaces=ignore_spaces,
                 ignore_case=ignore_case,
+                comparators=self._get_comparators(),
             )
 
         self.intersect_rows = self.intersect_rows.withColumns(exprs)
@@ -679,11 +738,11 @@ class SparkSQLCompare(BaseCompare):
             row_cnt = self.intersect_rows.count()
             col_match = self.intersect_rows.select(f"{column}_match")
             match_cnt = col_match.where(
-                col(f"{column}_match") == True  # noqa: E712
+                F.col(f"{column}_match") == True  # noqa: E712
             ).count()
             sample_count = min(sample_count, row_cnt - match_cnt)
             sample = (
-                self.intersect_rows.where(col(f"{column}_match") == False)  # noqa: E712
+                self.intersect_rows.where(F.col(f"{column}_match") == False)  # noqa: E712
                 .drop(f"{column}_match")
                 .limit(sample_count)
             )
@@ -798,8 +857,8 @@ class SparkSQLCompare(BaseCompare):
             return to_return
 
         mm_rows = self.intersect_rows.withColumn(
-            "match_array", array(match_list)
-        ).where(array_contains("match_array", False))
+            "match_array", F.array(match_list)
+        ).where(F.array_contains("match_array", False))
 
         mm_rows = mm_rows.withColumnsRenamed(
             {f"{c}_{self.df1_name}": c for c in self.join_columns}
@@ -959,31 +1018,39 @@ class SparkSQLCompare(BaseCompare):
             "column_count": column_count,
             "df1_unique_rows": {
                 "has_rows": min_sample_count_df1 > 0,
-                "rows": df_to_str(
-                    self.df1_unq_rows.select(
-                        self.df1_unq_rows.columns[:min_column_count_df1]
-                    ),
-                    sample_count=min_sample_count_df1,
-                )
-                if df1_unq_count > 0
-                else "",
-                "columns": self.df1_unq_rows.columns[:min_column_count_df1]
-                if df1_unq_count > 0
-                else "",
+                "rows": (
+                    df_to_str(
+                        self.df1_unq_rows.select(
+                            self.df1_unq_rows.columns[:min_column_count_df1]
+                        ),
+                        sample_count=min_sample_count_df1,
+                    )
+                    if df1_unq_count > 0
+                    else ""
+                ),
+                "columns": (
+                    self.df1_unq_rows.columns[:min_column_count_df1]
+                    if df1_unq_count > 0
+                    else ""
+                ),
             },
             "df2_unique_rows": {
                 "has_rows": min_sample_count_df2 > 0,
-                "rows": df_to_str(
-                    self.df2_unq_rows.select(
-                        self.df2_unq_rows.columns[:min_column_count_df2]
-                    ),
-                    sample_count=min_sample_count_df2,
-                )
-                if df2_unq_count > 0
-                else "",
-                "columns": self.df2_unq_rows.columns[:min_column_count_df2]
-                if df2_unq_count > 0
-                else "",
+                "rows": (
+                    df_to_str(
+                        self.df2_unq_rows.select(
+                            self.df2_unq_rows.columns[:min_column_count_df2]
+                        ),
+                        sample_count=min_sample_count_df2,
+                    )
+                    if df2_unq_count > 0
+                    else ""
+                ),
+                "columns": (
+                    self.df2_unq_rows.columns[:min_column_count_df2]
+                    if df2_unq_count > 0
+                    else ""
+                ),
             },
         }
 
@@ -1061,7 +1128,6 @@ class SparkSQLCompare(BaseCompare):
         return report
 
 
-@check_spark_available
 def columns_equal(
     dataframe: "pyspark.sql.DataFrame",
     col_1: str,
@@ -1070,6 +1136,8 @@ def columns_equal(
     abs_tol: float = 0,
     ignore_spaces: bool = False,
     ignore_case: bool = False,
+    comparators: List[BaseComparator] | None = None,
+    **kwargs,
 ) -> "pyspark.sql.Column":
     """Compare if two columns are considered equal, returns a boolean Spark Column to be used in a `.withColumn(...)` statement.
 
@@ -1099,6 +1167,10 @@ def columns_equal(
         Flag to strip whitespace (including newlines) from string columns
     ignore_case : bool, optional
         Flag to ignore the case of string columns
+    comparators: List[BaseComparator] | None = None,
+        A list of custom comparator classes to use to compare columns.
+    **kwargs
+        Additional keyword arguments to pass to custom comparators.
 
     Returns
     -------
@@ -1124,47 +1196,42 @@ def columns_equal(
     Starting in version 0.18.0, the behavior of this function was changed so rather than returning
     a DataFrame a Column expression is returned.
     """
-    base_dtype, compare_dtype = _get_column_dtypes(dataframe, col_1, col_2)
-    if _is_comparable(base_dtype, compare_dtype):
-        if (base_dtype in NUMERIC_SPARK_TYPES) and (
-            compare_dtype in NUMERIC_SPARK_TYPES
-        ):
-            # numeric tolerance comparison
-            return when(
-                (col(col_1).eqNullSafe(col(col_2)))
-                | (
-                    abs(col(col_1) - col(col_2))
-                    <= lit(abs_tol) + (lit(rel_tol) * abs(col(col_2)))
-                ),
-                # corner case of col1 != NaN and col2 == NaN returns True incorrectly
-                when(
-                    (isnan(col(col_1)) == False)  # noqa: E712
-                    & (isnan(col(col_2)) == True),  # noqa: E712
-                    lit(False),
-                ).otherwise(lit(True)),
-            ).otherwise(lit(False))
+    comparators_ = comparators
+
+    if not comparators_:
+        # If no comparators are passed, behave as before.
+        comparators_ = _SPARK_DEFAULT_COMPARATORS
+
+    for comparator in comparators_:
+        if isinstance(comparator, SparkNumericComparator):
+            compare = comparator.compare(
+                dataframe, col_1, col_2, rtol=rel_tol, atol=abs_tol
+            )
+        elif isinstance(comparator, SparkStringComparator):
+            compare = comparator.compare(
+                dataframe,
+                col_1,
+                col_2,
+                ignore_space=ignore_spaces,
+                ignore_case=ignore_case,
+            )
+        elif isinstance(comparator, SparkArrayLikeComparator):
+            compare = comparator.compare(dataframe, col_1, col_2)
         else:
-            # non-numeric comparison
-            if ignore_case and not ignore_spaces:
-                when_clause = upper(col(col_1)).eqNullSafe(upper(col(col_2)))
-            elif not ignore_case and ignore_spaces:
-                when_clause = trim(col(col_1)).eqNullSafe(trim(col(col_2)))
-            elif ignore_case and ignore_spaces:
-                when_clause = upper(trim(col(col_1))).eqNullSafe(
-                    upper(trim(col(col_2)))
-                )
-            else:
-                when_clause = col(col_1).eqNullSafe(col(col_2))
+            # for custom comparators pass all the available parameters
+            # custom comparators can ignore what they don't need.
+            compare = comparator.compare(dataframe, col_1, col_2, **kwargs)
 
-            return when(when_clause, lit(True)).otherwise(lit(False))
-    else:
-        LOG.debug(
-            f"Skipping {col_1}({base_dtype}) and {col_2}({compare_dtype}), columns are not comparable"
-        )
-        return lit(False)
+        if compare is not None:
+            LOG.info(
+                f"Using comparator: {comparator.__class__.__name__} for column ({col_1}, {col_2}) comparison."
+            )
+            return compare
+
+    compare = F.lit(False)
+    return compare
 
 
-@check_spark_available
 def get_merged_columns(
     original_df: "pyspark.sql.DataFrame",
     merged_df: "pyspark.sql.DataFrame",
@@ -1188,17 +1255,16 @@ def get_merged_columns(
         Column list of the original dataframe pre suffix
     """
     columns = []
-    for col in original_df.columns:
-        if col in merged_df.columns:
-            columns.append(col)
-        elif col + "_" + suffix in merged_df.columns:
-            columns.append(col + "_" + suffix)
+    for c in original_df.columns:
+        if c in merged_df.columns:
+            columns.append(c)
+        elif c + "_" + suffix in merged_df.columns:
+            columns.append(c + "_" + suffix)
         else:
-            raise ValueError("Column not found: %s", col)
+            raise ValueError("Column not found: %s", c)
     return columns
 
 
-@check_spark_available
 def calculate_max_diff(
     dataframe: "pyspark.sql.DataFrame", col_1: str, col_2: str
 ) -> float:
@@ -1218,12 +1284,18 @@ def calculate_max_diff(
     float
         max diff
     """
+    dtype1, dtype2 = get_spark_column_dtypes(dataframe, col_1, col_2)
+    if dtype1.startswith("array") and dtype2.startswith("array"):
+        LOG.warning(
+            f"Cannot calculate max_diff for array-like columns: {col_1}, {col_2}, defaulting to 0."
+        )
+        return 0
     diff = dataframe.select(
-        (col(col_1).astype("float") - col(col_2).astype("float")).alias("diff")
+        (F.col(col_1).astype("float") - F.col(col_2).astype("float")).alias("diff")
     )
-    abs_diff = diff.select(abs(col("diff")).alias("abs_diff"))
+    abs_diff = diff.select(F.abs(F.col("diff")).alias("abs_diff"))
     max_diff: float = (
-        abs_diff.where(isnan(col("abs_diff")) == False)  # noqa: E712
+        abs_diff.where(F.isnan(F.col("abs_diff")) == False)  # noqa: E712
         .agg({"abs_diff": "max"})
         .collect()[0][0]
     )
@@ -1234,7 +1306,6 @@ def calculate_max_diff(
         return max_diff
 
 
-@check_spark_available
 def calculate_null_diff(
     dataframe: "pyspark.sql.DataFrame", col_1: str, col_2: str
 ) -> int:
@@ -1256,21 +1327,21 @@ def calculate_null_diff(
     """
     nulls_df = dataframe.withColumn(
         "col_1_null",
-        when(col(col_1).isNull() == True, lit(True)).otherwise(  # noqa: E712
-            lit(False)
+        F.when(F.col(col_1).isNull() == True, F.lit(True)).otherwise(  # noqa: E712
+            F.lit(False)
         ),
     )
     nulls_df = nulls_df.withColumn(
         "col_2_null",
-        when(col(col_2).isNull() == True, lit(True)).otherwise(  # noqa: E712
-            lit(False)
+        F.when(F.col(col_2).isNull() == True, F.lit(True)).otherwise(  # noqa: E712
+            F.lit(False)
         ),
     ).select(["col_1_null", "col_2_null"])
 
     # (not a and b) or (a and not b)
     null_diff = nulls_df.where(
-        ((col("col_1_null") == False) & (col("col_2_null") == True))  # noqa: E712
-        | ((col("col_1_null") == True) & (col("col_2_null") == False))  # noqa: E712
+        ((F.col("col_1_null") == False) & (F.col("col_2_null") == True))  # noqa: E712
+        | ((F.col("col_1_null") == True) & (F.col("col_2_null") == False))  # noqa: E712
     ).count()
 
     if pd.isna(null_diff) or pd.isnull(null_diff) or null_diff is None:
@@ -1314,12 +1385,12 @@ def _generate_id_within_group(
 
         return (
             dataframe.select(
-                *(col(c).cast("string").alias(c) for c in [*join_columns, "__index"])
+                *(F.col(c).cast("string").alias(c) for c in [*join_columns, "__index"])
             )
             .fillna(default_value)
             .withColumn(
                 order_column_name,
-                row_number().over(Window.orderBy("__index").partitionBy(join_columns))
+                F.row_number().over(Window.orderBy("__index").partitionBy(join_columns))
                 - 1,
             )
             .select(["__index", order_column_name])
@@ -1329,7 +1400,7 @@ def _generate_id_within_group(
             dataframe.select([*join_columns, "__index"])
             .withColumn(
                 order_column_name,
-                row_number().over(Window.orderBy("__index").partitionBy(join_columns))
+                F.row_number().over(Window.orderBy("__index").partitionBy(join_columns))
                 - 1,
             )
             .select(["__index", order_column_name])

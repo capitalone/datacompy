@@ -1,5 +1,5 @@
 #
-# Copyright 2025 Capital One Services, LLC
+# Copyright 2026 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,4 +18,28 @@ Originally started to be something of a replacement for SAS's PROC COMPARE for P
 Then extended to carry that functionality over to Spark Dataframes.
 """
 
-__version__ = "0.19.1"
+__version__ = "1.0.0"
+
+from datacompy.base import BaseCompare
+from datacompy.pandas import PandasCompare
+from datacompy.polars import PolarsCompare
+
+__all__ = [
+    "BaseCompare",
+    "PandasCompare",
+    "PolarsCompare",
+]
+
+try:
+    from datacompy.snowflake import SnowflakeCompare  # noqa: F401
+
+    __all__.append("SnowflakeCompare")
+except ImportError:
+    pass
+
+try:
+    from datacompy.spark import SparkSQLCompare  # noqa: F401
+
+    __all__.append("SparkSQLCompare")
+except ImportError:
+    pass

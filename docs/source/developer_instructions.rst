@@ -10,7 +10,7 @@ We use the excellent `pre-commit <https://pre-commit.com/>`_ to run several hook
 ``pre-commit`` is included in the ``dev`` extra installs. You'll have to run ``pre-commit install`` once per environment
 before committing changes.
 
-The reason behind running black, isort, and others as a pre-commit hook is to let a machine make style decisions, based
+The reason behind running ruff, and others as a pre-commit hook is to let a machine make style decisions, based
 on the collective wisdom of the Python community.
 
 Generating Documentation

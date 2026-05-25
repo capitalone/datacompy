@@ -1,5 +1,5 @@
 #
-# Copyright 2025 Capital One Services, LLC
+# Copyright 2026 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 Testing out the datacompy functionality
 """
 
-import io
 import logging
 import os
-import sys
+import re
 import tempfile
 from datetime import datetime
 from decimal import Decimal
@@ -30,14 +29,13 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
-from pytest import raises
 
 pytest.importorskip("pyspark")
 
-if sys.version_info >= (3, 12):  # noqa: UP036
-    pytest.skip("unsupported python version", allow_module_level=True)
-
-from datacompy.spark.sql import (
+from datacompy.comparator.base import BaseComparator
+from datacompy.comparator.string import PYSPARK_STRING_TYPE
+from datacompy.comparator.utility import get_spark_column_dtypes
+from datacompy.spark import (
     SparkSQLCompare,
     _generate_id_within_group,
     calculate_max_diff,
@@ -45,18 +43,17 @@ from datacompy.spark.sql import (
     temp_column_name,
 )
 from pandas.testing import assert_frame_equal, assert_series_equal
+from pyspark.sql.functions import col, length, lit, when
 from pyspark.sql.types import (
     ArrayType,
+    BooleanType,
+    DateType,
     IntegerType,
     StringType,
     StructField,
     StructType,
 )
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
-pd.DataFrame.iteritems = pd.DataFrame.items  # Pandas 2+ compatability
-np.bool = np.bool_  # Numpy 1.24.3+ comptability
+from pytest import raises
 
 
 def test_numeric_columns_equal_abs(spark_session):
@@ -163,86 +160,190 @@ something||False
 
 
 def test_date_columns_equal(spark_session):
-    data = """a|b|expected
-2017-01-01|2017-01-01|True
-2017-01-02|2017-01-02|True
-2017-10-01|2017-10-10|False
-2017-01-01||False
-|2017-01-01|False
-||True"""
-    pdf = pd.read_csv(io.StringIO(data), sep="|")
-    df = spark_session.createDataFrame(pdf)
-    # First compare just the strings
+    # Define schema for string comparison
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", StringType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data for string comparison
+    data = [
+        ("2017-01-01", "2017-01-01", True),
+        ("2017-01-02", "2017-01-02", True),
+        ("2017-10-01", "2017-10-10", False),
+        ("2017-01-01", None, False),
+        (None, "2017-01-01", False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with string dates
+    df = spark_session.createDataFrame(data, schema)
+
+    # First compare as strings
     actual_out = df.withColumn(
         "actual", columns_equal(df, "a", "b", rel_tol=0.2)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
-    # Then compare converted to datetime objects
-    pdf["a"] = pd.to_datetime(pdf["a"])
-    pdf["b"] = pd.to_datetime(pdf["b"])
-    df = spark_session.createDataFrame(pdf)
-    actual_out = df.withColumn(
-        "actual", columns_equal(df, "a", "b", rel_tol=0.2)
+    # Define schema for date comparison
+    date_schema = StructType(
+        [
+            StructField("a", DateType(), True),
+            StructField("b", DateType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data with actual date objects
+    date_data = [
+        (datetime(2017, 1, 1), datetime(2017, 1, 1), True),
+        (datetime(2017, 1, 2), datetime(2017, 1, 2), True),
+        (datetime(2017, 10, 1), datetime(2017, 10, 10), False),
+        (datetime(2017, 1, 1), None, False),
+        (None, datetime(2017, 1, 1), False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with date objects
+    date_df = spark_session.createDataFrame(date_data, date_schema)
+
+    # Compare date columns
+    actual_out = date_df.withColumn(
+        "actual", columns_equal(date_df, "a", "b", rel_tol=0.2)
     ).toPandas()["actual"]
-    expect_out = df.select("expected").toPandas()["expected"]
+    expect_out = date_df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
-    # and reverse
-    actual_out_rev = df.withColumn(
-        "actual", columns_equal(df, "b", "a", rel_tol=0.2)
+
+    # Test reverse comparison
+    actual_out_rev = date_df.withColumn(
+        "actual", columns_equal(date_df, "b", "a", rel_tol=0.2)
     ).toPandas()["actual"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
+    # Define schema for date / string comparison
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", DateType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data for string comparison
+    data = [
+        ("2017-01-01", datetime(2017, 1, 1), True),
+        ("2017-01-02", datetime(2017, 1, 2), True),
+        ("2017-10-01", datetime(2017, 10, 10), False),
+        ("2017-01-01", None, False),
+        (None, datetime(2017, 1, 1), False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with string dates
+    df = spark_session.createDataFrame(data, schema)
+
+    # First compare as strings
+    actual_out = df.withColumn(
+        "actual", columns_equal(df, "a", "b", rel_tol=0.2)
+    ).toPandas()["actual"]
+    expect_out = df.select("expected").toPandas()["expected"]
+    assert_series_equal(expect_out, actual_out, check_names=False)
+
 
 def test_date_columns_equal_with_ignore_spaces(spark_session):
-    data = """a|b|expected
-2017-01-01|2017-01-01   |True
-2017-01-02  |2017-01-02|True
-2017-10-01  |2017-10-10   |False
-2017-01-01||False
-|2017-01-01|False
-||True"""
-    pdf = pd.read_csv(io.StringIO(data), sep="|")
-    df = spark_session.createDataFrame(pdf)
-    # First compare just the strings
+    # Define schema for string comparison
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", StringType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data with string dates including spaces
+    string_data = [
+        ("2017-01-01", "2017-01-01   ", True),
+        ("2017-01-02  ", "2017-01-02", True),
+        ("2017-10-01  ", "2017-10-10   ", False),
+        ("2017-01-01", None, False),
+        (None, "2017-01-01", False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with string dates
+    df = spark_session.createDataFrame(string_data, schema)
+
+    # First compare as strings
     actual_out = df.withColumn(
         "actual", columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
-    # Then compare converted to datetime objects
-    try:  # pandas 2
-        pdf["a"] = pd.to_datetime(pdf["a"], format="mixed")
-        pdf["b"] = pd.to_datetime(pdf["b"], format="mixed")
-    except ValueError:  # pandas 1.5
-        pdf["a"] = pd.to_datetime(pdf["a"])
-        pdf["b"] = pd.to_datetime(pdf["b"])
-    df = spark_session.createDataFrame(pdf)
-    actual_out = df.withColumn(
-        "actual", columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True)
+    # Define schema for date comparison
+    date_schema = StructType(
+        [
+            StructField("a", DateType(), True),
+            StructField("b", DateType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data with actual date objects
+    date_data = [
+        (datetime(2017, 1, 1), datetime(2017, 1, 1), True),
+        (datetime(2017, 1, 2), datetime(2017, 1, 2), True),
+        (datetime(2017, 10, 1), datetime(2017, 10, 10), False),
+        (datetime(2017, 1, 1), None, False),
+        (None, datetime(2017, 1, 1), False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with date objects
+    date_df = spark_session.createDataFrame(date_data, date_schema)
+
+    # Compare date columns
+    actual_out = date_df.withColumn(
+        "actual", columns_equal(date_df, "a", "b", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
-    expect_out = df.select("expected").toPandas()["expected"]
+    expect_out = date_df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
-    # and reverse
-    actual_out_rev = df.withColumn(
-        "actual", columns_equal(df, "b", "a", rel_tol=0.2, ignore_spaces=True)
+
+    # Test reverse comparison
+    actual_out_rev = date_df.withColumn(
+        "actual", columns_equal(date_df, "b", "a", rel_tol=0.2, ignore_spaces=True)
     ).toPandas()["actual"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
 def test_date_columns_equal_with_ignore_spaces_and_case(spark_session):
-    data = """a|b|expected
-2017-01-01|2017-01-01   |True
-2017-01-02  |2017-01-02|True
-2017-10-01  |2017-10-10   |False
-2017-01-01||False
-|2017-01-01|False
-||True"""
-    pdf = pd.read_csv(io.StringIO(data), sep="|")
-    df = spark_session.createDataFrame(pdf)
-    # First compare just the strings
+    # Define schema for string comparison
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", StringType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data with string dates including spaces
+    string_data = [
+        ("2017-01-01", "2017-01-01   ", True),
+        ("2017-01-02  ", "2017-01-02", True),
+        ("2017-10-01  ", "2017-10-10   ", False),
+        ("2017-01-01", None, False),
+        (None, "2017-01-01", False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with string dates
+    df = spark_session.createDataFrame(string_data, schema)
+
+    # First compare as strings
     actual_out = df.withColumn(
         "actual",
         columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True),
@@ -250,35 +351,67 @@ def test_date_columns_equal_with_ignore_spaces_and_case(spark_session):
     expect_out = df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
-    # Then compare converted to datetime objects
-    try:  # pandas 2
-        pdf["a"] = pd.to_datetime(pdf["a"], format="mixed")
-        pdf["b"] = pd.to_datetime(pdf["b"], format="mixed")
-    except ValueError:  # pandas 1.5
-        pdf["a"] = pd.to_datetime(pdf["a"])
-        pdf["b"] = pd.to_datetime(pdf["b"])
-    df = spark_session.createDataFrame(pdf)
-    actual_out = df.withColumn(
+    # Define schema for date comparison
+    date_schema = StructType(
+        [
+            StructField("a", DateType(), True),
+            StructField("b", DateType(), True),
+            StructField("expected", BooleanType(), True),
+        ]
+    )
+
+    # Create data with actual date objects
+    date_data = [
+        (datetime(2017, 1, 1), datetime(2017, 1, 1), True),
+        (datetime(2017, 1, 2), datetime(2017, 1, 2), True),
+        (datetime(2017, 10, 1), datetime(2017, 10, 10), False),
+        (datetime(2017, 1, 1), None, False),
+        (None, datetime(2017, 1, 1), False),
+        (None, None, True),
+    ]
+
+    # Create DataFrame with date objects
+    date_df = spark_session.createDataFrame(date_data, date_schema)
+
+    # Compare date columns
+    actual_out = date_df.withColumn(
         "actual",
-        columns_equal(df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True),
+        columns_equal(
+            date_df, "a", "b", rel_tol=0.2, ignore_spaces=True, ignore_case=True
+        ),
     ).toPandas()["actual"]
-    expect_out = df.select("expected").toPandas()["expected"]
+    expect_out = date_df.select("expected").toPandas()["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
-    # and reverse
-    actual_out_rev = df.withColumn(
+
+    # Test reverse comparison
+    actual_out_rev = date_df.withColumn(
         "actual",
-        columns_equal(df, "b", "a", rel_tol=0.2, ignore_spaces=True, ignore_case=True),
+        columns_equal(
+            date_df, "b", "a", rel_tol=0.2, ignore_spaces=True, ignore_case=True
+        ),
     ).toPandas()["actual"]
     assert_series_equal(expect_out, actual_out_rev, check_names=False)
 
 
 def test_date_columns_unequal(spark_session):
     """I want datetime fields to match with dates stored as strings"""
-    data = [{"a": "2017-01-01", "b": "2017-01-02"}, {"a": "2017-01-01"}]
-    pdf = pd.DataFrame(data)
-    pdf["a_dt"] = pd.to_datetime(pdf["a"])
-    pdf["b_dt"] = pd.to_datetime(pdf["b"])
-    df = spark_session.createDataFrame(pdf)
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", StringType(), True),
+            StructField("a_dt", DateType(), True),
+            StructField("b_dt", DateType(), True),
+        ]
+    )
+
+    data = [
+        ("2017-01-01", "2017-01-02", datetime(2017, 1, 1), datetime(2017, 1, 2)),
+        ("2017-01-01", None, datetime(2017, 1, 1), None),
+    ]
+
+    df = spark_session.createDataFrame(data, schema)
+
+    # Test string vs date equality both ways
     assert (
         df.withColumn("actual", columns_equal(df, "a", "a_dt"))
         .toPandas()["actual"]
@@ -299,6 +432,8 @@ def test_date_columns_unequal(spark_session):
         .toPandas()["actual"]
         .all()
     )
+
+    # Test mismatched fields
     assert (
         not df.withColumn("actual", columns_equal(df, "b_dt", "a"))
         .toPandas()["actual"]
@@ -325,13 +460,21 @@ def test_bad_date_columns(spark_session):
     """If strings can't be coerced into dates then it should be false for the
     whole column.
     """
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", StringType(), True),
+            StructField("a_dt", DateType(), True),
+        ]
+    )
+
     data = [
-        {"a": "2017-01-01", "b": "2017-01-01"},
-        {"a": "2017-01-01", "b": "217-01-01"},
+        ("2017-01-01", "2017-01-01", datetime(2017, 1, 1)),
+        ("2017-01-01", "217-01-01", datetime(2017, 1, 1)),  # malformed date in b column
     ]
-    pdf = pd.DataFrame(data)
-    pdf["a_dt"] = pd.to_datetime(pdf["a"])
-    df = spark_session.createDataFrame(pdf)
+
+    df = spark_session.createDataFrame(data, schema)
+
     assert (
         not df.withColumn("actual", columns_equal(df, "a_dt", "b"))
         .toPandas()["actual"]
@@ -348,15 +491,28 @@ def test_rounded_date_columns(spark_session):
     """If strings can't be coerced into dates then it should be false for the
     whole column.
     """
+    schema = StructType(
+        [
+            StructField("a", StringType(), True),
+            StructField("b", StringType(), True),
+            StructField("exp", BooleanType(), True),
+            StructField("a_dt", DateType(), True),
+        ]
+    )
+
     data = [
-        {"a": "2017-01-01", "b": "2017-01-01 00:00:00.000000", "exp": True},
-        {"a": "2017-01-01", "b": "2017-01-01 00:00:00.123456", "exp": False},
-        {"a": "2017-01-01", "b": "2017-01-01 00:00:01.000000", "exp": False},
-        {"a": "2017-01-01", "b": "2017-01-01 00:00:00", "exp": True},
+        ("2017-01-01", "2017-01-01 00:00:00.000000", True, datetime(2017, 1, 1)),
+        (
+            "2017-01-01",
+            "2017-01-01 00:01:00.123456",
+            True,
+            datetime(2017, 1, 1),
+        ),  # rounded to the day
+        ("2017-01-01", "2017-01-02 00:00:01.000000", False, datetime(2017, 1, 1)),
+        ("2017-01-01", "2017-01-01 00:00:00", True, datetime(2017, 1, 1)),
     ]
-    pdf = pd.DataFrame(data)
-    pdf["a_dt"] = pd.to_datetime(pdf["a"])
-    df = spark_session.createDataFrame(pdf)
+
+    df = spark_session.createDataFrame(data, schema)
     actual = df.withColumn("actual", columns_equal(df, "a_dt", "b")).toPandas()[
         "actual"
     ]
@@ -1383,8 +1539,8 @@ def test_integer_column_names(spark_session):
     assert compare.matches()
 
 
-@mock.patch("datacompy.spark.sql.render")
-@mock.patch("datacompy.spark.sql.save_html_report")
+@mock.patch("datacompy.spark.render")
+@mock.patch("datacompy.spark.save_html_report")
 def test_save_html(mock_save_html, mock_render, spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
@@ -1791,8 +1947,8 @@ def test_template_context_variables(spark_session):
             os.unlink(template_path)
 
 
-@mock.patch("datacompy.spark.sql.save_html_report")
-@mock.patch("datacompy.spark.sql.render")
+@mock.patch("datacompy.spark.save_html_report")
+@mock.patch("datacompy.spark.render")
 def test_html_report_generation(mock_render, mock_save_html, spark_session):
     """Test that HTML reports can be generated and saved to a file."""
     df1 = spark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
@@ -1962,3 +2118,726 @@ def test_10k_rows_rel_tol_per_column_default(spark_session):
     assert compare_tol.all_columns_match()
     assert compare_tol.all_rows_overlap()
     assert not compare_tol.intersect_rows_match()
+
+
+def test_custom_comparator_spark(spark_session):
+    """Test that a custom comparator can be passed and used with Snowflake."""
+
+    class StringLengthComparator(BaseComparator):
+        """A custom comparator that matches strings based on length."""
+
+        def compare(self, dataframe, col1, col2):
+            base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
+            base_string_type = any(
+                base_dtype.startswith(t) for t in PYSPARK_STRING_TYPE
+            )
+            compare_string_type = any(
+                compare_dtype.startswith(t) for t in PYSPARK_STRING_TYPE
+            )
+            if base_string_type and compare_string_type:
+                return when(
+                    length(col(col1)) == length(col(col2)), lit(True)
+                ).otherwise(lit(False))
+            return None
+
+    df1 = spark_session.createDataFrame([(1, "apple")], ["id", "value"])
+    df2 = spark_session.createDataFrame([(1, "grape")], ["id", "value"])
+
+    # With custom comparator, it should match because 'apple' and 'grape' have the same length
+    compare_custom = SparkSQLCompare(
+        spark_session,
+        df1,
+        df2,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
+    )
+    assert compare_custom.matches()
+
+    # Without custom comparator, it should not match
+    compare_default = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    assert not compare_default.matches()
+
+    # Test case where custom comparator does not apply (returns None)
+    # and default comparison should be used.
+    df3 = spark_session.createDataFrame([(1, 10)], ["id", "value"])
+    df4 = spark_session.createDataFrame([(1, 20)], ["id", "value"])
+
+    # With custom comparator, but it won't apply to integer 'value' column
+    # so default comparison for integers should kick in, resulting in a mismatch.
+    compare_custom_fallback = SparkSQLCompare(
+        spark_session,
+        df3,
+        df4,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
+    )
+    assert not compare_custom_fallback.matches()
+
+    # Test case where custom comparator does not apply (returns None)
+    # and default comparison should be used.
+    df5 = spark_session.createDataFrame([(1, 10)], ["id", "value"])
+    df6 = spark_session.createDataFrame([(1, 10)], ["id", "value"])
+
+    # With custom comparator, but it won't apply to integer 'value' column
+    # so default comparison for integers should kick in, resulting in a match.
+    compare_custom_fallback = SparkSQLCompare(
+        spark_session,
+        df5,
+        df6,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
+    )
+    assert compare_custom_fallback.matches()
+
+    # Ensure the StringLengthComparator is actually used for string columns
+    df7 = spark_session.createDataFrame([(1, "test")], ["id", "value"])
+    df8 = spark_session.createDataFrame([(1, "abcd")], ["id", "value"])
+
+    compare_string_custom = SparkSQLCompare(
+        spark_session,
+        df7,
+        df8,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
+    )
+    assert compare_string_custom.matches()
+
+    compare_string_default = SparkSQLCompare(
+        spark_session, df7, df8, join_columns=["id"]
+    )
+    assert not compare_string_default.matches()
+
+    # StringLengthComparator mismatch case
+    df9 = spark_session.createDataFrame([(1, "test")], ["id", "value"])
+    df10 = spark_session.createDataFrame([(1, "abcde")], ["id", "value"])
+
+    compare_string_custom_mismatch = SparkSQLCompare(
+        spark_session,
+        df9,
+        df10,
+        join_columns=["id"],
+        custom_comparators=[StringLengthComparator()],
+    )
+    assert not compare_string_custom_mismatch.matches()
+
+
+def test_array_comparator_spark(spark_session):
+    schema = StructType(
+        [
+            StructField("id", IntegerType(), True),
+            StructField("array_col", ArrayType(IntegerType()), True),
+        ]
+    )
+    data1 = [
+        (1, [1, 2, 3]),
+        (2, [4, 5, 6]),
+        (3, [7, 8, 9]),
+        (5, [1, 2, 3]),
+        (6, [1, 2]),
+        (7, None),
+        (8, [1, None]),
+    ]
+    df1 = spark_session.createDataFrame(data1, schema)
+    data2 = [
+        (1, [1, 2, 3]),
+        (2, [4, 5, 7]),
+        (4, [10, 11, 12]),
+        (5, [3, 2, 1]),
+        (6, [1, 2, 3]),
+        (7, None),
+        (8, [1, None]),
+    ]
+    df2 = spark_session.createDataFrame(data2, schema)
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    assert not compare.matches()
+    assert compare.df1_unq_rows.count() == 1
+    assert compare.df1_unq_rows.toPandas()["id_df1"].iloc[0] == 3
+    assert compare.df2_unq_rows.count() == 1
+    assert compare.df2_unq_rows.toPandas()["id_df2"].iloc[0] == 4
+    assert compare.intersect_rows.count() == 6
+    assert not compare.intersect_rows_match()
+    assert compare.count_matching_rows() == 3
+    mismatch_df = (
+        compare.all_mismatch().toPandas().sort_values("id").reset_index(drop=True)
+    )
+    assert len(mismatch_df) == 3
+    assert mismatch_df["id"].iloc[0] == 2
+    assert (mismatch_df["array_col_df1"].iloc[0] == [4, 5, 6]).all()
+    assert (mismatch_df["array_col_df2"].iloc[0] == [4, 5, 7]).all()
+    assert mismatch_df["id"].iloc[1] == 5
+    assert (mismatch_df["array_col_df1"].iloc[1] == [1, 2, 3]).all()
+    assert (mismatch_df["array_col_df2"].iloc[1] == [3, 2, 1]).all()
+    assert mismatch_df["id"].iloc[2] == 6
+    assert (mismatch_df["array_col_df1"].iloc[2] == [1, 2]).all()
+    assert (mismatch_df["array_col_df2"].iloc[2] == [1, 2, 3]).all()
+
+
+def test_cache_intermediates_enabled(spark_session, caplog):
+    """Test that caching is enabled by default."""
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
+
+    caplog.set_level(logging.DEBUG)
+    compare = SparkSQLCompare(
+        spark_session, df1, df2, join_columns=["a"], cache_intermediates=True
+    )
+
+    # The comparison should still work correctly
+    assert not compare.matches()
+
+    # Verify the log message
+    assert compare.cache_intermediates is True
+    assert "Caching intersect_rows dataframe" in caplog.text
+
+
+def test_cache_intermediates_disabled(spark_session, caplog):
+    """Test that caching can be disabled for Databricks Serverless environments."""
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])
+
+    caplog.set_level(logging.DEBUG)
+    compare = SparkSQLCompare(
+        spark_session, df1, df2, join_columns=["a"], cache_intermediates=False
+    )
+
+    # The comparison should still work correctly without caching
+    assert not compare.matches()
+
+    # Verify the log message
+    assert compare.cache_intermediates is False
+    assert "Caching disabled - skipping cache() on intersect_rows" in caplog.text
+
+
+def test_cache_intermediates_default_is_true(spark_session, caplog):
+    """Test that cache_intermediates defaults to True for backward compatibility."""
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}])
+
+    caplog.set_level(logging.DEBUG)
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+
+    # The comparison should work as expected
+    assert compare.matches()
+
+    # Verify the log message
+    assert compare.cache_intermediates is True
+    assert "Caching intersect_rows dataframe" in caplog.text
+
+
+def test_columns_with_mismatches_single_column(spark_session):
+    """Test columns_with_mismatches with a single mismatched column."""
+    df1 = spark_session.createDataFrame(
+        [(1, "Alice", 25), (2, "Bob", 30), (3, "Charlie", 35)], ["id", "name", "age"]
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            (1, "Alice", 25),
+            (2, "Bob", 31),  # age differs for id=2
+            (3, "Charlie", 35),
+        ],
+        ["id", "name", "age"],
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == ["age"]
+
+
+def test_columns_with_mismatches_multiple_columns(spark_session):
+    """Test columns_with_mismatches with multiple mismatched columns."""
+    df1 = spark_session.createDataFrame(
+        [(1, "Alice", 25, "NYC"), (2, "Bob", 30, "LA"), (3, "Charlie", 35, "Chicago")],
+        ["id", "name", "age", "city"],
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            (1, "Alice", 25, "NYC"),
+            (2, "Bob", 31, "LA"),  # age differs for id=2
+            (3, "Charlie", 35, "Boston"),  # city differs for id=3
+        ],
+        ["id", "name", "age", "city"],
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert sorted(result) == ["age", "city"]
+
+
+def test_columns_with_mismatches_no_mismatches(spark_session):
+    """Test columns_with_mismatches when all columns match."""
+    df1 = spark_session.createDataFrame(
+        [(1, "Alice", 25), (2, "Bob", 30), (3, "Charlie", 35)], ["id", "name", "age"]
+    )
+    df2 = spark_session.createDataFrame(
+        [(1, "Alice", 25), (2, "Bob", 30), (3, "Charlie", 35)], ["id", "name", "age"]
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == []
+
+
+def test_columns_with_mismatches_excludes_join_columns(spark_session):
+    """Test that join columns are excluded from the result."""
+    df1 = spark_session.createDataFrame([(1, "a"), (2, "b"), (3, "c")], ["id", "value"])
+    df2 = spark_session.createDataFrame(
+        [
+            (1, "a"),
+            (2, "b"),
+            (4, "d"),  # id=3 missing, id=4 added
+        ],
+        ["id", "value"],
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    # 'id' should not be in the result even though there are row mismatches
+    assert "id" not in result
+    # Result should be empty because 'value' matches for the intersecting rows
+    assert result == []
+
+
+def test_columns_with_mismatches_with_nulls(spark_session):
+    """Test columns_with_mismatches with null values."""
+    df1 = spark_session.createDataFrame(
+        [(1, "a"), (2, None), (3, "c")], ["id", "value"]
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            (1, "a"),
+            (2, "b"),  # null differs to 'b' for id=2
+            (3, "c"),
+        ],
+        ["id", "value"],
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id"])
+    result = compare.columns_with_mismatches()
+    assert result == ["value"]
+
+
+def test_columns_with_mismatches_multiple_join_columns(spark_session):
+    """Test columns_with_mismatches with multiple join columns."""
+    df1 = spark_session.createDataFrame(
+        [(1, "a", 10, 100), (1, "b", 20, 200), (2, "a", 30, 300), (2, "b", 40, 400)],
+        ["id1", "id2", "value1", "value2"],
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            (1, "a", 10, 100),
+            (1, "b", 25, 200),  # value1 differs for (1, 'b')
+            (2, "a", 30, 305),  # value2 differs for (2, 'a')
+            (2, "b", 40, 400),
+        ],
+        ["id1", "id2", "value1", "value2"],
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["id1", "id2"])
+    result = compare.columns_with_mismatches()
+    assert "id1" not in result
+    assert "id2" not in result
+    assert sorted(result) == ["value1", "value2"]
+
+
+def test_sensitive_columns_hide(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == "*******"
+    assert intersect_rows.loc[0, "b_df2"] == "*******"
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_hide(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "sensitive columns are already hidden, call reveal_sensitive_columns() first"
+        ),
+    ):
+        compare.hide_sensitive_columns(["c"])
+
+
+def test_sensitive_columns_hide_reveal(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+    compare.reveal_sensitive_columns()
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == 0
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == 0
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == 2
+    assert intersect_rows.loc[0, "b_df2"] == 2
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_hide(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b"])
+    compare.reveal_sensitive_columns()
+    compare.hide_sensitive_columns(["b"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == "*******"
+    assert intersect_rows.loc[0, "b_df2"] == "*******"
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_cast_lower(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["B"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == "*******"
+    assert intersect_rows.loc[0, "b_df2"] == "*******"
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_join_columns(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["a"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    sample_mismatch = compare.sample_mismatch("a").toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "a"] == 1
+    assert compare.df1.toPandas().loc[1, "a"] == 1
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == "*******"
+    assert len(sample_mismatch) == 2
+    assert sample_mismatch.loc[0, "a"] == "*******"
+    assert sample_mismatch.loc[1, "a"] == "*******"
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_join_columns(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["a"])
+    compare.reveal_sensitive_columns()
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    sample_mismatch = compare.sample_mismatch("a").toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "a"] == 1
+    assert compare.df1.toPandas().loc[1, "a"] == 1
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert len(sample_mismatch) == 2
+    assert sample_mismatch.sort_values("a").reset_index(drop=True).loc[0, "a"] == 1
+    assert sample_mismatch.sort_values("a").reset_index(drop=True).loc[1, "a"] == 2
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_missing(spark_session):
+    df1 = spark_session.createDataFrame(
+        [{"a": 1, "b": "bruh", "c": 3}, {"a": 3, "b": "67", "c": 6}]
+    )
+    df2 = spark_session.createDataFrame(
+        [{"a": 1, "b": "hello", "d": 4}, {"a": 2, "b": "yo", "d": 7}]
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b", "c"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == "bruh"
+    assert compare.df1.toPandas().loc[1, "b"] == "67"
+    assert compare.df1.toPandas().loc[0, "c"] == 3
+    assert compare.df1.toPandas().loc[1, "c"] == 6
+    assert compare.df2.toPandas().loc[0, "d"] == 4
+    assert compare.df2.toPandas().loc[1, "d"] == 7
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 3
+    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert df1_unq_rows.loc[0, "c_df1"] == "*******"
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert df2_unq_rows.loc[0, "d_df2"] == 7
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "b_df1"] == "*******"
+    assert intersect_rows.loc[0, "b_df2"] == "*******"
+    assert intersect_rows.loc[0, "c_df1"] == "*******"
+    assert not intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_unused(spark_session, caplog):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    with caplog.at_level(logging.WARNING):
+        compare.hide_sensitive_columns(["c"])
+        assert (
+            "sensitive columns not found in either df1 or df2 will be ignored: ['c']"
+            in caplog.text
+        )
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == 0
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == 0
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == 2
+    assert intersect_rows.loc[0, "b_df2"] == 2
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_reveal_empty(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns([])
+    compare.reveal_sensitive_columns()
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == 0
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == 0
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == 2
+    assert intersect_rows.loc[0, "b_df2"] == 2
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_hide_empty(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns([])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert compare.df1.toPandas().loc[0, "b"] == 2
+    assert compare.df1.toPandas().loc[1, "b"] == 0
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "a_df1"] == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == 0
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "a_df2"] == 2
+    assert df2_unq_rows.loc[0, "b_df2"] == 0
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "a_df1"] == 1
+    assert intersect_rows.loc[0, "b_df1"] == 2
+    assert intersect_rows.loc[0, "b_df2"] == 2
+    assert intersect_rows.loc[0, "b_match"]
+    # Just render the report to make sure it renders.
+    compare.report()
+
+
+def test_sensitive_columns_setter(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}])
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+
+    # Valid setter call
+    compare._set_and_validate_sensitive_columns(["b"])
+    assert compare.sensitive_columns == ["b"]
+
+    # Invalid setter call - not a list of strings
+    with pytest.raises(TypeError, match="sensitive_columns must be a list of strings"):
+        compare._set_and_validate_sensitive_columns([1, 2, 3])
+
+
+def test_sensitive_columns_duplicates(spark_session):
+    df1 = spark_session.createDataFrame([{"a": 1, "b": 2}])
+    df2 = spark_session.createDataFrame([{"a": 1, "b": 2}])
+
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    # Duplicate columns should raise ValueError during hide_sensitive_columns()
+    with pytest.raises(ValueError, match=r"duplicate columns: {'b'}"):
+        compare.hide_sensitive_columns(["b", "b"])
+
+
+def test_sensitive_columns_numeric_types(spark_session):
+    """Verify that hiding works for different numeric types without LossySetitemError."""
+    df1 = spark_session.createDataFrame(
+        [
+            {"a": 1, "b": 10, "c": 1.1},
+            {"a": 2, "b": 20, "c": 2.2},
+        ]
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            {"a": 1, "b": 10, "c": 1.1},
+            {"a": 2, "b": 20, "c": 2.2},
+        ]
+    )
+
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"])
+    compare.hide_sensitive_columns(["b", "c"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert not isinstance(compare.df1.toPandas()["b"].loc[0], str)
+    assert not isinstance(compare.df1.toPandas()["c"].loc[0], str)
+    assert len(df1_unq_rows) == 0
+    assert intersect_rows.loc[0, "b_df1"] == "*******"
+    assert intersect_rows.loc[0, "b_df2"] == "*******"
+    assert intersect_rows.loc[0, "c_df1"] == "*******"
+    assert intersect_rows.loc[0, "c_df2"] == "*******"
+
+
+def test_sensitive_columns_numeric_types_with_tolerance(spark_session):
+    """Verify that hiding works for different numeric types with tolerance."""
+    df1 = spark_session.createDataFrame(
+        [
+            {"a": 1, "b": 10, "c": 1.1},
+            {"a": 2, "b": 20, "c": 2.1},
+        ]
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            {"a": 1, "b": 10, "c": 1.2},
+            {"a": 3, "b": 21, "c": 2.1},
+        ]
+    )
+
+    compare = SparkSQLCompare(spark_session, df1, df2, join_columns=["a"], abs_tol=0.1)
+    compare.hide_sensitive_columns(["b", "c"])
+
+    df1_unq_rows = compare.df1_unq_rows.toPandas().reset_index(drop=True)
+    df2_unq_rows = compare.df2_unq_rows.toPandas().reset_index(drop=True)
+    intersect_rows = compare.intersect_rows.toPandas().reset_index(drop=True)
+
+    assert not isinstance(compare.df1.toPandas()["b"].loc[0], str)
+    assert not isinstance(compare.df1.toPandas()["c"].loc[0], str)
+    assert len(df1_unq_rows) == 1
+    assert df1_unq_rows.loc[0, "b_df1"] == "*******"
+    assert df1_unq_rows.loc[0, "c_df1"] == "*******"
+    assert len(df2_unq_rows) == 1
+    assert df2_unq_rows.loc[0, "b_df2"] == "*******"
+    assert df2_unq_rows.loc[0, "c_df2"] == "*******"
+    assert len(intersect_rows) == 1
+    assert intersect_rows.loc[0, "b_df1"] == "*******"
+    assert intersect_rows.loc[0, "b_df2"] == "*******"
+    assert intersect_rows.loc[0, "b_match"]
+    assert intersect_rows.loc[0, "c_df1"] == "*******"
+    assert intersect_rows.loc[0, "c_df2"] == "*******"
+    assert intersect_rows.loc[0, "c_match"]
+
+
+def test_forbid_case_sensitive_columns(spark_session):
+    """Test error case for case sensitive columns in dataframes."""
+    df1 = spark_session.createDataFrame(
+        [{"a": 1, "b": 2, "B": 1}, {"a": 3, "b": 1, "B": 0}]
+    )
+    df2 = spark_session.createDataFrame(
+        [{"a": 1, "b": 2, "B": 2}, {"a": 2, "b": 0, "B": 0}]
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"df1 has columns that differ only by case: \{(?:'b', 'B'|'B', 'b')\}. "
+        "Spark strongly discourages use of case sensitive column names. "
+        "Rename columns to be unique regardless of case. "
+        "See: https://spark.apache.org/docs/latest/api/python/tutorial/"
+        "pandas_on_spark/best_practices.html#do-not-use-duplicated-column-names",
+    ):
+        SparkSQLCompare(
+            spark_session,
+            df1,
+            df2,
+            join_columns=["a"],
+            cast_column_names_lower=False,
+        )

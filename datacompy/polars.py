@@ -1,5 +1,5 @@
 #
-# Copyright 2025 Capital One Services, LLC
+# Copyright 2026 Capital One Services, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,24 +25,36 @@ import logging
 from copy import deepcopy
 from typing import Any, Dict, List, cast
 
-import numpy as np
 import polars as pl
 from ordered_set import OrderedSet
 
 from datacompy.base import (
     BaseCompare,
-    _validate_tolerance_parameter,
     df_to_str,
     get_column_tolerance,
     render,
     save_html_report,
     temp_column_name,
+    validate_tolerance_parameter,
 )
+from datacompy.comparator import (
+    PolarsArrayLikeComparator,
+    PolarsNumericComparator,
+    PolarsStringComparator,
+)
+from datacompy.comparator.base import BaseComparator
+from datacompy.comparator.string import polars_normalize_string_column
 
 LOG = logging.getLogger(__name__)
 
 STRING_TYPE = ["String", "Utf8"]
 LIST_TYPE = ["List", "Array"]
+
+_POLARS_DEFAULT_COMPARATORS = [
+    PolarsArrayLikeComparator(),
+    PolarsNumericComparator(),
+    PolarsStringComparator(),
+]
 
 
 class PolarsCompare(BaseCompare):
@@ -81,13 +93,8 @@ class PolarsCompare(BaseCompare):
         Flag to ignore the case of string columns. Excludes categoricals.
     cast_column_names_lower: bool, optional
         Boolean indicator that controls of column names will be cast into lower case
-
-    Attributes
-    ----------
-    df1_unq_rows : Polars ``DataFrame``
-        All records that are only in df1 (based on a join on join_columns)
-    df2_unq_rows : Polars ``DataFrame``
-        All records that are only in df2 (based on a join on join_columns)
+    custom_comparators : list of ``BaseComparator``, optional
+        A list of custom comparator classes to use to compare columns.
     """
 
     def __init__(
@@ -102,14 +109,17 @@ class PolarsCompare(BaseCompare):
         ignore_spaces: bool = False,
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
+        custom_comparators: List[BaseComparator] | None = None,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
+        self.custom_comparators = custom_comparators or []
+        self._sensitive_columns: List[str] | None = None
 
         # Validate tolerance parameters first
-        self._abs_tol_dict = _validate_tolerance_parameter(
+        self._abs_tol_dict = validate_tolerance_parameter(
             abs_tol, "abs_tol", "lower" if cast_column_names_lower else "preserve"
         )
-        self._rel_tol_dict = _validate_tolerance_parameter(
+        self._rel_tol_dict = validate_tolerance_parameter(
             rel_tol, "rel_tol", "lower" if cast_column_names_lower else "preserve"
         )
 
@@ -142,6 +152,13 @@ class PolarsCompare(BaseCompare):
         self.column_stats: List[Dict[str, Any]] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
+    def _get_comparators(self) -> List[BaseComparator]:
+        """Build and return the list of comparators to be used.
+
+        Custom comparators are placed first, followed by the default ones.
+        """
+        return self.custom_comparators + _POLARS_DEFAULT_COMPARATORS
+
     @property
     def df1(self) -> pl.DataFrame:
         """Get the first dataframe."""
@@ -166,6 +183,49 @@ class PolarsCompare(BaseCompare):
         self._df2 = df2
         self._validate_dataframe(
             "df2", cast_column_names_lower=self.cast_column_names_lower
+        )
+
+    def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
+        """Hides sensitive columns of df1 or df2 if applicable in the compare."""
+        # Don't allow hiding columns again before first revealing
+        if self.sensitive_columns:
+            raise ValueError(
+                "sensitive columns are already hidden, call reveal_sensitive_columns() first"
+            )
+
+        self._set_and_validate_sensitive_columns(sensitive_columns)
+        # Don't do anything if [] is passed (normalized to None)
+        if not self.sensitive_columns:
+            return
+        sensitive = set(self.sensitive_columns)  # Otherwise this fails due to None
+        sensitive_with_suffixes = (
+            sensitive
+            | {f"{c}_{self.df1_name}" for c in sensitive}
+            | {f"{c}_{self.df2_name}" for c in sensitive}
+        )
+
+        # Hide columns in unq_rows
+        for df_name in ("df1_unq_rows", "df2_unq_rows"):
+            df = getattr(self, df_name)
+            LOG.debug(f"Hiding sensitive columns in {df_name}")
+            cols_to_hide = [col for col in df.columns if col in sensitive]
+            if not cols_to_hide:  # skip if empty
+                continue
+            setattr(
+                self,
+                df_name,
+                df.with_columns([pl.lit("*******").alias(col) for col in cols_to_hide]),
+            )
+
+        # Hide columns in intersect_rows
+        LOG.debug("Hiding sensitive columns in intersect_rows")
+        cols_to_hide = [
+            col for col in self.intersect_rows.columns if col in sensitive_with_suffixes
+        ]
+        if not cols_to_hide:  # skip if empty
+            return
+        self.intersect_rows = self.intersect_rows.with_columns(
+            [pl.lit("*******").alias(col) for col in cols_to_hide]
         )
 
     def _validate_dataframe(
@@ -289,12 +349,12 @@ class PolarsCompare(BaseCompare):
         if ignore_spaces:
             for column in self.join_columns:
                 df1 = df1.with_columns(
-                    normalize_string_column(
+                    polars_normalize_string_column(
                         df1[column], ignore_spaces=ignore_spaces, ignore_case=False
                     )
                 )
                 df2 = df2.with_columns(
-                    normalize_string_column(
+                    polars_normalize_string_column(
                         df2[column], ignore_spaces=ignore_spaces, ignore_case=False
                     )
                 )
@@ -390,6 +450,7 @@ class PolarsCompare(BaseCompare):
                         abs_tol=get_column_tolerance(column, self._abs_tol_dict),
                         ignore_spaces=ignore_spaces,
                         ignore_case=ignore_case,
+                        comparators=self._get_comparators(),
                     ).alias(col_match)
                 )
                 match_cnt = self.intersect_rows[col_match].sum()
@@ -609,6 +670,7 @@ class PolarsCompare(BaseCompare):
                     abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
                     ignore_spaces=self.ignore_spaces,
                     ignore_case=self.ignore_case,
+                    comparators=self._get_comparators(),
                 )
 
                 if not ignore_matching_cols or (
@@ -889,6 +951,8 @@ def columns_equal(
     abs_tol: float = 0,
     ignore_spaces: bool = False,
     ignore_case: bool = False,
+    comparators: List[BaseComparator] | None = None,
+    **kwargs,
 ) -> pl.Series:
     """Compare two columns from a dataframe.
 
@@ -917,6 +981,10 @@ def columns_equal(
         Flag to strip whitespace (including newlines) from string columns
     ignore_case : bool, optional
         Flag to ignore the case of string columns
+    comparators : list of ``BaseComparator``, optional
+        A list of custom comparator classes to use to compare columns.
+    **kwargs
+        Additional keyword arguments to pass to custom comparators.
 
     Returns
     -------
@@ -926,80 +994,33 @@ def columns_equal(
     """
     compare: pl.Series
 
-    col_1 = normalize_string_column(col_1, ignore_spaces, ignore_case)
-    col_2 = normalize_string_column(col_2, ignore_spaces, ignore_case)
+    comparators_ = comparators
+    if not comparators_:
+        # If no comparators are passed, behave as before.
+        comparators_ = _POLARS_DEFAULT_COMPARATORS
 
-    if (
-        (str(col_1.dtype) in STRING_TYPE and str(col_2.dtype) in STRING_TYPE)
-        or (col_1.dtype.is_temporal() and col_2.dtype.is_temporal())
-        or (
-            str(col_1.dtype.base_type()) in LIST_TYPE
-            and str(col_2.dtype.base_type()) in LIST_TYPE
-        )
-    ):
-        compare = pl.Series(
-            (col_1.eq_missing(col_2)) | (col_1.is_null() & col_2.is_null())
-        )
-    elif (str(col_1.dtype) in STRING_TYPE and str(col_2.dtype).startswith("Date")) or (
-        str(col_1.dtype).startswith("Date") and str(col_2.dtype) in STRING_TYPE
-    ):
-        compare = compare_string_and_date_columns(col_1, col_2)
-    else:
-        try:
-            compare = pl.Series(
-                np.isclose(col_1, col_2, rtol=rel_tol, atol=abs_tol, equal_nan=True)
+    for comparator in comparators_:
+        if isinstance(comparator, PolarsNumericComparator):
+            compare = comparator.compare(col_1, col_2, rtol=rel_tol, atol=abs_tol)
+        elif isinstance(comparator, PolarsStringComparator):
+            compare = comparator.compare(
+                col_1, col_2, ignore_space=ignore_spaces, ignore_case=ignore_case
             )
-        except TypeError:
-            try:
-                compare = pl.Series(
-                    np.isclose(
-                        col_1.cast(pl.Float64, strict=True),
-                        col_2.cast(pl.Float64, strict=True),
-                        rtol=rel_tol,
-                        atol=abs_tol,
-                        equal_nan=True,
-                    )
-                )
-            except Exception:
-                try:  # last check where we just cast to strings
-                    compare = pl.Series(col_1.cast(pl.String) == col_2.cast(pl.String))
-                except Exception:  # Blanket exception should just return all False
-                    compare = pl.Series(False * col_1.shape[0])
+        elif isinstance(comparator, PolarsArrayLikeComparator):
+            compare = comparator.compare(col_1, col_2)
+        else:
+            # for custom comparators pass all the available parameters
+            # custom comparators can ignore what they don't need.
+            compare = comparator.compare(col_1, col_2, **kwargs)
+
+        if compare is not None:
+            LOG.info(
+                f"Using comparator: {comparator.__class__.__name__} for column ({col_1.name}, {col_2.name}) comparison."
+            )
+            return compare
+
+    compare = pl.Series([False] * col_1.shape[0])
     return compare
-
-
-def compare_string_and_date_columns(col_1: pl.Series, col_2: pl.Series) -> pl.Series:
-    """Compare a string column and date column, value-wise.
-
-    This tries to convert a string column to a date column and compare that way.
-
-    Parameters
-    ----------
-    col_1 : Polars.Series
-        The first column to look at
-    col_2 : Polars.Series
-        The second column
-
-    Returns
-    -------
-    Polars.Series
-        A series of Boolean values.  True == the values match, False == the
-        values don't match.
-    """
-    if str(col_1.dtype) in STRING_TYPE:
-        str_column = col_1
-        date_column = col_2
-    else:
-        str_column = col_2
-        date_column = col_1
-
-    try:  # datetime is inferred
-        return pl.Series(
-            (str_column.str.to_datetime(strict=False).eq_missing(date_column))
-            | (str_column.is_null() & date_column.is_null())
-        )
-    except Exception:
-        return pl.Series([False] * col_1.shape[0])
 
 
 def get_merged_columns(
@@ -1099,34 +1120,3 @@ def generate_id_within_group(
         return dataframe.select(
             rn=pl.col(dataframe.columns[0]).cum_count().over(join_columns)
         ).to_series()
-
-
-def normalize_string_column(
-    column: pl.Series, ignore_spaces: bool, ignore_case: bool
-) -> pl.Series:
-    """Normalize a string column by converting to upper case and stripping whitespace.
-
-    Parameters
-    ----------
-    column : pl.Series
-        The column to normalize
-    ignore_spaces : bool
-        Whether to ignore spaces when normalizing
-    ignore_case : bool
-        Whether to ignore case when normalizing
-
-    Returns
-    -------
-    pl.Series
-        The normalized column
-
-    Notes
-    -----
-    Will not operate on categorical columns.
-    """
-    if str(column.dtype.base_type()) in STRING_TYPE:
-        if ignore_spaces:
-            column = column.str.strip_chars()
-        if ignore_case:
-            column = column.str.to_uppercase()
-    return column
