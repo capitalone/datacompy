@@ -21,7 +21,7 @@ and lets you tweak how accurate matches have to be). Supported types include:
 > [!IMPORTANT]
 > datacompy has released `v1`. The `v0.19.x` line is no longer supported — users should upgrade to `v1` going forward.
 > The `support/0.19.x` branch is archived and will only receive critical security fixes on a best-effort basis; no new features or regular maintenance will be provided.
-> All active development targets the `v1` branches (`develop` and `main`).
+> All active development targets `main`.
 
 
 ## Quick Installation
