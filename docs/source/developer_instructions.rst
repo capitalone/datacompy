@@ -102,16 +102,16 @@ This should return output like the following and also updating ``pyproject.toml`
 Release Guide
 -------------
 
-For ``datacompy`` we want to use a simple workflow branching style and follow
+For ``datacompy`` we want to use a simple trunk-based workflow and follow
 `Semantic Versioning <https://semver.org/>`_ for each release.
 
-``develop`` is the default branch where most people will work with day to day. All features must be squash merged into
-this branch. The reason we squash merge is to prevent the develop branch from being polluted with endless commit messages
-when people are developing. Squashing collapses all the commits into one single new commit. It will also make it much easier to
-back out changes if something breaks.
+``main`` is the single active branch where all day-to-day development happens. All feature branches must be squash
+merged into ``main``. The reason we squash merge is to keep the branch history clean and prevent it from being
+polluted with interim commit messages. Squashing collapses all the commits into one single new commit, which also
+makes it easier to back out changes if something breaks.
 
-``main`` is where official releases will go. Each release on ``main`` should be tagged properly to denote a "version"
-that will have the corresponding artifact on pypi for users to ``pip install``.
+Releases are cut directly from ``main`` by tagging the desired commit with the appropriate version. Each tag should
+correspond to a published artifact on PyPI that users can ``pip install``.
 
 ``gh-pages`` is where official documentation will go. After each release you should build the docs and push the HTML to
 the pages branch. When first setting up the repo you want to make sure your gh-pages is a orphaned branch since it is
