@@ -1409,7 +1409,9 @@ def test_calculate_max_diff_with_integer_columns(spark_session):
     schema = StructType([StructField("a", LongType()), StructField("b", LongType())])
     # Use values within double's exact integer range (< 2**53) so subtraction is exact.
     big = 2**40
-    df = spark_session.createDataFrame([(big, big), (big, big - 10), (big, big + 5)], schema)
+    df = spark_session.createDataFrame(
+        [(big, big), (big, big - 10), (big, big + 5)], schema
+    )
     result = calculate_max_diff(df, "a", "b")
     assert isinstance(result, float)
     assert np.isclose(result, 10.0)

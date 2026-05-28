@@ -106,12 +106,18 @@ def test_spark_numeric_comparator_large_integers(spark_session):
     comparator = SparkNumericComparator()
     from pyspark.sql.types import LongType, StructField, StructType
 
-    schema = StructType([StructField("col1", LongType()), StructField("col2", LongType())])
+    schema = StructType(
+        [StructField("col1", LongType()), StructField("col2", LongType())]
+    )
     # Use values within double's exact integer range (< 2**53) so comparison is exact.
     # Use rtol=0, atol=0 to test pure equality without tolerance absorbing the diff.
     big = 2**40
-    df = spark_session.createDataFrame([(big, big), (big, big - 1000), (big, 0)], schema)
-    result_col = comparator.compare(dataframe=df, col1="col1", col2="col2", rtol=0, atol=0)
+    df = spark_session.createDataFrame(
+        [(big, big), (big, big - 1000), (big, 0)], schema
+    )
+    result_col = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", rtol=0, atol=0
+    )
     result = df.withColumn("col_match", result_col).select("col_match").collect()
     assert result[0][0] is True
     assert result[1][0] is False

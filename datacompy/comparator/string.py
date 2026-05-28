@@ -324,12 +324,16 @@ class SparkStringComparator(BaseComparator):
                     # Both strings: compare as-is with optional normalisation.
                     col1_expr = psf.col(col1)
                     col2_expr = psf.col(col2)
-                col1_expr = spark_normalize_string_column(col1_expr, ignore_space, ignore_case)
-                col2_expr = spark_normalize_string_column(col2_expr, ignore_space, ignore_case)
-
-                return psf.when(col1_expr.eqNullSafe(col2_expr), psf.lit(True)).otherwise(
-                    psf.lit(False)
+                col1_expr = spark_normalize_string_column(
+                    col1_expr, ignore_space, ignore_case
                 )
+                col2_expr = spark_normalize_string_column(
+                    col2_expr, ignore_space, ignore_case
+                )
+
+                return psf.when(
+                    col1_expr.eqNullSafe(col2_expr), psf.lit(True)
+                ).otherwise(psf.lit(False))
             except Exception:
                 return psf.lit(False)
         else:

@@ -308,13 +308,17 @@ class SparkNumericComparator(BaseComparator):
                 nan_col1 = psf.isnan(col1_expr) if col1_can_be_nan else psf.lit(False)
                 nan_col2 = psf.isnan(col2_expr) if col2_can_be_nan else psf.lit(False)
                 return (
-                    psf.when(nan_col1 & nan_col2, psf.lit(True))   # NaN == NaN
-                    .when(nan_col1 | nan_col2, psf.lit(False))      # NaN != real, real != NaN
-                    .when(psf.col(col1).eqNullSafe(psf.col(col2)), psf.lit(True))  # NULL-safe equality
+                    psf.when(nan_col1 & nan_col2, psf.lit(True))  # NaN == NaN
+                    .when(
+                        nan_col1 | nan_col2, psf.lit(False)
+                    )  # NaN != real, real != NaN
+                    .when(
+                        psf.col(col1).eqNullSafe(psf.col(col2)), psf.lit(True)
+                    )  # NULL-safe equality
                     .when(
                         psf.abs(col1_expr - col2_expr)
                         <= psf.lit(atol) + (psf.lit(rtol) * psf.abs(col2_expr)),
-                        psf.lit(True),                              # within tolerance
+                        psf.lit(True),  # within tolerance
                     )
                     .otherwise(psf.lit(False))
                 )

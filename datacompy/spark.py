@@ -1377,7 +1377,9 @@ def _generate_id_within_group(
     """
     default_value = "DATACOMPY_NULL"
     null_cols = [f"any(isnull({c}))" for c in join_columns]
-    default_cols = [f"any(CAST({c} AS STRING) == '{default_value}')" for c in join_columns]
+    default_cols = [
+        f"any(CAST({c} AS STRING) == '{default_value}')" for c in join_columns
+    ]
 
     null_check = any(list(dataframe.selectExpr(null_cols).first()))
     default_check = any(list(dataframe.selectExpr(default_cols).first()))
