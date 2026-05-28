@@ -61,10 +61,12 @@ try:
         "double",
         decimal_comparator(),
     ]
+    SPARK_INTEGER_TYPES = {"tinyint", "smallint", "int", "bigint"}
 except ImportError:
     ps = None
     psf = None
     NUMERIC_PYSPARK_TYPES = None
+    SPARK_INTEGER_TYPES = None
 
 # Optional Snowflake dependencies
 try:
@@ -288,20 +290,34 @@ class SparkNumericComparator(BaseComparator):
             compare_dtype.startswith(t) for t in NUMERIC_PYSPARK_TYPES
         )
         if (base_numeric_type) and (compare_numeric_type):
+            # Cast integer types to double to avoid ANSI-mode overflow on subtraction
+            # and to prevent isnan() being called on non-float types.
+            col1_expr = (
+                psf.col(col1).cast("double")
+                if base_dtype in SPARK_INTEGER_TYPES
+                else psf.col(col1)
+            )
+            col2_expr = (
+                psf.col(col2).cast("double")
+                if compare_dtype in SPARK_INTEGER_TYPES
+                else psf.col(col2)
+            )
+            col1_can_be_nan = base_dtype in {"float", "double"}
+            col2_can_be_nan = compare_dtype in {"float", "double"}
             try:
-                return psf.when(
-                    (psf.col(col1).eqNullSafe(psf.col(col2)))
-                    | (
-                        psf.abs(psf.col(col1) - psf.col(col2))
-                        <= psf.lit(atol) + (psf.lit(rtol) * psf.abs(psf.col(col2)))
-                    ),
-                    # corner case of col1 != NaN and col2 == Nan returns True incorrectly
-                    psf.when(
-                        (psf.isnan(psf.col(col1)) == False)  # noqa: E712
-                        & (psf.isnan(psf.col(col2)) == True),  # noqa: E712
-                        psf.lit(False),
-                    ).otherwise(psf.lit(True)),
-                ).otherwise(psf.lit(False))
+                nan_col1 = psf.isnan(col1_expr) if col1_can_be_nan else psf.lit(False)
+                nan_col2 = psf.isnan(col2_expr) if col2_can_be_nan else psf.lit(False)
+                return (
+                    psf.when(nan_col1 & nan_col2, psf.lit(True))   # NaN == NaN
+                    .when(nan_col1 | nan_col2, psf.lit(False))      # NaN != real, real != NaN
+                    .when(psf.col(col1).eqNullSafe(psf.col(col2)), psf.lit(True))  # NULL-safe equality
+                    .when(
+                        psf.abs(col1_expr - col2_expr)
+                        <= psf.lit(atol) + (psf.lit(rtol) * psf.abs(col2_expr)),
+                        psf.lit(True),                              # within tolerance
+                    )
+                    .otherwise(psf.lit(False))
+                )
             except Exception:
                 return psf.lit(False)
         else:
