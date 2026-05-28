@@ -308,16 +308,32 @@ class SparkStringComparator(BaseComparator):
             or ((base_date_type) and (compare_date_type))  # date/date compare.
         ):
             try:
-                col1 = spark_normalize_string_column(
-                    psf.col(col1), ignore_space, ignore_case
+                if base_date_type and compare_date_type:
+                    # Both are date/timestamp: compare directly, no string conversion needed.
+                    col1_expr = psf.col(col1)
+                    col2_expr = psf.col(col2)
+                elif base_date_type and compare_string_type:
+                    # Cast the string to match the date column's type using TRY_CAST so
+                    # malformed strings return NULL instead of throwing in ANSI mode.
+                    col1_expr = psf.col(col1)
+                    col2_expr = psf.expr(f"TRY_CAST(`{col2}` AS {base_dtype})")
+                elif base_string_type and compare_date_type:
+                    col1_expr = psf.expr(f"TRY_CAST(`{col1}` AS {compare_dtype})")
+                    col2_expr = psf.col(col2)
+                else:
+                    # Both strings: compare as-is with optional normalisation.
+                    col1_expr = psf.col(col1)
+                    col2_expr = psf.col(col2)
+                col1_expr = spark_normalize_string_column(
+                    col1_expr, ignore_space, ignore_case
                 )
-                col2 = spark_normalize_string_column(
-                    psf.col(col2), ignore_space, ignore_case
+                col2_expr = spark_normalize_string_column(
+                    col2_expr, ignore_space, ignore_case
                 )
 
-                return psf.when(col1.eqNullSafe(col2), psf.lit(True)).otherwise(
-                    psf.lit(False)
-                )
+                return psf.when(
+                    col1_expr.eqNullSafe(col2_expr), psf.lit(True)
+                ).otherwise(psf.lit(False))
             except Exception:
                 return psf.lit(False)
         else:

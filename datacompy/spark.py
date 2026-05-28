@@ -1291,7 +1291,10 @@ def calculate_max_diff(
         )
         return 0
     diff = dataframe.select(
-        (F.col(col_1).astype("float") - F.col(col_2).astype("float")).alias("diff")
+        (
+            F.expr(f"TRY_CAST(`{col_1}` AS DOUBLE)")
+            - F.expr(f"TRY_CAST(`{col_2}` AS DOUBLE)")
+        ).alias("diff")
     )
     abs_diff = diff.select(F.abs(F.col("diff")).alias("abs_diff"))
     max_diff: float = (
@@ -1374,7 +1377,9 @@ def _generate_id_within_group(
     """
     default_value = "DATACOMPY_NULL"
     null_cols = [f"any(isnull({c}))" for c in join_columns]
-    default_cols = [f"any({c} == '{default_value}')" for c in join_columns]
+    default_cols = [
+        f"any(CAST({c} AS STRING) == '{default_value}')" for c in join_columns
+    ]
 
     null_check = any(list(dataframe.selectExpr(null_cols).first()))
     default_check = any(list(dataframe.selectExpr(default_cols).first()))
