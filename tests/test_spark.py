@@ -1388,6 +1388,33 @@ def test_calculate_max_diff(spark_session, column, expected):
     assert np.isclose(calculate_max_diff(MAX_DIFF_DF, "base", column), expected)
 
 
+def test_calculate_max_diff_with_non_numeric_strings(spark_session):
+    """Non-castable strings must not raise in ANSI mode; castable rows are used."""
+    pdf = pd.DataFrame(
+        {
+            "a": ["1", "2", "some string", "4"],
+            "b": ["1", "1", "other string", "3"],
+        }
+    )
+    df = spark_session.createDataFrame(pdf)
+    result = calculate_max_diff(df, "a", "b")
+    assert isinstance(result, float)
+    assert np.isclose(result, 1.0)
+
+
+def test_calculate_max_diff_with_integer_columns(spark_session):
+    """Large integer columns must produce a correct float result without overflow."""
+    from pyspark.sql.types import LongType, StructField, StructType
+
+    schema = StructType([StructField("a", LongType()), StructField("b", LongType())])
+    # Use values within double's exact integer range (< 2**53) so subtraction is exact.
+    big = 2**40
+    df = spark_session.createDataFrame([(big, big), (big, big - 10), (big, big + 5)], schema)
+    result = calculate_max_diff(df, "a", "b")
+    assert isinstance(result, float)
+    assert np.isclose(result, 10.0)
+
+
 def test_dupes_with_nulls_strings(spark_session):
     pdf1 = pd.DataFrame(
         {
