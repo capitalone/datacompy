@@ -2667,11 +2667,11 @@ def test_compare_empty_arrow_backed_join_keys():
         )
 
         compare = PandasCompare(
-            df1, 
-            df2, 
-            join_columns=["key1", "key2"], 
+            df1,
+            df2,
+            join_columns=["key1", "key2"],
             ignore_spaces=True,
-            ignore_case=False
+            ignore_case=False,
         )
 
         assert len(compare.intersect_rows) == 0
