@@ -373,8 +373,8 @@ class PandasCompare(BaseCompare):
                     self.df1[column], ignore_spaces=ignore_spaces, ignore_case=False
                 )
                 self.df2[column] = pandas_normalize_string_column(
-                self.df2[column], ignore_spaces=ignore_spaces, ignore_case=False
-            )
+                    self.df2[column], ignore_spaces=ignore_spaces, ignore_case=False
+                )
 
         outer_join = self.df1.merge(
             self.df2,
