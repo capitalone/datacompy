@@ -2645,6 +2645,40 @@ def test_columns_with_mismatches_empty_dataframes():
     assert result == []
 
 
+def test_compare_empty_arrow_backed_join_keys():
+    """Regression for #514: empty Arrow-backed join keys must not crash merge."""
+    import pyarrow as pa
+
+    for arrow_type in (pa.string(), pa.int64()):
+        dtype = pd.ArrowDtype(arrow_type)
+        df1 = pd.DataFrame(
+            {
+                "key1": pd.Series([], dtype=dtype),
+                "key2": pd.Series([], dtype=dtype),
+                "value": pd.Series([], dtype=dtype),
+            }
+        )
+        df2 = pd.DataFrame(
+            {
+                "key1": pd.Series([], dtype=dtype),
+                "key2": pd.Series([], dtype=dtype),
+                "value": pd.Series([], dtype=dtype),
+            }
+        )
+
+        compare = PandasCompare(
+            df1, 
+            df2, 
+            join_columns=["key1", "key2"], 
+            ignore_spaces=True,
+            ignore_case=False
+        )
+
+        assert len(compare.intersect_rows) == 0
+        assert len(compare.df1_unq_rows) == 0
+        assert len(compare.df2_unq_rows) == 0
+
+
 def test_columns_with_mismatches_on_index():
     """Test columns_with_mismatches when comparing on index."""
     df1 = pd.DataFrame(

@@ -363,11 +363,16 @@ class PandasCompare(BaseCompare):
         else:
             params = {"on": self.join_columns}
 
-        for column in self.join_columns:
-            self.df1[column] = pandas_normalize_string_column(
-                self.df1[column], ignore_spaces=ignore_spaces, ignore_case=False
-            )
-            self.df2[column] = pandas_normalize_string_column(
+        # Skip normalization for empty frames: str.strip() on an empty
+        # Arrow-backed column drops its chunks to zero, which causes pandas
+        # merge to call pa.chunked_array([]) and raise ArrowInvalid when
+        # multiple join columns are present. See issue #514.
+        if len(self.df1) > 0 or len(self.df2) > 0:
+            for column in self.join_columns:
+                self.df1[column] = pandas_normalize_string_column(
+                    self.df1[column], ignore_spaces=ignore_spaces, ignore_case=False
+                )
+                self.df2[column] = pandas_normalize_string_column(
                 self.df2[column], ignore_spaces=ignore_spaces, ignore_case=False
             )
 
