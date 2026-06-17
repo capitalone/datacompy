@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Typed data model and Report class for DataComPy report generation.
+"""Typed data model for DataComPy report generation.
 
 All backends produce a :class:`ReportData` instance via
-``compare.build_report_data()``.  :class:`Report` owns rendering to text
-and HTML, and exposes ``to_dict()`` for programmatic consumers.
+``compare.build_report_data()``.  :class:`ReportData` owns rendering to
+text and HTML, and exposes ``to_dict()`` for programmatic consumers.
 
 Examples
 --------
@@ -29,16 +29,14 @@ Programmatic access without rendering:
 
 Render to text and save HTML:
 
->>> from datacompy import Report
 >>> data = compare.build_report_data()
->>> rep = Report(data)
->>> print(rep.render())
->>> rep.save("comparison.html")
+>>> print(data.render())
+>>> data.save("comparison.html")
 
 Export as JSON-serializable dict:
 
 >>> import json
->>> json.dumps(rep.to_dict())
+>>> json.dumps(data.to_dict())
 """
 
 import dataclasses
@@ -223,7 +221,7 @@ class UniqueRowsData:
     rows: str = ""
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class ReportData:
     """Complete data model for a DataComPy comparison report.
 
@@ -325,69 +323,56 @@ class ReportData:
             "df2_unique_rows": dataclasses.asdict(self.df2_unique_rows),
         }
 
-
-class Report:
-    """Renders a :class:`ReportData` to text or HTML.
-
-    Parameters
-    ----------
-    data : ReportData
-        The structured comparison data produced by ``compare.build_report_data()``.
-    template_path : str, optional
-        Path to a custom Jinja2 template.  When ``None`` the default
-        ``report_template.j2`` is used.
-
-    Examples
-    --------
-    >>> data = compare.build_report_data()
-    >>> rep = Report(data)
-    >>> print(rep)                   # text report
-    >>> rep.save("report.html")      # write HTML
-    >>> d = rep.to_dict()            # JSON-serializable dict
-    """
-
-    def __init__(self, data: ReportData, template_path: str | None = None) -> None:
-        self._data = data
-        self._template_path = template_path or "report_template.j2"
-
-    @property
-    def data(self) -> ReportData:
-        """The underlying :class:`ReportData`."""
-        return self._data
-
-    def render(self) -> str:
+    def render(self, template_path: str | None = None) -> str:
         """Render the report to a text string.
+
+        Parameters
+        ----------
+        template_path : str, optional
+            Path to a custom Jinja2 template.  When ``None`` the default
+            ``report_template.j2`` is used.
 
         Returns
         -------
         str
             Formatted report text.
         """
-        return render(self._template_path, **self._data.to_template_context())
+        return render(
+            template_path or "report_template.j2", **self.to_template_context()
+        )
 
-    def to_html(self) -> str:
+    def to_html(self, template_path: str | None = None) -> str:
         """Return the report wrapped in a minimal HTML page.
+
+        Parameters
+        ----------
+        template_path : str, optional
+            Path to a custom Jinja2 template.  When ``None`` the default
+            ``report_template.j2`` is used.
 
         Returns
         -------
         str
             HTML string with the text report inside a ``<pre>`` block.
         """
-        text = self.render()
+        text = self.render(template_path)
         return (
             f"<html><head><title>DataComPy Report</title></head>"
             f"<body><pre>{text}</pre></body></html>"
         )
 
-    def save(self, path: str | Path) -> None:
+    def save(self, path: str | Path, template_path: str | None = None) -> None:
         """Save the report as an HTML file.
 
         Parameters
         ----------
         path : str or Path
             Destination file path.  Parent directories are created if needed.
+        template_path : str, optional
+            Path to a custom Jinja2 template.  When ``None`` the default
+            ``report_template.j2`` is used.
         """
-        save_html_report(self.render(), path)
+        save_html_report(self.render(template_path), path)
 
     def to_dict(self) -> Dict[str, Any]:
         """Return the report data as a JSON-serializable dict.
@@ -395,9 +380,9 @@ class Report:
         Returns
         -------
         dict
-            ``dataclasses.asdict(data)`` — safe for ``json.dumps()``.
+            ``dataclasses.asdict(self)`` — safe for ``json.dumps()``.
         """
-        return dataclasses.asdict(self._data)
+        return dataclasses.asdict(self)
 
     def __str__(self) -> str:
         """Return the rendered report as a string."""
@@ -406,6 +391,6 @@ class Report:
     def __repr__(self) -> str:
         """Return a concise developer representation."""
         return (
-            f"Report(df1={self._data.df1_name!r}, df2={self._data.df2_name!r}, "
-            f"shape1={self._data.df1_shape}, shape2={self._data.df2_shape})"
+            f"ReportData(df1={self.df1_name!r}, df2={self.df2_name!r}, "
+            f"shape1={self.df1_shape}, shape2={self.df2_shape})"
         )

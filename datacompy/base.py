@@ -25,7 +25,10 @@ import logging
 from abc import ABC, abstractmethod
 from collections import Counter
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
+
+if TYPE_CHECKING:
+    from datacompy.report import ReportData
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ordered_set import OrderedSet
@@ -236,7 +239,9 @@ class BaseCompare(ABC):
     # Concrete report-building — shared across all backends
     # ------------------------------------------------------------------
 
-    def build_report_data(self, sample_count: int = 10, column_count: int = 10) -> Any:
+    def build_report_data(
+        self, sample_count: int = 10, column_count: int = 10
+    ) -> "ReportData":
         """Build a typed :class:`~datacompy.report.ReportData` from this comparison.
 
         Parameters
@@ -415,13 +420,9 @@ class BaseCompare(ABC):
         See Also
         --------
         build_report_data : Access the structured data without rendering.
-        datacompy.report.Report : Render / export a :class:`~datacompy.report.ReportData`.
         """
-        from datacompy.report import Report
-
         data = self.build_report_data(sample_count, column_count)
-        rep = Report(data, template_path=template_path)
-        text = rep.render()
+        text = data.render(template_path=template_path)
         if html_file:
             save_html_report(text, html_file)
         return text
