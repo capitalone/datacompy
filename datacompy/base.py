@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List
 
 if TYPE_CHECKING:
-    from datacompy.report import ReportData
+    import datacompy.report
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ordered_set import OrderedSet
@@ -241,7 +241,7 @@ class BaseCompare(ABC):
 
     def build_report_data(
         self, sample_count: int = 10, column_count: int = 10
-    ) -> "ReportData":
+    ) -> "datacompy.report.ReportData":
         """Build a typed :class:`~datacompy.report.ReportData` from this comparison.
 
         Parameters

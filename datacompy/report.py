@@ -15,8 +15,8 @@
 
 """Typed data model for DataComPy report generation.
 
-All backends produce a :class:`ReportData` instance via
-``compare.build_report_data()``.  :class:`ReportData` owns rendering to
+All backends produce a :class:`~datacompy.report.ReportData` instance via
+``compare.build_report_data()``.  :class:`~datacompy.report.ReportData` owns rendering to
 text and HTML, and exposes ``to_dict()`` for programmatic consumers.
 
 Examples

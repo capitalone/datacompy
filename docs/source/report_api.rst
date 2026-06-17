@@ -76,3 +76,4 @@ Data Classes
              MismatchStat, MismatchStats, UniqueRowsData
    :show-inheritance:
    :undoc-members:
+   :no-index:
