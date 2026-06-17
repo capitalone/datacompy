@@ -23,11 +23,29 @@ __version__ = "1.0.2"
 from datacompy.base import BaseCompare
 from datacompy.pandas import PandasCompare
 from datacompy.polars import PolarsCompare
+from datacompy.report import (
+    ColumnComparison,
+    ColumnSummary,
+    MismatchStat,
+    MismatchStats,
+    Report,
+    ReportData,
+    RowSummary,
+    UniqueRowsData,
+)
 
 __all__ = [
     "BaseCompare",
+    "ColumnComparison",
+    "ColumnSummary",
+    "MismatchStat",
+    "MismatchStats",
     "PandasCompare",
     "PolarsCompare",
+    "Report",
+    "ReportData",
+    "RowSummary",
+    "UniqueRowsData",
 ]
 
 try:

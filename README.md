@@ -55,6 +55,37 @@ pip install datacompy[snowflake]
 - Snowflake/Snowpark: ([See documentation](https://capitalone.github.io/datacompy/snowflake_usage.html))
 
 
+## Programmatic Report Access
+
+Every compare object exposes `build_report_data()` which returns a typed
+[`ReportData`](https://capitalone.github.io/datacompy/report_api.html) object
+— useful for dashboards, JSON export, or custom rendering without relying on
+the string report:
+
+```python
+import pandas as pd
+from datacompy import PandasCompare, Report
+
+df1 = pd.DataFrame({"id": [1, 2, 3], "val": [10, 20, 30]})
+df2 = pd.DataFrame({"id": [1, 2, 3], "val": [10, 99, 30]})
+
+compare = PandasCompare(df1, df2, join_columns="id")
+
+# Access structured data directly
+data = compare.build_report_data()
+print(data.row_summary.unequal_rows)        # 1
+print(data.mismatch_stats.stats[0].column)  # 'val'
+
+# Render / export
+rep = Report(data)
+print(rep.render())        # same text as compare.report()
+rep.save("report.html")   # HTML file
+rep.to_dict()              # JSON-serializable dict
+```
+
+See the [Report API documentation](https://capitalone.github.io/datacompy/report_api.html) for the full reference.
+
+
 ## Contributors
 
 We welcome and appreciate your contributions! Before we can accept any contributions, we ask that you please be sure to
