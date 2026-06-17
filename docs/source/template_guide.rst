@@ -34,10 +34,11 @@ template can interpolate them directly.
    | ``column_summary``     | Dict with column statistics including:                                         |
    | (dict)                 |                                                                                |
    |                        | - ``common_columns`` (int): count of columns in both DataFrames                |
-   |                        | - ``df1_unique``: pre-formatted string like                                    |
-   |                        |   ``"3 ['col_a','col_b']"`` when df1 has unique columns; bare                  |
-   |                        |   integer ``0`` when there are none                                            |
-   |                        | - ``df2_unique``: same shape as ``df1_unique`` for df2                         |
+   |                        | - ``df1_unique`` (str or int): pre-formatted string like                       |
+   |                        |   ``"3 ['col_a','col_b']"`` when df1 has unique columns;                       |
+   |                        |   bare integer ``0`` when there are none                                       |
+   |                        | - ``df2_unique`` (str or int): same shape as ``df1_unique``                    |
+   |                        |   for df2                                                                      |
    |                        | - ``df1_name``, ``df2_name`` (str): DataFrame labels                           |
    +------------------------+--------------------------------------------------------------------------------+
    | ``row_summary``        | Dict with row statistics including:                                            |
@@ -69,9 +70,10 @@ template can interpolate them directly.
    |                        |   has unequal values or types                                                  |
    |                        | - ``has_samples`` (bool): true when sample rows are available                  |
    |                        | - ``stats`` (list of dict): one entry per mismatched column,                   |
-   |                        |   sorted by column name; keys are ``column``, ``dtype1``,                      |
-   |                        |   ``dtype2``, ``unequal_cnt``, ``max_diff``, ``null_diff``,                    |
-   |                        |   ``rel_tol``, ``abs_tol``                                                     |
+   |                        |   sorted by column name. Each dict has ``column`` (str),                       |
+   |                        |   ``dtype1`` (str), ``dtype2`` (str), ``unequal_cnt`` (int),                   |
+   |                        |   ``max_diff`` (float), ``null_diff`` (int),                                   |
+   |                        |   ``rel_tol`` (float), ``abs_tol`` (float)                                     |
    |                        | - ``samples`` (list of str): pre-rendered ASCII tables of                      |
    |                        |   sample mismatched rows, one per column with mismatches                       |
    |                        | - ``df1_name``, ``df2_name`` (str): DataFrame labels                           |
