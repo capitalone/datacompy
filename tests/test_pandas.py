@@ -1378,8 +1378,8 @@ def test_integer_column_names():
     assert compare.matches()
 
 
-@mock.patch("datacompy.pandas.render")
-@mock.patch("datacompy.pandas.save_html_report")
+@mock.patch("datacompy.report.render")
+@mock.patch("datacompy.base.save_html_report")
 def test_save_html(mock_save_html, mock_render):
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 4}])

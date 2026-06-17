@@ -1322,8 +1322,8 @@ def test_lower():
         )
 
 
-@mock.patch("datacompy.polars.render")
-@mock.patch("datacompy.polars.save_html_report")
+@mock.patch("datacompy.report.render")
+@mock.patch("datacompy.base.save_html_report")
 def test_save_html(mock_save_html, mock_render):
     df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
