@@ -64,7 +64,7 @@ the string report:
 
 ```python
 import pandas as pd
-from datacompy import PandasCompare, Report
+from datacompy import PandasCompare
 
 df1 = pd.DataFrame({"id": [1, 2, 3], "val": [10, 20, 30]})
 df2 = pd.DataFrame({"id": [1, 2, 3], "val": [10, 99, 30]})
@@ -76,11 +76,10 @@ data = compare.build_report_data()
 print(data.row_summary.unequal_rows)        # 1
 print(data.mismatch_stats.stats[0].column)  # 'val'
 
-# Render / export
-rep = Report(data)
-print(rep.render())        # same text as compare.report()
-rep.save("report.html")   # HTML file
-rep.to_dict()              # JSON-serializable dict
+# Render / export — methods live on ReportData itself
+print(data.render())      # same text as compare.report()
+data.save("report.html")  # HTML file
+data.to_dict()            # JSON-serializable dict
 ```
 
 See the [Report API documentation](https://capitalone.github.io/datacompy/report_api.html) for the full reference.

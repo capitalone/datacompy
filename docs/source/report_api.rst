@@ -1,10 +1,12 @@
 Report API
 ==========
 
-DataComPy's ``datacompy.report`` module provides a typed data model and
-rendering class that every backend uses to generate comparison reports.
-All backends share the same output structure, making it easy to build
-custom dashboards, export to JSON, or plug in alternative templates.
+DataComPy's ``datacompy.report`` module provides a typed data model where
+every backend produces a :class:`~datacompy.report.ReportData` instance via
+``compare.build_report_data()``.  Rendering methods (``render()``,
+``to_html()``, ``save()``, ``to_dict()``) live directly on ``ReportData``,
+making it easy to build custom dashboards, export to JSON, or plug in
+alternative templates.
 
 Programmatic Access
 -------------------
@@ -35,35 +37,32 @@ The same method is available on all backends (``PolarsCompare``,
 Rendering and Export
 --------------------
 
-Wrap a :class:`~datacompy.report.ReportData` in a
-:class:`~datacompy.report.Report` for rendering:
+Rendering methods live on :class:`~datacompy.report.ReportData` directly:
 
 .. code-block:: python
 
-    from datacompy import Report
-
     data = compare.build_report_data()
-    rep = Report(data)
 
-    # Plain-text report (same as compare.report())
-    print(rep.render())
+    # Plain-text report (same output as compare.report())
+    print(data.render())
 
-    # Save HTML file
-    rep.save("comparison.html")
+    # Save as HTML file
+    data.save("comparison.html")
 
     # JSON-serializable dict (for dashboards / APIs)
     import json
-    payload = json.dumps(rep.to_dict())
+    payload = json.dumps(data.to_dict())
 
 Custom Templates
 ~~~~~~~~~~~~~~~~
 
-Pass a ``template_path`` to use your own Jinja2 template:
+Pass a ``template_path`` to ``render()`` or ``save()`` to use your own Jinja2
+template:
 
 .. code-block:: python
 
-    rep = Report(data, template_path="my_report.j2")
-    print(rep.render())
+    print(data.render(template_path="my_report.j2"))
+    data.save("report.html", template_path="my_report.j2")
 
 The template receives the same context dict as the default
 ``report_template.j2``; see :doc:`template_guide` for the full variable
@@ -74,6 +73,6 @@ Data Classes
 
 .. automodule:: datacompy.report
    :members: ReportData, ColumnSummary, RowSummary, ColumnComparison,
-             MismatchStat, MismatchStats, UniqueRowsData, Report
+             MismatchStat, MismatchStats, UniqueRowsData
    :show-inheritance:
    :undoc-members:
