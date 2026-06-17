@@ -1568,8 +1568,8 @@ def test_integer_column_names(spark_session):
     assert compare.matches()
 
 
-@mock.patch("datacompy.spark.render")
-@mock.patch("datacompy.spark.save_html_report")
+@mock.patch("datacompy.report.render")
+@mock.patch("datacompy.base.save_html_report")
 def test_save_html(mock_save_html, mock_render, spark_session):
     df1 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
     df2 = spark_session.createDataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 2}])
@@ -1976,8 +1976,8 @@ def test_template_context_variables(spark_session):
             os.unlink(template_path)
 
 
-@mock.patch("datacompy.spark.save_html_report")
-@mock.patch("datacompy.spark.render")
+@mock.patch("datacompy.base.save_html_report")
+@mock.patch("datacompy.report.render")
 def test_html_report_generation(mock_render, mock_save_html, spark_session):
     """Test that HTML reports can be generated and saved to a file."""
     df1 = spark_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
