@@ -1,0 +1,46 @@
+DataComPy Comparison
+-------------------
+
+DataFrame Summary
+-----------------
+
+DataFrame  Columns  Rows
+------------------------
+df1               2     3
+df2               2     3
+
+
+Column Summary
+--------------
+
+Number of columns in common: 2
+Number of columns in df1 but not in df2: 0
+Number of columns in df2 but not in df1: 0
+
+Row Summary
+-----------
+
+Matched on: id
+Any duplicates on match values: No
+Default Absolute Tolerance: 0
+Default Relative Tolerance: 0
+Number of rows in common: 3
+Number of rows in df1 but not in df2: 0
+Number of rows in df2 but not in df1: 0
+
+Number of rows with some compared columns unequal: 3
+Number of rows with all compared columns equal: 0
+
+Column Comparison
+-----------------
+
+Number of columns compared with some values unequal: 1
+Number of columns compared with all values equal: 1
+Total number of values which compare unequal: 3
+
+Columns with Unequal Values or Types
+------------------------------------
+
+Column               df1 dtype       df2 dtype        # Unequal   Max Diff  # Null Diff    Rel Tol    Abs Tol
+-------------------- --------------- --------------- ---------- ---------- ------------ ---------- ----------
+val                  int64           int64                    3     3.0000            0     0.0000     0.0000
