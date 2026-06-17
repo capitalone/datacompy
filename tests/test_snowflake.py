@@ -1590,8 +1590,8 @@ def test_generate_id_within_group_single_join(snowflake_session):
     assert (actual["_TEMP_0"] == expected).all()
 
 
-@mock.patch("datacompy.snowflake.render")
-@mock.patch("datacompy.snowflake.save_html_report")
+@mock.patch("datacompy.report.render")
+@mock.patch("datacompy.base.save_html_report")
 def test_save_html(mock_save_html, mock_render, snowflake_session):
     df1 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
     df2 = snowflake_session.createDataFrame([{"A": 1, "B": 2}, {"A": 1, "B": 2}])
@@ -1878,8 +1878,8 @@ def test_template_context_variables(snowflake_session):
             os.unlink(template_path)
 
 
-@mock.patch("datacompy.snowflake.save_html_report")
-@mock.patch("datacompy.snowflake.render")
+@mock.patch("datacompy.base.save_html_report")
+@mock.patch("datacompy.report.render")
 def test_html_report_generation(mock_render, mock_save_html, snowflake_session):
     """Test that HTML reports can be generated and saved to a file."""
     df1 = snowflake_session.createDataFrame([("a", 1), ("b", 2)], ["id", "value"])
