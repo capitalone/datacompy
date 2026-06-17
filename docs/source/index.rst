@@ -15,6 +15,7 @@ Contents
     Snowflake Usage <snowflake_usage>
     Polars Usage <polars_usage>
     Template Guide <template_guide>
+    Report API <report_api>
     Benchmarks <benchmark>
     Developer Instructions <developer_instructions>
 
