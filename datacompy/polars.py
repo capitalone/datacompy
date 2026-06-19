@@ -159,7 +159,7 @@ class PolarsCompare(BaseCompare):
 
     @property
     def df1(self) -> pl.DataFrame:
-        """Get the first dataframe."""
+        """The first dataframe."""
         return self._df1
 
     @df1.setter
@@ -172,7 +172,7 @@ class PolarsCompare(BaseCompare):
 
     @property
     def df2(self) -> pl.DataFrame:
-        """Get the second dataframe."""
+        """The second dataframe."""
         return self._df2
 
     @df2.setter

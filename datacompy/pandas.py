@@ -171,7 +171,7 @@ class PandasCompare(BaseCompare):
 
     @property
     def df1(self) -> pd.DataFrame:
-        """Get the first dataframe."""
+        """The first dataframe."""
         return self._df1
 
     @df1.setter
@@ -184,7 +184,7 @@ class PandasCompare(BaseCompare):
 
     @property
     def df2(self) -> pd.DataFrame:
-        """Get the second dataframe."""
+        """The second dataframe."""
         return self._df2
 
     @df2.setter

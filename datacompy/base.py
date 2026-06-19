@@ -57,7 +57,7 @@ class BaseCompare(ABC):
 
     @property
     def df1(self) -> Any:
-        """Get the first dataframe."""
+        """The first dataframe."""
         return self._df1  # type: ignore
 
     @df1.setter
@@ -68,7 +68,7 @@ class BaseCompare(ABC):
 
     @property
     def df2(self) -> Any:
-        """Get the second dataframe."""
+        """The second dataframe."""
         return self._df2  # type: ignore
 
     @df2.setter
@@ -79,7 +79,7 @@ class BaseCompare(ABC):
 
     @property
     def sensitive_columns(self) -> List[str] | None:
-        """Get the list of sensitive columns."""
+        """Sensitive columns to mask in report output."""
         return self._sensitive_columns
 
     def _set_and_validate_sensitive_columns(
