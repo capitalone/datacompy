@@ -652,7 +652,7 @@ def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) 
     if hasattr(df, "to_pandas"):
         if sample_count is not None and len(df) > sample_count:
             df = df.head(sample_count)
-        return df.to_pandas().to_string()
+        return str(df)
 
     # Fallback to str() if we can't determine the type
     return str(df)
