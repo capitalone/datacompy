@@ -14,14 +14,14 @@ Column Summary
 --------------
 
 Number of columns in common: {{ column_summary.common_columns }}
-Number of columns in {{ column_summary.df1_name }} but not in {{ column_summary.df2_name }}: {{ column_summary.df1_unique }}
-Number of columns in {{ column_summary.df2_name }} but not in {{ column_summary.df1_name }}: {{ column_summary.df2_unique }}
+Number of columns in {{ column_summary.df1_name }} but not in {{ column_summary.df2_name }}: {{ column_summary.df1_unique ~ " " ~ column_summary.df1_unique_columns | list if column_summary.df1_unique_columns else column_summary.df1_unique }}
+Number of columns in {{ column_summary.df2_name }} but not in {{ column_summary.df1_name }}: {{ column_summary.df2_unique ~ " " ~ column_summary.df2_unique_columns | list if column_summary.df2_unique_columns else column_summary.df2_unique }}
 
 Row Summary
 -----------
 
-Matched on: {{ row_summary.match_columns }}
-Any duplicates on match values: {{ row_summary.has_duplicates }}
+Matched on: {{ "index" if row_summary.on_index else row_summary.match_columns | join(", ") }}
+Any duplicates on match values: {{ "Yes" if row_summary.has_duplicates else "No" }}
 Default Absolute Tolerance: {{ row_summary.abs_tol }}
 Default Relative Tolerance: {{ row_summary.rel_tol }}
 Number of rows in common: {{ "{:,}".format(row_summary.common_rows) }}

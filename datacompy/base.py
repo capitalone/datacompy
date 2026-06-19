@@ -25,12 +25,31 @@ import logging
 from abc import ABC, abstractmethod
 from collections import Counter
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List, TypedDict
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ordered_set import OrderedSet
 
+if TYPE_CHECKING:
+    import datacompy.report
+
 LOG = logging.getLogger(__name__)
+
+
+class ColumnStat(TypedDict):
+    """Typed contract for per-column comparison statistics populated by each backend."""
+
+    column: str
+    match_column: str
+    match_cnt: int
+    unequal_cnt: int
+    dtype1: str
+    dtype2: str
+    all_match: bool
+    max_diff: float
+    null_diff: int
+    rel_tol: float
+    abs_tol: float
 
 
 class BaseCompare(ABC):
@@ -38,7 +57,7 @@ class BaseCompare(ABC):
 
     @property
     def df1(self) -> Any:
-        """Get the first dataframe."""
+        """The first dataframe."""
         return self._df1  # type: ignore
 
     @df1.setter
@@ -49,7 +68,7 @@ class BaseCompare(ABC):
 
     @property
     def df2(self) -> Any:
-        """Get the second dataframe."""
+        """The second dataframe."""
         return self._df2  # type: ignore
 
     @df2.setter
@@ -60,7 +79,7 @@ class BaseCompare(ABC):
 
     @property
     def sensitive_columns(self) -> List[str] | None:
-        """Get the list of sensitive columns."""
+        """Sensitive columns to mask in report output."""
         return self._sensitive_columns
 
     def _set_and_validate_sensitive_columns(
@@ -191,7 +210,197 @@ class BaseCompare(ABC):
         """Get all rows that mismatch."""
         pass
 
-    @abstractmethod
+    # ------------------------------------------------------------------
+    # Backend primitives — override in subclasses where the default
+    # (.shape / .columns) does not apply (e.g. Spark / Snowflake).
+    # ------------------------------------------------------------------
+
+    def _table_shape(self, df: Any) -> tuple[int, int]:
+        """Return ``(rows, columns)`` for *df*.
+
+        Spark and Snowflake backends override this to call ``.count()``.
+        """
+        return df.shape  # type: ignore[no-any-return]
+
+    def _row_count(self, df: Any, _cache: Dict[int, int] | None = None) -> int:
+        """Return the row count for *df*, using *_cache* when provided.
+
+        Parameters
+        ----------
+        df :
+            The DataFrame whose rows to count.
+        _cache : dict, optional
+            Mapping from ``id(df)`` to cached count.  Spark and Snowflake
+            backends pass this in to avoid redundant ``.count()`` actions.
+        """
+        if _cache is not None:
+            key = id(df)
+            if key not in _cache:
+                _cache[key] = int(df.shape[0])
+            return _cache[key]
+        return int(df.shape[0])
+
+    def _select_first_n_columns(self, df: Any, n: int) -> Any:
+        """Return *df* with only its first *n* columns.
+
+        Pandas overrides this with ``.iloc[:, :n]``.
+        """
+        return df.select(list(df.columns)[:n])
+
+    def _column_names(self, df: Any) -> List[str]:
+        """Return column names of *df* as a plain list."""
+        return list(df.columns)  # type: ignore[return-value]
+
+    # ------------------------------------------------------------------
+    # Concrete report-building — shared across all backends
+    # ------------------------------------------------------------------
+
+    def build_report_data(
+        self, sample_count: int = 10, column_count: int = 10
+    ) -> "datacompy.report.ReportData":
+        """Build a typed :class:`~datacompy.report.ReportData` from this comparison.
+
+        Parameters
+        ----------
+        sample_count : int, optional
+            Maximum number of sample rows to include per section. Defaults to 10.
+        column_count : int, optional
+            Maximum number of columns to show in unique-row samples. Defaults to 10.
+
+        Returns
+        -------
+        datacompy.report.ReportData
+            Immutable data object suitable for rendering or programmatic use.
+
+        Examples
+        --------
+        >>> data = compare.build_report_data()
+        >>> print(data.row_summary.unequal_rows)
+        """
+        from datacompy.report import (
+            ColumnComparison,
+            ColumnSummary,
+            MismatchStat,
+            MismatchStats,
+            ReportData,
+            RowSummary,
+            UniqueRowsData,
+        )
+
+        # Per-call row-count cache so Spark/Snowflake only trigger .count() once
+        # per unique DataFrame object.
+        row_count_cache: Dict[int, int] = {}
+
+        # ---- column summary ------------------------------------------
+        df1_unq_cols = self.df1_unq_columns()
+        df2_unq_cols = self.df2_unq_columns()
+        column_summary = ColumnSummary(
+            common_columns=len(self.intersect_columns()),
+            df1_unique=len(df1_unq_cols),
+            df1_unique_columns=tuple(df1_unq_cols),
+            df2_unique=len(df2_unq_cols),
+            df2_unique_columns=tuple(df2_unq_cols),
+            df1_name=self.df1_name,
+            df2_name=self.df2_name,
+        )
+
+        # ---- row summary ---------------------------------------------
+        intersect_count = self._row_count(self.intersect_rows, row_count_cache)
+        df1_unq_count = self._row_count(self.df1_unq_rows, row_count_cache)
+        df2_unq_count = self._row_count(self.df2_unq_rows, row_count_cache)
+        matching_rows = self.count_matching_rows()
+
+        on_index: bool = getattr(self, "on_index", False)
+        row_summary = RowSummary(
+            match_columns=tuple(self.join_columns),
+            on_index=on_index,
+            has_duplicates=bool(self._any_dupes),
+            abs_tol=self.abs_tol,
+            rel_tol=self.rel_tol,
+            common_rows=intersect_count,
+            df1_unique=df1_unq_count,
+            df2_unique=df2_unq_count,
+            unequal_rows=intersect_count - matching_rows,
+            equal_rows=matching_rows,
+            df1_name=self.df1_name,
+            df2_name=self.df2_name,
+        )
+
+        # ---- column comparison ---------------------------------------
+        column_comparison = ColumnComparison(
+            unequal_columns=len([c for c in self.column_stats if c["unequal_cnt"] > 0]),
+            equal_columns=len([c for c in self.column_stats if c["unequal_cnt"] == 0]),
+            unequal_values=sum(c["unequal_cnt"] for c in self.column_stats),
+        )
+
+        # ---- mismatch stats ------------------------------------------
+        stat_list: List[MismatchStat] = []
+        sample_list: List[Any] = []
+
+        for col in self.column_stats:
+            if not col["all_match"]:
+                stat_list.append(
+                    MismatchStat(
+                        column=col["column"],
+                        dtype1=col["dtype1"],
+                        dtype2=col["dtype2"],
+                        unequal_cnt=col["unequal_cnt"],
+                        max_diff=col["max_diff"],
+                        null_diff=col["null_diff"],
+                        rel_tol=col["rel_tol"],
+                        abs_tol=col["abs_tol"],
+                    )
+                )
+                if col["unequal_cnt"] > 0:
+                    sample_list.append(
+                        self.sample_mismatch(
+                            col["column"], sample_count, for_display=True
+                        )
+                    )
+
+        if stat_list:
+            mismatch_stats = MismatchStats(
+                has_mismatches=True,
+                has_samples=len(sample_list) > 0 and sample_count > 0,
+                stats=tuple(sorted(stat_list, key=lambda s: s.column)),
+                samples=tuple(df_to_str(s) for s in sample_list),
+                df1_name=self.df1_name,
+                df2_name=self.df2_name,
+            )
+        else:
+            mismatch_stats = MismatchStats(has_mismatches=False, has_samples=False)
+
+        # ---- unique rows data ----------------------------------------
+        def _unique_rows_data(df: Any, unq_count: int) -> "UniqueRowsData":
+            min_sample = min(sample_count, unq_count)
+            min_cols = min(column_count, len(self._column_names(df)))
+            if min_sample > 0:
+                rows_str = df_to_str(
+                    self._select_first_n_columns(df, min_cols),
+                    sample_count=min_sample,
+                )
+            else:
+                rows_str = ""
+            return UniqueRowsData(has_rows=min_sample > 0, rows=rows_str)
+
+        df1_unique_rows = _unique_rows_data(self.df1_unq_rows, df1_unq_count)
+        df2_unique_rows = _unique_rows_data(self.df2_unq_rows, df2_unq_count)
+
+        # ---- assemble ------------------------------------------------
+        return ReportData(
+            df1_name=self.df1_name,
+            df2_name=self.df2_name,
+            df1_shape=self._table_shape(self.df1),
+            df2_shape=self._table_shape(self.df2),
+            column_count=column_count,
+            column_summary=column_summary,
+            row_summary=row_summary,
+            column_comparison=column_comparison,
+            mismatch_stats=mismatch_stats,
+            df1_unique_rows=df1_unique_rows,
+            df2_unique_rows=df2_unique_rows,
+        )
+
     def report(
         self,
         sample_count: int = 10,
@@ -201,27 +410,36 @@ class BaseCompare(ABC):
     ) -> str:
         """Return a string representation of a report.
 
+        The representation can then be printed or saved to a file. You can customize the
+        report's appearance by providing a custom Jinja2 template.
+
         Parameters
         ----------
         sample_count : int, optional
             The number of sample records to return. Defaults to 10.
-
         column_count : int, optional
             The number of columns to display in the sample records output. Defaults to 10.
-
         html_file : str, optional
             HTML file name to save report output to. If ``None`` the file creation will be skipped.
-
         template_path : str, optional
             Path to a custom Jinja2 template file to use for report generation.
-            If ``None``, the default template will be used.
+            If ``None``, the default template will be used. The template receives the
+            context variables documented on :class:`~datacompy.report.ReportData`.
 
         Returns
         -------
         str
             The report, formatted according to the template.
+
+        See Also
+        --------
+        build_report_data : Access the structured data without rendering.
         """
-        pass
+        data = self.build_report_data(sample_count, column_count)
+        text = data.render(template_path=template_path)
+        if html_file:
+            save_html_report(text, html_file)
+        return text
 
     def reveal_sensitive_columns(self) -> None:
         """Reveals all sensitive columns.
@@ -432,7 +650,7 @@ def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) 
     if hasattr(df, "to_pandas"):
         if sample_count is not None and len(df) > sample_count:
             df = df.head(sample_count)
-        return df.to_pandas().to_string()
+        return str(df)
 
     # Fallback to str() if we can't determine the type
     return str(df)
