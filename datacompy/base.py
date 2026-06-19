@@ -360,7 +360,7 @@ class BaseCompare(ABC):
         def _unique_rows_data(df: Any, unq_count: int) -> "UniqueRowsData":
             min_sample = min(sample_count, unq_count)
             min_cols = min(column_count, len(self._column_names(df)))
-            if unq_count > 0:
+            if min_sample > 0:
                 rows_str = df_to_str(
                     self._select_first_n_columns(df, min_cols),
                     sample_count=min_sample,
