@@ -260,69 +260,6 @@ class ReportData:
     df1_unique_rows: UniqueRowsData
     df2_unique_rows: UniqueRowsData
 
-    def to_template_context(self) -> Dict[str, Any]:
-        """Return a dict suitable for passing directly to the Jinja2 template.
-
-        The template contract uses pre-formatted strings for a few fields
-        (``row_summary.match_columns`` as comma-joined str, ``has_duplicates``
-        as ``"Yes"``/``"No"``).  This method emits those stringified values
-        while keeping the dataclass fields typed.
-
-        Returns
-        -------
-        dict
-            Context dict accepted by ``report_template.j2`` and custom templates.
-        """
-        cs = self.column_summary
-        rs = self.row_summary
-
-        match_columns_str = "index" if rs.on_index else ", ".join(rs.match_columns)
-        has_dupes_str = "Yes" if rs.has_duplicates else "No"
-
-        # Render df1/df2_unique as "N ['col1', 'col2', ...]" when there are
-        # unique columns (consistent across all backends), or plain N when empty.
-        def _fmt_unique(count: int, cols: Tuple[str, ...]) -> Any:
-            return f"{count} {list(cols)}" if cols else count
-
-        return {
-            "df1_name": self.df1_name,
-            "df2_name": self.df2_name,
-            "df1_shape": self.df1_shape,
-            "df2_shape": self.df2_shape,
-            "column_count": self.column_count,
-            "column_summary": {
-                "common_columns": cs.common_columns,
-                "df1_unique": _fmt_unique(cs.df1_unique, cs.df1_unique_columns),
-                "df2_unique": _fmt_unique(cs.df2_unique, cs.df2_unique_columns),
-                "df1_name": cs.df1_name,
-                "df2_name": cs.df2_name,
-            },
-            "row_summary": {
-                "match_columns": match_columns_str,
-                "has_duplicates": has_dupes_str,
-                "abs_tol": rs.abs_tol,
-                "rel_tol": rs.rel_tol,
-                "common_rows": rs.common_rows,
-                "df1_unique": rs.df1_unique,
-                "df2_unique": rs.df2_unique,
-                "unequal_rows": rs.unequal_rows,
-                "equal_rows": rs.equal_rows,
-                "df1_name": rs.df1_name,
-                "df2_name": rs.df2_name,
-            },
-            "column_comparison": dataclasses.asdict(self.column_comparison),
-            "mismatch_stats": {
-                "has_mismatches": self.mismatch_stats.has_mismatches,
-                "has_samples": self.mismatch_stats.has_samples,
-                "stats": [dataclasses.asdict(s) for s in self.mismatch_stats.stats],
-                "samples": list(self.mismatch_stats.samples),
-                "df1_name": self.mismatch_stats.df1_name,
-                "df2_name": self.mismatch_stats.df2_name,
-            },
-            "df1_unique_rows": dataclasses.asdict(self.df1_unique_rows),
-            "df2_unique_rows": dataclasses.asdict(self.df2_unique_rows),
-        }
-
     def render(self, template_path: str | None = None) -> str:
         """Render the report to a text string.
 
@@ -337,9 +274,7 @@ class ReportData:
         str
             Formatted report text.
         """
-        return render(
-            template_path or "report_template.j2", **self.to_template_context()
-        )
+        return render(template_path or "report_template.j2", **dataclasses.asdict(self))
 
     def to_html(self, template_path: str | None = None) -> str:
         """Return the report wrapped in a minimal HTML page.

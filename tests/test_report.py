@@ -124,50 +124,52 @@ def test_unique_rows_data_defaults():
 
 
 # ---------------------------------------------------------------------------
-# to_template_context tests
+# Template rendering formatting tests
+# (formatting previously done in to_template_context, now done in the template)
 # ---------------------------------------------------------------------------
 
 
-def test_template_context_basic_keys_present():
-    ctx = _minimal_report_data().to_template_context()
-    for key in [
-        "df1_name",
-        "df2_name",
-        "df1_shape",
-        "df2_shape",
-        "column_count",
-        "column_summary",
-        "row_summary",
-        "column_comparison",
-        "mismatch_stats",
-        "df1_unique_rows",
-        "df2_unique_rows",
-    ]:
-        assert key in ctx
+def test_render_match_columns_joined():
+    assert "Matched on: id" in _minimal_report_data().render()
 
 
-def test_template_context_row_summary_match_columns_joined():
-    ctx = _minimal_report_data().to_template_context()
-    assert ctx["row_summary"]["match_columns"] == "id"
-
-
-def test_template_context_row_summary_on_index():
+def test_render_match_columns_on_index():
     data = dataclasses.replace(
         _minimal_report_data(),
         row_summary=dataclasses.replace(
             _minimal_report_data().row_summary, on_index=True
         ),
     )
-    ctx = data.to_template_context()
-    assert ctx["row_summary"]["match_columns"] == "index"
+    assert "Matched on: index" in data.render()
 
 
-def test_template_context_has_duplicates_string():
-    ctx = _minimal_report_data().to_template_context()
-    assert ctx["row_summary"]["has_duplicates"] in ("Yes", "No")
+def test_render_match_columns_multi_column():
+    data = dataclasses.replace(
+        _minimal_report_data(),
+        row_summary=dataclasses.replace(
+            _minimal_report_data().row_summary,
+            match_columns=("id", "name"),
+            on_index=False,
+        ),
+    )
+    assert "Matched on: id, name" in data.render()
 
 
-def test_template_context_df1_unique_formatted_with_cols():
+def test_render_has_duplicates_yes():
+    data = dataclasses.replace(
+        _minimal_report_data(),
+        row_summary=dataclasses.replace(
+            _minimal_report_data().row_summary, has_duplicates=True
+        ),
+    )
+    assert "Any duplicates on match values: Yes" in data.render()
+
+
+def test_render_has_duplicates_no():
+    assert "Any duplicates on match values: No" in _minimal_report_data().render()
+
+
+def test_render_unique_columns_formatted_with_names():
     data = dataclasses.replace(
         _minimal_report_data(),
         column_summary=dataclasses.replace(
@@ -176,20 +178,15 @@ def test_template_context_df1_unique_formatted_with_cols():
             df1_unique_columns=("col_a", "col_b"),
         ),
     )
-    ctx = data.to_template_context()
-    assert ctx["column_summary"]["df1_unique"] == "2 ['col_a', 'col_b']"
+    assert "2 ['col_a', 'col_b']" in data.render()
 
 
-def test_template_context_df1_unique_plain_int_when_no_unique_cols():
-    ctx = _minimal_report_data().to_template_context()
-    assert ctx["column_summary"]["df1_unique"] == 0
+def test_render_unique_columns_plain_zero_when_none():
+    assert "but not in df2: 0\n" in _minimal_report_data().render()
 
 
-def test_template_context_mismatch_stats_is_list_of_dicts():
-    ctx = _minimal_report_data(mismatch=True).to_template_context()
-    assert isinstance(ctx["mismatch_stats"]["stats"], list)
-    assert isinstance(ctx["mismatch_stats"]["stats"][0], dict)
-    assert "column" in ctx["mismatch_stats"]["stats"][0]
+def test_render_mismatch_stats_column_name_present():
+    assert "val" in _minimal_report_data(mismatch=True).render()
 
 
 # ---------------------------------------------------------------------------
@@ -312,7 +309,7 @@ def test_pandas_on_index():
     df2 = pd.DataFrame({"val": [1, 9]}, index=[0, 1])
     data = PandasCompare(df1, df2, on_index=True).build_report_data()
     assert data.row_summary.on_index is True
-    assert data.to_template_context()["row_summary"]["match_columns"] == "index"
+    assert "Matched on: index" in data.render()
 
 
 def test_pandas_html_file(tmp_path):
