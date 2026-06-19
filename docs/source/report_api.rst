@@ -64,7 +64,7 @@ template:
     print(data.render(template_path="my_report.j2"))
     data.save("report.html", template_path="my_report.j2")
 
-The template receives the same context dict as the default
+The template receives the same context as the default
 ``report_template.j2``; see :doc:`template_guide` for the full variable
 reference.
 
