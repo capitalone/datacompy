@@ -336,11 +336,9 @@ class BaseCompare(ABC):
         # ---- mismatch stats ------------------------------------------
         stat_list: List[MismatchStat] = []
         sample_list: List[Any] = []
-        any_mismatch = False
 
         for col in self.column_stats:
             if not col["all_match"]:
-                any_mismatch = True
                 stat_list.append(
                     MismatchStat(
                         column=col["column"],
@@ -360,7 +358,7 @@ class BaseCompare(ABC):
                         )
                     )
 
-        if any_mismatch:
+        if stat_list:
             mismatch_stats = MismatchStats(
                 has_mismatches=True,
                 has_samples=len(sample_list) > 0 and sample_count > 0,
