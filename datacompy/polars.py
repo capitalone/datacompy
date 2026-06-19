@@ -30,6 +30,7 @@ from ordered_set import OrderedSet
 
 from datacompy.base import (
     BaseCompare,
+    ColumnStat,
     get_column_tolerance,
     temp_column_name,
     validate_tolerance_parameter,
@@ -146,7 +147,7 @@ class PolarsCompare(BaseCompare):
         self.df1_unq_rows: pl.DataFrame
         self.df2_unq_rows: pl.DataFrame
         self.intersect_rows: pl.DataFrame
-        self.column_stats: List[Dict[str, Any]] = []
+        self.column_stats: List[ColumnStat] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
     def _get_comparators(self) -> List[BaseComparator]:
@@ -416,8 +417,8 @@ class PolarsCompare(BaseCompare):
         creates a column column_match which is True for matches, False
         otherwise.
         """
-        match_cnt: int | float
-        null_diff: int | float
+        match_cnt: int
+        null_diff: int
 
         LOG.debug("Comparing intersection")
         for column in self.intersect_columns():
@@ -450,14 +451,16 @@ class PolarsCompare(BaseCompare):
                         comparators=self._get_comparators(),
                     ).alias(col_match)
                 )
-                match_cnt = self.intersect_rows[col_match].sum()
+                match_cnt = int(self.intersect_rows[col_match].sum())
                 max_diff = calculate_max_diff(
                     self.intersect_rows[col_1], self.intersect_rows[col_2]
                 )
-                null_diff = (
-                    (self.intersect_rows[col_1].is_null())
-                    ^ (self.intersect_rows[col_2].is_null())
-                ).sum()
+                null_diff = int(
+                    (
+                        (self.intersect_rows[col_1].is_null())
+                        ^ (self.intersect_rows[col_2].is_null())
+                    ).sum()
+                )
             if row_cnt > 0:
                 match_rate = float(match_cnt) / row_cnt
             else:

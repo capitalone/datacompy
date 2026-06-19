@@ -34,6 +34,7 @@ from pyspark.sql.connect.dataframe import DataFrame
 
 from datacompy.base import (
     BaseCompare,
+    ColumnStat,
     get_column_tolerance,
     temp_column_name,
     validate_tolerance_parameter,
@@ -182,7 +183,7 @@ class SparkSQLCompare(BaseCompare):
         self.df1_unq_rows: pyspark.sql.DataFrame
         self.df2_unq_rows: pyspark.sql.DataFrame
         self.intersect_rows: pyspark.sql.DataFrame
-        self.column_stats: List = []
+        self.column_stats: List[ColumnStat] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
     def _get_comparators(self) -> List[BaseComparator]:

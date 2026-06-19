@@ -25,15 +25,31 @@ import logging
 from abc import ABC, abstractmethod
 from collections import Counter
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List
-
-if TYPE_CHECKING:
-    import datacompy.report
+from typing import TYPE_CHECKING, Any, Dict, List, TypedDict
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ordered_set import OrderedSet
 
+if TYPE_CHECKING:
+    import datacompy.report
+
 LOG = logging.getLogger(__name__)
+
+
+class ColumnStat(TypedDict):
+    """Typed contract for per-column comparison statistics populated by each backend."""
+
+    column: str
+    match_column: str
+    match_cnt: int
+    unequal_cnt: int
+    dtype1: str
+    dtype2: str
+    all_match: bool
+    max_diff: float
+    null_diff: int
+    rel_tol: float
+    abs_tol: float
 
 
 class BaseCompare(ABC):

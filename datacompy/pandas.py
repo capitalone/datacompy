@@ -29,6 +29,7 @@ from ordered_set import OrderedSet
 
 from datacompy.base import (
     BaseCompare,
+    ColumnStat,
     get_column_tolerance,
     temp_column_name,
     validate_tolerance_parameter,
@@ -158,7 +159,7 @@ class PandasCompare(BaseCompare):
         self.df1_unq_rows: pd.DataFrame
         self.df2_unq_rows: pd.DataFrame
         self.intersect_rows: pd.DataFrame
-        self.column_stats: List[Dict[str, Any]] = []
+        self.column_stats: List[ColumnStat] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
     def _get_comparators(self) -> List[BaseComparator]:
