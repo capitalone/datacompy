@@ -80,6 +80,16 @@ Tolerances (`abs_tol`, `rel_tol`) can be a single float (applied globally) or a 
 - **Imports**: Only absolute imports (relative imports banned via ruff TID252)
 - **Pre-commit hooks**: ruff (lint + format), trailing whitespace, debug statements, end-of-file fixer, pyproject-fmt
 
+## Testing Conventions
+
+- Write plain pytest functions, not class-based test suites. Use `def test_*()` at module level.
+- Do not group tests into `class Test*` unless the upstream codebase already does so in the same file.
+
+## Documentation Conventions
+
+- Do not use em dashes ("--" or "---") in documentation or docstrings; rewrite the sentence instead.
+- Do not use emojis in documentation, docstrings, or commit messages.
+
 ## Branching
 
 - `develop` is the active development branch for v1
