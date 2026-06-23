@@ -140,8 +140,12 @@ def _build_compare(args: CompareArgs) -> tuple[Any, Any]:
         session = get_snowflake_session(args.snowflake_config)
         # infer_format is NOT called here — load_snowflake handles table refs
         # (e.g. DB.SCHEMA.MY_TABLE) that have no file extension.
-        ref1 = load_snowflake(session, args.left, args.format)
-        ref2 = load_snowflake(session, args.right, args.format)
+        ref1 = load_snowflake(
+            session, args.left, args.format, csv_delimiter=args.csv_delimiter
+        )
+        ref2 = load_snowflake(
+            session, args.right, args.format, csv_delimiter=args.csv_delimiter
+        )
         return make_snowflake_compare(args, session, ref1, ref2), session
 
     raise BadArgsError(f"Unknown backend: {args.backend!r}")

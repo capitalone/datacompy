@@ -95,7 +95,14 @@ def get_snowflake_session(config_path: Path | None = None) -> Any:
         ) from exc
 
     if config_path is not None:
-        params: dict[str, str] = json.loads(config_path.read_text())
+        try:
+            params: dict[str, str] = json.loads(config_path.read_text())
+        except FileNotFoundError as exc:
+            raise BadArgsError(
+                f"--snowflake-config file not found: {config_path}"
+            ) from exc
+        except (OSError, json.JSONDecodeError) as exc:
+            raise BadArgsError(f"--snowflake-config {config_path}: {exc}") from exc
         return Session.builder.configs(params).create()
 
     # Build from environment variables.

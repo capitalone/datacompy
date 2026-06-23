@@ -140,7 +140,7 @@ def test_snowflake_two_part_ref_expanded(
         ),
         patch(
             "datacompy.cli.commands.compare.load_snowflake",
-            side_effect=lambda session, ref, fmt: ref,
+            side_effect=lambda session, ref, fmt, **kw: ref,
         ),
         patch(
             "datacompy.cli.commands.compare.make_snowflake_compare",
@@ -187,3 +187,46 @@ def test_snowflake_two_part_ref_no_db_exits_2(
 
     assert code == 2
     assert "SNOWFLAKE_DATABASE" in err or "db.schema.table" in err
+
+
+def test_missing_snowflake_config_raises_bad_args_error(
+    tmp_path: Path,
+) -> None:
+    """get_snowflake_session must raise BadArgsError (not FileNotFoundError)
+    when --snowflake-config points to a non-existent file, so the caller
+    gets a message that names both the bad path and the flag to fix."""
+    from datacompy.cli.errors import BadArgsError
+    from datacompy.cli.sessions import get_snowflake_session
+
+    missing = tmp_path / "no_such_conn.json"
+    with pytest.raises(BadArgsError, match=r"no_such_conn\.json"):
+        get_snowflake_session(config_path=missing)
+
+
+def test_missing_snowflake_config_file_exits_2_with_clear_message(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """End-to-end: --snowflake-config pointing to a missing file must exit 2
+    with a message that identifies the bad path."""
+    missing = tmp_path / "no_such_conn.json"
+
+    code, _, err = run(
+        [
+            "compare",
+            "--left",
+            "DB.SCHEMA.TABLE_L",
+            "--right",
+            "DB.SCHEMA.TABLE_R",
+            "--on",
+            "ID",
+            "--backend",
+            "snowflake",
+            "--snowflake-config",
+            str(missing),
+        ],
+        capsys,
+    )
+
+    assert code == 2
+    assert "no_such_conn.json" in err
