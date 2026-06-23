@@ -252,3 +252,235 @@ def test_ignore_unique_rows_without_max_unequal_rows_exits_2(
     )
     assert code == 2
     assert "--max-unequal-rows" in err
+
+
+# ---------------------------------------------------------------------------
+# --abs-tol
+# ---------------------------------------------------------------------------
+
+
+def test_abs_tol_allows_small_numeric_difference(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    left.write_text("id,val\n1,1.0\n2,2.0\n")
+    right.write_text("id,val\n1,1.0\n2,2.005\n")
+    # without tolerance the values differ
+    code_no_tol, _, _ = run(
+        ["compare", "--left", str(left), "--right", str(right), "--on", "id"],
+        capsys,
+    )
+    assert code_no_tol == 1
+    # with abs_tol=0.01 the difference of 0.005 is within tolerance
+    code_tol, _, _ = run(
+        [
+            "compare",
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--on",
+            "id",
+            "--abs-tol",
+            "0.01",
+        ],
+        capsys,
+    )
+    assert code_tol == 0
+
+
+def test_abs_tol_still_fails_when_difference_exceeds_tolerance(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    left.write_text("id,val\n1,1.0\n2,2.0\n")
+    right.write_text("id,val\n1,1.0\n2,2.5\n")
+    code, _, _ = run(
+        [
+            "compare",
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--on",
+            "id",
+            "--abs-tol",
+            "0.01",
+        ],
+        capsys,
+    )
+    assert code == 1
+
+
+# ---------------------------------------------------------------------------
+# --rel-tol
+# ---------------------------------------------------------------------------
+
+
+def test_rel_tol_allows_small_relative_difference(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    # 100 vs 101 is a 1% relative difference
+    left.write_text("id,val\n1,100.0\n")
+    right.write_text("id,val\n1,101.0\n")
+    code_no_tol, _, _ = run(
+        ["compare", "--left", str(left), "--right", str(right), "--on", "id"],
+        capsys,
+    )
+    assert code_no_tol == 1
+    code_tol, _, _ = run(
+        [
+            "compare",
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--on",
+            "id",
+            "--rel-tol",
+            "0.02",
+        ],
+        capsys,
+    )
+    assert code_tol == 0
+
+
+def test_rel_tol_still_fails_when_relative_difference_exceeds_tolerance(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    # 100 vs 120 is a 20% relative difference
+    left.write_text("id,val\n1,100.0\n")
+    right.write_text("id,val\n1,120.0\n")
+    code, _, _ = run(
+        [
+            "compare",
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--on",
+            "id",
+            "--rel-tol",
+            "0.02",
+        ],
+        capsys,
+    )
+    assert code == 1
+
+
+# ---------------------------------------------------------------------------
+# --ignore-spaces
+# ---------------------------------------------------------------------------
+
+
+def test_ignore_spaces_matches_values_differing_only_in_whitespace(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    left.write_text("id,val\n1,hello\n2,world\n")
+    right.write_text("id,val\n1,  hello  \n2,  world  \n")
+    code_no_flag, _, _ = run(
+        ["compare", "--left", str(left), "--right", str(right), "--on", "id"],
+        capsys,
+    )
+    assert code_no_flag == 1
+    code_flag, _, _ = run(
+        [
+            "compare",
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--on",
+            "id",
+            "--ignore-spaces",
+        ],
+        capsys,
+    )
+    assert code_flag == 0
+
+
+def test_ignore_spaces_still_fails_on_non_whitespace_difference(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    left.write_text("id,val\n1,hello\n")
+    right.write_text("id,val\n1,world\n")
+    code, _, _ = run(
+        [
+            "compare",
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--on",
+            "id",
+            "--ignore-spaces",
+        ],
+        capsys,
+    )
+    assert code == 1
+
+
+# ---------------------------------------------------------------------------
+# --ignore-case
+# ---------------------------------------------------------------------------
+
+
+def test_ignore_case_matches_values_differing_only_in_case(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    left.write_text("id,val\n1,Hello\n2,World\n")
+    right.write_text("id,val\n1,HELLO\n2,WORLD\n")
+    code_no_flag, _, _ = run(
+        ["compare", "--left", str(left), "--right", str(right), "--on", "id"],
+        capsys,
+    )
+    assert code_no_flag == 1
+    code_flag, _, _ = run(
+        [
+            "compare",
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--on",
+            "id",
+            "--ignore-case",
+        ],
+        capsys,
+    )
+    assert code_flag == 0
+
+
+def test_ignore_case_still_fails_on_non_case_difference(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    left.write_text("id,val\n1,hello\n")
+    right.write_text("id,val\n1,world\n")
+    code, _, _ = run(
+        [
+            "compare",
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--on",
+            "id",
+            "--ignore-case",
+        ],
+        capsys,
+    )
+    assert code == 1
