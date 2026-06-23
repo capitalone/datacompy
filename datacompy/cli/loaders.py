@@ -33,7 +33,7 @@ import polars as pl
 
 from datacompy.cli.errors import BadArgsError, LoadError, MissingExtraError
 
-_TABLE_REF_RE = re.compile(r"^[\w$]+(\.[\w$]+){1,2}$")
+_TABLE_REF_RE = re.compile(r"^[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*){1,2}$")
 
 _NON_TABLE_REF_EXTENSIONS = frozenset(
     {

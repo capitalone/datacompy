@@ -85,6 +85,79 @@ def test_is_snowflake_ref_single_word_is_not_a_ref() -> None:
     assert is_snowflake_ref("mytable") is False
 
 
+# Valid identifiers: numbers and special characters inside segments
+def test_is_snowflake_ref_numbers_inside_segment_are_valid() -> None:
+    assert is_snowflake_ref("db1.schema2.table3") is True
+
+
+def test_is_snowflake_ref_dollar_sign_in_segment_is_valid() -> None:
+    assert is_snowflake_ref("MY$DB.MY$SCHEMA.MY$TABLE") is True
+
+
+def test_is_snowflake_ref_underscore_led_segment_is_valid() -> None:
+    assert is_snowflake_ref("_db._schema._table") is True
+
+
+def test_is_snowflake_ref_mixed_case_with_numbers_is_valid() -> None:
+    assert is_snowflake_ref("PROD_2024.Analytics.SALES_FACT_V2") is True
+
+
+# Digit-leading segments — not valid Snowflake identifiers; the current
+# regex accepts these because \w includes [0-9].
+def test_is_snowflake_ref_digit_led_first_segment_is_not_a_ref() -> None:
+    assert is_snowflake_ref("1db.schema.table") is False
+
+
+def test_is_snowflake_ref_digit_led_second_segment_is_not_a_ref() -> None:
+    assert is_snowflake_ref("db.2schema.table") is False
+
+
+def test_is_snowflake_ref_digit_led_third_segment_is_not_a_ref() -> None:
+    assert is_snowflake_ref("db.schema.3table") is False
+
+
+def test_is_snowflake_ref_all_numeric_two_part_is_not_a_ref() -> None:
+    # "1.5" looks like a floating-point literal, not a table ref
+    assert is_snowflake_ref("1.5") is False
+
+
+def test_is_snowflake_ref_all_numeric_three_part_is_not_a_ref() -> None:
+    assert is_snowflake_ref("1.2.3") is False
+
+
+# Version strings and other dot-separated values without extensions
+def test_is_snowflake_ref_version_string_without_extension_is_not_a_ref() -> None:
+    # e.g. a file named "v1.5" with no extension
+    assert is_snowflake_ref("v1.5") is False
+
+
+# Structure: wrong number of parts
+def test_is_snowflake_ref_four_part_is_not_a_ref() -> None:
+    assert is_snowflake_ref("a.b.c.d") is False
+
+
+def test_is_snowflake_ref_empty_string_is_not_a_ref() -> None:
+    assert is_snowflake_ref("") is False
+
+
+def test_is_snowflake_ref_empty_segment_is_not_a_ref() -> None:
+    assert is_snowflake_ref("db..table") is False
+
+
+def test_is_snowflake_ref_leading_dot_is_not_a_ref() -> None:
+    assert is_snowflake_ref(".schema.table") is False
+
+
+def test_is_snowflake_ref_trailing_dot_is_not_a_ref() -> None:
+    assert is_snowflake_ref("schema.table.") is False
+
+
+# Quoted identifiers are not handled by the CLI (the regex does not
+# recognise double-quote delimited names).
+def test_is_snowflake_ref_quoted_identifier_is_not_a_ref() -> None:
+    assert is_snowflake_ref('"My DB"."My Schema"."My Table"') is False
+
+
 # ---------------------------------------------------------------------------
 # _default_name
 # ---------------------------------------------------------------------------
