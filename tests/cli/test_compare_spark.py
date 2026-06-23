@@ -20,27 +20,12 @@ Skipped automatically when PySpark is not installed.
 
 import csv
 from pathlib import Path
-from typing import Generator
 
 import pytest
 
 pyspark = pytest.importorskip("pyspark")
 
-from pyspark.sql import SparkSession  # type: ignore[import-untyped]
-
 from tests.cli.conftest import run
-
-
-@pytest.fixture(scope="module")
-def spark() -> Generator[SparkSession, None, None]:
-    session = (
-        SparkSession.builder.appName("datacompy-cli-test")
-        .master("local[1]")
-        .getOrCreate()
-    )
-    session.sparkContext.setLogLevel("ERROR")
-    yield session
-    session.stop()
 
 
 @pytest.fixture()
