@@ -240,7 +240,9 @@ def _expand_table_ref(session: Any, ref: str) -> str:
     return f"{db}.{ref}"
 
 
-def load_snowflake(session: Any, ref: str, fmt: str | None) -> Any:
+def load_snowflake(
+    session: Any, ref: str, fmt: str | None, csv_delimiter: str = ","
+) -> Any:
     """Load *ref* for use with :class:`~datacompy.snowflake.SnowflakeCompare`.
 
     When *ref* looks like ``db.schema.table`` (3-part) or ``schema.table``
@@ -258,6 +260,8 @@ def load_snowflake(session: Any, ref: str, fmt: str | None) -> Any:
         current database.
     fmt:
         File format; only used when *ref* is a local file.
+    csv_delimiter:
+        Field delimiter used when *fmt* is ``"csv"`` (default: comma).
 
     Returns
     -------
@@ -271,7 +275,8 @@ def load_snowflake(session: Any, ref: str, fmt: str | None) -> Any:
         When ``snowflake.snowpark`` is not installed.
     BadArgsError
         When a 2-part ref cannot be expanded because the session has no
-        current database.
+        current database, or when the session has no current database/schema
+        and a local file needs to be staged.
     LoadError
         On file read or Snowflake staging errors.
     """
@@ -290,7 +295,7 @@ def load_snowflake(session: Any, ref: str, fmt: str | None) -> Any:
     actual_fmt = fmt or infer_format(ref, None)
     try:
         if actual_fmt == "csv":
-            df_pd = pd.read_csv(ref)
+            df_pd = pd.read_csv(ref, sep=csv_delimiter)
         elif actual_fmt == "parquet":
             df_pd = pd.read_parquet(ref)
         elif actual_fmt == "json":
@@ -306,6 +311,20 @@ def load_snowflake(session: Any, ref: str, fmt: str | None) -> Any:
 
     from uuid import uuid4
 
+    db = session.get_current_database()
+    schema = session.get_current_schema()
+    if not db or not schema:
+        missing_vars = ", ".join(
+            v
+            for v, val in [("SNOWFLAKE_DATABASE", db), ("SNOWFLAKE_SCHEMA", schema)]
+            if not val
+        )
+        raise BadArgsError(
+            f"Cannot stage {ref!r} to Snowflake: session has no current "
+            f"database/schema. Set {missing_vars} or use the db.schema.table "
+            "form directly."
+        )
+
     table_name = f"DATACOMPY_TMP_{uuid4().hex[:8].upper()}"
     try:
         session.write_pandas(
@@ -320,6 +339,4 @@ def load_snowflake(session: Any, ref: str, fmt: str | None) -> Any:
             f"Failed to stage {ref} to Snowflake temp table: {exc}"
         ) from exc
 
-    db = session.get_current_database() or ""
-    schema = session.get_current_schema() or ""
     return f"{db}.{schema}.{table_name}"
