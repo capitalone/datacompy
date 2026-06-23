@@ -434,3 +434,88 @@ def test_df_names_default_to_stem(
     )
     assert "sales_before" in out
     assert "sales_after" in out
+
+
+# ---------------------------------------------------------------------------
+# --csv-delimiter validation
+# ---------------------------------------------------------------------------
+
+
+def test_multi_char_delimiter_exits_2(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    for p in (left, right):
+        p.write_text("id,val\n1,a\n")
+    code, _, err = run(
+        [
+            "compare",
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--on",
+            "id",
+            "--backend",
+            "pandas",
+            "--csv-delimiter",
+            "||",
+        ],
+        capsys,
+    )
+    assert code == 2
+    assert "csv-delimiter" in err.lower() or "delimiter" in err.lower()
+
+
+def test_empty_delimiter_exits_2(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    for p in (left, right):
+        p.write_text("id,val\n1,a\n")
+    code, _, err = run(
+        [
+            "compare",
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--on",
+            "id",
+            "--backend",
+            "pandas",
+            "--csv-delimiter",
+            "",
+        ],
+        capsys,
+    )
+    assert code == 2
+    assert "csv-delimiter" in err.lower() or "delimiter" in err.lower()
+
+
+def test_single_char_delimiter_is_accepted(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    for p in (left, right):
+        p.write_text("id|val\n1|a\n2|b\n")
+    code, _, _ = run(
+        [
+            "compare",
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--on",
+            "id",
+            "--backend",
+            "pandas",
+            "--csv-delimiter",
+            "|",
+        ],
+        capsys,
+    )
+    assert code == 0

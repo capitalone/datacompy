@@ -96,6 +96,10 @@ def _validate_args(args: CompareArgs) -> None:
             "--on is required (or --on-index for the pandas backend). "
             "Specify at least one join column with --on COL."
         )
+    if len(args.csv_delimiter) != 1:
+        raise BadArgsError(
+            f"--csv-delimiter must be a single character, got {args.csv_delimiter!r}."
+        )
     if args.max_unequal_rows is not None and args.max_unequal_rows < 0:
         raise BadArgsError("--max-unequal-rows must be a non-negative integer.")
     if args.ignore_unique_rows and args.max_unequal_rows is None:
