@@ -66,7 +66,6 @@ def _add_compare_subparser(
         "--format",
         choices=["csv", "parquet", "json"],
         default=None,
-        metavar="FMT",
         help="Input file format.  Inferred from extension when omitted.",
     )
     inp.add_argument(
