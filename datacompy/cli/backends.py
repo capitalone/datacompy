@@ -26,12 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
-import polars as pl
-
 from datacompy.cli.loaders import is_snowflake_ref
-from datacompy.pandas import PandasCompare
-from datacompy.polars import PolarsCompare
 
 
 @dataclass(frozen=True)
@@ -105,10 +100,10 @@ def to_compare_args(ns: Any) -> CompareArgs:
     )
 
 
-def make_pandas_compare(
-    args: CompareArgs, df1: pd.DataFrame, df2: pd.DataFrame
-) -> PandasCompare:
+def make_pandas_compare(args: CompareArgs, df1: Any, df2: Any) -> Any:
     """Construct a :class:`~datacompy.pandas.PandasCompare`."""
+    from datacompy.pandas import PandasCompare
+
     if args.on_index:
         return PandasCompare(
             df1,
@@ -136,10 +131,10 @@ def make_pandas_compare(
     )
 
 
-def make_polars_compare(
-    args: CompareArgs, df1: pl.DataFrame, df2: pl.DataFrame
-) -> PolarsCompare:
+def make_polars_compare(args: CompareArgs, df1: Any, df2: Any) -> Any:
     """Construct a :class:`~datacompy.polars.PolarsCompare`."""
+    from datacompy.polars import PolarsCompare
+
     return PolarsCompare(
         df1,
         df2,
