@@ -274,11 +274,21 @@ def load_snowflake(
     MissingExtraError
         When ``snowflake.snowpark`` is not installed.
     BadArgsError
-        When a 2-part ref cannot be expanded because the session has no
-        current database, or when the session has no current database/schema
-        and a local file needs to be staged.
+        When a ref cannot be resolved or a local file cannot be staged.
     LoadError
         On file read or Snowflake staging errors.
+    """
+    if is_snowflake_ref(ref):
+        return _expand_table_ref(session, ref)
+    return _stage_file_to_snowflake(session, ref, fmt, csv_delimiter)
+
+
+def _stage_file_to_snowflake(
+    session: Any, path: str, fmt: str | None, csv_delimiter: str = ","
+) -> str:
+    """Load a local file via Pandas and write it to a temporary Snowflake table.
+
+    Returns the fully-qualified ``db.schema.table`` name of the temp table.
     """
     try:
         import snowflake.snowpark  # noqa: F401
@@ -288,26 +298,11 @@ def load_snowflake(
             "Install it with: pip install datacompy[snowflake]"
         ) from exc
 
-    if is_snowflake_ref(ref):
-        return _expand_table_ref(session, ref)
+    actual_fmt = fmt or infer_format(path, None)
+    if actual_fmt not in ("csv", "parquet", "json"):
+        raise BadArgsError(f"Unsupported format for Snowflake loader: {actual_fmt!r}")
 
-    # Local file → stage to a temporary Snowflake table.
-    actual_fmt = fmt or infer_format(ref, None)
-    try:
-        if actual_fmt == "csv":
-            df_pd = pd.read_csv(ref, sep=csv_delimiter)
-        elif actual_fmt == "parquet":
-            df_pd = pd.read_parquet(ref)
-        elif actual_fmt == "json":
-            df_pd = pd.read_json(ref)
-        else:
-            raise BadArgsError(
-                f"Unsupported format for Snowflake loader: {actual_fmt!r}"
-            )
-    except FileNotFoundError as exc:
-        raise LoadError(f"File not found: {ref}") from exc
-    except OSError as exc:
-        raise LoadError(f"Cannot read {ref}: {exc}") from exc
+    df_pd = load_pandas(path, actual_fmt, csv_delimiter=csv_delimiter)
 
     from uuid import uuid4
 
@@ -320,7 +315,7 @@ def load_snowflake(
             if not val
         )
         raise BadArgsError(
-            f"Cannot stage {ref!r} to Snowflake: session has no current "
+            f"Cannot stage {path!r} to Snowflake: session has no current "
             f"database/schema. Set {missing_vars} or use the db.schema.table "
             "form directly."
         )
@@ -336,7 +331,7 @@ def load_snowflake(
         )
     except Exception as exc:
         raise LoadError(
-            f"Failed to stage {ref} to Snowflake temp table: {exc}"
+            f"Failed to stage {path} to Snowflake temp table: {exc}"
         ) from exc
 
     return f"{db}.{schema}.{table_name}"

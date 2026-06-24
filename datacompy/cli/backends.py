@@ -76,17 +76,6 @@ def _default_name(ref: str) -> str:
     return Path(ref).stem
 
 
-def _unescape_delimiter(raw: str) -> str:
-    r"""Translate common escape sequences in a CLI-supplied delimiter string.
-
-    Argparse always delivers argv values as plain strings, so a user who
-    types ``--csv-delimiter '\\t'`` gets the two-character string ``\\t``
-    rather than a real tab.  This function maps the most common sequences
-    to their single-character equivalents so both forms work identically.
-    """
-    return raw.replace("\\t", "\t").replace("\\n", "\n").replace("\\r", "\r")
-
-
 def to_compare_args(ns: Any) -> CompareArgs:
     """Convert an :class:`argparse.Namespace` to a typed :class:`CompareArgs`."""
     return CompareArgs(
@@ -103,7 +92,7 @@ def to_compare_args(ns: Any) -> CompareArgs:
         ignore_extra_columns=ns.ignore_extra_columns,
         ignore_unique_rows=ns.ignore_unique_rows,
         cast_column_names_lower=ns.cast_column_names_lower,
-        csv_delimiter=_unescape_delimiter(ns.csv_delimiter),
+        csv_delimiter=ns.csv_delimiter,
         df1_name=ns.df1_name if ns.df1_name is not None else _default_name(ns.left),
         df2_name=ns.df2_name if ns.df2_name is not None else _default_name(ns.right),
         sample_count=ns.sample_count,

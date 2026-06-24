@@ -48,14 +48,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         result: int = args.func(args)
         return result
     except CLIError as exc:
+        if args.debug:
+            raise
         print_error(str(exc))
         return exc.exit_code
     except FileNotFoundError as exc:
+        if args.debug:
+            raise
         print_error(f"file not found: {exc.filename}")
-        return 2
-    except (ValueError, TypeError, KeyError) as exc:
-        print_error(str(exc))
-        return 2
-    except Exception as exc:
-        print_error(f"unexpected error: {exc}")
         return 2
