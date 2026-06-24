@@ -26,7 +26,6 @@ layer so it works without any live Snowflake session.
 
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -72,18 +71,31 @@ def test_snowflake_missing_account_exits_2(
 
 def test_snowflake_compare_match(
     tmp_path: Path,
-    mock_snowflake_compare: Callable[[bool], tuple[MagicMock, Any]],
+    mock_snowflake_compare: Callable[[bool], MagicMock],
     cli: Callable[[list[str]], tuple[int, str, str]],
 ) -> None:
     """Mock out the full compare stack so no live Snowflake session is needed."""
-    _mock_compare, patches = mock_snowflake_compare(matches=True)
+    mock_compare = mock_snowflake_compare(matches=True)
 
     left = tmp_path / "left.csv"
     right = tmp_path / "right.csv"
     left.write_text("id,val\n1,a\n")
     right.write_text("id,val\n1,a\n")
 
-    with patches:
+    with (
+        patch(
+            "datacompy.cli.sessions.get_snowflake_session",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "datacompy.cli.compare.load_snowflake",
+            return_value="DB.SCHEMA.TABLE",
+        ),
+        patch(
+            "datacompy.cli.compare.make_snowflake_compare",
+            return_value=mock_compare,
+        ),
+    ):
         code, out, err = cli(
             [
                 "compare",
@@ -102,35 +114,19 @@ def test_snowflake_compare_match(
     assert "DataComPy Comparison" in out
 
 
-def test_snowflake_two_part_ref_expanded(
-    mock_snowflake_compare: Callable[[bool], tuple[MagicMock, Any]],
-    cli: Callable[[list[str]], tuple[int, str, str]],
-) -> None:
+def test_snowflake_two_part_ref_expanded() -> None:
     """2-part schema.table ref is expanded to db.schema.table using session context."""
     mock_session = MagicMock()
     mock_session.get_current_database.return_value = "PROD"
 
-    with (
-        patch(
-            "datacompy.cli.sessions.get_snowflake_session", return_value=mock_session
-        ),
-        patch(
-            "datacompy.cli.commands.compare.load_snowflake",
-            side_effect=lambda session, ref, fmt, **kw: ref,
-        ),
-        patch(
-            "datacompy.cli.commands.compare.make_snowflake_compare",
-            return_value=mock_snowflake_compare(matches=True)[0],
-        ),
-    ):
-        assert (
-            _expand_table_ref(mock_session, "ANALYTICS.SALES_FACT")
-            == "PROD.ANALYTICS.SALES_FACT"
-        )
-        assert (
-            _expand_table_ref(mock_session, "PROD.ANALYTICS.SALES_FACT")
-            == "PROD.ANALYTICS.SALES_FACT"
-        )
+    assert (
+        _expand_table_ref(mock_session, "ANALYTICS.SALES_FACT")
+        == "PROD.ANALYTICS.SALES_FACT"
+    )
+    assert (
+        _expand_table_ref(mock_session, "PROD.ANALYTICS.SALES_FACT")
+        == "PROD.ANALYTICS.SALES_FACT"
+    )
 
 
 def test_snowflake_two_part_ref_no_db_exits_2(

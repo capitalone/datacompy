@@ -17,10 +17,8 @@
 
 import csv
 from collections.abc import Callable, Generator
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from datacompy.cli import main
@@ -33,7 +31,10 @@ def cli(
     """Return a callable that runs ``main(argv)`` and returns ``(exit_code, stdout, stderr)``."""
 
     def _run(argv: list[str]) -> tuple[int, str, str]:
-        code = main(argv)
+        try:
+            code = main(argv)
+        except SystemExit as exc:
+            code = int(exc.code) if exc.code is not None else 0
         captured = capsys.readouterr()
         return code, captured.out, captured.err
 
@@ -110,39 +111,18 @@ def mock_snowflake_session() -> MagicMock:
 
 
 @pytest.fixture()
-def mock_snowflake_compare() -> Callable[
-    [bool],
-    Any,
-]:
-    """Return a factory that produces a (mock_compare, ctx_manager) pair.
+def mock_snowflake_compare() -> Callable[[bool], MagicMock]:
+    """Return a factory that produces a pre-configured ``MagicMock`` compare object.
 
     Usage::
 
         def test_something(mock_snowflake_compare, cli):
-            mock_compare, patches = mock_snowflake_compare(matches=True)
-            with patches:
-                code, out, err = cli([...])
+            mock_compare = mock_snowflake_compare(matches=True)
+            with patch("datacompy.cli.compare.make_snowflake_compare", return_value=mock_compare):
+                ...
     """
 
-    @contextmanager
-    def _patches(mock_compare: MagicMock) -> Generator[None, None, None]:
-        with (
-            patch(
-                "datacompy.cli.sessions.get_snowflake_session",
-                return_value=MagicMock(),
-            ),
-            patch(
-                "datacompy.cli.commands.compare.load_snowflake",
-                return_value="DB.SCHEMA.TABLE",
-            ),
-            patch(
-                "datacompy.cli.commands.compare.make_snowflake_compare",
-                return_value=mock_compare,
-            ),
-        ):
-            yield
-
-    def _factory(matches: bool = True) -> tuple[MagicMock, Any]:
+    def _factory(matches: bool = True) -> MagicMock:
         mock_compare = MagicMock()
         mock_compare.build_report_data.return_value = MagicMock(
             render=MagicMock(
@@ -151,6 +131,6 @@ def mock_snowflake_compare() -> Callable[
             row_summary=MagicMock(unequal_rows=0 if matches else 1),
         )
         mock_compare.matches.return_value = matches
-        return mock_compare, _patches(mock_compare)
+        return mock_compare
 
     return _factory

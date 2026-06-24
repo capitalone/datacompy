@@ -132,3 +132,60 @@ def test_compare_version(capsys: pytest.CaptureFixture[str]) -> None:
     assert exc.value.code == 0
     out = capsys.readouterr().out
     assert "datacompy" in out
+
+
+def test_csv_delimiter_multi_char_rejected_at_parse_time() -> None:
+    """--csv-delimiter with more than one character should fail at argparse parse
+    time (exit 2), not later during validation."""
+    p = build_parser()
+    with pytest.raises(SystemExit) as exc:
+        p.parse_args(
+            [
+                "compare",
+                "--left",
+                "a.csv",
+                "--right",
+                "b.csv",
+                "--on",
+                "id",
+                "--csv-delimiter",
+                "abc",
+            ]
+        )
+    assert exc.value.code == 2
+
+
+def test_max_unequal_rows_negative_rejected_at_parse_time() -> None:
+    """--max-unequal-rows with a negative value should fail at argparse parse time."""
+    p = build_parser()
+    with pytest.raises(SystemExit) as exc:
+        p.parse_args(
+            [
+                "compare",
+                "--left",
+                "a.csv",
+                "--right",
+                "b.csv",
+                "--on",
+                "id",
+                "--max-unequal-rows",
+                "-1",
+            ]
+        )
+    assert exc.value.code == 2
+
+
+def test_debug_flag_default_false() -> None:
+    p = build_parser()
+    args = p.parse_args(
+        ["compare", "--left", "a.csv", "--right", "b.csv", "--on", "id"]
+    )
+    assert args.debug is False
+
+
+def test_debug_flag_set_true() -> None:
+    p = build_parser()
+    args = p.parse_args(
+        ["--debug", "compare", "--left", "a.csv", "--right", "b.csv", "--on", "id"]
+    )
+    assert args.debug is True
