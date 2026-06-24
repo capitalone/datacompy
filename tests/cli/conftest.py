@@ -34,7 +34,7 @@ def cli(
         try:
             code = main(argv)
         except SystemExit as exc:
-            code = int(exc.code) if exc.code is not None else 0
+            code = int(exc.code) if isinstance(exc.code, int) else 2
         captured = capsys.readouterr()
         return code, captured.out, captured.err
 
