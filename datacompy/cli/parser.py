@@ -125,7 +125,7 @@ def _add_compare_subparser(
         dest="on",
         default=None,
         metavar="COL",
-        help="Join column name.  Repeat for composite keys: --on id --on date.",
+        help="Join column name (required unless --on-index is used).  Repeat for composite keys: --on id --on date.",
     )
     keys.add_argument(
         "--on-index",
@@ -140,7 +140,7 @@ def _add_compare_subparser(
         "--backend",
         choices=["pandas", "polars", "spark", "snowflake"],
         default="polars",
-        help="Comparison backend.  Default: polars.",
+        help="Comparison backend.  Polars is fast and the default; use Pandas for index-based joins or wider ecosystem compatibility.  Default: polars.",
     )
 
     # ---- tolerances & flags ----------------------------------------------------
@@ -269,7 +269,10 @@ def _add_compare_subparser(
         default=None,
         metavar="PATH",
         help="Path to a JSON file with Snowflake connection parameters. "
-        "Overrides SNOWFLAKE_* environment variables (Snowflake backend only).",
+        "Overrides environment variables: SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, "
+        "SNOWFLAKE_PASSWORD (or SNOWFLAKE_AUTHENTICATOR for SSO), and optionally "
+        "SNOWFLAKE_ROLE, SNOWFLAKE_WAREHOUSE, SNOWFLAKE_DATABASE, SNOWFLAKE_SCHEMA "
+        "(Snowflake backend only).",
     )
 
     cmp.set_defaults(func=run_compare)
