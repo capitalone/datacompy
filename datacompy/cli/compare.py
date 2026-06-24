@@ -99,15 +99,16 @@ def _build_backend(args: CompareArgs, stack: ExitStack) -> BaseCompare:
     """
     if args.backend == "pandas":
         return _build_pandas(args)
-    if args.backend == "polars":
+    elif args.backend == "polars":
         return _build_polars(args)
-    if args.backend == "spark":
+    elif args.backend == "spark":
         return _build_spark(args, stack)
-    if args.backend == "snowflake":
+    elif args.backend == "snowflake":
         return _build_snowflake(args, stack)
-    raise BadArgsError(
-        f"Unknown backend: {args.backend!r}"
-    )  # unreachable (argparse choices=)
+    else:
+        raise BadArgsError(
+            f"Unknown backend: {args.backend!r}"
+        )  # unreachable — argparse choices= enforces the valid set
 
 
 def _build_pandas(args: CompareArgs) -> BaseCompare:

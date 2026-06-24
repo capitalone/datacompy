@@ -55,5 +55,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except FileNotFoundError as exc:
         if args.debug:
             raise
-        print_error(f"file not found: {exc.filename}")
+        print_error(f"file not found: {exc.filename or 'unknown'}")
         return 2
+    # All other exceptions are unexpected bugs — let them propagate as tracebacks.
+    # Run with --debug to see the full traceback for any error.
