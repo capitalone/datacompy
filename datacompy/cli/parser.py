@@ -19,6 +19,37 @@ import argparse
 from pathlib import Path
 
 import datacompy
+from datacompy.cli.compare import run_compare
+
+
+def _single_char_delimiter(value: str) -> str:
+    r"""Argparse ``type=`` that accepts a single-character delimiter.
+
+    Translates ``\t`` to a real tab so both the shell literal ``$'\t'`` and
+    the string ``\t`` work identically.  Rejects anything that is not exactly
+    one character after translation.
+    """
+    translated = value.replace("\\t", "\t")
+    if len(translated) != 1:
+        raise argparse.ArgumentTypeError(
+            f"--csv-delimiter must be a single character, got {value!r}"
+        )
+    return translated
+
+
+def _non_negative_int(value: str) -> int:
+    """Argparse ``type=`` that accepts a non-negative integer."""
+    try:
+        n = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            f"--max-unequal-rows must be a non-negative integer, got {value!r}"
+        ) from exc
+    if n < 0:
+        raise argparse.ArgumentTypeError(
+            f"--max-unequal-rows must be a non-negative integer, got {n}"
+        )
+    return n
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -31,6 +62,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--version",
         action="version",
         version=f"%(prog)s {datacompy.__version__}",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="Re-raise unexpected exceptions instead of printing a friendly message. "
+        "Useful when filing bug reports.",
     )
 
     sub = parser.add_subparsers(dest="command", required=True)
@@ -70,6 +108,7 @@ def _add_compare_subparser(
     )
     inp.add_argument(
         "--csv-delimiter",
+        type=_single_char_delimiter,
         default=",",
         metavar="CHAR",
         help=(
@@ -178,7 +217,7 @@ def _add_compare_subparser(
     )
     report.add_argument(
         "--max-unequal-rows",
-        type=int,
+        type=_non_negative_int,
         default=None,
         metavar="N",
         help=(
@@ -232,7 +271,5 @@ def _add_compare_subparser(
         help="Path to a JSON file with Snowflake connection parameters. "
         "Overrides SNOWFLAKE_* environment variables (Snowflake backend only).",
     )
-
-    from datacompy.cli.commands.compare import run_compare
 
     cmp.set_defaults(func=run_compare)
