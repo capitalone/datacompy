@@ -23,6 +23,7 @@ from pathlib import Path
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+import pytest
 
 
 def test_match_exits_0(
@@ -482,3 +483,34 @@ def test_single_char_delimiter_is_accepted(
         ]
     )
     assert code == 0
+
+
+# ---------------------------------------------------------------------------
+# --debug flag
+# ---------------------------------------------------------------------------
+
+
+def test_debug_flag_re_raises_cli_error(
+    tmp_path: Path,
+) -> None:
+    """--debug must cause CLIError subclasses to propagate as real exceptions
+    rather than being swallowed into a friendly exit-2 message."""
+    from datacompy.cli import main
+    from datacompy.cli.errors import BadArgsError
+
+    with pytest.raises(BadArgsError):
+        main(
+            [
+                "--debug",
+                "compare",
+                "--left",
+                str(tmp_path / "a.csv"),
+                "--right",
+                str(tmp_path / "b.csv"),
+                "--on",
+                "id",
+                "--on-index",  # mutually exclusive with --on -- triggers BadArgsError
+                "--backend",
+                "pandas",
+            ]
+        )

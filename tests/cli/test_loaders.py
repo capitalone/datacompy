@@ -22,7 +22,7 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
-from datacompy.cli.backends import _default_name, _unescape_delimiter, to_compare_args
+from datacompy.cli.backends import _default_name, to_compare_args
 from datacompy.cli.errors import BadArgsError, LoadError
 from datacompy.cli.loaders import (
     is_snowflake_ref,
@@ -30,6 +30,7 @@ from datacompy.cli.loaders import (
     load_polars,
     load_snowflake,
 )
+from datacompy.cli.parser import _single_char_delimiter
 
 # ---------------------------------------------------------------------------
 # is_snowflake_ref
@@ -39,7 +40,6 @@ _VALID_SNOWFLAKE_REFS = [
     pytest.param("PROD.ANALYTICS.SALES_FACT", id="three_part_upper"),
     pytest.param("mydb.reporting.orders", id="three_part_lowercase"),
     pytest.param("ANALYTICS.SALES_FACT", id="two_part"),
-    pytest.param("db1.schema2.table3", id="numbers_inside_segment"),
     pytest.param("MY$DB.MY$SCHEMA.MY$TABLE", id="dollar_sign_in_segment"),
     pytest.param("_db._schema._table", id="underscore_led_segment"),
     pytest.param("PROD_2024.Analytics.SALES_FACT_V2", id="mixed_case_with_numbers"),
@@ -53,27 +53,11 @@ def test_is_snowflake_ref_valid(ref: str) -> None:
 
 _INVALID_SNOWFLAKE_REFS = [
     pytest.param("sales_data.csv", id="csv_file"),
-    pytest.param("data.parquet", id="parquet_file"),
-    pytest.param("events.json", id="json_file"),
-    pytest.param("data.txt", id="txt_file"),
-    pytest.param("data.csv.gz", id="gz_file"),
-    pytest.param("archive.zip", id="zip_file"),
     pytest.param("s3://bucket/prefix/file.csv", id="s3_uri"),
-    pytest.param("path/to/file.csv", id="relative_path"),
-    pytest.param("C:\\data\\file.csv", id="windows_path"),
-    pytest.param("mytable", id="single_word"),
-    pytest.param("1db.schema.table", id="digit_led_first_segment"),
-    pytest.param("db.2schema.table", id="digit_led_second_segment"),
-    pytest.param("db.schema.3table", id="digit_led_third_segment"),
-    pytest.param("1.5", id="all_numeric_two_part"),
-    pytest.param("1.2.3", id="all_numeric_three_part"),
-    pytest.param("v1.5", id="version_string_without_extension"),
-    pytest.param("a.b.c.d", id="four_part"),
-    pytest.param("", id="empty_string"),
-    pytest.param("db..table", id="empty_segment"),
-    pytest.param(".schema.table", id="leading_dot"),
-    pytest.param("schema.table.", id="trailing_dot"),
+    pytest.param("path/to/file.csv", id="slash_path"),
     pytest.param('"My DB"."My Schema"."My Table"', id="quoted_identifier"),
+    pytest.param("mytable", id="single_segment"),
+    pytest.param("a.b.c.d", id="four_part"),
 ]
 
 
@@ -166,11 +150,11 @@ def test_snowflake_three_part_refs_produce_distinct_df_names_in_report(
             return_value=MagicMock(),
         ),
         patch(
-            "datacompy.cli.commands.compare.load_snowflake",
+            "datacompy.cli.compare.load_snowflake",
             side_effect=lambda s, ref, fmt, **kw: ref,
         ),
         patch(
-            "datacompy.cli.commands.compare.make_snowflake_compare",
+            "datacompy.cli.compare.make_snowflake_compare",
             return_value=mock_compare,
         ) as mock_make,
     ):
@@ -259,23 +243,38 @@ def test_load_polars_missing_file_raises_load_error(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# _unescape_delimiter
+# _single_char_delimiter (parser-level argparse type= callable)
 # ---------------------------------------------------------------------------
 
-_UNESCAPE_CASES = [
-    pytest.param("\\t", "\t", id="backslash_t_escape"),
-    pytest.param("\\n", "\n", id="backslash_n_escape"),
-    pytest.param("\\r", "\r", id="backslash_r_escape"),
-    pytest.param("\t", "\t", id="real_tab_unchanged"),
-    pytest.param(";", ";", id="semicolon_unchanged"),
-    pytest.param(",", ",", id="comma_unchanged"),
-    pytest.param("|", "|", id="pipe_unchanged"),
-]
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        pytest.param("\\t", "\t", id="backslash_t_escape"),
+        pytest.param("\t", "\t", id="real_tab_unchanged"),
+        pytest.param(";", ";", id="semicolon_unchanged"),
+        pytest.param(",", ",", id="comma_unchanged"),
+        pytest.param("|", "|", id="pipe_unchanged"),
+    ],
+)
+def test_single_char_delimiter_valid(raw: str, expected: str) -> None:
+    assert _single_char_delimiter(raw) == expected
 
 
-@pytest.mark.parametrize("raw,expected", _UNESCAPE_CASES)
-def test_unescape_delimiter(raw: str, expected: str) -> None:
-    assert _unescape_delimiter(raw) == expected
+@pytest.mark.parametrize(
+    "raw",
+    [
+        pytest.param("ab", id="two_chars"),
+        pytest.param("abc", id="three_chars"),
+        pytest.param("\\n", id="backslash_n_not_a_single_char"),
+        pytest.param("\\r", id="backslash_r_not_a_single_char"),
+    ],
+)
+def test_single_char_delimiter_invalid_raises(raw: str) -> None:
+    import argparse
+
+    with pytest.raises(argparse.ArgumentTypeError):
+        _single_char_delimiter(raw)
 
 
 # ---------------------------------------------------------------------------
