@@ -16,17 +16,34 @@
 """Shared fixtures for CLI tests."""
 
 import csv
+from collections.abc import Callable, Generator
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
 from datacompy.cli import main
 
 
 @pytest.fixture()
-def tmp_csv(tmp_path: Path) -> Generator[tuple[Path, Path], None, None]:
-    """Write two identical CSV files; return (left_path, right_path)."""
-    rows = [["id", "val"], ["1", "a"], ["2", "b"], ["3", "c"]]
+def cli(
+    capsys: pytest.CaptureFixture[str],
+) -> Callable[[list[str]], tuple[int, str, str]]:
+    """Return a callable that runs ``main(argv)`` and returns ``(exit_code, stdout, stderr)``."""
+
+    def _run(argv: list[str]) -> tuple[int, str, str]:
+        code = main(argv)
+        captured = capsys.readouterr()
+        return code, captured.out, captured.err
+
+    return _run
+
+
+@pytest.fixture()
+def csv_match(tmp_path: Path) -> Generator[tuple[Path, Path], None, None]:
+    """Yield two identical 2-row CSVs ``(left, right)``."""
+    rows = [["id", "val"], ["1", "a"], ["2", "b"]]
     left = tmp_path / "left.csv"
     right = tmp_path / "right.csv"
     for p in (left, right):
@@ -36,20 +53,104 @@ def tmp_csv(tmp_path: Path) -> Generator[tuple[Path, Path], None, None]:
 
 
 @pytest.fixture()
-def tmp_csv_mismatch(tmp_path: Path) -> Generator[tuple[Path, Path], None, None]:
-    """Write two CSVs that differ on row 2."""
+def csv_mismatch(tmp_path: Path) -> Generator[tuple[Path, Path], None, None]:
+    """Yield two 2-row CSVs that differ on row 2 ``(left, right)``."""
     left = tmp_path / "left.csv"
     right = tmp_path / "right.csv"
-    rows_l = [["id", "val"], ["1", "a"], ["2", "b"]]
-    rows_r = [["id", "val"], ["1", "a"], ["2", "X"]]
-    for p, rows in ((left, rows_l), (right, rows_r)):
-        with p.open("w", newline="") as f:
-            csv.writer(f).writerows(rows)
+    with left.open("w", newline="") as f:
+        csv.writer(f).writerows([["id", "val"], ["1", "a"], ["2", "b"]])
+    with right.open("w", newline="") as f:
+        csv.writer(f).writerows([["id", "val"], ["1", "a"], ["2", "X"]])
     yield left, right
 
 
-def run(argv: list[str], capsys: pytest.CaptureFixture[str]) -> tuple[int, str, str]:  # type: ignore[type-arg]
-    """Call ``main(argv)`` and return ``(exit_code, stdout, stderr)``."""
-    code = main(argv)
-    captured = capsys.readouterr()
-    return code, captured.out, captured.err
+@pytest.fixture()
+def csv_pair(
+    tmp_path: Path,
+) -> Callable[[str, str], tuple[Path, Path]]:
+    """Return a factory that writes two CSV strings to ``left.csv`` / ``right.csv``."""
+
+    def _make(left_text: str, right_text: str) -> tuple[Path, Path]:
+        left = tmp_path / "left.csv"
+        right = tmp_path / "right.csv"
+        left.write_text(left_text)
+        right.write_text(right_text)
+        return left, right
+
+    return _make
+
+
+@pytest.fixture()
+def tsv_pair(
+    tmp_path: Path,
+) -> Callable[[list[list[str]], list[list[str]]], tuple[Path, Path]]:
+    """Return a factory that writes two TSV files to ``left.csv`` / ``right.csv``."""
+
+    def _make(
+        left_rows: list[list[str]], right_rows: list[list[str]]
+    ) -> tuple[Path, Path]:
+        left = tmp_path / "left.csv"
+        right = tmp_path / "right.csv"
+        for path, rows in ((left, left_rows), (right, right_rows)):
+            with path.open("w", newline="") as f:
+                csv.writer(f, delimiter="\t").writerows(rows)
+        return left, right
+
+    return _make
+
+
+@pytest.fixture()
+def mock_snowflake_session() -> MagicMock:
+    """Return a MagicMock Snowpark session with db=PROD, schema=PUBLIC."""
+    sess = MagicMock()
+    sess.get_current_database.return_value = "PROD"
+    sess.get_current_schema.return_value = "PUBLIC"
+    sess.write_pandas.return_value = None
+    return sess
+
+
+@pytest.fixture()
+def mock_snowflake_compare() -> Callable[
+    [bool],
+    Any,
+]:
+    """Return a factory that produces a (mock_compare, ctx_manager) pair.
+
+    Usage::
+
+        def test_something(mock_snowflake_compare, cli):
+            mock_compare, patches = mock_snowflake_compare(matches=True)
+            with patches:
+                code, out, err = cli([...])
+    """
+
+    @contextmanager
+    def _patches(mock_compare: MagicMock) -> Generator[None, None, None]:
+        with (
+            patch(
+                "datacompy.cli.sessions.get_snowflake_session",
+                return_value=MagicMock(),
+            ),
+            patch(
+                "datacompy.cli.commands.compare.load_snowflake",
+                return_value="DB.SCHEMA.TABLE",
+            ),
+            patch(
+                "datacompy.cli.commands.compare.make_snowflake_compare",
+                return_value=mock_compare,
+            ),
+        ):
+            yield
+
+    def _factory(matches: bool = True) -> tuple[MagicMock, Any]:
+        mock_compare = MagicMock()
+        mock_compare.build_report_data.return_value = MagicMock(
+            render=MagicMock(
+                return_value="DataComPy Comparison\nMatch: " + str(matches)
+            ),
+            row_summary=MagicMock(unequal_rows=0 if matches else 1),
+        )
+        mock_compare.matches.return_value = matches
+        return mock_compare, _patches(mock_compare)
+
+    return _factory

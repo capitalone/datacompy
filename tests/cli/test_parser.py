@@ -25,8 +25,8 @@ def test_compare_defaults() -> None:
         ["compare", "--left", "a.csv", "--right", "b.csv", "--on", "id"]
     )
     assert args.backend == "polars"
-    assert args.abs_tol == 0.0
-    assert args.rel_tol == 0.0
+    assert args.abs_tol == pytest.approx(0.0)
+    assert args.rel_tol == pytest.approx(0.0)
     assert args.ignore_spaces is False
     assert args.ignore_case is False
     assert args.ignore_extra_columns is False
@@ -42,23 +42,23 @@ def test_compare_defaults() -> None:
     assert args.quiet is False
 
 
-def test_compare_backend_choices() -> None:
+@pytest.mark.parametrize("backend", ["pandas", "polars", "spark", "snowflake"])
+def test_compare_backend_choices(backend: str) -> None:
     p = build_parser()
-    for backend in ("pandas", "polars", "spark", "snowflake"):
-        args = p.parse_args(
-            [
-                "compare",
-                "--left",
-                "a.csv",
-                "--right",
-                "b.csv",
-                "--on",
-                "id",
-                "--backend",
-                backend,
-            ]
-        )
-        assert args.backend == backend
+    args = p.parse_args(
+        [
+            "compare",
+            "--left",
+            "a.csv",
+            "--right",
+            "b.csv",
+            "--on",
+            "id",
+            "--backend",
+            backend,
+        ]
+    )
+    assert args.backend == backend
 
 
 def test_compare_invalid_backend_exits() -> None:
@@ -80,23 +80,23 @@ def test_compare_invalid_backend_exits() -> None:
     assert exc.value.code == 2
 
 
-def test_compare_format_choices() -> None:
+@pytest.mark.parametrize("fmt", ["csv", "parquet", "json"])
+def test_compare_format_choices(fmt: str) -> None:
     p = build_parser()
-    for fmt in ("csv", "parquet", "json"):
-        args = p.parse_args(
-            [
-                "compare",
-                "--left",
-                "a.csv",
-                "--right",
-                "b.csv",
-                "--on",
-                "id",
-                "--format",
-                fmt,
-            ]
-        )
-        assert args.format == fmt
+    args = p.parse_args(
+        [
+            "compare",
+            "--left",
+            "a.csv",
+            "--right",
+            "b.csv",
+            "--on",
+            "id",
+            "--format",
+            fmt,
+        ]
+    )
+    assert args.format == fmt
 
 
 def test_compare_multi_on_columns() -> None:
