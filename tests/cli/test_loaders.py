@@ -16,6 +16,7 @@
 """Unit tests for datacompy/cli/loaders.py and backends._default_name / _unescape_delimiter."""
 
 import argparse
+import importlib.util
 from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -382,7 +383,13 @@ def test_csv_delimiter_real_tab_also_works(
 # load_snowflake staging
 # ---------------------------------------------------------------------------
 
+_snowflake_missing = importlib.util.find_spec("snowflake") is None
+_skip_no_snowflake = pytest.mark.skipif(
+    _snowflake_missing, reason="snowflake.snowpark not installed"
+)
 
+
+@_skip_no_snowflake
 def test_load_snowflake_staging_raises_error_when_no_database(
     mock_snowflake_session: MagicMock,
     tmp_path: Path,
@@ -396,6 +403,7 @@ def test_load_snowflake_staging_raises_error_when_no_database(
         load_snowflake(mock_snowflake_session, str(csv_file), "csv")
 
 
+@_skip_no_snowflake
 def test_load_snowflake_staging_raises_error_when_no_schema(
     mock_snowflake_session: MagicMock,
     tmp_path: Path,
@@ -409,6 +417,7 @@ def test_load_snowflake_staging_raises_error_when_no_schema(
         load_snowflake(mock_snowflake_session, str(csv_file), "csv")
 
 
+@_skip_no_snowflake
 def test_load_snowflake_staging_returns_valid_ref_when_both_set(
     mock_snowflake_session: MagicMock,
     tmp_path: Path,
@@ -425,6 +434,7 @@ def test_load_snowflake_staging_returns_valid_ref_when_both_set(
     assert parts[2].startswith("DATACOMPY_TMP_")
 
 
+@_skip_no_snowflake
 def test_load_snowflake_csv_delimiter_is_honoured_when_staging(
     mock_snowflake_session: MagicMock,
     tmp_path: Path,
