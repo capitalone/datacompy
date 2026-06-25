@@ -74,7 +74,6 @@ scripts.datacompy = "datacompy.cli:main"
 packages = [
   "datacompy",
   "datacompy.cli",
-  "datacompy.cli.commands",
   "datacompy.comparator",
   "datacompy.templates",
 ]
