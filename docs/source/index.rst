@@ -16,6 +16,7 @@ Contents
     Polars Usage <polars_usage>
     Template Guide <template_guide>
     Report API <report_api>
+    CLI Usage <cli>
     Benchmarks <benchmark>
     Developer Instructions <developer_instructions>
 
