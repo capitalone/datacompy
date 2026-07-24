@@ -17,9 +17,9 @@ jobs:
   lint-and-format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
           python-version: "3.12"
       - name: Install dependencies
@@ -47,13 +47,13 @@ jobs:
       PANDAS_VERSION: ${{ matrix.pandas-version }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Setup Java JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287  # v5.3.0
         with:
           java-version: "17"
           distribution: "adopt"
@@ -92,13 +92,13 @@ jobs:
       PANDAS_VERSION: ${{ matrix.pandas-version }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Setup Java JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287  # v5.3.0
         with:
           java-version: "17"
           distribution: "adopt"
@@ -129,9 +129,9 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install datacompy

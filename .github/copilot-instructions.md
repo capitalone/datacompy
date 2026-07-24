@@ -40,6 +40,7 @@ This guide provides essential context for AI coding agents to be productive in t
 - **Comparison Usage**:
   ```python
   from datacompy import PandasCompare
+
   compare = PandasCompare(df1, df2, join_columns=[...])
   print(compare.report())
   ```

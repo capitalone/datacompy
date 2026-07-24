@@ -28,15 +28,14 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
-  "Programming Language :: Python :: 3.14",
 ]
 dynamic = [ "version" ]
 dependencies = [
   "jinja2>=3",
-  "numpy<2.5,>=1.26.4",
-  "ordered-set<=4.1,>=4.0.2",
-  "pandas<3.1,>=2.2",
-  "polars[pandas]<1.42,>=0.20.4",
+  "numpy>=1.26.4,<2.5",
+  "ordered-set>=4.0.2,<=4.1",
+  "pandas>=2.2,<3.1",
+  "polars[pandas]>=0.20.4,<1.42",
 ]
 optional-dependencies.build = [ "build", "twine", "wheel" ]
 optional-dependencies.dev = [
@@ -51,23 +50,24 @@ optional-dependencies.dev = [
 optional-dependencies.docs = [ "furo", "myst-parser", "sphinx" ]
 optional-dependencies.edgetest = [ "edgetest", "edgetest-conda" ]
 optional-dependencies.qa = [ "mypy", "pandas-stubs", "pre-commit", "ruff" ]
-optional-dependencies.snowflake = [ "snowflake-snowpark-python<=1.50.1,>=1.37" ]
+optional-dependencies.snowflake = [ "snowflake-snowpark-python>=1.37,<=1.50.1" ]
 optional-dependencies.spark = [
-  "pyspark[connect]!=4,<=4.1.1,>=3.5; python_version<='3.11'",
+  "pyspark[connect]>=3.5,!=4,<=4.1.1; python_version<='3.11'",
   "pyspark[connect]>=4; python_version>='3.12'",
 ]
 optional-dependencies.tests = [
   "pytest",
   "pytest-benchmark",
   "pytest-cov",
-  "pytest-profiling"
+  "pytest-profiling",
 ]
 optional-dependencies.tests-spark = [ "pytest-spark" ]
 urls."Bug Tracker" = "https://github.com/capitalone/datacompy/issues"
-urls."Source Code" = "https://github.com/capitalone/datacompy"
 urls.Documentation = "https://capitalone.github.io/datacompy/"
 urls.Homepage = "https://github.com/capitalone/datacompy"
 urls.Repository = "https://github.com/capitalone/datacompy.git"
+
+urls."Source Code" = "https://github.com/capitalone/datacompy"
 
 [tool.setuptools]
 packages = [ "datacompy", "datacompy.comparator", "datacompy.templates" ]
@@ -84,18 +84,18 @@ target-version = "py312"
 src = [ "src" ]
 extend-include = [ "*.ipynb" ]
 lint.select = [
-  "B",      # flake8-bugbear
+  "B", # flake8-bugbear
   # "A", # flake8-builtins
-  "C4",     # flake8-comprehensions
-  "D",      # pydocstyle
-  "E",      # pycodestyle errors
-  "F",      # pyflakes
-  "I",      # isort
-  "LOG",    # flake8-logging
-  "NPY",    # numpy rules
-  "RUF",    # Ruff errors
+  "C4",  # flake8-comprehensions
+  "D",   # pydocstyle
+  "E",   # pycodestyle errors
+  "F",   # pyflakes
+  "I",   # isort
+  "LOG", # flake8-logging
+  "NPY", # numpy rules
+  "RUF", # Ruff errors
   # "ARG", # flake8-unused-arguments
-  "SIM",    # flake8-simplify
+  "SIM", # flake8-simplify
   # "C901", # mccabe complexity
   # "G", # flake8-logging-format
   "T20",    # flake8-print
@@ -104,18 +104,20 @@ lint.select = [
   "W",      # pycodestyle warnings
 ]
 lint.ignore = [
-  "D206",   # Docstring indentation. Using formatter instead.
-  "D300",   # Use triple single quotes. Using formatter instead.
-  "E111",   # Check indentation level. Using formatter instead.
-  "E114",   # Check indentation level. Using formatter instead.
-  "E117",   # Check indentation level. Using formatter instead.
-  "E203",   # Check whitespace. Using formatter instead.
-  "E501",   # Line too long. Using formatter instead.
-  "RUF067", # non-empty-init-module
-  "SIM105", # Use `contextlib.suppress(FileNotFoundError)` instead of `try`-`except`-`pass`
-  "SIM108", # Use ternary operator instead of if-else blocks.
-  "UP006",  # `typing.x` is deprecated, use `x` instead
-  "UP035",  # `typing.x` is deprecated, use `x` instead
+  "D206",                    # Docstring indentation. Using formatter instead.
+  "D300",                    # Use triple single quotes. Using formatter instead.
+  "E111",                    # Check indentation level. Using formatter instead.
+  "E114",                    # Check indentation level. Using formatter instead.
+  "E117",                    # Check indentation level. Using formatter instead.
+  "E203",                    # Check whitespace. Using formatter instead.
+  "E501",                    # Line too long. Using formatter instead.
+  "noqa-comments",
+  "RUF067",                  # non-empty-init-module
+  "rule-codes-in-selectors",
+  "SIM105",                  # Use `contextlib.suppress(FileNotFoundError)` instead of `try`-`except`-`pass`
+  "SIM108",                  # Use ternary operator instead of if-else blocks.
+  "UP006",                   # `typing.x` is deprecated, use `x` instead
+  "UP035",                   # `typing.x` is deprecated, use `x` instead
 ]
 lint.per-file-ignores."**/{tests,docs}/*" = [ "ARG", "D", "E402", "F841" ]
 lint.per-file-ignores."__init__.py" = [ "E402" ]
