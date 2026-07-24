@@ -46,6 +46,4 @@ class PandasBooleanComparator(BaseComparator):
         if col1.shape != col2.shape:
             return None
 
-        return (
-            col1.eq(col2) | (col1.isna() & col2.isna())
-        ).fillna(False).astype(bool)
+        return (col1.eq(col2) | (col1.isna() & col2.isna())).fillna(False).astype(bool)
