@@ -73,13 +73,13 @@ compare = PandasCompare(df1, df2, join_columns="id")
 
 # Access structured data directly
 data = compare.build_report_data()
-print(data.row_summary.unequal_rows)        # 1
+print(data.row_summary.unequal_rows)  # 1
 print(data.mismatch_stats.stats[0].column)  # 'val'
 
 # Render / export — methods live on ReportData itself
-print(data.render())      # same text as compare.report()
+print(data.render())  # same text as compare.report()
 data.save("report.html")  # HTML file
-data.to_dict()            # JSON-serializable dict
+data.to_dict()  # JSON-serializable dict
 ```
 
 See the [Report API documentation](https://capitalone.github.io/datacompy/report_api.html) for the full reference.

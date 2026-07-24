@@ -36,6 +36,7 @@ from datacompy.base import (
 )
 from datacompy.comparator import (
     PandasArrayLikeComparator,
+    PandasBooleanComparator,
     PandasNumericComparator,
     PandasStringComparator,
 )
@@ -47,6 +48,7 @@ LOG = logging.getLogger(__name__)
 
 _PANDAS_DEFAULT_COMPARATORS = [
     PandasArrayLikeComparator(),
+    PandasBooleanComparator(),
     PandasNumericComparator(),
     PandasStringComparator(),
 ]
@@ -597,7 +599,6 @@ class PandasCompare(BaseCompare):
             A sample of the intersection dataframe, containing only the
             "pertinent" columns, for rows that don't match on the provided
             column.
-
         None
             When the column being requested is not an intersecting column between dataframes.
         """
@@ -779,7 +780,9 @@ def columns_equal(
         comparators_ = _PANDAS_DEFAULT_COMPARATORS
 
     for comparator in comparators_:
-        if isinstance(comparator, PandasNumericComparator):
+        if isinstance(comparator, PandasBooleanComparator):
+            compare = comparator.compare(col_1, col_2)
+        elif isinstance(comparator, PandasNumericComparator):
             compare = comparator.compare(col_1, col_2, rtol=rel_tol, atol=abs_tol)
         elif isinstance(comparator, PandasStringComparator):
             compare = comparator.compare(
