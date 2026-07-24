@@ -31,19 +31,43 @@ class PandasBooleanComparator(BaseComparator):
         col2: pd.Series,
         **kwargs: Any,
     ) -> pd.Series | None:
-        """Compare columns when either Pandas dtype is Boolean.
+        """Compare columns when either column holds Boolean values.
 
         Boolean comparisons are exact and null-safe. When a Boolean column is
         compared with another dtype, normal Pandas equality semantics are used;
         for example, ``True`` matches ``1`` and ``False`` matches ``0``.
+
+        Parameters
+        ----------
+        col1 : pd.Series
+            The first Pandas Series to compare.
+        col2 : pd.Series
+            The second Pandas Series to compare.
+        **kwargs : Any
+            Unused; accepted so this comparator matches the pipeline signature.
+
+        Returns
+        -------
+        pd.Series
+            A Pandas Series of booleans indicating whether the values in `col1`
+            and `col2` are equal. Two nulls are treated as equal.
+        None
+            if the columns are not comparable.
+
+        Notes
+        -----
+        Detection uses ``infer_dtype`` rather than the column ``dtype`` because
+        Pandas represents Boolean data as ``object`` in common cases: a Boolean
+        column containing a null, and any Boolean column that has been through
+        an outer merge (which upcasts ``bool`` to ``object``).
         """
-        if not (
-            pd.api.types.is_bool_dtype(col1.dtype)
-            or pd.api.types.is_bool_dtype(col2.dtype)
-        ):
+        if col1.shape != col2.shape:
             return None
 
-        if col1.shape != col2.shape:
+        if not (
+            pd.api.types.infer_dtype(col1, skipna=True) == "boolean"
+            or pd.api.types.infer_dtype(col2, skipna=True) == "boolean"
+        ):
             return None
 
         return (col1.eq(col2) | (col1.isna() & col2.isna())).fillna(False).astype(bool)
