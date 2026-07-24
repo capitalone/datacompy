@@ -16,10 +16,9 @@
 """Regression tests for Pandas Boolean comparisons."""
 
 import pandas as pd
-from pandas.testing import assert_series_equal
-
 from datacompy.comparator import PandasBooleanComparator
 from datacompy.pandas import PandasCompare, columns_equal
+from pandas.testing import assert_series_equal
 
 
 def test_native_boolean_columns_equal():
