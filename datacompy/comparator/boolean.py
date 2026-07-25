@@ -345,10 +345,11 @@ class SnowflakeBooleanComparator(BaseComparator):
 
         Notes
         -----
-        The Boolean/Boolean path is verified against a live Snowflake session.
-        Note that Snowpark's local testing mode does not reproduce it: its
-        ``eqNullSafe`` returns ``True`` for every row, so a local run cannot
-        confirm the null semantics asserted here.
+        Both paths are verified against a live Snowflake session. Snowpark's
+        local testing mode does not fully reproduce them: its ``eqNullSafe``
+        returns ``True`` for every row, and it truncates high-precision decimals
+        when a DataFrame is created, so a local run cannot confirm the null or
+        precision semantics asserted in the tests.
 
         Snowflake implicitly converts between BOOLEAN and NUMBER, and the
         direction of that conversion would decide whether ``2`` matches
