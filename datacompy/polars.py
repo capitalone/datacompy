@@ -37,6 +37,7 @@ from datacompy.base import (
 )
 from datacompy.comparator import (
     PolarsArrayLikeComparator,
+    PolarsBooleanComparator,
     PolarsNumericComparator,
     PolarsStringComparator,
 )
@@ -50,6 +51,7 @@ LIST_TYPE = ["List", "Array"]
 
 _POLARS_DEFAULT_COMPARATORS = [
     PolarsArrayLikeComparator(),
+    PolarsBooleanComparator(),
     PolarsNumericComparator(),
     PolarsStringComparator(),
 ]

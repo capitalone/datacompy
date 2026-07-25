@@ -41,6 +41,7 @@ from datacompy.base import (
 )
 from datacompy.comparator import (
     SparkArrayLikeComparator,
+    SparkBooleanComparator,
     SparkNumericComparator,
     SparkStringComparator,
 )
@@ -52,6 +53,7 @@ LOG = logging.getLogger(__name__)
 
 _SPARK_DEFAULT_COMPARATORS = [
     SparkArrayLikeComparator(),
+    SparkBooleanComparator(),
     SparkNumericComparator(),
     SparkStringComparator(),
 ]

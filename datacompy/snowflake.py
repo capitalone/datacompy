@@ -64,6 +64,7 @@ from datacompy.base import (
 )
 from datacompy.comparator import (
     SnowflakeArrayLikeComparator,
+    SnowflakeBooleanComparator,
     SnowflakeNumericComparator,
     SnowflakeStringComparator,
 )
@@ -84,6 +85,7 @@ NUMERIC_SNOWPARK_TYPES = [
 
 _SNOWFLAKE_DEFAULT_COMPARATORS = [
     SnowflakeArrayLikeComparator(),
+    SnowflakeBooleanComparator(),
     SnowflakeNumericComparator(),
     SnowflakeStringComparator(),
 ]
