@@ -41,6 +41,7 @@ from datacompy.base import (
 )
 from datacompy.comparator import (
     SparkArrayLikeComparator,
+    SparkBooleanComparator,
     SparkNumericComparator,
     SparkStringComparator,
 )
@@ -52,6 +53,7 @@ LOG = logging.getLogger(__name__)
 
 _SPARK_DEFAULT_COMPARATORS = [
     SparkArrayLikeComparator(),
+    SparkBooleanComparator(),
     SparkNumericComparator(),
     SparkStringComparator(),
 ]
@@ -957,7 +959,9 @@ def columns_equal(
         comparators_ = _SPARK_DEFAULT_COMPARATORS
 
     for comparator in comparators_:
-        if isinstance(comparator, SparkNumericComparator):
+        if isinstance(comparator, SparkBooleanComparator):
+            compare = comparator.compare(dataframe, col_1, col_2)
+        elif isinstance(comparator, SparkNumericComparator):
             compare = comparator.compare(
                 dataframe, col_1, col_2, rtol=rel_tol, atol=abs_tol
             )

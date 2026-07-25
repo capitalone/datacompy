@@ -22,6 +22,20 @@ import polars as pl
 
 from datacompy.comparator.base import BaseComparator
 
+PYSPARK_BOOLEAN_TYPE = "boolean"
+
+# Optional Spark dependencies
+try:
+    import pyspark as ps
+    import pyspark.sql.functions as psf
+
+    from datacompy.comparator.numeric import NUMERIC_PYSPARK_TYPES
+    from datacompy.comparator.utility import get_spark_column_dtypes
+except ImportError:
+    ps = None
+    psf = None
+    NUMERIC_PYSPARK_TYPES = None
+
 
 class PandasBooleanComparator(BaseComparator):
     """Comparator for Boolean columns in Pandas."""
@@ -125,3 +139,81 @@ class PolarsBooleanComparator(BaseComparator):
             # Boolean against a List, Date, Struct, ...). Signal that this
             # comparator cannot handle the pair so the pipeline continues.
             return None
+
+
+class SparkBooleanComparator(BaseComparator):
+    """Comparator for Boolean columns in PySpark."""
+
+    def compare(
+        self,
+        dataframe: "ps.sql.DataFrame",
+        col1: str,
+        col2: str,
+        **kwargs: Any,
+    ) -> "ps.sql.Column | None":
+        """Compare two columns in a PySpark DataFrame when either is Boolean.
+
+        Boolean comparisons are exact and null-safe. A Boolean column may also
+        be compared against a numeric column, in which case Spark casts the
+        Boolean to the numeric type; for example, ``True`` matches ``1`` and
+        ``False`` matches ``0``.
+
+        Parameters
+        ----------
+        dataframe : pyspark.sql.DataFrame
+            The PySpark DataFrame containing the columns to compare.
+        col1 : str
+            The name of the first column to compare.
+        col2 : str
+            The name of the second column to compare.
+        **kwargs : Any
+            Unused; accepted so this comparator matches the pipeline signature.
+
+        Returns
+        -------
+        pyspark.sql.Column
+            A Column containing boolean values indicating whether the values in
+            `col1` and `col2` are equal. Two nulls are treated as equal.
+        None
+            Columns are not comparable if neither is Boolean, or if a Boolean is
+            paired with anything other than a numeric type.
+
+        Notes
+        -----
+        Unlike the Pandas and Polars comparators, this one claims only
+        Boolean/Boolean and Boolean/numeric pairs. Spark builds the comparison
+        lazily, so an unsupported pair (Boolean against a date, array, or
+        struct) raises ``AnalysisException`` when the plan is analysed rather
+        than when the Column is constructed, which is too late for this method to
+        catch. Unsupported pairs are therefore rejected up front. Boolean
+        against string is also declined, because Spark would implicitly cast
+        the string to a Boolean and report ``True == 'yes'`` as a match, which
+        the other backends do not.
+
+        The Boolean/numeric case casts both sides to ``double`` rather than
+        relying on Spark's implicit coercion, which is only available with
+        ``spark.sql.ansi.enabled=false``. Under ANSI mode, the default from
+        Spark 4 comparing a Boolean against a numeric raises
+        ``DATATYPE_MISMATCH.BINARY_OP_DIFF_TYPES``. The explicit cast behaves
+        identically under both settings.
+        """
+        base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
+        base_boolean_type = base_dtype == PYSPARK_BOOLEAN_TYPE
+        compare_boolean_type = compare_dtype == PYSPARK_BOOLEAN_TYPE
+        base_numeric_type = any(base_dtype.startswith(t) for t in NUMERIC_PYSPARK_TYPES)
+        compare_numeric_type = any(
+            compare_dtype.startswith(t) for t in NUMERIC_PYSPARK_TYPES
+        )
+
+        if base_boolean_type and compare_boolean_type:
+            when_clause = psf.col(col1).eqNullSafe(psf.col(col2))
+        elif (base_boolean_type and compare_numeric_type) or (
+            compare_boolean_type and base_numeric_type
+        ):
+            when_clause = (
+                psf.col(col1).cast("double").eqNullSafe(psf.col(col2).cast("double"))
+            )
+        else:
+            return None
+
+        return psf.when(when_clause, psf.lit(True)).otherwise(psf.lit(False))
