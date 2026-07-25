@@ -779,6 +779,15 @@ def columns_equal(
         # If no comparators are passed, behave as before.
         comparators_ = _PANDAS_DEFAULT_COMPARATORS
 
+    # Comparison is positional: the result is stamped with col_1's index below.
+    # Most Pandas operations align on labels instead, so a column whose index
+    # differs from col_1's would be compared row-by-label (or reindexed to a
+    # different length). Put col_2 on col_1's labels first so every comparator
+    # sees the same positional pairing. Length mismatches are left alone; the
+    # comparators' own shape guards handle those.
+    if len(col_1) == len(col_2) and not col_1.index.equals(col_2.index):
+        col_2 = col_2.set_axis(col_1.index)
+
     for comparator in comparators_:
         if isinstance(comparator, PandasBooleanComparator):
             compare = comparator.compare(col_1, col_2)

@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from unittest import mock
+
 import pandas as pd
 import polars as pl
 from datacompy.comparator.string import (
@@ -182,3 +184,36 @@ def test_pandas_compare_string_and_date_columns():
     date_col = pd.to_datetime(["2023-01-01", "2023-02-01", "2023-03-01"])
     result = pandas_compare_string_and_date_columns(str_col, date_col)
     assert result.tolist() == [False, False, True]
+
+
+def test_pandas_string_comparator_string_fallback_returns_booleans():
+    """The last-ditch fallback must return booleans, not the index values."""
+    comparator = PandasStringComparator()
+    col1 = pd.Series(["a", "b"], index=[7, 9])
+    col2 = pd.Series(["a", "b"], index=[7, 9])
+
+    # Force every comparison attempt in the string branch to fail so the
+    # fallback is the only path left.
+    with (
+        mock.patch.object(pd.Series, "fillna", side_effect=Exception("boom")),
+        mock.patch.object(pd.Series, "astype", side_effect=Exception("boom")),
+    ):
+        result = comparator.compare(col1, col2)
+
+    assert result.dtype == bool
+    assert result.tolist() == [False, False]
+    assert result.index.tolist() == [7, 9]
+
+
+def test_pandas_string_comparator_mixed_fallback_returns_booleans():
+    """Same fallback, reached through the mixed-dtype branch."""
+    comparator = PandasStringComparator()
+    col1 = pd.Series([1, "a"], index=[7, 9])
+    col2 = pd.Series([1, "a"], index=[7, 9])
+
+    with mock.patch.object(pd.Series, "astype", side_effect=Exception("boom")):
+        result = comparator.compare(col1, col2)
+
+    assert result.dtype == bool
+    assert result.tolist() == [False, False]
+    assert result.index.tolist() == [7, 9]
