@@ -64,6 +64,7 @@ from datacompy.base import (
 )
 from datacompy.comparator import (
     SnowflakeArrayLikeComparator,
+    SnowflakeBooleanComparator,
     SnowflakeNumericComparator,
     SnowflakeStringComparator,
 )
@@ -84,6 +85,7 @@ NUMERIC_SNOWPARK_TYPES = [
 
 _SNOWFLAKE_DEFAULT_COMPARATORS = [
     SnowflakeArrayLikeComparator(),
+    SnowflakeBooleanComparator(),
     SnowflakeNumericComparator(),
     SnowflakeStringComparator(),
 ]
@@ -978,7 +980,9 @@ def columns_equal(
         comparators_ = _SNOWFLAKE_DEFAULT_COMPARATORS
 
     for comparator in comparators_:
-        if isinstance(comparator, SnowflakeNumericComparator):
+        if isinstance(comparator, SnowflakeBooleanComparator):
+            compare = comparator.compare(dataframe, col_1, col_2, col_match)
+        elif isinstance(comparator, SnowflakeNumericComparator):
             compare = comparator.compare(
                 dataframe, col_1, col_2, col_match, rtol=rel_tol, atol=abs_tol
             )
