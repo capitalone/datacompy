@@ -25,6 +25,10 @@ from datacompy.comparator.base import BaseComparator
 PYSPARK_BOOLEAN_TYPE = "boolean"
 SNOWFLAKE_BOOLEAN_TYPE = "boolean"
 
+# Text dtypes a Polars Boolean will silently compare against. Every other
+# non-numeric dtype raises instead, and is handled by the caller's try/except.
+STRING_POLARS_TYPES = (pl.String, pl.Categorical, pl.Enum)
+
 # Optional Spark dependencies
 try:
     import pyspark as ps
@@ -136,11 +140,20 @@ class PolarsBooleanComparator(BaseComparator):
         ``eq_missing`` is used rather than ``==`` because Polars propagates
         nulls through ``==``; ``eq_missing`` treats two nulls as equal and a
         null against a value as unequal.
+
+        Boolean against text is declined, matching the Spark comparator. Polars
+        parses the string when comparing the two, so ``True`` would match
+        ``'true'`` but not ``'True'``, the form ``str(True)`` produces. That
+        casing rule is arbitrary enough to be a trap, and neither Pandas nor
+        Spark reports a match here, so the pair is left to fall through.
         """
         if col1.shape != col2.shape:
             return None
 
         if not (col1.dtype == pl.Boolean or col2.dtype == pl.Boolean):
+            return None
+
+        if col1.dtype in STRING_POLARS_TYPES or col2.dtype in STRING_POLARS_TYPES:
             return None
 
         try:
@@ -155,6 +168,37 @@ class PolarsBooleanComparator(BaseComparator):
 class SparkBooleanComparator(BaseComparator):
     """Comparator for Boolean columns in PySpark."""
 
+    @staticmethod
+    def _boolean_equals_numeric(boolean_col: str, numeric_col: str) -> "ps.sql.Column":
+        """Compare a Boolean column against a numeric column's 1/0 equivalents.
+
+        The numeric side is compared against integer literals rather than both
+        sides being cast to a common type, so the numeric column keeps its own
+        precision. Spark promotes the literal to the column's type, which is
+        exact for ``bigint`` and ``decimal``; casting to ``double`` instead
+        would round ``1.000000000000000001`` to ``1.0`` and report a match.
+
+        Parameters
+        ----------
+        boolean_col : str
+            The name of the Boolean column.
+        numeric_col : str
+            The name of the numeric column.
+
+        Returns
+        -------
+        pyspark.sql.Column
+            A Column of booleans. Two nulls are treated as equal; a null against
+            a value is not.
+        """
+        boolean = psf.col(boolean_col)
+        numeric = psf.col(numeric_col)
+        both_null = boolean.isNull() & numeric.isNull()
+        values_equal = (
+            boolean.eqNullSafe(psf.lit(True)) & numeric.eqNullSafe(psf.lit(1))
+        ) | (boolean.eqNullSafe(psf.lit(False)) & numeric.eqNullSafe(psf.lit(0)))
+        return both_null | values_equal
+
     def compare(
         self,
         dataframe: "ps.sql.DataFrame",
@@ -165,9 +209,8 @@ class SparkBooleanComparator(BaseComparator):
         """Compare two columns in a PySpark DataFrame when either is Boolean.
 
         Boolean comparisons are exact and null-safe. A Boolean column may also
-        be compared against a numeric column, in which case Spark casts the
-        Boolean to the numeric type; for example, ``True`` matches ``1`` and
-        ``False`` matches ``0``.
+        be compared against a numeric column, in which case ``True`` matches
+        exactly ``1`` and ``False`` matches exactly ``0``.
 
         Parameters
         ----------
@@ -201,12 +244,13 @@ class SparkBooleanComparator(BaseComparator):
         the string to a Boolean and report ``True == 'yes'`` as a match, which
         the other backends do not.
 
-        The Boolean/numeric case casts both sides to ``double`` rather than
-        relying on Spark's implicit coercion, which is only available with
-        ``spark.sql.ansi.enabled=false``. Under ANSI mode, the default from
-        Spark 4 comparing a Boolean against a numeric raises
-        ``DATATYPE_MISMATCH.BINARY_OP_DIFF_TYPES``. The explicit cast behaves
-        identically under both settings.
+        The Boolean/numeric case does not rely on Spark's implicit coercion,
+        which is only available with ``spark.sql.ansi.enabled=false``. Under
+        ANSI mode, the default from Spark 4, comparing a Boolean against a
+        numeric raises ``DATATYPE_MISMATCH.BINARY_OP_DIFF_TYPES``. See
+        :meth:`_boolean_equals_numeric` for the comparison used instead, which
+        behaves identically under both settings and preserves the numeric
+        column's precision.
         """
         base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
         base_boolean_type = base_dtype == PYSPARK_BOOLEAN_TYPE
@@ -218,12 +262,10 @@ class SparkBooleanComparator(BaseComparator):
 
         if base_boolean_type and compare_boolean_type:
             when_clause = psf.col(col1).eqNullSafe(psf.col(col2))
-        elif (base_boolean_type and compare_numeric_type) or (
-            compare_boolean_type and base_numeric_type
-        ):
-            when_clause = (
-                psf.col(col1).cast("double").eqNullSafe(psf.col(col2).cast("double"))
-            )
+        elif base_boolean_type and compare_numeric_type:
+            when_clause = self._boolean_equals_numeric(col1, col2)
+        elif compare_boolean_type and base_numeric_type:
+            when_clause = self._boolean_equals_numeric(col2, col1)
         else:
             return None
 

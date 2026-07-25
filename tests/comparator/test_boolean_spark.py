@@ -15,6 +15,8 @@
 
 """Regression tests for Spark Boolean comparisons."""
 
+from decimal import Decimal
+
 import pytest
 
 pytest.importorskip("pyspark")
@@ -56,7 +58,7 @@ def test_all_null_boolean_columns_equal(spark_session):
 
 
 def test_boolean_and_numeric_columns_equal(spark_session):
-    """Boolean/numeric is cast explicitly so it works under ANSI mode too."""
+    """Boolean/numeric avoids implicit coercion so it works under ANSI mode too."""
     df = spark_session.createDataFrame(
         [(True, 1), (False, 0), (True, 0), (True, 2), (None, None)],
         "b boolean, i int",
@@ -66,6 +68,38 @@ def test_boolean_and_numeric_columns_equal(spark_session):
 
     assert _evaluate(df, columns_equal(df, "b", "i")) == expected
     assert _evaluate(df, columns_equal(df, "i", "b")) == expected
+
+
+def test_boolean_and_decimal_columns_preserve_precision(spark_session):
+    """A decimal just past ``double`` precision must not be rounded into a match."""
+    df = spark_session.createDataFrame(
+        [
+            (True, Decimal("1.000000000000000001")),
+            (True, Decimal("1.000000000000000000")),
+            (False, Decimal("0.000000000000000001")),
+            (False, Decimal("0.000000000000000000")),
+            (None, None),
+        ],
+        "b boolean, d decimal(38,18)",
+    )
+
+    expected = [False, True, False, True, True]
+
+    assert _evaluate(df, columns_equal(df, "b", "d")) == expected
+    assert _evaluate(df, columns_equal(df, "d", "b")) == expected
+
+
+def test_boolean_and_bigint_columns_preserve_precision(spark_session):
+    """Large integers beyond ``double``'s 53-bit mantissa must not collapse."""
+    df = spark_session.createDataFrame(
+        [(True, 1), (True, 9007199254740993), (False, 0)],
+        "b boolean, l bigint",
+    )
+
+    expected = [True, False, True]
+
+    assert _evaluate(df, columns_equal(df, "b", "l")) == expected
+    assert _evaluate(df, columns_equal(df, "l", "b")) == expected
 
 
 def test_boolean_and_double_columns_equal(spark_session):
