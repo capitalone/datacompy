@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from decimal import Decimal
+
 import pytest
 
 pytest.importorskip("snowflake.snowpark")
@@ -22,6 +24,7 @@ from datacompy.comparator.boolean import SnowflakeBooleanComparator
 from datacompy.snowflake import columns_equal
 from snowflake.snowpark.types import (
     BooleanType,
+    DecimalType,
     IntegerType,
     StringType,
     StructField,
@@ -66,8 +69,14 @@ def test_snowflake_boolean_comparator_mismatch(snowflake_session):
     ]
 
 
-def test_snowflake_boolean_comparator_null_handling(snowflake_session):
-    """Two nulls are equal; a null against a value is not."""
+def test_snowflake_boolean_comparator_null_handling(
+    snowflake_session, requires_live_snowflake_session
+):
+    """Two nulls are equal; a null against a value is not.
+
+    Local testing mode returns ``True`` for every ``eqNullSafe`` row, so this
+    can only be verified against a real session.
+    """
     comparator = SnowflakeBooleanComparator()
     df = snowflake_session.createDataFrame(
         [(None, None), (None, False), (True, None), (True, True)],
@@ -109,23 +118,115 @@ def test_snowflake_boolean_comparator_ignores_non_boolean(snowflake_session):
     )
 
 
-def test_snowflake_boolean_comparator_declines_boolean_against_numeric(
-    snowflake_session,
-):
-    """Boolean/numeric is intentionally left to fall through; see the docstring."""
+BOOLEAN_NUMERIC_SCHEMA = StructType(
+    [
+        StructField("col1", BooleanType()),
+        StructField("col2", IntegerType()),
+    ]
+)
+NUMERIC_BOOLEAN_SCHEMA = StructType(
+    [
+        StructField("col1", IntegerType()),
+        StructField("col2", BooleanType()),
+    ]
+)
+
+
+def test_snowflake_boolean_comparator_against_numeric(snowflake_session):
+    """True matches exactly 1 and False exactly 0, regardless of column order."""
+    comparator = SnowflakeBooleanComparator()
+    rows = [(True, 1), (False, 0), (True, 0), (False, 1), (True, 2), (None, None)]
+    expected = [
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=False),
+        sf.Row(COL_MATCH=False),
+        sf.Row(COL_MATCH=False),
+        sf.Row(COL_MATCH=True),
+    ]
+
+    forward = comparator.compare(
+        dataframe=snowflake_session.createDataFrame(
+            rows, schema=BOOLEAN_NUMERIC_SCHEMA
+        ),
+        col1="col1",
+        col2="col2",
+        col_match="col_match",
+    )
+    reverse = comparator.compare(
+        dataframe=snowflake_session.createDataFrame(
+            [(n, b) for b, n in rows], schema=NUMERIC_BOOLEAN_SCHEMA
+        ),
+        col1="col1",
+        col2="col2",
+        col_match="col_match",
+    )
+
+    assert forward.select(["col_match"]).collect() == expected
+    assert reverse.select(["col_match"]).collect() == expected
+
+
+def test_snowflake_boolean_comparator_numeric_null_handling(snowflake_session):
+    """A null against a value is a mismatch in either direction."""
     comparator = SnowflakeBooleanComparator()
     df = snowflake_session.createDataFrame(
-        [(True, 1)],
+        [(None, 1), (True, None), (None, None)], schema=BOOLEAN_NUMERIC_SCHEMA
+    )
+    result = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", col_match="col_match"
+    )
+    assert result.select(["col_match"]).collect() == [
+        sf.Row(COL_MATCH=False),
+        sf.Row(COL_MATCH=False),
+        sf.Row(COL_MATCH=True),
+    ]
+
+
+def test_snowflake_boolean_comparator_decimal_preserves_precision(
+    snowflake_session, requires_live_snowflake_session
+):
+    """A decimal just past double precision must not be rounded into a match.
+
+    Local testing mode truncates ``1.000000000000000001`` to ``1`` when the
+    DataFrame is created, destroying the case under test.
+    """
+    comparator = SnowflakeBooleanComparator()
+    df = snowflake_session.createDataFrame(
+        [
+            (True, Decimal("1.000000000000000001")),
+            (True, Decimal("1.000000000000000000")),
+            (False, Decimal("0.000000000000000001")),
+            (False, Decimal("0.000000000000000000")),
+        ],
         schema=StructType(
-            [StructField("col1", BooleanType()), StructField("col2", IntegerType())]
+            [
+                StructField("col1", BooleanType()),
+                StructField("col2", DecimalType(38, 18)),
+            ]
         ),
     )
-    assert (
-        comparator.compare(
-            dataframe=df, col1="col1", col2="col2", col_match="col_match"
-        )
-        is None
+    result = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
+    assert result.select(["col_match"]).collect() == [
+        sf.Row(COL_MATCH=False),
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=False),
+        sf.Row(COL_MATCH=True),
+    ]
+
+
+def test_snowflake_columns_equal_dispatches_boolean_against_numeric(snowflake_session):
+    """Exercise the pipeline, not just the comparator in isolation."""
+    df = snowflake_session.createDataFrame(
+        [(True, 1), (True, 2), (False, 0)], schema=BOOLEAN_NUMERIC_SCHEMA
+    )
+    result = columns_equal(df, "col1", "col2", "col_match")
+    assert result.select(["col_match"]).collect() == [
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=False),
+        sf.Row(COL_MATCH=True),
+    ]
 
 
 def test_snowflake_boolean_comparator_declines_boolean_against_string(

@@ -46,10 +46,12 @@ try:
     import snowflake.snowpark as sp
     import snowflake.snowpark.functions as spf
 
+    from datacompy.comparator.numeric import NUMERIC_SNOWFLAKE_TYPES
     from datacompy.comparator.utility import get_snowflake_column_dtypes
 except ImportError:
     sp = None
     spf = None
+    NUMERIC_SNOWFLAKE_TYPES = None
 
 
 class PandasBooleanComparator(BaseComparator):
@@ -275,6 +277,36 @@ class SparkBooleanComparator(BaseComparator):
 class SnowflakeBooleanComparator(BaseComparator):
     """Comparator for Boolean columns in Snowflake."""
 
+    @staticmethod
+    def _boolean_equals_numeric(boolean_col: str, numeric_col: str) -> "sp.Column":
+        """Compare a Boolean column against a numeric column's 1/0 equivalents.
+
+        Each side is compared against a literal of its own type, so Snowflake's
+        implicit BOOLEAN/NUMBER conversion never runs and cannot decide the
+        result. The numeric column also keeps its own precision, which casting
+        to a floating point type would lose.
+
+        Parameters
+        ----------
+        boolean_col : str
+            The name of the Boolean column.
+        numeric_col : str
+            The name of the numeric column.
+
+        Returns
+        -------
+        snowflake.snowpark.Column
+            A Column of booleans. Two nulls are treated as equal; a null against
+            a value is not.
+        """
+        boolean = spf.col(boolean_col)
+        numeric = spf.col(numeric_col)
+        both_null = boolean.is_null() & numeric.is_null()
+        values_equal = (
+            boolean.eqNullSafe(spf.lit(True)) & numeric.eqNullSafe(spf.lit(1))
+        ) | (boolean.eqNullSafe(spf.lit(False)) & numeric.eqNullSafe(spf.lit(0)))
+        return both_null | values_equal
+
     def compare(
         self,
         dataframe: "sp.DataFrame",
@@ -283,9 +315,11 @@ class SnowflakeBooleanComparator(BaseComparator):
         col_match: str,
         **kwargs: Any,
     ) -> "sp.DataFrame | None":
-        """Compare two Boolean columns in a Snowflake DataFrame.
+        """Compare two columns in a Snowflake DataFrame when either is Boolean.
 
-        Boolean comparisons are exact and null-safe.
+        Boolean comparisons are exact and null-safe. A Boolean column may also
+        be compared against a numeric column, in which case ``True`` matches
+        exactly ``1`` and ``False`` matches exactly ``0``.
 
         Parameters
         ----------
@@ -306,33 +340,47 @@ class SnowflakeBooleanComparator(BaseComparator):
             The DataFrame with an additional column containing the comparison
             results. Two nulls are treated as equal.
         None
-            if both columns are not Boolean.
+            Columns are not comparable if neither is Boolean, or if a Boolean is
+            paired with anything other than a numeric type.
 
         Notes
         -----
-        Unlike the other backends, this comparator claims only Boolean/Boolean
-        pairs. Snowflake implicitly converts between BOOLEAN and NUMBER, but the
-        direction of that conversion decides whether ``2`` matches ``True``:
-        converting the Boolean gives ``1 = 2`` (no match, which is what Pandas,
-        Polars, and Spark report), while converting the number gives
-        ``TRUE = TRUE`` (a match). Boolean/numeric pairs are therefore left to
-        fall through, preserving existing behaviour, until the semantics can be
-        confirmed against a live Snowflake session.
+        The Boolean/Boolean path is verified against a live Snowflake session.
+        Note that Snowpark's local testing mode does not reproduce it: its
+        ``eqNullSafe`` returns ``True`` for every row, so a local run cannot
+        confirm the null semantics asserted here.
+
+        Snowflake implicitly converts between BOOLEAN and NUMBER, and the
+        direction of that conversion would decide whether ``2`` matches
+        ``True``: converting the Boolean gives ``1 = 2`` (no match, which is
+        what Pandas, Polars, and Spark report), while converting the number
+        gives ``TRUE = TRUE`` (a match). Rather than depend on which way
+        Snowflake goes, :meth:`_boolean_equals_numeric` compares each side
+        against a literal of its own type, pinning the semantics to the 1/0
+        rule the other three backends use.
+
+        Boolean against a non-numeric, non-Boolean type is declined so the pair
+        falls through to the rest of the pipeline.
         """
         base_dtype, compare_dtype = get_snowflake_column_dtypes(dataframe, col1, col2)
+        base_boolean_type = base_dtype == SNOWFLAKE_BOOLEAN_TYPE
+        compare_boolean_type = compare_dtype == SNOWFLAKE_BOOLEAN_TYPE
+        base_numeric_type = any(
+            base_dtype.startswith(t) for t in NUMERIC_SNOWFLAKE_TYPES
+        )
+        compare_numeric_type = any(
+            compare_dtype.startswith(t) for t in NUMERIC_SNOWFLAKE_TYPES
+        )
 
-        if (
-            base_dtype == SNOWFLAKE_BOOLEAN_TYPE
-            and compare_dtype == SNOWFLAKE_BOOLEAN_TYPE
-        ):
-            try:
-                return dataframe.withColumn(
-                    col_match,
-                    spf.when(
-                        spf.col(col1).eqNullSafe(spf.col(col2)), spf.lit(True)
-                    ).otherwise(spf.lit(False)),
-                )
-            except Exception:
-                return dataframe.withColumn(col_match, spf.lit(False))
+        if base_boolean_type and compare_boolean_type:
+            when_clause = spf.col(col1).eqNullSafe(spf.col(col2))
+        elif base_boolean_type and compare_numeric_type:
+            when_clause = self._boolean_equals_numeric(col1, col2)
+        elif compare_boolean_type and base_numeric_type:
+            when_clause = self._boolean_equals_numeric(col2, col1)
         else:
             return None
+
+        return dataframe.withColumn(
+            col_match, spf.when(when_clause, spf.lit(True)).otherwise(spf.lit(False))
+        )

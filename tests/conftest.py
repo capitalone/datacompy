@@ -42,5 +42,18 @@ def snowflake_session(request) -> Session:  # type: ignore
         return Session.builder.configs(CONNECTION_PARAMETERS).create()
 
 
+@pytest.fixture
+def requires_live_snowflake_session(request) -> None:  # type: ignore
+    """Skip a test whose behaviour Snowpark's local testing mode cannot reproduce.
+
+    Local testing mode is an emulator, not Snowflake. Two limitations matter
+    here: ``eqNullSafe`` returns ``True`` for every row, and high-precision
+    decimals are truncated when a DataFrame is created. Tests that depend on
+    either need a real session to mean anything.
+    """
+    if request.config.getoption("--snowflake-session") == "local":
+        pytest.skip("requires a live Snowflake session, not local testing mode")
+
+
 def pytest_addoption(parser):
     parser.addoption("--snowflake-session", action="store", default="integration")
