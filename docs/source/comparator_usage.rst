@@ -68,7 +68,7 @@ at the **beginning** of this pipeline.
 
 The order of execution is:
 1. Your list of custom comparators, in the order you provided them.
-2. DataComPy's built-in comparators (for arrays, numerics, and strings).
+2. DataComPy's built-in comparators (for arrays, booleans, numerics, and strings).
 
 This ensures that your custom logic is always tried first.
 

@@ -18,6 +18,7 @@
 from typing import Any
 
 import pandas as pd
+import polars as pl
 
 from datacompy.comparator.base import BaseComparator
 
@@ -71,3 +72,56 @@ class PandasBooleanComparator(BaseComparator):
             return None
 
         return (col1.eq(col2) | (col1.isna() & col2.isna())).fillna(False).astype(bool)
+
+
+class PolarsBooleanComparator(BaseComparator):
+    """Comparator for Boolean columns in Polars."""
+
+    def compare(
+        self,
+        col1: pl.Series,
+        col2: pl.Series,
+        **kwargs: Any,
+    ) -> pl.Series | None:
+        """Compare columns when either Polars dtype is Boolean.
+
+        Boolean comparisons are exact and null-safe. When a Boolean column is
+        compared with another dtype, normal Polars equality semantics are used;
+        for example, ``True`` matches ``1`` and ``False`` matches ``0``.
+
+        Parameters
+        ----------
+        col1 : pl.Series
+            The first Polars Series to compare.
+        col2 : pl.Series
+            The second Polars Series to compare.
+        **kwargs : Any
+            Unused; accepted so this comparator matches the pipeline signature.
+
+        Returns
+        -------
+        pl.Series
+            A Polars Series of booleans indicating whether the values in `col1`
+            and `col2` are equal. Two nulls are treated as equal.
+        None
+            if the columns are not comparable.
+
+        Notes
+        -----
+        ``eq_missing`` is used rather than ``==`` because Polars propagates
+        nulls through ``==``; ``eq_missing`` treats two nulls as equal and a
+        null against a value as unequal.
+        """
+        if col1.shape != col2.shape:
+            return None
+
+        if not (col1.dtype == pl.Boolean or col2.dtype == pl.Boolean):
+            return None
+
+        try:
+            return col1.eq_missing(col2)
+        except Exception:
+            # Polars raises when the dtypes have no comparison supertype (a
+            # Boolean against a List, Date, Struct, ...). Signal that this
+            # comparator cannot handle the pair so the pipeline continues.
+            return None
