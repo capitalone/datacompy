@@ -36,6 +36,14 @@ datacompy.polars module
    :show-inheritance:
    :undoc-members:
 
+datacompy.report module
+-----------------------
+
+.. automodule:: datacompy.report
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 datacompy.snowflake module
 --------------------------
 

@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Spark Usage" href="spark_usage.html"><link rel="prev" title="Comparator Framework Usage" href="comparator_usage.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Pandas Usage - datacompy 1.0.2 documentation</title>
+        <title>Pandas Usage - datacompy 1.0.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 1.0.2 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 1.0.3 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.0.2 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.0.3 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -198,6 +198,7 @@
 <li class="toctree-l1"><a class="reference internal" href="snowflake_usage.html">Snowflake Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="template_guide.html">Template Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="report_api.html">Report API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmarks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
 </ul>
@@ -349,7 +350,7 @@ containing data like:</p>
 <p>Set up like:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">datacompy.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Compare</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datacompy.pandas</span><span class="w"> </span><span class="kn">import</span> <span class="n">PandasCompare</span>
 
 <span class="n">data1</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld,date_fld</span>
 <span class="s2">10000001234,123.45,George Maharis,14530.1555,2017-01-01</span>
@@ -377,7 +378,7 @@ containing data like:</p>
 <h2>Compare Object Setup<a class="headerlink" href="#compare-object-setup" title="Link to this heading">¶</a></h2>
 <p>There are currently two supported methods for joining your dataframes - by
 join column(s) or by index.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">compare</span> <span class="o">=</span> <span class="n">Compare</span><span class="p">(</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">compare</span> <span class="o">=</span> <span class="n">PandasCompare</span><span class="p">(</span>
     <span class="n">df1</span><span class="p">,</span>
     <span class="n">df2</span><span class="p">,</span>
     <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1">#You can also specify a list of columns</span>
@@ -388,17 +389,17 @@ join column(s) or by index.</p>
 
 <span class="c1"># OR</span>
 
-<span class="n">compare</span> <span class="o">=</span> <span class="n">Compare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">])</span>
+<span class="n">compare</span> <span class="o">=</span> <span class="n">PandasCompare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">])</span>
 
 <span class="c1"># OR</span>
 
-<span class="n">compare</span> <span class="o">=</span> <span class="n">Compare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">on_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">compare</span> <span class="o">=</span> <span class="n">PandasCompare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">on_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="reports">
 <h2>Reports<a class="headerlink" href="#reports" title="Link to this heading">¶</a></h2>
-<p>A report is generated by calling <code class="docutils literal notranslate"><span class="pre">Compare.report()</span></code>, which returns a string.
+<p>A report is generated by calling <code class="docutils literal notranslate"><span class="pre">PandasCompare.report()</span></code>, which returns a string.
 Here is a sample report generated by <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> for the two tables above,
 joined on <code class="docutils literal notranslate"><span class="pre">acct_id</span></code> (Note: if you don’t specify <code class="docutils literal notranslate"><span class="pre">df1_name</span></code> and/or <code class="docutils literal notranslate"><span class="pre">df2_name</span></code>,
 then any instance of “original” or “new” in the report is replaced with “df1”
@@ -729,7 +730,7 @@ same, you should look at the testing capabilities within Pandas and Numpy:</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=1ed6394b"></script>
+</div><script src="_static/documentation_options.js?v=baaebd52"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

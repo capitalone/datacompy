@@ -20,6 +20,14 @@ datacompy.comparator.base module
    :show-inheritance:
    :undoc-members:
 
+datacompy.comparator.boolean module
+-----------------------------------
+
+.. automodule:: datacompy.comparator.boolean
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 datacompy.comparator.numeric module
 -----------------------------------
 

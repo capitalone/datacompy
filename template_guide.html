@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Benchmarks" href="benchmark.html"><link rel="prev" title="Polars Usage" href="polars_usage.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Report API" href="report_api.html"><link rel="prev" title="Polars Usage" href="polars_usage.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Template Customization Guide - datacompy 1.0.2 documentation</title>
+        <title>Template Customization Guide - datacompy 1.0.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 1.0.2 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 1.0.3 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.0.2 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.0.3 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -198,6 +198,7 @@
 <li class="toctree-l1"><a class="reference internal" href="snowflake_usage.html">Snowflake Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Template Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="report_api.html">Report API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmarks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
 </ul>
@@ -256,11 +257,15 @@ This guide explains how to create and use custom templates for comparison report
 <section id="template-basics">
 <h2>Template Basics<a class="headerlink" href="#template-basics" title="Link to this heading">¶</a></h2>
 <p>Custom templates are Jinja2 templates that receive comparison data and format it according to your needs.
-The template receives a context dictionary with various comparison metrics and data samples.</p>
+The template context is produced by calling <code class="docutils literal notranslate"><span class="pre">dataclasses.asdict()</span></code> on the
+<a class="reference internal" href="api/datacompy.html#datacompy.report.ReportData" title="datacompy.report.ReportData"><code class="xref py py-class docutils literal notranslate"><span class="pre">ReportData</span></code></a> instance, so every field is passed in
+with its <strong>typed value</strong> — no pre-formatting is applied.  All formatting
+decisions belong in the template.</p>
 </section>
 <section id="available-template-variables">
 <h2>Available Template Variables<a class="headerlink" href="#available-template-variables" title="Link to this heading">¶</a></h2>
-<p>The following variables are available in the template context:</p>
+<p>The following variables are available in the template context.  They mirror
+the fields of <a class="reference internal" href="api/datacompy.html#datacompy.report.ReportData" title="datacompy.report.ReportData"><code class="xref py py-class docutils literal notranslate"><span class="pre">ReportData</span></code></a> and its nested dataclasses.</p>
 <blockquote>
 <div><div class="table-wrapper docutils container">
 <table class="docutils align-default">
@@ -270,86 +275,106 @@ The template receives a context dictionary with various comparison metrics and d
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">column_summary</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">df1_name</span></code>,
+<code class="docutils literal notranslate"><span class="pre">df2_name</span></code></p></td>
+<td><p>Names of the dataframes being compared (str).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">df1_shape</span></code>,
+<code class="docutils literal notranslate"><span class="pre">df2_shape</span></code></p></td>
+<td><p>Tuples of <code class="docutils literal notranslate"><span class="pre">(rows,</span> <span class="pre">columns)</span></code>. Index <code class="docutils literal notranslate"><span class="pre">[0]</span></code> is row count,
+<code class="docutils literal notranslate"><span class="pre">[1]</span></code> is column count.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">column_count</span></code></p></td>
+<td><p>Maximum number of columns shown in unique-row sample tables (int).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">column_summary</span></code></p></td>
 <td><p>Dict with column statistics including:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">common_columns</span></code>: List of columns common to both dataframes</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">df1_unique</span></code>: List of columns unique to df1</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">df2_unique</span></code>: List of columns unique to df2</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">df1_name</span></code>: Name of the first dataframe</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">df2_name</span></code>: Name of the second dataframe</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">common_columns</span></code> (int): count of columns in both DataFrames</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">df1_unique</span></code> (int): number of columns only in df1</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">df1_unique_columns</span></code> (list of str): names of those columns</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">df2_unique</span></code> (int): number of columns only in df2</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">df2_unique_columns</span></code> (list of str): names of those columns</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">df1_name</span></code>, <code class="docutils literal notranslate"><span class="pre">df2_name</span></code> (str): DataFrame labels</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">row_summary</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">row_summary</span></code></p></td>
 <td><p>Dict with row statistics including:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">match_columns</span></code>: List of columns used for matching</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">abs_tol</span></code>: Absolute tolerance between two values</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">rel_tol</span></code>: Relative tolerance between two values</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">common_rows</span></code>: Number of rows in common</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">df1_unique</span></code>: Number of rows unique to df1</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">df2_unique</span></code>: Number of rows unique to df2</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">unequal_rows</span></code>: Number of rows with differences</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">df1_name</span></code>: Name of the first dataframe</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">df2_name</span></code>: Name of the second dataframe</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">match_columns</span></code> (list of str): join column names; empty
+list when matching on index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">on_index</span></code> (bool): true when the comparison was joined on index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">has_duplicates</span></code> (bool): true when duplicate join-key values exist</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">abs_tol</span></code>, <code class="docutils literal notranslate"><span class="pre">rel_tol</span></code>: float (global) or
+<code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">float]</span></code> per-column tolerances</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">common_rows</span></code> (int): rows present in both DataFrames</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">df1_unique</span></code>, <code class="docutils literal notranslate"><span class="pre">df2_unique</span></code> (int): row counts unique to
+each side</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unequal_rows</span></code> (int): common rows where at least one
+compared column differs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">equal_rows</span></code> (int): common rows where all compared columns
+match</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">df1_name</span></code>, <code class="docutils literal notranslate"><span class="pre">df2_name</span></code> (str): DataFrame labels</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">column_comparison</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">column_comparison</span></code></p></td>
 <td><p>Dict with column comparison stats:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">unequal_columns</span></code>: List of columns with mismatches</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">equal_columns</span></code>: List of columns that match exactly</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">unequal_values</span></code>: Count of unequal values across all columns</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unequal_columns</span></code> (int): columns with at least one
+unequal value</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">equal_columns</span></code> (int): columns where all values match</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unequal_values</span></code> (int): total individual cell mismatches</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">mismatch_stats</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mismatch_stats</span></code></p></td>
 <td><p>Dict containing:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">stats</span></code>: List of dicts with per-column mismatch statistics:
-- <code class="docutils literal notranslate"><span class="pre">column</span></code>: Column name
-- <code class="docutils literal notranslate"><span class="pre">match</span></code>: Number of matching values
-- <code class="docutils literal notranslate"><span class="pre">mismatch</span></code>: Number of mismatched values
-- <code class="docutils literal notranslate"><span class="pre">null_diff</span></code>: Number of null value differences
-- <code class="docutils literal notranslate"><span class="pre">total</span></code>: Total number of comparisons</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">samples</span></code>: Sample rows with mismatched values</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">has_samples</span></code>: Boolean indicating if there are any samples</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">has_mismatches</span></code>: Boolean indicating if there are any mismatches</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">has_mismatches</span></code> (bool): true when at least one column
+has unequal values or types</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">has_samples</span></code> (bool): true when sample rows are available</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stats</span></code> (list of dict): one entry per mismatched column,
+sorted by column name. Each dict has <code class="docutils literal notranslate"><span class="pre">column</span></code> (str),
+<code class="docutils literal notranslate"><span class="pre">dtype1</span></code> (str), <code class="docutils literal notranslate"><span class="pre">dtype2</span></code> (str), <code class="docutils literal notranslate"><span class="pre">unequal_cnt</span></code> (int),
+<code class="docutils literal notranslate"><span class="pre">max_diff</span></code> (float), <code class="docutils literal notranslate"><span class="pre">null_diff</span></code> (int),
+<code class="docutils literal notranslate"><span class="pre">rel_tol</span></code> (float), <code class="docutils literal notranslate"><span class="pre">abs_tol</span></code> (float)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">samples</span></code> (list of str): pre-rendered ASCII tables of
+sample mismatched rows, one per column with mismatches</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">df1_name</span></code>, <code class="docutils literal notranslate"><span class="pre">df2_name</span></code> (str): DataFrame labels</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">df1_unique_rows</span></code></p></td>
-<td><p>Dict with unique rows in df1:</p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">df1_unique_rows</span></code>,
+<code class="docutils literal notranslate"><span class="pre">df2_unique_rows</span></code></p></td>
+<td><p>Dict with sample rows present in only one DataFrame:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">has_rows</span></code>: Boolean indicating if there are unique rows</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">rows</span></code>: Sample of unique rows (as strings)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">columns</span></code>: List of column names</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">has_rows</span></code> (bool): true when at least one unique row exists</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rows</span></code> (str): pre-rendered ASCII table; empty string when
+there are no unique rows</p></li>
 </ul>
 </td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">df2_unique_rows</span></code></p></td>
-<td><p>Dict with unique rows in df2:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">has_rows</span></code>: Boolean indicating if there are unique rows</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">rows</span></code>: Sample of unique rows (as strings)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">columns</span></code>: List of column names</p></li>
-</ul>
-</td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">df1_shape</span></code>,
-<code class="docutils literal notranslate"><span class="pre">df2_shape</span></code></p></td>
-<td><p>Tuples of (rows, columns) for each dataframe</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">df1_name</span></code>,
-<code class="docutils literal notranslate"><span class="pre">df2_name</span></code></p></td>
-<td><p>Names of the dataframes being compared</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 </div></blockquote>
+<section id="formatting-typed-values-in-templates">
+<h3>Formatting typed values in templates<a class="headerlink" href="#formatting-typed-values-in-templates" title="Link to this heading">¶</a></h3>
+<p>Because field values are typed (not pre-formatted), use Jinja2 expressions
+to produce display strings where needed.  Three common patterns:</p>
+<div class="highlight-jinja notranslate"><div class="highlight"><pre><span></span><span class="c">{# match_columns is a list; on_index is a bool #}</span>
+<span class="x">Matched on: </span><span class="cp">{{</span> <span class="s2">&quot;index&quot;</span> <span class="k">if</span> <span class="nv">row_summary.on_index</span> <span class="k">else</span> <span class="nv">row_summary.match_columns</span> <span class="o">|</span> <span class="nf">join</span><span class="o">(</span><span class="s2">&quot;, &quot;</span><span class="o">)</span> <span class="cp">}}</span>
+
+<span class="c">{# has_duplicates is a bool #}</span>
+<span class="x">Duplicates: </span><span class="cp">{{</span> <span class="s2">&quot;Yes&quot;</span> <span class="k">if</span> <span class="nv">row_summary.has_duplicates</span> <span class="k">else</span> <span class="s2">&quot;No&quot;</span> <span class="cp">}}</span>
+
+<span class="c">{# df1_unique is an int; df1_unique_columns is a list #}</span>
+<span class="x">Unique to df1: </span><span class="cp">{{</span> <span class="nv">column_summary.df1_unique</span> <span class="o">~</span> <span class="s2">&quot; &quot;</span> <span class="o">~</span> <span class="nv">column_summary.df1_unique_columns</span> <span class="k">if</span> <span class="nv">column_summary.df1_unique_columns</span> <span class="k">else</span> <span class="nv">column_summary.df1_unique</span> <span class="cp">}}</span>
+</pre></div>
+</div>
+</section>
 </section>
 <section id="creating-a-custom-template">
 <h2>Creating a Custom Template<a class="headerlink" href="#creating-a-custom-template" title="Link to this heading">¶</a></h2>
@@ -364,26 +389,27 @@ The template receives a context dictionary with various comparison metrics and d
 <h2>Example Template<a class="headerlink" href="#example-template" title="Link to this heading">¶</a></h2>
 <p>Here’s a simple example template that shows basic comparison metrics:</p>
 <div class="highlight-jinja notranslate"><div class="highlight"><pre><span></span><span class="x"># Data Comparison Report</span>
-<span class="x">=====================</span>
+<span class="x">=======================</span>
 
 <span class="x">## DataFrames</span>
-<span class="x">- </span><span class="cp">{{</span> <span class="nv">df1_name</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">df1_shape</span><span class="o">[</span><span class="m">0</span><span class="o">]</span> <span class="cp">}}</span><span class="x"> rows × </span><span class="cp">{{</span> <span class="nv">df1_shape</span><span class="o">[</span><span class="m">1</span><span class="o">]</span> <span class="cp">}}</span><span class="x"> columns</span>
-<span class="x">- </span><span class="cp">{{</span> <span class="nv">df2_name</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">df2_shape</span><span class="o">[</span><span class="m">0</span><span class="o">]</span> <span class="cp">}}</span><span class="x"> rows × </span><span class="cp">{{</span> <span class="nv">df2_shape</span><span class="o">[</span><span class="m">1</span><span class="o">]</span> <span class="cp">}}</span><span class="x"> columns</span>
+<span class="x">- </span><span class="cp">{{</span> <span class="nv">df1_name</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">df1_shape</span><span class="o">[</span><span class="m">0</span><span class="o">]</span> <span class="cp">}}</span><span class="x"> rows x </span><span class="cp">{{</span> <span class="nv">df1_shape</span><span class="o">[</span><span class="m">1</span><span class="o">]</span> <span class="cp">}}</span><span class="x"> columns</span>
+<span class="x">- </span><span class="cp">{{</span> <span class="nv">df2_name</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">df2_shape</span><span class="o">[</span><span class="m">0</span><span class="o">]</span> <span class="cp">}}</span><span class="x"> rows x </span><span class="cp">{{</span> <span class="nv">df2_shape</span><span class="o">[</span><span class="m">1</span><span class="o">]</span> <span class="cp">}}</span><span class="x"> columns</span>
 
 <span class="x">## Column Summary</span>
 <span class="x">- Common columns: </span><span class="cp">{{</span> <span class="nv">column_summary.common_columns</span> <span class="cp">}}</span>
-<span class="x">- Columns only in </span><span class="cp">{{</span> <span class="nv">df1_name</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">column_summary.df1_unique</span> <span class="cp">}}</span>
-<span class="x">- Columns only in </span><span class="cp">{{</span> <span class="nv">df2_name</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">column_summary.df2_unique</span> <span class="cp">}}</span>
+<span class="x">- Columns only in </span><span class="cp">{{</span> <span class="nv">df1_name</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">column_summary.df1_unique</span> <span class="o">~</span> <span class="s2">&quot; &quot;</span> <span class="o">~</span> <span class="nv">column_summary.df1_unique_columns</span> <span class="k">if</span> <span class="nv">column_summary.df1_unique_columns</span> <span class="k">else</span> <span class="nv">column_summary.df1_unique</span> <span class="cp">}}</span>
+<span class="x">- Columns only in </span><span class="cp">{{</span> <span class="nv">df2_name</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">column_summary.df2_unique</span> <span class="o">~</span> <span class="s2">&quot; &quot;</span> <span class="o">~</span> <span class="nv">column_summary.df2_unique_columns</span> <span class="k">if</span> <span class="nv">column_summary.df2_unique_columns</span> <span class="k">else</span> <span class="nv">column_summary.df2_unique</span> <span class="cp">}}</span>
 
 <span class="x">## Row Summary</span>
-<span class="x">- Rows with some columns unequal: </span><span class="cp">{{</span> <span class="nv">row_summary.unequal_rows</span> <span class="cp">}}</span>
+<span class="x">- Matched on: </span><span class="cp">{{</span> <span class="s2">&quot;index&quot;</span> <span class="k">if</span> <span class="nv">row_summary.on_index</span> <span class="k">else</span> <span class="nv">row_summary.match_columns</span> <span class="o">|</span> <span class="nf">join</span><span class="o">(</span><span class="s2">&quot;, &quot;</span><span class="o">)</span> <span class="cp">}}</span>
+<span class="x">- Rows in common: </span><span class="cp">{{</span> <span class="nv">row_summary.common_rows</span> <span class="cp">}}</span>
 <span class="x">- Rows with all columns equal: </span><span class="cp">{{</span> <span class="nv">row_summary.equal_rows</span> <span class="cp">}}</span>
+<span class="x">- Rows with some columns unequal: </span><span class="cp">{{</span> <span class="nv">row_summary.unequal_rows</span> <span class="cp">}}</span>
 
-<span class="cp">{%</span> <span class="k">if</span> <span class="nv">mismatch_stats</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">if</span> <span class="nv">mismatch_stats.has_mismatches</span> <span class="cp">%}</span>
 <span class="x">## Mismatched Columns</span>
-<span class="cp">{%</span> <span class="k">for</span> <span class="nv">col</span> <span class="k">in</span> <span class="nv">mismatch_stats</span> <span class="cp">%}</span>
-<span class="x">- </span><span class="cp">{{</span> <span class="nv">col.column</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">col.unequal_cnt</span> <span class="cp">}}</span><span class="x"> mismatches</span>
-<span class="x">  - Match rate: </span><span class="cp">{{</span> <span class="s2">&quot;%.2f&quot;</span><span class="o">|</span><span class="nf">format</span><span class="o">(</span><span class="nv">col.match_rate</span> <span class="o">*</span> <span class="m">100</span><span class="o">)</span> <span class="cp">}}</span><span class="x">%</span>
+<span class="cp">{%</span> <span class="k">for</span> <span class="nv">col</span> <span class="k">in</span> <span class="nv">mismatch_stats.stats</span> <span class="cp">%}</span>
+<span class="x">- </span><span class="cp">{{</span> <span class="nv">col.column</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">col.unequal_cnt</span> <span class="cp">}}</span><span class="x"> unequal value(s), max diff </span><span class="cp">{{</span> <span class="s2">&quot;%.4f&quot;</span><span class="o">|</span><span class="nf">format</span><span class="o">(</span><span class="nv">col.max_diff</span><span class="o">)</span> <span class="cp">}}</span>
 <span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
 <span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span>
 </pre></div>
@@ -392,9 +418,9 @@ The template receives a context dictionary with various comparison metrics and d
 <section id="using-a-custom-template">
 <h2>Using a Custom Template<a class="headerlink" href="#using-a-custom-template" title="Link to this heading">¶</a></h2>
 <p>To use your custom template, pass its path to the <code class="docutils literal notranslate"><span class="pre">report()</span></code> method:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datacompy.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Compare</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datacompy</span><span class="w"> </span><span class="kn">import</span> <span class="n">PandasCompare</span>
 
-<span class="n">compare</span> <span class="o">=</span> <span class="n">Compare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+<span class="n">compare</span> <span class="o">=</span> <span class="n">PandasCompare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
 
 <span class="c1"># Generate report with custom template</span>
 <span class="n">report</span> <span class="o">=</span> <span class="n">compare</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="n">template_path</span><span class="o">=</span><span class="s1">&#39;path/to/your/template.j2&#39;</span><span class="p">)</span>
@@ -434,12 +460,12 @@ You can use this as a reference when creating your own templates.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="benchmark.html">
+          <a class="next-page" href="report_api.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Benchmarks</div>
+                <div class="title">Report API</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -486,7 +512,10 @@ You can use this as a reference when creating your own templates.</p>
             <ul>
 <li><a class="reference internal" href="#">Template Customization Guide</a><ul>
 <li><a class="reference internal" href="#template-basics">Template Basics</a></li>
-<li><a class="reference internal" href="#available-template-variables">Available Template Variables</a></li>
+<li><a class="reference internal" href="#available-template-variables">Available Template Variables</a><ul>
+<li><a class="reference internal" href="#formatting-typed-values-in-templates">Formatting typed values in templates</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#creating-a-custom-template">Creating a Custom Template</a></li>
 <li><a class="reference internal" href="#example-template">Example Template</a></li>
 <li><a class="reference internal" href="#using-a-custom-template">Using a Custom Template</a></li>
@@ -504,7 +533,7 @@ You can use this as a reference when creating your own templates.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=1ed6394b"></script>
+</div><script src="_static/documentation_options.js?v=baaebd52"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="prev" title="datacompy package" href="datacompy.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>datacompy.comparator package - datacompy 1.0.2 documentation</title>
+        <title>datacompy.comparator package - datacompy 1.0.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 1.0.2 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 1.0.3 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.0.2 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.0.3 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -198,6 +198,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../snowflake_usage.html">Snowflake Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../polars_usage.html">Polars Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../template_guide.html">Template Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../report_api.html">Report API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../benchmark.html">Benchmarks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_instructions.html">Developer Instructions</a></li>
 </ul>
@@ -409,6 +410,194 @@ specific comparison logic.</p>
 <dd class="field-odd"><p>Any</p>
 </dd>
 </dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-datacompy.comparator.boolean">
+<span id="datacompy-comparator-boolean-module"></span><h2>datacompy.comparator.boolean module<a class="headerlink" href="#module-datacompy.comparator.boolean" title="Link to this heading">¶</a></h2>
+<p>Boolean comparator classes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.comparator.boolean.PandasBooleanComparator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.comparator.boolean.</span></span><span class="sig-name descname"><span class="pre">PandasBooleanComparator</span></span><a class="headerlink" href="#datacompy.comparator.boolean.PandasBooleanComparator" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.comparator.base.BaseComparator" title="datacompy.comparator.base.BaseComparator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseComparator</span></code></a></p>
+<p>Comparator for Boolean columns in Pandas.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.comparator.boolean.PandasBooleanComparator.compare">
+<span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.comparator.boolean.PandasBooleanComparator.compare" title="Link to this definition">¶</a></dt>
+<dd><p>Compare columns when either column holds Boolean values.</p>
+<p>Boolean comparisons are exact and null-safe. When a Boolean column is
+compared with another dtype, normal Pandas equality semantics are used;
+for example, <code class="docutils literal notranslate"><span class="pre">True</span></code> matches <code class="docutils literal notranslate"><span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">False</span></code> matches <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col1</strong> (<em>pd.Series</em>) – The first Pandas Series to compare.</p></li>
+<li><p><strong>col2</strong> (<em>pd.Series</em>) – The second Pandas Series to compare.</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Unused; accepted so this comparator matches the pipeline signature.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>pd.Series</em> – A Pandas Series of booleans indicating whether the values in <cite>col1</cite>
+and <cite>col2</cite> are equal. Two nulls are treated as equal.</p></li>
+<li><p><em>None</em> – if the columns are not comparable.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Detection uses <code class="docutils literal notranslate"><span class="pre">infer_dtype</span></code> rather than the column <code class="docutils literal notranslate"><span class="pre">dtype</span></code> because
+Pandas represents Boolean data as <code class="docutils literal notranslate"><span class="pre">object</span></code> in common cases: a Boolean
+column containing a null, and any Boolean column that has been through
+an outer merge (which upcasts <code class="docutils literal notranslate"><span class="pre">bool</span></code> to <code class="docutils literal notranslate"><span class="pre">object</span></code>).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.comparator.boolean.PolarsBooleanComparator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.comparator.boolean.</span></span><span class="sig-name descname"><span class="pre">PolarsBooleanComparator</span></span><a class="headerlink" href="#datacompy.comparator.boolean.PolarsBooleanComparator" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.comparator.base.BaseComparator" title="datacompy.comparator.base.BaseComparator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseComparator</span></code></a></p>
+<p>Comparator for Boolean columns in Polars.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.comparator.boolean.PolarsBooleanComparator.compare">
+<span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.comparator.boolean.PolarsBooleanComparator.compare" title="Link to this definition">¶</a></dt>
+<dd><p>Compare columns when either Polars dtype is Boolean.</p>
+<p>Boolean comparisons are exact and null-safe. When a Boolean column is
+compared with another dtype, normal Polars equality semantics are used;
+for example, <code class="docutils literal notranslate"><span class="pre">True</span></code> matches <code class="docutils literal notranslate"><span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">False</span></code> matches <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col1</strong> (<em>pl.Series</em>) – The first Polars Series to compare.</p></li>
+<li><p><strong>col2</strong> (<em>pl.Series</em>) – The second Polars Series to compare.</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Unused; accepted so this comparator matches the pipeline signature.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>pl.Series</em> – A Polars Series of booleans indicating whether the values in <cite>col1</cite>
+and <cite>col2</cite> are equal. Two nulls are treated as equal.</p></li>
+<li><p><em>None</em> – if the columns are not comparable.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p><code class="docutils literal notranslate"><span class="pre">eq_missing</span></code> is used rather than <code class="docutils literal notranslate"><span class="pre">==</span></code> because Polars propagates
+nulls through <code class="docutils literal notranslate"><span class="pre">==</span></code>; <code class="docutils literal notranslate"><span class="pre">eq_missing</span></code> treats two nulls as equal and a
+null against a value as unequal.</p>
+<p>Boolean against text is declined, matching the Spark comparator. Polars
+parses the string when comparing the two, so <code class="docutils literal notranslate"><span class="pre">True</span></code> would match
+<code class="docutils literal notranslate"><span class="pre">'true'</span></code> but not <code class="docutils literal notranslate"><span class="pre">'True'</span></code>, the form <code class="docutils literal notranslate"><span class="pre">str(True)</span></code> produces. That
+casing rule is arbitrary enough to be a trap, and neither Pandas nor
+Spark reports a match here, so the pair is left to fall through.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.comparator.boolean.SnowflakeBooleanComparator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.comparator.boolean.</span></span><span class="sig-name descname"><span class="pre">SnowflakeBooleanComparator</span></span><a class="headerlink" href="#datacompy.comparator.boolean.SnowflakeBooleanComparator" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.comparator.base.BaseComparator" title="datacompy.comparator.base.BaseComparator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseComparator</span></code></a></p>
+<p>Comparator for Boolean columns in Snowflake.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.comparator.boolean.SnowflakeBooleanComparator.compare">
+<span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_match</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.comparator.boolean.SnowflakeBooleanComparator.compare" title="Link to this definition">¶</a></dt>
+<dd><p>Compare two columns in a Snowflake DataFrame when either is Boolean.</p>
+<p>Boolean comparisons are exact and null-safe. A Boolean column may also
+be compared against a numeric column, in which case <code class="docutils literal notranslate"><span class="pre">True</span></code> matches
+exactly <code class="docutils literal notranslate"><span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">False</span></code> matches exactly <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> (<em>snowflake.snowpark.DataFrame</em>) – The Snowflake DataFrame containing the columns to compare.</p></li>
+<li><p><strong>col1</strong> (<em>str</em>) – The name of the first column to compare.</p></li>
+<li><p><strong>col2</strong> (<em>str</em>) – The name of the second column to compare.</p></li>
+<li><p><strong>col_match</strong> (<em>str</em>) – The name of the output column that will store the comparison results.</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Unused; accepted so this comparator matches the pipeline signature.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>snowflake.snowpark.DataFrame</em> – The DataFrame with an additional column containing the comparison
+results. Two nulls are treated as equal.</p></li>
+<li><p><em>None</em> – Columns are not comparable if neither is Boolean, or if a Boolean is
+paired with anything other than a numeric type.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Both paths are verified against a live Snowflake session. Snowpark’s
+local testing mode does not fully reproduce them: its <code class="docutils literal notranslate"><span class="pre">eqNullSafe</span></code>
+returns <code class="docutils literal notranslate"><span class="pre">True</span></code> for every row, and it truncates high-precision decimals
+when a DataFrame is created, so a local run cannot confirm the null or
+precision semantics asserted in the tests.</p>
+<p>Snowflake implicitly converts between BOOLEAN and NUMBER, and the
+direction of that conversion would decide whether <code class="docutils literal notranslate"><span class="pre">2</span></code> matches
+<code class="docutils literal notranslate"><span class="pre">True</span></code>: converting the Boolean gives <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">=</span> <span class="pre">2</span></code> (no match, which is
+what Pandas, Polars, and Spark report), while converting the number
+gives <code class="docutils literal notranslate"><span class="pre">TRUE</span> <span class="pre">=</span> <span class="pre">TRUE</span></code> (a match). Rather than depend on which way
+Snowflake goes, <code class="xref py py-meth docutils literal notranslate"><span class="pre">_boolean_equals_numeric()</span></code> compares each side
+against a literal of its own type, pinning the semantics to the 1/0
+rule the other three backends use.</p>
+<p>Boolean against a non-numeric, non-Boolean type is declined so the pair
+falls through to the rest of the pipeline.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.comparator.boolean.SparkBooleanComparator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.comparator.boolean.</span></span><span class="sig-name descname"><span class="pre">SparkBooleanComparator</span></span><a class="headerlink" href="#datacompy.comparator.boolean.SparkBooleanComparator" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.comparator.base.BaseComparator" title="datacompy.comparator.base.BaseComparator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseComparator</span></code></a></p>
+<p>Comparator for Boolean columns in PySpark.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.comparator.boolean.SparkBooleanComparator.compare">
+<span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Column</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.comparator.boolean.SparkBooleanComparator.compare" title="Link to this definition">¶</a></dt>
+<dd><p>Compare two columns in a PySpark DataFrame when either is Boolean.</p>
+<p>Boolean comparisons are exact and null-safe. A Boolean column may also
+be compared against a numeric column, in which case <code class="docutils literal notranslate"><span class="pre">True</span></code> matches
+exactly <code class="docutils literal notranslate"><span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">False</span></code> matches exactly <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> (<em>pyspark.sql.DataFrame</em>) – The PySpark DataFrame containing the columns to compare.</p></li>
+<li><p><strong>col1</strong> (<em>str</em>) – The name of the first column to compare.</p></li>
+<li><p><strong>col2</strong> (<em>str</em>) – The name of the second column to compare.</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Unused; accepted so this comparator matches the pipeline signature.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>pyspark.sql.Column</em> – A Column containing boolean values indicating whether the values in
+<cite>col1</cite> and <cite>col2</cite> are equal. Two nulls are treated as equal.</p></li>
+<li><p><em>None</em> – Columns are not comparable if neither is Boolean, or if a Boolean is
+paired with anything other than a numeric type.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Unlike the Pandas and Polars comparators, this one claims only
+Boolean/Boolean and Boolean/numeric pairs. Spark builds the comparison
+lazily, so an unsupported pair (Boolean against a date, array, or
+struct) raises <code class="docutils literal notranslate"><span class="pre">AnalysisException</span></code> when the plan is analysed rather
+than when the Column is constructed, which is too late for this method to
+catch. Unsupported pairs are therefore rejected up front. Boolean
+against string is also declined, because Spark would implicitly cast
+the string to a Boolean and report <code class="docutils literal notranslate"><span class="pre">True</span> <span class="pre">==</span> <span class="pre">'yes'</span></code> as a match, which
+the other backends do not.</p>
+<p>The Boolean/numeric case does not rely on Spark’s implicit coercion,
+which is only available with <code class="docutils literal notranslate"><span class="pre">spark.sql.ansi.enabled=false</span></code>. Under
+ANSI mode, the default from Spark 4, comparing a Boolean against a
+numeric raises <code class="docutils literal notranslate"><span class="pre">DATATYPE_MISMATCH.BINARY_OP_DIFF_TYPES</span></code>. See
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">_boolean_equals_numeric()</span></code> for the comparison used instead, which
+behaves identically under both settings and preserves the numeric
+column’s precision.</p>
 </dd></dl>
 
 </dd></dl>
@@ -996,6 +1185,44 @@ are equal.</p></li>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="datacompy.comparator.PandasBooleanComparator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.comparator.</span></span><span class="sig-name descname"><span class="pre">PandasBooleanComparator</span></span><a class="headerlink" href="#datacompy.comparator.PandasBooleanComparator" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.comparator.base.BaseComparator" title="datacompy.comparator.base.BaseComparator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseComparator</span></code></a></p>
+<p>Comparator for Boolean columns in Pandas.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.comparator.PandasBooleanComparator.compare">
+<span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.comparator.PandasBooleanComparator.compare" title="Link to this definition">¶</a></dt>
+<dd><p>Compare columns when either column holds Boolean values.</p>
+<p>Boolean comparisons are exact and null-safe. When a Boolean column is
+compared with another dtype, normal Pandas equality semantics are used;
+for example, <code class="docutils literal notranslate"><span class="pre">True</span></code> matches <code class="docutils literal notranslate"><span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">False</span></code> matches <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col1</strong> (<em>pd.Series</em>) – The first Pandas Series to compare.</p></li>
+<li><p><strong>col2</strong> (<em>pd.Series</em>) – The second Pandas Series to compare.</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Unused; accepted so this comparator matches the pipeline signature.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>pd.Series</em> – A Pandas Series of booleans indicating whether the values in <cite>col1</cite>
+and <cite>col2</cite> are equal. Two nulls are treated as equal.</p></li>
+<li><p><em>None</em> – if the columns are not comparable.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Detection uses <code class="docutils literal notranslate"><span class="pre">infer_dtype</span></code> rather than the column <code class="docutils literal notranslate"><span class="pre">dtype</span></code> because
+Pandas represents Boolean data as <code class="docutils literal notranslate"><span class="pre">object</span></code> in common cases: a Boolean
+column containing a null, and any Boolean column that has been through
+an outer merge (which upcasts <code class="docutils literal notranslate"><span class="pre">bool</span></code> to <code class="docutils literal notranslate"><span class="pre">object</span></code>).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="datacompy.comparator.PandasNumericComparator">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.comparator.</span></span><span class="sig-name descname"><span class="pre">PandasNumericComparator</span></span><a class="headerlink" href="#datacompy.comparator.PandasNumericComparator" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#datacompy.comparator.base.BaseComparator" title="datacompy.comparator.base.BaseComparator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseComparator</span></code></a></p>
@@ -1124,6 +1351,48 @@ are equal.</p></li>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="datacompy.comparator.PolarsBooleanComparator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.comparator.</span></span><span class="sig-name descname"><span class="pre">PolarsBooleanComparator</span></span><a class="headerlink" href="#datacompy.comparator.PolarsBooleanComparator" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.comparator.base.BaseComparator" title="datacompy.comparator.base.BaseComparator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseComparator</span></code></a></p>
+<p>Comparator for Boolean columns in Polars.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.comparator.PolarsBooleanComparator.compare">
+<span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.comparator.PolarsBooleanComparator.compare" title="Link to this definition">¶</a></dt>
+<dd><p>Compare columns when either Polars dtype is Boolean.</p>
+<p>Boolean comparisons are exact and null-safe. When a Boolean column is
+compared with another dtype, normal Polars equality semantics are used;
+for example, <code class="docutils literal notranslate"><span class="pre">True</span></code> matches <code class="docutils literal notranslate"><span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">False</span></code> matches <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col1</strong> (<em>pl.Series</em>) – The first Polars Series to compare.</p></li>
+<li><p><strong>col2</strong> (<em>pl.Series</em>) – The second Polars Series to compare.</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Unused; accepted so this comparator matches the pipeline signature.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>pl.Series</em> – A Polars Series of booleans indicating whether the values in <cite>col1</cite>
+and <cite>col2</cite> are equal. Two nulls are treated as equal.</p></li>
+<li><p><em>None</em> – if the columns are not comparable.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p><code class="docutils literal notranslate"><span class="pre">eq_missing</span></code> is used rather than <code class="docutils literal notranslate"><span class="pre">==</span></code> because Polars propagates
+nulls through <code class="docutils literal notranslate"><span class="pre">==</span></code>; <code class="docutils literal notranslate"><span class="pre">eq_missing</span></code> treats two nulls as equal and a
+null against a value as unequal.</p>
+<p>Boolean against text is declined, matching the Spark comparator. Polars
+parses the string when comparing the two, so <code class="docutils literal notranslate"><span class="pre">True</span></code> would match
+<code class="docutils literal notranslate"><span class="pre">'true'</span></code> but not <code class="docutils literal notranslate"><span class="pre">'True'</span></code>, the form <code class="docutils literal notranslate"><span class="pre">str(True)</span></code> produces. That
+casing rule is arbitrary enough to be a trap, and neither Pandas nor
+Spark reports a match here, so the pair is left to fall through.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="datacompy.comparator.PolarsNumericComparator">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.comparator.</span></span><span class="sig-name descname"><span class="pre">PolarsNumericComparator</span></span><a class="headerlink" href="#datacompy.comparator.PolarsNumericComparator" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#datacompy.comparator.base.BaseComparator" title="datacompy.comparator.base.BaseComparator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseComparator</span></code></a></p>
@@ -1241,6 +1510,58 @@ equal.</p></li>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="datacompy.comparator.SnowflakeBooleanComparator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.comparator.</span></span><span class="sig-name descname"><span class="pre">SnowflakeBooleanComparator</span></span><a class="headerlink" href="#datacompy.comparator.SnowflakeBooleanComparator" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.comparator.base.BaseComparator" title="datacompy.comparator.base.BaseComparator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseComparator</span></code></a></p>
+<p>Comparator for Boolean columns in Snowflake.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.comparator.SnowflakeBooleanComparator.compare">
+<span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_match</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.comparator.SnowflakeBooleanComparator.compare" title="Link to this definition">¶</a></dt>
+<dd><p>Compare two columns in a Snowflake DataFrame when either is Boolean.</p>
+<p>Boolean comparisons are exact and null-safe. A Boolean column may also
+be compared against a numeric column, in which case <code class="docutils literal notranslate"><span class="pre">True</span></code> matches
+exactly <code class="docutils literal notranslate"><span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">False</span></code> matches exactly <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> (<em>snowflake.snowpark.DataFrame</em>) – The Snowflake DataFrame containing the columns to compare.</p></li>
+<li><p><strong>col1</strong> (<em>str</em>) – The name of the first column to compare.</p></li>
+<li><p><strong>col2</strong> (<em>str</em>) – The name of the second column to compare.</p></li>
+<li><p><strong>col_match</strong> (<em>str</em>) – The name of the output column that will store the comparison results.</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Unused; accepted so this comparator matches the pipeline signature.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>snowflake.snowpark.DataFrame</em> – The DataFrame with an additional column containing the comparison
+results. Two nulls are treated as equal.</p></li>
+<li><p><em>None</em> – Columns are not comparable if neither is Boolean, or if a Boolean is
+paired with anything other than a numeric type.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Both paths are verified against a live Snowflake session. Snowpark’s
+local testing mode does not fully reproduce them: its <code class="docutils literal notranslate"><span class="pre">eqNullSafe</span></code>
+returns <code class="docutils literal notranslate"><span class="pre">True</span></code> for every row, and it truncates high-precision decimals
+when a DataFrame is created, so a local run cannot confirm the null or
+precision semantics asserted in the tests.</p>
+<p>Snowflake implicitly converts between BOOLEAN and NUMBER, and the
+direction of that conversion would decide whether <code class="docutils literal notranslate"><span class="pre">2</span></code> matches
+<code class="docutils literal notranslate"><span class="pre">True</span></code>: converting the Boolean gives <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">=</span> <span class="pre">2</span></code> (no match, which is
+what Pandas, Polars, and Spark report), while converting the number
+gives <code class="docutils literal notranslate"><span class="pre">TRUE</span> <span class="pre">=</span> <span class="pre">TRUE</span></code> (a match). Rather than depend on which way
+Snowflake goes, <code class="xref py py-meth docutils literal notranslate"><span class="pre">_boolean_equals_numeric()</span></code> compares each side
+against a literal of its own type, pinning the semantics to the 1/0
+rule the other three backends use.</p>
+<p>Boolean against a non-numeric, non-Boolean type is declined so the pair
+falls through to the rest of the pipeline.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="datacompy.comparator.SnowflakeNumericComparator">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.comparator.</span></span><span class="sig-name descname"><span class="pre">SnowflakeNumericComparator</span></span><a class="headerlink" href="#datacompy.comparator.SnowflakeNumericComparator" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#datacompy.comparator.base.BaseComparator" title="datacompy.comparator.base.BaseComparator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseComparator</span></code></a></p>
@@ -1352,6 +1673,58 @@ incorrect comparisons.</p></li>
 </p>
 </dd>
 </dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.comparator.SparkBooleanComparator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.comparator.</span></span><span class="sig-name descname"><span class="pre">SparkBooleanComparator</span></span><a class="headerlink" href="#datacompy.comparator.SparkBooleanComparator" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.comparator.base.BaseComparator" title="datacompy.comparator.base.BaseComparator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseComparator</span></code></a></p>
+<p>Comparator for Boolean columns in PySpark.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.comparator.SparkBooleanComparator.compare">
+<span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Column</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.comparator.SparkBooleanComparator.compare" title="Link to this definition">¶</a></dt>
+<dd><p>Compare two columns in a PySpark DataFrame when either is Boolean.</p>
+<p>Boolean comparisons are exact and null-safe. A Boolean column may also
+be compared against a numeric column, in which case <code class="docutils literal notranslate"><span class="pre">True</span></code> matches
+exactly <code class="docutils literal notranslate"><span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">False</span></code> matches exactly <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> (<em>pyspark.sql.DataFrame</em>) – The PySpark DataFrame containing the columns to compare.</p></li>
+<li><p><strong>col1</strong> (<em>str</em>) – The name of the first column to compare.</p></li>
+<li><p><strong>col2</strong> (<em>str</em>) – The name of the second column to compare.</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Unused; accepted so this comparator matches the pipeline signature.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>pyspark.sql.Column</em> – A Column containing boolean values indicating whether the values in
+<cite>col1</cite> and <cite>col2</cite> are equal. Two nulls are treated as equal.</p></li>
+<li><p><em>None</em> – Columns are not comparable if neither is Boolean, or if a Boolean is
+paired with anything other than a numeric type.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Unlike the Pandas and Polars comparators, this one claims only
+Boolean/Boolean and Boolean/numeric pairs. Spark builds the comparison
+lazily, so an unsupported pair (Boolean against a date, array, or
+struct) raises <code class="docutils literal notranslate"><span class="pre">AnalysisException</span></code> when the plan is analysed rather
+than when the Column is constructed, which is too late for this method to
+catch. Unsupported pairs are therefore rejected up front. Boolean
+against string is also declined, because Spark would implicitly cast
+the string to a Boolean and report <code class="docutils literal notranslate"><span class="pre">True</span> <span class="pre">==</span> <span class="pre">'yes'</span></code> as a match, which
+the other backends do not.</p>
+<p>The Boolean/numeric case does not rely on Spark’s implicit coercion,
+which is only available with <code class="docutils literal notranslate"><span class="pre">spark.sql.ansi.enabled=false</span></code>. Under
+ANSI mode, the default from Spark 4, comparing a Boolean against a
+numeric raises <code class="docutils literal notranslate"><span class="pre">DATATYPE_MISMATCH.BINARY_OP_DIFF_TYPES</span></code>. See
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">_boolean_equals_numeric()</span></code> for the comparison used instead, which
+behaves identically under both settings and preserves the numeric
+column’s precision.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1517,6 +1890,25 @@ incorrect comparisons.</p></li>
 </li>
 </ul>
 </li>
+<li><a class="reference internal" href="#module-datacompy.comparator.boolean">datacompy.comparator.boolean module</a><ul>
+<li><a class="reference internal" href="#datacompy.comparator.boolean.PandasBooleanComparator"><code class="docutils literal notranslate"><span class="pre">PandasBooleanComparator</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.comparator.boolean.PandasBooleanComparator.compare"><code class="docutils literal notranslate"><span class="pre">PandasBooleanComparator.compare()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.comparator.boolean.PolarsBooleanComparator"><code class="docutils literal notranslate"><span class="pre">PolarsBooleanComparator</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.comparator.boolean.PolarsBooleanComparator.compare"><code class="docutils literal notranslate"><span class="pre">PolarsBooleanComparator.compare()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.comparator.boolean.SnowflakeBooleanComparator"><code class="docutils literal notranslate"><span class="pre">SnowflakeBooleanComparator</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.comparator.boolean.SnowflakeBooleanComparator.compare"><code class="docutils literal notranslate"><span class="pre">SnowflakeBooleanComparator.compare()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.comparator.boolean.SparkBooleanComparator"><code class="docutils literal notranslate"><span class="pre">SparkBooleanComparator</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.comparator.boolean.SparkBooleanComparator.compare"><code class="docutils literal notranslate"><span class="pre">SparkBooleanComparator.compare()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-datacompy.comparator.numeric">datacompy.comparator.numeric module</a><ul>
 <li><a class="reference internal" href="#datacompy.comparator.numeric.PandasNumericComparator"><code class="docutils literal notranslate"><span class="pre">PandasNumericComparator</span></code></a><ul>
 <li><a class="reference internal" href="#datacompy.comparator.numeric.PandasNumericComparator.compare"><code class="docutils literal notranslate"><span class="pre">PandasNumericComparator.compare()</span></code></a></li>
@@ -1572,6 +1964,10 @@ incorrect comparisons.</p></li>
 <li><a class="reference internal" href="#datacompy.comparator.PandasArrayLikeComparator.compare"><code class="docutils literal notranslate"><span class="pre">PandasArrayLikeComparator.compare()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#datacompy.comparator.PandasBooleanComparator"><code class="docutils literal notranslate"><span class="pre">PandasBooleanComparator</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.comparator.PandasBooleanComparator.compare"><code class="docutils literal notranslate"><span class="pre">PandasBooleanComparator.compare()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#datacompy.comparator.PandasNumericComparator"><code class="docutils literal notranslate"><span class="pre">PandasNumericComparator</span></code></a><ul>
 <li><a class="reference internal" href="#datacompy.comparator.PandasNumericComparator.compare"><code class="docutils literal notranslate"><span class="pre">PandasNumericComparator.compare()</span></code></a></li>
 </ul>
@@ -1582,6 +1978,10 @@ incorrect comparisons.</p></li>
 </li>
 <li><a class="reference internal" href="#datacompy.comparator.PolarsArrayLikeComparator"><code class="docutils literal notranslate"><span class="pre">PolarsArrayLikeComparator</span></code></a><ul>
 <li><a class="reference internal" href="#datacompy.comparator.PolarsArrayLikeComparator.compare"><code class="docutils literal notranslate"><span class="pre">PolarsArrayLikeComparator.compare()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.comparator.PolarsBooleanComparator"><code class="docutils literal notranslate"><span class="pre">PolarsBooleanComparator</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.comparator.PolarsBooleanComparator.compare"><code class="docutils literal notranslate"><span class="pre">PolarsBooleanComparator.compare()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#datacompy.comparator.PolarsNumericComparator"><code class="docutils literal notranslate"><span class="pre">PolarsNumericComparator</span></code></a><ul>
@@ -1596,6 +1996,10 @@ incorrect comparisons.</p></li>
 <li><a class="reference internal" href="#datacompy.comparator.SnowflakeArrayLikeComparator.compare"><code class="docutils literal notranslate"><span class="pre">SnowflakeArrayLikeComparator.compare()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#datacompy.comparator.SnowflakeBooleanComparator"><code class="docutils literal notranslate"><span class="pre">SnowflakeBooleanComparator</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.comparator.SnowflakeBooleanComparator.compare"><code class="docutils literal notranslate"><span class="pre">SnowflakeBooleanComparator.compare()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#datacompy.comparator.SnowflakeNumericComparator"><code class="docutils literal notranslate"><span class="pre">SnowflakeNumericComparator</span></code></a><ul>
 <li><a class="reference internal" href="#datacompy.comparator.SnowflakeNumericComparator.compare"><code class="docutils literal notranslate"><span class="pre">SnowflakeNumericComparator.compare()</span></code></a></li>
 </ul>
@@ -1606,6 +2010,10 @@ incorrect comparisons.</p></li>
 </li>
 <li><a class="reference internal" href="#datacompy.comparator.SparkArrayLikeComparator"><code class="docutils literal notranslate"><span class="pre">SparkArrayLikeComparator</span></code></a><ul>
 <li><a class="reference internal" href="#datacompy.comparator.SparkArrayLikeComparator.compare"><code class="docutils literal notranslate"><span class="pre">SparkArrayLikeComparator.compare()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.comparator.SparkBooleanComparator"><code class="docutils literal notranslate"><span class="pre">SparkBooleanComparator</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.comparator.SparkBooleanComparator.compare"><code class="docutils literal notranslate"><span class="pre">SparkBooleanComparator.compare()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#datacompy.comparator.SparkNumericComparator"><code class="docutils literal notranslate"><span class="pre">SparkNumericComparator</span></code></a><ul>
@@ -1629,7 +2037,7 @@ incorrect comparisons.</p></li>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=1ed6394b"></script>
+</div><script src="../_static/documentation_options.js?v=baaebd52"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
