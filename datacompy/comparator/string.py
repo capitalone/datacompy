@@ -233,7 +233,7 @@ class PandasStringComparator(BaseComparator):
                     try:
                         return pd.Series(col1.astype("str") == col2.astype("str"))
                     except Exception:
-                        return pd.Series(False * col1.index)
+                        return pd.Series(False, index=col1.index)
         # if both are mixed or dates
         elif (
             pd.api.types.infer_dtype(col1).startswith("mixed")
@@ -246,7 +246,7 @@ class PandasStringComparator(BaseComparator):
                     == col2.astype("str").fillna(DEFAULT_VALUE)
                 )
             except Exception:
-                return pd.Series(False * col1.index)
+                return pd.Series(False, index=col1.index)
         else:  # if not one of the supported type usecases
             return None
 
