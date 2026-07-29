@@ -37,6 +37,7 @@ from datacompy.base import (
 )
 from datacompy.comparator import (
     PolarsArrayLikeComparator,
+    PolarsBooleanComparator,
     PolarsNumericComparator,
     PolarsStringComparator,
 )
@@ -50,6 +51,7 @@ LIST_TYPE = ["List", "Array"]
 
 _POLARS_DEFAULT_COMPARATORS = [
     PolarsArrayLikeComparator(),
+    PolarsBooleanComparator(),
     PolarsNumericComparator(),
     PolarsStringComparator(),
 ]
@@ -760,7 +762,9 @@ def columns_equal(
         comparators_ = _POLARS_DEFAULT_COMPARATORS
 
     for comparator in comparators_:
-        if isinstance(comparator, PolarsNumericComparator):
+        if isinstance(comparator, PolarsBooleanComparator):
+            compare = comparator.compare(col_1, col_2)
+        elif isinstance(comparator, PolarsNumericComparator):
             compare = comparator.compare(col_1, col_2, rtol=rel_tol, atol=abs_tol)
         elif isinstance(comparator, PolarsStringComparator):
             compare = comparator.compare(
