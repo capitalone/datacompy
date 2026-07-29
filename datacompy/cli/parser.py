@@ -22,6 +22,16 @@ import datacompy
 from datacompy.cli.compare import run_compare
 
 
+def _join_columns(value: str) -> list[str]:
+    """Argparse ``type=`` for ``--on``.
+
+    Accepts either a single column name or a comma-separated list, so both
+    ``--on id,date`` and ``--on id --on date`` work.  Column names that
+    literally contain a comma must use the repeated-``--on`` form.
+    """
+    return [col.strip() for col in value.split(",") if col.strip()]
+
+
 def _single_char_delimiter(value: str) -> str:
     r"""Argparse ``type=`` that accepts a single-character delimiter.
 
@@ -54,30 +64,37 @@ def _non_negative_int(value: str) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     """Build and return the top-level argument parser."""
+    # Shared parent so --debug is accepted both before and after the subcommand.
+    # SUPPRESS avoids the subparser re-applying a False default that would
+    # overwrite a True set at the top level.
+    debug_parent = argparse.ArgumentParser(add_help=False)
+    debug_parent.add_argument(
+        "--debug",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Re-raise unexpected exceptions instead of printing a friendly message. "
+        "Useful when filing bug reports.",
+    )
+
     parser = argparse.ArgumentParser(
         prog="datacompy",
         description="Compare two datasets across multiple backends.",
+        parents=[debug_parent],
     )
     parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {datacompy.__version__}",
     )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        default=False,
-        help="Re-raise unexpected exceptions instead of printing a friendly message. "
-        "Useful when filing bug reports.",
-    )
 
     sub = parser.add_subparsers(dest="command", required=True)
-    _add_compare_subparser(sub)
+    _add_compare_subparser(sub, debug_parent)
     return parser
 
 
 def _add_compare_subparser(
     sub: "argparse._SubParsersAction[argparse.ArgumentParser]",
+    debug_parent: argparse.ArgumentParser,
 ) -> None:
     """Register the ``compare`` subcommand on *sub*."""
     cmp = sub.add_parser(
@@ -87,6 +104,7 @@ def _add_compare_subparser(
             "Load --left and --right files, compare them using --backend, "
             "and exit 0 (match), 1 (mismatch / threshold violated), or 2 (error)."
         ),
+        parents=[debug_parent],
     )
 
     # ---- inputs ----------------------------------------------------------------
@@ -104,7 +122,11 @@ def _add_compare_subparser(
         "--format",
         choices=["csv", "parquet", "json"],
         default=None,
-        help="Input file format.  Inferred from extension when omitted.",
+        help=(
+            "Input file format.  Inferred from extension when omitted.  "
+            "Applies to both --left and --right; for mixed-format inputs omit "
+            "this flag and rely on extension inference instead."
+        ),
     )
     inp.add_argument(
         "--csv-delimiter",
@@ -122,10 +144,15 @@ def _add_compare_subparser(
     keys.add_argument(
         "--on",
         action="append",
+        type=_join_columns,
         dest="on",
         default=None,
-        metavar="COL",
-        help="Join column name (required unless --on-index is used).  Repeat for composite keys: --on id --on date.",
+        metavar="COL[,COL...]",
+        help=(
+            "Join column name (required unless --on-index is used). "
+            "Accepts a comma-separated list (--on id,date) or repeated flags (--on id --on date). "
+            "Use repeated flags for column names that contain a comma."
+        ),
     )
     keys.add_argument(
         "--on-index",

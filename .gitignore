@@ -31,3 +31,6 @@ coverage.xml
 
 # benchmark datasets
 benchmarks/data/
+
+# examples
+examples/

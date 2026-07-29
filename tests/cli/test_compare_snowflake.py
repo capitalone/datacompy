@@ -195,3 +195,85 @@ def test_missing_snowflake_config_file_exits_2_with_clear_message(
 
     assert code == 2
     assert "no_such_conn.json" in err
+
+
+# ---------------------------------------------------------------------------
+# Non-dict --snowflake-config raises BadArgsError (finding 2 fix)
+# ---------------------------------------------------------------------------
+
+
+def test_snowflake_config_json_array_raises_bad_args_error(
+    tmp_path: Path,
+) -> None:
+    """get_snowflake_session must raise BadArgsError when the config file
+    contains a JSON array instead of an object, not a raw TypeError."""
+    bad_config = tmp_path / "conn.json"
+    bad_config.write_text('[{"account": "x", "user": "y"}]')
+    with pytest.raises(BadArgsError, match="JSON object"):
+        get_snowflake_session(config_path=bad_config)
+
+
+def test_snowflake_config_json_string_raises_bad_args_error(
+    tmp_path: Path,
+) -> None:
+    """get_snowflake_session must raise BadArgsError for a JSON scalar."""
+    bad_config = tmp_path / "conn.json"
+    bad_config.write_text('"just a string"')
+    with pytest.raises(BadArgsError, match="JSON object"):
+        get_snowflake_session(config_path=bad_config)
+
+
+def test_snowflake_config_json_array_exits_2(
+    tmp_path: Path,
+    cli: Callable[[list[str]], tuple[int, str, str]],
+) -> None:
+    """End-to-end: a non-dict --snowflake-config must exit 2 with a friendly
+    message, not propagate a TypeError traceback."""
+    bad_config = tmp_path / "conn.json"
+    bad_config.write_text('[{"account": "x"}]')
+
+    code, _, err = cli(
+        [
+            "compare",
+            "--left",
+            "DB.SCHEMA.TABLE_L",
+            "--right",
+            "DB.SCHEMA.TABLE_R",
+            "--on",
+            "ID",
+            "--backend",
+            "snowflake",
+            "--snowflake-config",
+            str(bad_config),
+        ]
+    )
+
+    assert code == 2
+    assert "JSON object" in err
+
+
+# ---------------------------------------------------------------------------
+# --no-cast-column-names-lower rejected for Snowflake backend (finding 11 fix)
+# ---------------------------------------------------------------------------
+
+
+def test_no_cast_column_names_lower_rejected_for_snowflake(
+    cli: Callable[[list[str]], tuple[int, str, str]],
+) -> None:
+    """--no-cast-column-names-lower with --backend snowflake must exit 2."""
+    code, _, err = cli(
+        [
+            "compare",
+            "--left",
+            "DB.SCHEMA.TABLE_L",
+            "--right",
+            "DB.SCHEMA.TABLE_R",
+            "--on",
+            "ID",
+            "--backend",
+            "snowflake",
+            "--no-cast-column-names-lower",
+        ]
+    )
+    assert code == 2
+    assert "snowflake" in err.lower()

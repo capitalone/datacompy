@@ -50,8 +50,8 @@ def run_compare(ns: argparse.Namespace) -> int:
     Returns
     -------
     int
-        ``0`` -- datasets match (within any specified thresholds).
-        ``1`` -- datasets differ or a threshold was violated.
+        ``0`` if the datasets match (within any specified thresholds).
+        ``1`` if the datasets differ or a threshold was violated.
         Raises :class:`~datacompy.cli.errors.CLIError` (exit ``2``) on
         invalid arguments, missing files, or unsupported backends.
     """
@@ -87,6 +87,11 @@ def _validate_arg_combinations(args: CompareArgs) -> None:
     if args.ignore_unique_rows and args.max_unequal_rows is None:
         raise BadArgsError(
             "--ignore-unique-rows requires --max-unequal-rows to be set."
+        )
+    if args.backend == "snowflake" and not args.cast_column_names_lower:
+        raise BadArgsError(
+            "--no-cast-column-names-lower is not supported with --backend snowflake. "
+            "Snowflake always normalises identifiers to uppercase."
         )
 
 

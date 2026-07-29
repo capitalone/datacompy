@@ -73,11 +73,14 @@ def _default_name(ref: str) -> str:
 
 def to_compare_args(ns: Any) -> CompareArgs:
     """Convert an :class:`argparse.Namespace` to a typed :class:`CompareArgs`."""
+    on: list[str] | None = None
+    if ns.on is not None:
+        on = [col for group in ns.on for col in group]
     return CompareArgs(
         left=ns.left,
         right=ns.right,
         format=ns.format,
-        on=ns.on,
+        on=on,
         on_index=ns.on_index,
         backend=ns.backend,
         abs_tol=ns.abs_tol,
@@ -104,31 +107,20 @@ def make_pandas_compare(args: CompareArgs, df1: Any, df2: Any) -> Any:
     """Construct a :class:`~datacompy.pandas.PandasCompare`."""
     from datacompy.pandas import PandasCompare
 
+    kwargs: dict[str, Any] = {
+        "abs_tol": args.abs_tol,
+        "rel_tol": args.rel_tol,
+        "df1_name": args.df1_name,
+        "df2_name": args.df2_name,
+        "ignore_spaces": args.ignore_spaces,
+        "ignore_case": args.ignore_case,
+        "cast_column_names_lower": args.cast_column_names_lower,
+    }
     if args.on_index:
-        return PandasCompare(
-            df1,
-            df2,
-            on_index=True,
-            abs_tol=args.abs_tol,
-            rel_tol=args.rel_tol,
-            df1_name=args.df1_name,
-            df2_name=args.df2_name,
-            ignore_spaces=args.ignore_spaces,
-            ignore_case=args.ignore_case,
-            cast_column_names_lower=args.cast_column_names_lower,
-        )
-    return PandasCompare(
-        df1,
-        df2,
-        join_columns=args.on,
-        abs_tol=args.abs_tol,
-        rel_tol=args.rel_tol,
-        df1_name=args.df1_name,
-        df2_name=args.df2_name,
-        ignore_spaces=args.ignore_spaces,
-        ignore_case=args.ignore_case,
-        cast_column_names_lower=args.cast_column_names_lower,
-    )
+        kwargs["on_index"] = True
+    else:
+        kwargs["join_columns"] = args.on
+    return PandasCompare(df1, df2, **kwargs)
 
 
 def make_polars_compare(args: CompareArgs, df1: Any, df2: Any) -> Any:

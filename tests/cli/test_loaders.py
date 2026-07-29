@@ -16,12 +16,10 @@
 """Unit tests for datacompy/cli/loaders.py and backends._default_name / _unescape_delimiter."""
 
 import argparse
-import importlib.util
 from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pandas as pd
 import pytest
 from datacompy.cli.backends import _default_name, to_compare_args
 from datacompy.cli.errors import BadArgsError, LoadError
@@ -105,7 +103,7 @@ def test_default_name_explicit_name_overrides_default(tmp_path: Path) -> None:
         df1_name="before",
         df2_name="after",
         format=None,
-        on=["ID"],
+        on=[["ID"]],
         on_index=False,
         backend="snowflake",
         abs_tol=0.0,
@@ -380,83 +378,116 @@ def test_csv_delimiter_real_tab_also_works(
 
 
 # ---------------------------------------------------------------------------
-# load_snowflake staging
+# load_snowflake — local file rejection
 # ---------------------------------------------------------------------------
 
-_snowflake_missing = importlib.util.find_spec("snowflake") is None
-_skip_no_snowflake = pytest.mark.skipif(
-    _snowflake_missing, reason="snowflake.snowpark not installed"
-)
 
-
-@_skip_no_snowflake
-def test_load_snowflake_staging_raises_error_when_no_database(
+def test_load_snowflake_rejects_local_file_path(
     mock_snowflake_session: MagicMock,
     tmp_path: Path,
 ) -> None:
-    """load_snowflake with a local CSV and session.get_current_database()=None
-    must raise BadArgsError, not return a broken '.' -prefixed table ref."""
-    mock_snowflake_session.get_current_database.return_value = None
+    """load_snowflake must raise BadArgsError for a local file path — staging
+    is no longer supported; users must pass a table reference."""
     csv_file = tmp_path / "data.csv"
     csv_file.write_text("id,val\n1,a\n2,b\n")
-    with pytest.raises(BadArgsError, match=r"SNOWFLAKE_DATABASE|database"):
+    with pytest.raises(BadArgsError, match=r"does not look like a Snowflake table"):
         load_snowflake(mock_snowflake_session, str(csv_file), "csv")
 
 
-@_skip_no_snowflake
-def test_load_snowflake_staging_raises_error_when_no_schema(
-    mock_snowflake_session: MagicMock,
+# ---------------------------------------------------------------------------
+# JSONL / NDJSON loading (finding 1 fix)
+# ---------------------------------------------------------------------------
+
+_NDJSON_DATA = '{"a": 1, "b": "x"}\n{"a": 2, "b": "y"}\n'
+
+
+def test_load_pandas_jsonl_loads_successfully(tmp_path: Path) -> None:
+    """load_pandas must parse newline-delimited JSON (.jsonl) without error."""
+    f = tmp_path / "data.jsonl"
+    f.write_text(_NDJSON_DATA)
+    df = load_pandas(str(f), "json")
+    assert list(df.columns) == ["a", "b"]
+    assert len(df) == 2
+
+
+def test_load_pandas_ndjson_extension_loads_successfully(tmp_path: Path) -> None:
+    """load_pandas must parse .ndjson files."""
+    f = tmp_path / "data.ndjson"
+    f.write_text(_NDJSON_DATA)
+    df = load_pandas(str(f), "json")
+    assert len(df) == 2
+
+
+def test_load_pandas_json_array_still_works(tmp_path: Path) -> None:
+    """load_pandas must still parse standard JSON arrays with a .json extension."""
+    f = tmp_path / "data.json"
+    f.write_text('[{"a": 1, "b": "x"}, {"a": 2, "b": "y"}]')
+    df = load_pandas(str(f), "json")
+    assert list(df.columns) == ["a", "b"]
+    assert len(df) == 2
+
+
+def test_load_polars_jsonl_loads_successfully(tmp_path: Path) -> None:
+    """load_polars must parse newline-delimited JSON (.jsonl) without error."""
+    f = tmp_path / "data.jsonl"
+    f.write_text(_NDJSON_DATA)
+    import polars as pl
+
+    df = load_polars(str(f), "json")
+    assert isinstance(df, pl.DataFrame)
+    assert df.columns == ["a", "b"]
+    assert len(df) == 2
+
+
+def test_load_polars_ndjson_extension_loads_successfully(tmp_path: Path) -> None:
+    """load_polars must parse .ndjson files."""
+    f = tmp_path / "data.ndjson"
+    f.write_text(_NDJSON_DATA)
+    import polars as pl
+
+    df = load_polars(str(f), "json")
+    assert isinstance(df, pl.DataFrame)
+    assert len(df) == 2
+
+
+def test_load_polars_json_array_still_works(tmp_path: Path) -> None:
+    """load_polars must still parse standard JSON arrays with a .json extension."""
+    f = tmp_path / "data.json"
+    f.write_text('[{"a": 1, "b": "x"}, {"a": 2, "b": "y"}]')
+    import polars as pl
+
+    df = load_polars(str(f), "json")
+    assert isinstance(df, pl.DataFrame)
+    assert len(df) == 2
+
+
+# ---------------------------------------------------------------------------
+# is_snowflake_ref: existing file short-circuit (finding 4 fix)
+# ---------------------------------------------------------------------------
+
+
+def test_is_snowflake_ref_returns_false_for_existing_local_file(
     tmp_path: Path,
 ) -> None:
-    """load_snowflake with a local CSV and session.get_current_schema()=None
-    must raise BadArgsError, not return a broken ref like 'PROD..DATACOMPY_TMP_...'."""
-    mock_snowflake_session.get_current_schema.return_value = None
-    csv_file = tmp_path / "data.csv"
-    csv_file.write_text("id,val\n1,a\n2,b\n")
-    with pytest.raises(BadArgsError, match=r"SNOWFLAKE_SCHEMA|schema"):
-        load_snowflake(mock_snowflake_session, str(csv_file), "csv")
+    """A file that exists on disk must never be classified as a Snowflake ref,
+    even if its name matches the dotted-identifier regex."""
+    f = tmp_path / "data.backup"
+    f.touch()
+    assert is_snowflake_ref(str(f)) is False
 
 
-@_skip_no_snowflake
-def test_load_snowflake_staging_returns_valid_ref_when_both_set(
-    mock_snowflake_session: MagicMock,
+def test_is_snowflake_ref_returns_false_for_unlisted_extension_existing_file(
     tmp_path: Path,
 ) -> None:
-    """When db and schema are both available, the returned ref must be
-    a fully-qualified 'db.schema.table' string."""
-    csv_file = tmp_path / "data.csv"
-    csv_file.write_text("id,val\n1,a\n2,b\n")
-    ref = load_snowflake(mock_snowflake_session, str(csv_file), "csv")
-    parts = ref.split(".")
-    assert len(parts) == 3, f"expected db.schema.table, got {ref!r}"
-    assert parts[0] == "PROD"
-    assert parts[1] == "PUBLIC"
-    assert parts[2].startswith("DATACOMPY_TMP_")
+    """Files with extensions not in the denylist are still caught by the
+    existence check when they are real files."""
+    for name in ("model.v2", "report.final", "archive.bak"):
+        f = tmp_path / name
+        f.touch()
+        assert is_snowflake_ref(str(f)) is False, f"{name!r} should not be a ref"
 
 
-@_skip_no_snowflake
-def test_load_snowflake_csv_delimiter_is_honoured_when_staging(
-    mock_snowflake_session: MagicMock,
-    tmp_path: Path,
-) -> None:
-    """When a semicolon-delimited CSV is staged, write_pandas must receive
-    a DataFrame with two separate columns, not a single column whose name
-    contains the delimiter."""
-    semi_csv = tmp_path / "data.csv"
-    semi_csv.write_text("id;val\n1;a\n2;b\n")
-
-    captured_df: list[pd.DataFrame] = []
-
-    def _capture_write_pandas(df: pd.DataFrame, **kwargs: object) -> None:
-        captured_df.append(df)
-
-    mock_snowflake_session.write_pandas.side_effect = _capture_write_pandas
-
-    load_snowflake(mock_snowflake_session, str(semi_csv), "csv", csv_delimiter=";")
-
-    assert len(captured_df) == 1, "write_pandas should have been called once"
-    df = captured_df[0]
-    assert list(df.columns) == [
-        "id",
-        "val",
-    ], f"Expected ['id', 'val'], got {list(df.columns)!r} -- delimiter was ignored"
+def test_is_snowflake_ref_unlisted_extension_nonexistent_still_matches() -> None:
+    """A non-existent name with an unlisted extension still matches as a ref
+    when it looks like a valid dotted identifier (table refs never exist locally)."""
+    assert is_snowflake_ref("PROD.SCHEMA.TABLE") is True
