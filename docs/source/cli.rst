@@ -49,7 +49,9 @@ Input flags
    * - ``--format {csv,parquet,json}``
      - Override format detection.  By default the format is inferred from
        the file extension (``*.csv`` / ``*.tsv``, ``*.parquet`` / ``*.pq``,
-       ``*.json`` / ``*.jsonl``).
+       ``*.json`` / ``*.jsonl``).  This flag applies to **both** ``--left``
+       and ``--right``; for mixed-format inputs, omit it and let the CLI
+       infer the format from each file's extension instead.
    * - ``--csv-delimiter CHAR``
      - Field delimiter for CSV files (default: comma).  Use ``';'`` for
        European CSVs or ``'\\t'`` for TSV files.  Both the escape sequence

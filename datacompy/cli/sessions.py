@@ -55,7 +55,10 @@ def get_spark_session(app_name: str = "datacompy-cli") -> Any:
 
     spark = SparkSession.builder.appName(app_name).getOrCreate()
     log_level = os.environ.get("DATACOMPY_SPARK_LOG_LEVEL", "ERROR")
-    spark.sparkContext.setLogLevel(log_level)
+    try:
+        spark.sparkContext.setLogLevel(log_level)
+    except Exception:
+        pass  # log-level is cosmetic; never let it prevent the session from being returned
     return spark
 
 
@@ -96,13 +99,19 @@ def get_snowflake_session(config_path: Path | None = None) -> Any:
 
     if config_path is not None:
         try:
-            params: dict[str, str] = json.loads(config_path.read_text())
+            raw = json.loads(config_path.read_text())
         except FileNotFoundError as exc:
             raise BadArgsError(
                 f"--snowflake-config file not found: {config_path}"
             ) from exc
         except (OSError, json.JSONDecodeError) as exc:
             raise BadArgsError(f"--snowflake-config {config_path}: {exc}") from exc
+        if not isinstance(raw, dict):
+            raise BadArgsError(
+                f"--snowflake-config must contain a JSON object of connection "
+                f"parameters, got {type(raw).__name__}."
+            )
+        params: dict[str, str] = raw
         return Session.builder.configs(params).create()
 
     # Build from environment variables.

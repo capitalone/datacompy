@@ -17,7 +17,8 @@
 
 ``main()`` is the function registered as ``[project.scripts] datacompy``
 in ``pyproject.toml`` and called by ``datacompy/cli/__main__.py`` for
-``python -m datacompy`` invocations.
+``python -m datacompy.cli`` invocations, and by ``datacompy/__main__.py``
+for ``python -m datacompy`` invocations.
 """
 
 from collections.abc import Sequence
@@ -44,18 +45,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     """
     parser = build_parser()
     args = parser.parse_args(list(argv) if argv is not None else None)
+    debug = getattr(args, "debug", False)
     try:
         result: int = args.func(args)
         return result
     except CLIError as exc:
-        if args.debug:
+        if debug:
             raise
         print_error(str(exc))
         return exc.exit_code
     except FileNotFoundError as exc:
-        if args.debug:
+        if debug:
             raise
         print_error(f"file not found: {exc.filename or 'unknown'}")
         return 2
-    # All other exceptions are unexpected bugs — let them propagate as tracebacks.
+    # All other exceptions are unexpected bugs; let them propagate as tracebacks.
     # Run with --debug to see the full traceback for any error.

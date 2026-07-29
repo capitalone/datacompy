@@ -31,7 +31,7 @@ from typing import Any
 import pandas as pd
 import polars as pl
 
-from datacompy.cli.errors import BadArgsError, LoadError, MissingExtraError
+from datacompy.cli.errors import BadArgsError, LoadError
 
 _TABLE_REF_RE = re.compile(r"^[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*){1,2}$")
 
@@ -55,16 +55,23 @@ def is_snowflake_ref(ref: str) -> bool:
     """Return ``True`` when *ref* looks like a Snowflake ``[db.]schema.table`` identifier.
 
     A ref is considered a table identifier when it:
+    - does not exist as a local file (an existing path is never a table ref),
     - contains no path separators (rules out file paths and URIs),
     - does not end with a recognised file-like extension (rules out
       ``data.csv``, ``archive.zip``, ``snapshot.parquet.gz``, etc.), and
     - matches the ``word.word[.word]`` pattern (2- or 3-part dotted identifier).
 
+    The local-file existence check is performed first so that files with
+    unusual or unlisted extensions (e.g. ``data.backup``, ``model.v2``) are
+    never misclassified as table refs.
+
     Note: ``.gz`` and ``.zip`` are included in the extension guard so that
-    compressed file paths are never mistaken for table refs.  They are not
-    loadable by the CLI directly — use ``--format csv`` (etc.) with the
-    underlying reader if it supports the compression format.
+    compressed file paths with known suffixes are never mistaken for table
+    refs.  They are not loadable by the CLI directly; use ``--format csv``
+    (etc.) with the underlying reader if it supports the compression format.
     """
+    if Path(ref).exists():
+        return False
     if "/" in ref or "\\" in ref:
         return False
     if Path(ref).suffix.lower() in _NON_TABLE_REF_EXTENSIONS:
@@ -77,6 +84,13 @@ _FORMAT_MAP: dict[str, list[str]] = {
     "parquet": [".parquet", ".pq"],
     "json": [".json", ".jsonl", ".ndjson"],
 }
+
+_NDJSON_EXTENSIONS = frozenset({".jsonl", ".ndjson"})
+
+
+def _is_ndjson(path: str) -> bool:
+    """Return ``True`` when *path* has a newline-delimited JSON extension."""
+    return Path(path).suffix.lower() in _NDJSON_EXTENSIONS
 
 
 def infer_format(path: str, override: str | None) -> str:
@@ -138,7 +152,7 @@ def load_pandas(path: str, fmt: str, csv_delimiter: str = ",") -> pd.DataFrame:
         if fmt == "parquet":
             return pd.read_parquet(path)
         if fmt == "json":
-            return pd.read_json(path)
+            return pd.read_json(path, lines=_is_ndjson(path))
     except FileNotFoundError as exc:
         raise LoadError(f"File not found: {path}") from exc
     except Exception as exc:
@@ -171,7 +185,7 @@ def load_polars(path: str, fmt: str, csv_delimiter: str = ",") -> pl.DataFrame:
         if fmt == "parquet":
             return pl.read_parquet(path)
         if fmt == "json":
-            return pl.read_json(path)
+            return pl.read_ndjson(path) if _is_ndjson(path) else pl.read_json(path)
     except FileNotFoundError as exc:
         raise LoadError(f"File not found: {path}") from exc
     except Exception as exc:
@@ -208,7 +222,7 @@ def load_spark(spark: Any, path: str, fmt: str, csv_delimiter: str = ",") -> Any
         if fmt == "parquet":
             return spark.read.parquet(path)
         if fmt == "json":
-            return spark.read.json(path)
+            return spark.read.json(path, multiLine=not _is_ndjson(path))
     except Exception as exc:
         raise LoadError(f"Spark cannot read {path}: {exc}") from exc
     raise BadArgsError(f"Unsupported format for Spark loader: {fmt!r}")
@@ -243,25 +257,24 @@ def _expand_table_ref(session: Any, ref: str) -> str:
 def load_snowflake(
     session: Any, ref: str, fmt: str | None, csv_delimiter: str = ","
 ) -> Any:
-    """Load *ref* for use with :class:`~datacompy.snowflake.SnowflakeCompare`.
+    """Resolve *ref* to a fully-qualified ``db.schema.table`` name.
 
-    When *ref* looks like ``db.schema.table`` (3-part) or ``schema.table``
-    (2-part) it is resolved to a fully-qualified table name and returned
-    directly.  Otherwise *ref* is treated as a local file, loaded via
-    Pandas, and staged to a temporary Snowflake table whose name is returned.
+    Only Snowflake table references (``db.schema.table`` or ``schema.table``)
+    are accepted.  Local file paths are not supported for the Snowflake backend;
+    use the ``--backend pandas`` or ``--backend polars`` loader to read local
+    files, or stage the data to a Snowflake table before comparing.
 
     Parameters
     ----------
     session:
         A live :class:`snowflake.snowpark.Session`.
     ref:
-        A ``db.schema.table`` (3-part) or ``schema.table`` (2-part) identifier,
-        or a local file path.  2-part refs are expanded using the session's
-        current database.
+        A ``db.schema.table`` (3-part) or ``schema.table`` (2-part) identifier.
+        2-part refs are expanded using the session's current database.
     fmt:
-        File format; only used when *ref* is a local file.
+        Unused; kept for a consistent loader signature.
     csv_delimiter:
-        Field delimiter used when *fmt* is ``"csv"`` (default: comma).
+        Unused; kept for a consistent loader signature.
 
     Returns
     -------
@@ -271,67 +284,15 @@ def load_snowflake(
 
     Raises
     ------
-    MissingExtraError
-        When ``snowflake.snowpark`` is not installed.
     BadArgsError
-        When a ref cannot be resolved or a local file cannot be staged.
-    LoadError
-        On file read or Snowflake staging errors.
+        When *ref* is not a recognised table reference, or when a 2-part ref
+        cannot be resolved because the session has no current database.
     """
-    if is_snowflake_ref(ref):
-        return _expand_table_ref(session, ref)
-    return _stage_file_to_snowflake(session, ref, fmt, csv_delimiter)
-
-
-def _stage_file_to_snowflake(
-    session: Any, path: str, fmt: str | None, csv_delimiter: str = ","
-) -> str:
-    """Load a local file via Pandas and write it to a temporary Snowflake table.
-
-    Returns the fully-qualified ``db.schema.table`` name of the temp table.
-    """
-    try:
-        import snowflake.snowpark  # noqa: F401
-    except ImportError as exc:
-        raise MissingExtraError(
-            "Snowflake backend requires 'datacompy[snowflake]'. "
-            "Install it with: pip install datacompy[snowflake]"
-        ) from exc
-
-    actual_fmt = fmt or infer_format(path, None)
-    if actual_fmt not in ("csv", "parquet", "json"):
-        raise BadArgsError(f"Unsupported format for Snowflake loader: {actual_fmt!r}")
-
-    df_pd = load_pandas(path, actual_fmt, csv_delimiter=csv_delimiter)
-
-    from uuid import uuid4
-
-    db = session.get_current_database()
-    schema = session.get_current_schema()
-    if not db or not schema:
-        missing_vars = ", ".join(
-            v
-            for v, val in [("SNOWFLAKE_DATABASE", db), ("SNOWFLAKE_SCHEMA", schema)]
-            if not val
-        )
+    if not is_snowflake_ref(ref):
         raise BadArgsError(
-            f"Cannot stage {path!r} to Snowflake: session has no current "
-            f"database/schema. Set {missing_vars} or use the db.schema.table "
-            "form directly."
+            f"{ref!r} does not look like a Snowflake table reference "
+            "(expected db.schema.table or schema.table). "
+            "Local file loading is not supported for the Snowflake backend. "
+            "Stage your data to a Snowflake table first, then pass the table reference."
         )
-
-    table_name = f"DATACOMPY_TMP_{uuid4().hex[:8].upper()}"
-    try:
-        session.write_pandas(
-            df_pd,
-            table_name=table_name,
-            auto_create_table=True,
-            table_type="temp",
-            overwrite=True,
-        )
-    except Exception as exc:
-        raise LoadError(
-            f"Failed to stage {path} to Snowflake temp table: {exc}"
-        ) from exc
-
-    return f"{db}.{schema}.{table_name}"
+    return _expand_table_ref(session, ref)
