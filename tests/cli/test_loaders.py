@@ -150,7 +150,7 @@ def test_snowflake_three_part_refs_produce_distinct_df_names_in_report(
         ),
         patch(
             "datacompy.cli.compare.load_snowflake",
-            side_effect=lambda s, ref, fmt, **kw: ref,
+            side_effect=lambda s, ref: ref,
         ),
         patch(
             "datacompy.cli.compare.make_snowflake_compare",
@@ -391,7 +391,7 @@ def test_load_snowflake_rejects_local_file_path(
     csv_file = tmp_path / "data.csv"
     csv_file.write_text("id,val\n1,a\n2,b\n")
     with pytest.raises(BadArgsError, match=r"does not look like a Snowflake table"):
-        load_snowflake(mock_snowflake_session, str(csv_file), "csv")
+        load_snowflake(mock_snowflake_session, str(csv_file))
 
 
 # ---------------------------------------------------------------------------

@@ -52,9 +52,9 @@ def test_snowflake_missing_account_exits_2(
         [
             "compare",
             "--left",
-            "dummy_left.csv",
+            "DB.SCHEMA.TABLE_BEFORE",
             "--right",
-            "dummy_right.csv",
+            "DB.SCHEMA.TABLE_AFTER",
             "--on",
             "id",
             "--backend",
@@ -70,17 +70,11 @@ def test_snowflake_missing_account_exits_2(
 
 
 def test_snowflake_compare_match(
-    tmp_path: Path,
     mock_snowflake_compare: Callable[[bool], MagicMock],
     cli: Callable[[list[str]], tuple[int, str, str]],
 ) -> None:
     """Mock out the full compare stack so no live Snowflake session is needed."""
     mock_compare = mock_snowflake_compare(matches=True)
-
-    left = tmp_path / "left.csv"
-    right = tmp_path / "right.csv"
-    left.write_text("id,val\n1,a\n")
-    right.write_text("id,val\n1,a\n")
 
     with (
         patch(
@@ -100,9 +94,9 @@ def test_snowflake_compare_match(
             [
                 "compare",
                 "--left",
-                str(left),
+                "DB.SCHEMA.TABLE_BEFORE",
                 "--right",
-                str(right),
+                "DB.SCHEMA.TABLE_AFTER",
                 "--on",
                 "id",
                 "--backend",
@@ -156,6 +150,35 @@ def test_snowflake_two_part_ref_no_db_exits_2(
 
     assert code == 2
     assert "SNOWFLAKE_DATABASE" in err or "db.schema.table" in err
+
+
+def test_snowflake_local_file_rejected_before_session_opened(
+    tmp_path: Path,
+    cli: Callable[[list[str]], tuple[int, str, str]],
+) -> None:
+    """A local file with --backend snowflake must fail fast during argument
+    validation, before any Snowflake session is created."""
+    local = tmp_path / "data.csv"
+    local.write_text("id,val\n1,a\n")
+
+    with patch("datacompy.cli.sessions.get_snowflake_session") as mock_get_session:
+        code, _, err = cli(
+            [
+                "compare",
+                "--left",
+                str(local),
+                "--right",
+                "DB.SCHEMA.TABLE_AFTER",
+                "--on",
+                "id",
+                "--backend",
+                "snowflake",
+            ]
+        )
+
+    assert code == 2
+    assert "does not look like a Snowflake table reference" in err
+    mock_get_session.assert_not_called()
 
 
 def test_missing_snowflake_config_raises_bad_args_error(

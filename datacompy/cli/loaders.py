@@ -254,9 +254,7 @@ def _expand_table_ref(session: Any, ref: str) -> str:
     return f"{db}.{ref}"
 
 
-def load_snowflake(
-    session: Any, ref: str, fmt: str | None, csv_delimiter: str = ","
-) -> Any:
+def load_snowflake(session: Any, ref: str) -> str:
     """Resolve *ref* to a fully-qualified ``db.schema.table`` name.
 
     Only Snowflake table references (``db.schema.table`` or ``schema.table``)
@@ -271,10 +269,6 @@ def load_snowflake(
     ref:
         A ``db.schema.table`` (3-part) or ``schema.table`` (2-part) identifier.
         2-part refs are expanded using the session's current database.
-    fmt:
-        Unused; kept for a consistent loader signature.
-    csv_delimiter:
-        Unused; kept for a consistent loader signature.
 
     Returns
     -------
