@@ -110,18 +110,20 @@ lint.select = [
   "W",      # pycodestyle warnings
 ]
 lint.ignore = [
-  "D206",   # Docstring indentation. Using formatter instead.
-  "D300",   # Use triple single quotes. Using formatter instead.
-  "E111",   # Check indentation level. Using formatter instead.
-  "E114",   # Check indentation level. Using formatter instead.
-  "E117",   # Check indentation level. Using formatter instead.
-  "E203",   # Check whitespace. Using formatter instead.
-  "E501",   # Line too long. Using formatter instead.
-  "RUF067", # non-empty-init-module
-  "SIM105", # Use `contextlib.suppress(FileNotFoundError)` instead of `try`-`except`-`pass`
-  "SIM108", # Use ternary operator instead of if-else blocks.
-  "UP006",  # `typing.x` is deprecated, use `x` instead
-  "UP035",  # `typing.x` is deprecated, use `x` instead
+  "D206",                    # Docstring indentation. Using formatter instead.
+  "D300",                    # Use triple single quotes. Using formatter instead.
+  "E111",                    # Check indentation level. Using formatter instead.
+  "E114",                    # Check indentation level. Using formatter instead.
+  "E117",                    # Check indentation level. Using formatter instead.
+  "E203",                    # Check whitespace. Using formatter instead.
+  "E501",                    # Line too long. Using formatter instead.
+  "noqa-comments",
+  "RUF067",                  # non-empty-init-module
+  "rule-codes-in-selectors",
+  "SIM105",                  # Use `contextlib.suppress(FileNotFoundError)` instead of `try`-`except`-`pass`
+  "SIM108",                  # Use ternary operator instead of if-else blocks.
+  "UP006",                   # `typing.x` is deprecated, use `x` instead
+  "UP035",                   # `typing.x` is deprecated, use `x` instead
 ]
 lint.per-file-ignores."**/{tests,docs}/*" = [ "ARG", "D", "E402", "F841" ]
 lint.per-file-ignores."__init__.py" = [ "E402" ]
