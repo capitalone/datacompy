@@ -104,7 +104,33 @@ def test_compare_multi_on_columns() -> None:
     args = p.parse_args(
         ["compare", "--left", "a.csv", "--right", "b.csv", "--on", "id", "--on", "date"]
     )
-    assert args.on == ["id", "date"]
+    assert args.on == [["id"], ["date"]]
+
+
+def test_compare_on_comma_separated() -> None:
+    p = build_parser()
+    args = p.parse_args(
+        ["compare", "--left", "a.csv", "--right", "b.csv", "--on", "id,date"]
+    )
+    assert args.on == [["id", "date"]]
+
+
+def test_compare_on_mixed_repeat_and_comma() -> None:
+    p = build_parser()
+    args = p.parse_args(
+        [
+            "compare",
+            "--left",
+            "a.csv",
+            "--right",
+            "b.csv",
+            "--on",
+            "id,date",
+            "--on",
+            "region",
+        ]
+    )
+    assert args.on == [["id", "date"], ["region"]]
 
 
 def test_compare_on_index_flag() -> None:
@@ -180,7 +206,9 @@ def test_debug_flag_default_false() -> None:
     args = p.parse_args(
         ["compare", "--left", "a.csv", "--right", "b.csv", "--on", "id"]
     )
-    assert args.debug is False
+    # --debug uses argparse.SUPPRESS so the attribute is absent when not passed;
+    # main() reads it via getattr(args, "debug", False).
+    assert getattr(args, "debug", False) is False
 
 
 def test_debug_flag_set_true() -> None:
@@ -188,4 +216,13 @@ def test_debug_flag_set_true() -> None:
     args = p.parse_args(
         ["--debug", "compare", "--left", "a.csv", "--right", "b.csv", "--on", "id"]
     )
-    assert args.debug is True
+    assert getattr(args, "debug", False) is True
+
+
+def test_debug_flag_after_subcommand() -> None:
+    """--debug is accepted after the subcommand name, not only before it."""
+    p = build_parser()
+    args = p.parse_args(
+        ["compare", "--left", "a.csv", "--right", "b.csv", "--on", "id", "--debug"]
+    )
+    assert getattr(args, "debug", False) is True

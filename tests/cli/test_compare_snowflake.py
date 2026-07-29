@@ -52,9 +52,9 @@ def test_snowflake_missing_account_exits_2(
         [
             "compare",
             "--left",
-            "dummy_left.csv",
+            "DB.SCHEMA.TABLE_BEFORE",
             "--right",
-            "dummy_right.csv",
+            "DB.SCHEMA.TABLE_AFTER",
             "--on",
             "id",
             "--backend",
@@ -70,17 +70,11 @@ def test_snowflake_missing_account_exits_2(
 
 
 def test_snowflake_compare_match(
-    tmp_path: Path,
     mock_snowflake_compare: Callable[[bool], MagicMock],
     cli: Callable[[list[str]], tuple[int, str, str]],
 ) -> None:
     """Mock out the full compare stack so no live Snowflake session is needed."""
     mock_compare = mock_snowflake_compare(matches=True)
-
-    left = tmp_path / "left.csv"
-    right = tmp_path / "right.csv"
-    left.write_text("id,val\n1,a\n")
-    right.write_text("id,val\n1,a\n")
 
     with (
         patch(
@@ -100,9 +94,9 @@ def test_snowflake_compare_match(
             [
                 "compare",
                 "--left",
-                str(left),
+                "DB.SCHEMA.TABLE_BEFORE",
                 "--right",
-                str(right),
+                "DB.SCHEMA.TABLE_AFTER",
                 "--on",
                 "id",
                 "--backend",
@@ -158,6 +152,35 @@ def test_snowflake_two_part_ref_no_db_exits_2(
     assert "SNOWFLAKE_DATABASE" in err or "db.schema.table" in err
 
 
+def test_snowflake_local_file_rejected_before_session_opened(
+    tmp_path: Path,
+    cli: Callable[[list[str]], tuple[int, str, str]],
+) -> None:
+    """A local file with --backend snowflake must fail fast during argument
+    validation, before any Snowflake session is created."""
+    local = tmp_path / "data.csv"
+    local.write_text("id,val\n1,a\n")
+
+    with patch("datacompy.cli.sessions.get_snowflake_session") as mock_get_session:
+        code, _, err = cli(
+            [
+                "compare",
+                "--left",
+                str(local),
+                "--right",
+                "DB.SCHEMA.TABLE_AFTER",
+                "--on",
+                "id",
+                "--backend",
+                "snowflake",
+            ]
+        )
+
+    assert code == 2
+    assert "does not look like a Snowflake table reference" in err
+    mock_get_session.assert_not_called()
+
+
 def test_missing_snowflake_config_raises_bad_args_error(
     tmp_path: Path,
 ) -> None:
@@ -195,3 +218,85 @@ def test_missing_snowflake_config_file_exits_2_with_clear_message(
 
     assert code == 2
     assert "no_such_conn.json" in err
+
+
+# ---------------------------------------------------------------------------
+# Non-dict --snowflake-config raises BadArgsError (finding 2 fix)
+# ---------------------------------------------------------------------------
+
+
+def test_snowflake_config_json_array_raises_bad_args_error(
+    tmp_path: Path,
+) -> None:
+    """get_snowflake_session must raise BadArgsError when the config file
+    contains a JSON array instead of an object, not a raw TypeError."""
+    bad_config = tmp_path / "conn.json"
+    bad_config.write_text('[{"account": "x", "user": "y"}]')
+    with pytest.raises(BadArgsError, match="JSON object"):
+        get_snowflake_session(config_path=bad_config)
+
+
+def test_snowflake_config_json_string_raises_bad_args_error(
+    tmp_path: Path,
+) -> None:
+    """get_snowflake_session must raise BadArgsError for a JSON scalar."""
+    bad_config = tmp_path / "conn.json"
+    bad_config.write_text('"just a string"')
+    with pytest.raises(BadArgsError, match="JSON object"):
+        get_snowflake_session(config_path=bad_config)
+
+
+def test_snowflake_config_json_array_exits_2(
+    tmp_path: Path,
+    cli: Callable[[list[str]], tuple[int, str, str]],
+) -> None:
+    """End-to-end: a non-dict --snowflake-config must exit 2 with a friendly
+    message, not propagate a TypeError traceback."""
+    bad_config = tmp_path / "conn.json"
+    bad_config.write_text('[{"account": "x"}]')
+
+    code, _, err = cli(
+        [
+            "compare",
+            "--left",
+            "DB.SCHEMA.TABLE_L",
+            "--right",
+            "DB.SCHEMA.TABLE_R",
+            "--on",
+            "ID",
+            "--backend",
+            "snowflake",
+            "--snowflake-config",
+            str(bad_config),
+        ]
+    )
+
+    assert code == 2
+    assert "JSON object" in err
+
+
+# ---------------------------------------------------------------------------
+# --no-cast-column-names-lower rejected for Snowflake backend (finding 11 fix)
+# ---------------------------------------------------------------------------
+
+
+def test_no_cast_column_names_lower_rejected_for_snowflake(
+    cli: Callable[[list[str]], tuple[int, str, str]],
+) -> None:
+    """--no-cast-column-names-lower with --backend snowflake must exit 2."""
+    code, _, err = cli(
+        [
+            "compare",
+            "--left",
+            "DB.SCHEMA.TABLE_L",
+            "--right",
+            "DB.SCHEMA.TABLE_R",
+            "--on",
+            "ID",
+            "--backend",
+            "snowflake",
+            "--no-cast-column-names-lower",
+        ]
+    )
+    assert code == 2
+    assert "snowflake" in err.lower()

@@ -30,6 +30,7 @@ from datacompy.cli.backends import (
 from datacompy.cli.errors import BadArgsError
 from datacompy.cli.loaders import (
     infer_format,
+    is_snowflake_ref,
     load_pandas,
     load_polars,
     load_snowflake,
@@ -50,8 +51,8 @@ def run_compare(ns: argparse.Namespace) -> int:
     Returns
     -------
     int
-        ``0`` -- datasets match (within any specified thresholds).
-        ``1`` -- datasets differ or a threshold was violated.
+        ``0`` if the datasets match (within any specified thresholds).
+        ``1`` if the datasets differ or a threshold was violated.
         Raises :class:`~datacompy.cli.errors.CLIError` (exit ``2``) on
         invalid arguments, missing files, or unsupported backends.
     """
@@ -88,6 +89,20 @@ def _validate_arg_combinations(args: CompareArgs) -> None:
         raise BadArgsError(
             "--ignore-unique-rows requires --max-unequal-rows to be set."
         )
+    if args.backend == "snowflake" and not args.cast_column_names_lower:
+        raise BadArgsError(
+            "--no-cast-column-names-lower is not supported with --backend snowflake. "
+            "Snowflake always normalises identifiers to uppercase."
+        )
+    if args.backend == "snowflake":
+        for side, ref in [("--left", args.left), ("--right", args.right)]:
+            if not is_snowflake_ref(ref):
+                raise BadArgsError(
+                    f"{side} {ref!r} does not look like a Snowflake table reference "
+                    "(expected db.schema.table or schema.table). Local file loading "
+                    "is not supported for the Snowflake backend; use --backend pandas "
+                    "or --backend polars for files, or stage the data to a table first."
+                )
 
 
 def _build_backend(args: CompareArgs, stack: ExitStack) -> BaseCompare:
@@ -136,7 +151,7 @@ def _build_spark(args: CompareArgs, stack: ExitStack) -> BaseCompare:
     fmt_r = infer_format(args.right, args.format)
     df1 = load_spark(spark, args.left, fmt_l, csv_delimiter=args.csv_delimiter)
     df2 = load_spark(spark, args.right, fmt_r, csv_delimiter=args.csv_delimiter)
-    return make_spark_compare(args, spark, df1, df2)  # type: ignore[no-any-return]
+    return make_spark_compare(args, spark, df1, df2)
 
 
 def _build_snowflake(args: CompareArgs, stack: ExitStack) -> BaseCompare:
@@ -144,13 +159,9 @@ def _build_snowflake(args: CompareArgs, stack: ExitStack) -> BaseCompare:
 
     session = get_snowflake_session(args.snowflake_config)
     stack.callback(session.close)
-    ref1 = load_snowflake(
-        session, args.left, args.format, csv_delimiter=args.csv_delimiter
-    )
-    ref2 = load_snowflake(
-        session, args.right, args.format, csv_delimiter=args.csv_delimiter
-    )
-    return make_snowflake_compare(args, session, ref1, ref2)  # type: ignore[no-any-return]
+    ref1 = load_snowflake(session, args.left)
+    ref2 = load_snowflake(session, args.right)
+    return make_snowflake_compare(args, session, ref1, ref2)
 
 
 def _matched(args: CompareArgs, report_data: ReportData, compare: BaseCompare) -> bool:
