@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from datacompy.base import BaseCompare
 from datacompy.cli.loaders import is_snowflake_ref
 
 
@@ -103,7 +104,7 @@ def to_compare_args(ns: Any) -> CompareArgs:
     )
 
 
-def make_pandas_compare(args: CompareArgs, df1: Any, df2: Any) -> Any:
+def make_pandas_compare(args: CompareArgs, df1: Any, df2: Any) -> BaseCompare:
     """Construct a :class:`~datacompy.pandas.PandasCompare`."""
     from datacompy.pandas import PandasCompare
 
@@ -123,7 +124,7 @@ def make_pandas_compare(args: CompareArgs, df1: Any, df2: Any) -> Any:
     return PandasCompare(df1, df2, **kwargs)
 
 
-def make_polars_compare(args: CompareArgs, df1: Any, df2: Any) -> Any:
+def make_polars_compare(args: CompareArgs, df1: Any, df2: Any) -> BaseCompare:
     """Construct a :class:`~datacompy.polars.PolarsCompare`."""
     from datacompy.polars import PolarsCompare
 
@@ -141,7 +142,9 @@ def make_polars_compare(args: CompareArgs, df1: Any, df2: Any) -> Any:
     )
 
 
-def make_spark_compare(args: CompareArgs, spark: Any, df1: Any, df2: Any) -> Any:
+def make_spark_compare(
+    args: CompareArgs, spark: Any, df1: Any, df2: Any
+) -> BaseCompare:
     """Construct a :class:`~datacompy.spark.SparkSQLCompare`."""
     try:
         from datacompy.spark import SparkSQLCompare
@@ -170,7 +173,7 @@ def make_spark_compare(args: CompareArgs, spark: Any, df1: Any, df2: Any) -> Any
 
 def make_snowflake_compare(
     args: CompareArgs, session: Any, ref1: Any, ref2: Any
-) -> Any:
+) -> BaseCompare:
     """Construct a :class:`~datacompy.snowflake.SnowflakeCompare`."""
     try:
         from datacompy.snowflake import SnowflakeCompare

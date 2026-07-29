@@ -66,9 +66,11 @@ Join-key flags
 
    * - Flag
      - Description
-   * - ``--on COL``
-     - Join column name.  Repeat for composite keys:
-       ``--on id --on date``.
+   * - ``--on COL[,COL...]``
+     - Join column name.  Accepts a comma-separated list
+       (``--on id,date``) or repeated flags (``--on id --on date``); the
+       two forms can be mixed.  Use repeated flags for column names that
+       contain a comma.
    * - ``--on-index``
      - Join on the DataFrame index instead of columns.
        **Pandas backend only.**  Mutually exclusive with ``--on``.
@@ -252,7 +254,9 @@ ref is given, the CLI expands it to 3 parts using the session's current
 database (set via ``SNOWFLAKE_DATABASE`` or the connection config file).
 If no current database is set and a 2-part ref is used, the CLI exits
 with an error asking you to use the fully-qualified form.
-Local files are uploaded to temporary Snowflake tables automatically.
+The Snowflake backend accepts table references only.  Local files are not
+supported; use ``--backend pandas`` or ``--backend polars`` to compare files,
+or stage the data to a Snowflake table first and pass the table reference.
 
 Install the Snowflake extra:
 
