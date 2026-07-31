@@ -28,6 +28,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 dynamic = [ "version" ]
 dependencies = [
@@ -63,11 +64,10 @@ optional-dependencies.tests = [
 ]
 optional-dependencies.tests-spark = [ "pytest-spark" ]
 urls."Bug Tracker" = "https://github.com/capitalone/datacompy/issues"
+urls."Source Code" = "https://github.com/capitalone/datacompy"
 urls.Documentation = "https://capitalone.github.io/datacompy/"
 urls.Homepage = "https://github.com/capitalone/datacompy"
 urls.Repository = "https://github.com/capitalone/datacompy.git"
-
-urls."Source Code" = "https://github.com/capitalone/datacompy"
 scripts.datacompy = "datacompy.cli:main"
 
 [tool.setuptools]
@@ -77,10 +77,10 @@ packages = [
   "datacompy.comparator",
   "datacompy.templates",
 ]
-zip-safe = false
 include-package-data = true
-dynamic.version = { attr = "datacompy.__version__" }
 package-data."*" = [ "templates/*.j2", "templates/*.txt" ]
+dynamic.version = { attr = "datacompy.__version__" }
+zip-safe = false
 
 [tool.distutils]
 bdist_wheel.python-tag = "py3"
@@ -90,18 +90,18 @@ target-version = "py312"
 src = [ "src" ]
 extend-include = [ "*.ipynb" ]
 lint.select = [
-  "B", # flake8-bugbear
+  "B",      # flake8-bugbear
   # "A", # flake8-builtins
-  "C4",  # flake8-comprehensions
-  "D",   # pydocstyle
-  "E",   # pycodestyle errors
-  "F",   # pyflakes
-  "I",   # isort
-  "LOG", # flake8-logging
-  "NPY", # numpy rules
-  "RUF", # Ruff errors
+  "C4",     # flake8-comprehensions
+  "D",      # pydocstyle
+  "E",      # pycodestyle errors
+  "F",      # pyflakes
+  "I",      # isort
+  "LOG",    # flake8-logging
+  "NPY",    # numpy rules
+  "RUF",    # Ruff errors
   # "ARG", # flake8-unused-arguments
-  "SIM", # flake8-simplify
+  "SIM",    # flake8-simplify
   # "C901", # mccabe complexity
   # "G", # flake8-logging-format
   "T20",    # flake8-print
