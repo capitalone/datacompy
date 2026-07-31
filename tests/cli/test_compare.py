@@ -316,6 +316,68 @@ def test_ignore_extra_columns_without_a_threshold(
 
 
 # ---------------------------------------------------------------------------
+# Empty and non-overlapping inputs
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def empty_csv(tmp_path, left_frame):
+    """The same columns as the fixtures, with no rows."""
+    path = tmp_path / "empty.csv"
+    left_frame.iloc[:0].to_csv(path, index=False)
+    return path
+
+
+def test_two_empty_datasets_are_not_a_match(cli, empty_csv, backend, capsys):
+    """An empty intersection is a non-match, not a match with nothing to report.
+
+    Every backend's ``intersect_rows_match`` returns False when no rows overlap,
+    so "no rows differ" and "the datasets match" are different answers here.
+    ``within_threshold`` derives its verdict from the report data rather than
+    calling ``matches()``, and this pins the one case where the shortest reading
+    of those counts would disagree with the library.
+    """
+    assert (
+        cli("--left", str(empty_csv), "--right", str(empty_csv), "--backend", backend)
+        == MISMATCH
+    )
+
+
+def test_datasets_with_no_overlapping_join_keys_are_not_a_match(
+    cli, tmp_path, left_frame, backend, capsys
+):
+    """Every row is unique to one side, so nothing intersects."""
+    disjoint = tmp_path / "disjoint.csv"
+    left_frame.assign(id=left_frame["id"] + 100).to_csv(disjoint, index=False)
+
+    assert cli("--right", str(disjoint), "--backend", backend) == MISMATCH
+
+
+def test_empty_datasets_satisfy_an_explicit_zero_threshold(
+    cli, empty_csv, backend, capsys
+):
+    """``--max-unequal-rows`` asks a different question, and gets a different answer.
+
+    The threshold is a bound on how many rows differ, and zero rows differ, so an
+    empty comparison clears it even though it is not a match. Keeping the two
+    branches distinct is deliberate.
+    """
+    assert (
+        cli(
+            "--left",
+            str(empty_csv),
+            "--right",
+            str(empty_csv),
+            "--max-unequal-rows",
+            "0",
+            "--backend",
+            backend,
+        )
+        == MATCH
+    )
+
+
+# ---------------------------------------------------------------------------
 # Normalisation flags
 # ---------------------------------------------------------------------------
 

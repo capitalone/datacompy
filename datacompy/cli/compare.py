@@ -18,7 +18,6 @@
 import argparse
 from contextlib import ExitStack
 
-from datacompy.base import BaseCompare
 from datacompy.cli.backends import BACKENDS
 from datacompy.cli.errors import BadArgsError
 from datacompy.cli.output import emit
@@ -72,7 +71,7 @@ def run_compare(namespace: argparse.Namespace) -> int:
             namespace.output,
             quiet=namespace.quiet,
         )
-        matched = within_threshold(namespace, report_data, comparison)
+        matched = within_threshold(namespace, report_data)
     return 0 if matched else 1
 
 
@@ -125,25 +124,34 @@ def validate_arguments(namespace: argparse.Namespace) -> None:
 def within_threshold(
     namespace: argparse.Namespace,
     report_data: ReportData,
-    comparison: BaseCompare,
 ) -> bool:
     """Return ``True`` when the comparison counts as a pass.
 
-    Without ``--max-unequal-rows`` this is exactly
+    Without ``--max-unequal-rows`` this reproduces
     :meth:`~datacompy.base.BaseCompare.matches`. With it, the datasets pass
     while the number of differing rows stays at or below the threshold, and
     while the columns line up unless ``--ignore-extra-columns`` was given.
-    """
-    if namespace.max_unequal_rows is None:
-        return comparison.matches(ignore_extra_columns=namespace.ignore_extra_columns)
 
-    differing_rows = report_data.row_summary.unequal_rows
-    if not namespace.ignore_unique_rows:
-        differing_rows += (
-            report_data.row_summary.df1_unique + report_data.row_summary.df2_unique
-        )
+    Both branches read *report_data*, which ``build_report_data`` has already
+    computed. Calling ``matches()`` here instead would recount straight from the
+    DataFrames, and on Spark and Snowflake each of those counts is a distributed
+    action, so the default invocation would scan the data a second time after
+    the report had already been rendered.
+    """
+    rows = report_data.row_summary
     columns_ok = namespace.ignore_extra_columns or (
         report_data.column_summary.df1_unique == 0
         and report_data.column_summary.df2_unique == 0
     )
+
+    if namespace.max_unequal_rows is None:
+        rows_overlap = rows.df1_unique == 0 and rows.df2_unique == 0
+        # An empty intersection is a non-match for every backend, so the
+        # common_rows test is what keeps two empty datasets from passing.
+        intersect_matches = rows.common_rows > 0 and rows.unequal_rows == 0
+        return columns_ok and rows_overlap and intersect_matches
+
+    differing_rows = rows.unequal_rows
+    if not namespace.ignore_unique_rows:
+        differing_rows += rows.df1_unique + rows.df2_unique
     return columns_ok and differing_rows <= namespace.max_unequal_rows
