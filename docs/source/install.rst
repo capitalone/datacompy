@@ -2,11 +2,8 @@
 Installation
 ============
 
-.. important::
-
-    If you are using Python 3.12 and above, please note that not all functioanlity will be supported.
-    Pandas and Polars support should work fine and are tested.
-
+DataComPy requires Python 3.10 or later. Every backend is tested against each
+supported version.
 
 PyPI (basic)
 ------------
@@ -14,6 +11,22 @@ PyPI (basic)
 ::
 
     pip install datacompy
+
+Installing extras
+-----------------
+
+Pandas and Polars work out of the box. Spark and Snowflake are optional::
+
+    pip install datacompy[spark]
+    pip install datacompy[snowflake]
+
+.. note::
+
+    On Python 3.12 and above the ``spark`` extra resolves to PySpark 4. The
+    dependency markers pick the right version, so nothing extra is needed.
+
+Installing the package also provides the ``datacompy`` command line tool. See
+:doc:`cli`.
 
 
 A Conda environment or virtual environment is highly recommended:

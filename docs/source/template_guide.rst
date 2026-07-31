@@ -10,7 +10,7 @@ Template Basics
 Custom templates are Jinja2 templates that receive comparison data and format it according to your needs.
 The template context is produced by calling ``dataclasses.asdict()`` on the
 :class:`~datacompy.report.ReportData` instance, so every field is passed in
-with its **typed value** — no pre-formatting is applied.  All formatting
+with its **typed value**, and no pre-formatting is applied. All formatting
 decisions belong in the template.
 
 Available Template Variables
