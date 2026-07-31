@@ -65,13 +65,22 @@ any extra flags:
 
     datacompy compare --left snapshot.csv --right snapshot.parquet --on id
 
-Use ``--input-format`` when the extension is missing or unusual, and
-``--csv-delimiter`` for anything other than a comma:
+The extensions recognised are ``.csv``, ``.parquet``, ``.json``, ``.jsonl``,
+and ``.ndjson``. Use ``--input-format`` when the extension is missing or
+unusual, and ``--csv-delimiter`` for anything other than a comma:
 
 .. code-block:: bash
 
     datacompy compare --left extract.dat --right extract2.dat --on id \
         --input-format csv --csv-delimiter '\t'
+
+.. note::
+
+    ``--csv-delimiter`` applies to both datasets, and ``.tsv`` is not inferred
+    as a format for that reason. Read tab separated files with an explicit
+    ``--input-format csv --csv-delimiter '\t'``, which requires both sides to
+    use the same delimiter. Comparing a comma separated file against a tab
+    separated one is not currently supported.
 
 Cloud URIs such as ``s3://``, ``gs://``, and ``abfs://`` are handed straight to
 the underlying reader, so they work once the matching filesystem library

@@ -47,9 +47,14 @@ from datacompy.cli.errors import BadArgsError, LoadError, MissingExtraError
 from datacompy.cli.parser import OPTIONS
 
 #: File extension to canonical format name.
+#:
+#: ``.tsv`` is deliberately absent. Mapping it to ``csv`` would pick the right
+#: reader but not the right delimiter, which stays comma unless
+#: ``--csv-delimiter`` says otherwise, so a ``.tsv`` file would be recognised
+#: and then misparsed. Until the delimiter is inferred per file, a tab
+#: separated file is read with an explicit ``--input-format csv``.
 _EXTENSION_FORMATS = {
     ".csv": "csv",
-    ".tsv": "csv",
     ".parquet": "parquet",
     ".pq": "parquet",
     ".json": "json",
