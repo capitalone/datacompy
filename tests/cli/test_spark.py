@@ -171,6 +171,54 @@ def test_a_borrowed_session_survives_the_comparison(
     assert borrowed_session.createDataFrame([(1,)], ["x"]).count() == 1
 
 
+def test_cache_intermediates_changes_what_spark_does(
+    borrowed_session, left_csv, right_csv, monkeypatch, capsys
+):
+    """The flag has to reach Spark, not just survive parsing.
+
+    ``SparkSQLCompare`` caches ``intersect_rows`` and unpersists it again before
+    the comparison returns, so nothing is left to inspect once the CLI exits.
+    Counting ``cache()`` calls is what separates the two runs.
+
+    The class to patch is taken from a DataFrame the session actually produces.
+    ``cache`` is overridden on the concrete class, so patching the
+    ``pyspark.sql.DataFrame`` base would never intercept, and the concrete
+    class is not at the same import path across PySpark versions.
+    """
+    df_cls = type(borrowed_session.createDataFrame([(1,)], ["x"]))
+    original = df_cls.cache
+    calls = []
+
+    def spy(self):
+        calls.append(self)
+        return original(self)
+
+    monkeypatch.setattr(df_cls, "cache", spy)
+
+    argv = [
+        "compare",
+        "--left",
+        str(left_csv),
+        "--right",
+        str(right_csv),
+        "--on",
+        "id",
+        "--backend",
+        "spark",
+        "--quiet",
+    ]
+
+    assert main(argv) == MISMATCH
+    cached_by_default = len(calls)
+
+    calls.clear()
+    assert main([*argv, "--no-cache-intermediates"]) == MISMATCH
+    cached_when_disabled = len(calls)
+
+    assert cached_by_default > 0, "expected caching to be enabled by default"
+    assert cached_when_disabled == 0
+
+
 def test_a_borrowed_session_survives_a_failed_comparison(
     borrowed_session, tmp_path, capsys
 ):
