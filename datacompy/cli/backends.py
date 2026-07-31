@@ -231,7 +231,18 @@ class SparkBackend(CLIBackend):
     extra = "spark"
 
     def open_session(self, namespace: argparse.Namespace, stack: ExitStack) -> Any:
-        """Return a :class:`pyspark.sql.SparkSession`, stopping it on exit.
+        """Return a :class:`pyspark.sql.SparkSession`, stopping it only if we made it.
+
+        A SparkSession is process wide, so ``getOrCreate`` returns the caller's
+        existing session when there is one. :func:`datacompy.cli.main` is a
+        public function that can be called in process from a notebook or an
+        Airflow task, and stopping a session the CLI did not create would kill
+        the caller's ``SparkContext`` along with it. Teardown is therefore
+        registered only when this call is the one that created the session.
+
+        For the same reason ``--spark-app-name`` has no effect when a session
+        already exists: an application name cannot be changed once the
+        ``SparkContext`` is running.
 
         The log level defaults to ``ERROR`` so PySpark's INFO and WARN chatter
         stays out of the CLI's own output. Override it with
@@ -245,8 +256,13 @@ class SparkBackend(CLIBackend):
                 "Install it with: pip install 'datacompy[spark]'"
             ) from exc
 
+        # Read before getOrCreate, which installs an active session as a side
+        # effect. This is thread local, so a session created on another thread
+        # and never activated on this one is not detected.
+        borrowed = SparkSession.getActiveSession()
         spark = SparkSession.builder.appName(namespace.spark_app_name).getOrCreate()
-        stack.callback(spark.stop)
+        if borrowed is None:
+            stack.callback(spark.stop)
         try:
             spark.sparkContext.setLogLevel(
                 os.environ.get("DATACOMPY_SPARK_LOG_LEVEL", "ERROR")

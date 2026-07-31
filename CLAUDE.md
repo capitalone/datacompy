@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 DataComPy is a Python library for comparing two DataFrames/tables across multiple backends: Pandas, Polars, Spark, and Snowflake. It originated as a replacement for SAS's `PROC COMPARE`. v1 is GA; the version lives in `datacompy/__version__` and `pyproject.toml` derives the distribution version from it.
 
-A second AI agent guide exists at `.github/copilot-instructions.md` covering the same architecture. Keep the two consistent when changing either.
+This file is the single AI agent guide for the repository. `.github/copilot-instructions.md` used to duplicate it and was removed; put new guidance here rather than starting a second copy.
 
 ## Common Commands
 

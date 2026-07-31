@@ -25,14 +25,14 @@ Exit codes
 
 The exit code is the contract for automation.
 
-===== ==============================================================
-Code  Meaning
-===== ==============================================================
-``0`` The datasets match, or stay within ``--max-unequal-rows``
-``1`` The datasets differ, or the threshold was exceeded
-``2`` Bad arguments, unreadable input, or a missing optional backend
+======= ==============================================================
+Code    Meaning
+======= ==============================================================
+``0``   The datasets match, or stay within ``--max-unequal-rows``
+``1``   The datasets differ, or the threshold was exceeded
+``2``   Bad arguments, unreadable input, or a missing optional backend
 ``130`` Interrupted
-===== ==============================================================
+======= ==============================================================
 
 Anything unexpected propagates as a traceback. Pass ``--debug`` to see the full
 traceback for an error that would otherwise be reported as a short message.
