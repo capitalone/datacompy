@@ -213,9 +213,15 @@ Spark
 ~~~~~
 
 The CLI creates its own session and stops it when the command finishes, on both
-the success and the failure path. ``--spark-app-name`` sets the application name.
-PySpark's INFO and WARN logging is suppressed so it does not mix with the report;
-set ``DATACOMPY_SPARK_LOG_LEVEL`` to override that.
+the success and the failure path. A session that already exists is borrowed and
+left running, so calling the CLI from a process that owns a session is safe.
+``--spark-app-name`` sets the application name, and has no effect when a session
+already exists. PySpark's INFO and WARN logging is suppressed so it does not mix
+with the report; set ``DATACOMPY_SPARK_LOG_LEVEL`` to override that.
+
+Intermediate DataFrames are cached by default. Pass
+``--no-cache-intermediates`` on Databricks Serverless and other environments
+that do not support caching.
 
 Snowflake
 ~~~~~~~~~

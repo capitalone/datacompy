@@ -118,6 +118,21 @@ def compare_kwargs(namespace: argparse.Namespace, backend: str) -> dict[str, Any
     return kwargs
 
 
+def _missing_extra(backend: str, extra: str | None) -> MissingExtraError:
+    """Return the error raised when *backend* cannot be imported.
+
+    Kept in one place because the same wording is needed wherever an optional
+    dependency is imported. *extra* is ``None`` for backends with no optional
+    dependency, where a failed import is not something ``pip install`` fixes.
+    """
+    if extra is None:
+        return MissingExtraError(f"the {backend} backend could not be imported.")
+    return MissingExtraError(
+        f"the {backend} backend requires 'datacompy[{extra}]'. "
+        f"Install it with: pip install 'datacompy[{extra}]'"
+    )
+
+
 class CLIBackend(ABC):
     """Strategy describing how the CLI drives one comparison backend."""
 
@@ -147,10 +162,7 @@ class CLIBackend(ABC):
         try:
             module = importlib.import_module(self.module)
         except ImportError as exc:
-            raise MissingExtraError(
-                f"the {self.name} backend requires 'datacompy[{self.extra}]'. "
-                f"Install it with: pip install 'datacompy[{self.extra}]'"
-            ) from exc
+            raise _missing_extra(self.name, self.extra) from exc
         return getattr(module, self.class_name)  # type: ignore[no-any-return]
 
     def open_session(self, namespace: argparse.Namespace, stack: ExitStack) -> Any:
@@ -251,10 +263,7 @@ class SparkBackend(CLIBackend):
         try:
             from pyspark.sql import SparkSession
         except ImportError as exc:
-            raise MissingExtraError(
-                "the spark backend requires 'datacompy[spark]'. "
-                "Install it with: pip install 'datacompy[spark]'"
-            ) from exc
+            raise _missing_extra(self.name, self.extra) from exc
 
         # Read before getOrCreate, which installs an active session as a side
         # effect. This is thread local, so a session created on another thread
@@ -317,10 +326,7 @@ class SnowflakeBackend(CLIBackend):
         try:
             from snowflake.snowpark.session import Session
         except ImportError as exc:
-            raise MissingExtraError(
-                "the snowflake backend requires 'datacompy[snowflake]'. "
-                "Install it with: pip install 'datacompy[snowflake]'"
-            ) from exc
+            raise _missing_extra(self.name, self.extra) from exc
 
         params = _snowflake_params(namespace.snowflake_config)
         session = Session.builder.configs(params).create()

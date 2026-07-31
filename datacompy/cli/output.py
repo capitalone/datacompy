@@ -85,19 +85,19 @@ def emit(
     if quiet and output is None:
         return
 
+    # Rendered once and reused, so asking for a file and stdout together does
+    # not template the same ReportData twice.
+    rendered = render(report_data, report_format)
+
     if output is not None:
         try:
-            if report_format == "html":
-                # Reuse the library's HTML writer, which also creates parents.
-                report_data.save(output)
-            else:
-                output.parent.mkdir(parents=True, exist_ok=True)
-                output.write_text(render(report_data, report_format), encoding="utf-8")
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(rendered, encoding="utf-8")
         except OSError as exc:
             raise OutputError(f"cannot write {output}: {exc}") from exc
 
     if not quiet:
-        print(render(report_data, report_format))
+        print(rendered)
 
 
 def print_error(message: str) -> None:

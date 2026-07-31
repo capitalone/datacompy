@@ -108,6 +108,11 @@ def test_backend_specific_flags_are_rejected_elsewhere(cli, capsys):
     assert "--spark-app-name is not supported" in capsys.readouterr().err
 
 
+def test_cache_intermediates_is_rejected_for_non_spark_backends(cli, capsys):
+    assert cli("--no-cache-intermediates", "--backend", "polars") == ERROR
+    assert "--cache-intermediates is not supported" in capsys.readouterr().err
+
+
 def test_cast_column_names_lower_is_rejected_for_snowflake(cli, capsys):
     assert cli("--no-cast-column-names-lower", "--backend", "snowflake") == ERROR
     assert "--cast-column-names-lower is not supported" in capsys.readouterr().err

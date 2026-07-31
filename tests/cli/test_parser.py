@@ -75,6 +75,56 @@ def test_every_option_kwarg_exists_on_its_backend_constructor(backend_name):
         )
 
 
+#: Constructor keywords the CLI deliberately does not expose, and why.
+UNEXPOSED_KWARGS = {
+    "custom_comparators": "takes comparator instances, which a flag cannot express",
+}
+
+#: Constructor parameters that carry the data or the session, not configuration.
+_NOT_CONFIGURATION = frozenset({"self", "df1", "df2", "spark_session", "session"})
+
+
+@pytest.mark.parametrize("backend_name", sorted(ALL_BACKENDS))
+def test_every_backend_constructor_kwarg_is_exposed_or_allowlisted(backend_name):
+    """The drift guard pointed the other way.
+
+    The forward guard catches a CLI row that names a keyword the library does
+    not have. This one catches the library growing a keyword the CLI never
+    surfaces, which is the failure that stays invisible: the command keeps
+    working, it just quietly cannot reach the new behaviour. Anything genuinely
+    not expressible as a flag belongs in ``UNEXPOSED_KWARGS`` with a reason.
+    """
+    backend = BACKENDS[backend_name]
+    try:
+        compare_cls = backend.compare_cls
+    except MissingExtraError:
+        pytest.skip(f"datacompy[{backend.extra}] is not installed")
+
+    exposed = {opt.kwarg for opt in OPTIONS if opt.kwarg}
+    for name in inspect.signature(compare_cls.__init__).parameters:
+        if name in _NOT_CONFIGURATION:
+            continue
+        assert name in exposed or name in UNEXPOSED_KWARGS, (
+            f"{compare_cls.__name__}.__init__ accepts {name!r}, which no CLI "
+            f"option supplies. Add an Opt row for it, or add it to "
+            f"UNEXPOSED_KWARGS with the reason it cannot be a flag."
+        )
+
+
+def test_the_unexposed_allowlist_has_no_stale_entries():
+    """An allowlist that outlives the parameter it excuses is just misleading."""
+    known = set()
+    for backend in BACKENDS.values():
+        try:
+            compare_cls = backend.compare_cls
+        except MissingExtraError:
+            continue
+        known |= set(inspect.signature(compare_cls.__init__).parameters)
+
+    for name in UNEXPOSED_KWARGS:
+        assert name in known, f"{name!r} is allowlisted but no constructor takes it"
+
+
 def test_option_flags_and_destinations_are_unique():
     flags = [flag for opt in OPTIONS for flag in opt.flags]
     assert len(flags) == len(set(flags))
@@ -98,6 +148,14 @@ def test_compare_kwargs_omits_options_the_backend_does_not_accept():
     assert "cast_column_names_lower" not in compare_kwargs(namespace, "snowflake")
     assert "on_index" in compare_kwargs(namespace, "pandas")
     assert "on_index" not in compare_kwargs(namespace, "polars")
+    assert compare_kwargs(namespace, "spark")["cache_intermediates"] is True
+    assert "cache_intermediates" not in compare_kwargs(namespace, "polars")
+
+
+def test_cache_intermediates_can_be_turned_off():
+    """Databricks Serverless and similar environments cannot cache."""
+    namespace = _minimal("--no-cache-intermediates")
+    assert compare_kwargs(namespace, "spark")["cache_intermediates"] is False
 
 
 def test_compare_kwargs_omits_unset_values_so_library_defaults_apply():

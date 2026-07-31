@@ -482,6 +482,19 @@ OPTIONS: tuple[Opt, ...] = (
         options={"metavar": "NAME"},
     ),
     Opt(
+        flags=("--cache-intermediates",),
+        help=(
+            "Cache intermediate DataFrames (default: enabled). Pass "
+            "--no-cache-intermediates on Databricks Serverless and other "
+            "environments that do not support caching."
+        ),
+        group=GROUP_BACKEND_SPECIFIC,
+        kwarg="cache_intermediates",
+        backends=frozenset({"spark"}),
+        default=True,
+        options={"action": argparse.BooleanOptionalAction},
+    ),
+    Opt(
         flags=("--snowflake-config",),
         help=(
             "Path to a JSON file of Snowflake connection parameters. When "
