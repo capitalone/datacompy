@@ -343,3 +343,97 @@ def test_report_method_returns_string():
     rpt = PandasCompare(df1, df2, "id").report()
     assert isinstance(rpt, str)
     assert "DataComPy" in rpt
+
+
+# ---------------------------------------------------------------------------
+# Table alignment
+# ---------------------------------------------------------------------------
+
+
+def _dash_spans(separator: str) -> list[tuple[int, int]]:
+    """Return the (start, end) offset of each run of dashes in *separator*."""
+    spans, start = [], None
+    for index, char in enumerate(separator):
+        if char == "-" and start is None:
+            start = index
+        elif char != "-" and start is not None:
+            spans.append((start, index))
+            start = None
+    if start is not None:
+        spans.append((start, len(separator)))
+    return spans
+
+
+def _assert_table_aligned(report: str, heading_prefix: str) -> None:
+    """Assert every cell of a report table sits inside its own column.
+
+    The separator row of dashes defines the column boundaries. A cell that
+    overflows its field, which is what a hard coded width does as soon as a name
+    grows past it, lands in a gutter and fails here.
+    """
+    lines = report.splitlines()
+    head = next(i for i, line in enumerate(lines) if line.startswith(heading_prefix))
+    spans = _dash_spans(lines[head + 1])
+    assert len(spans) > 1, (
+        f"expected per column dashes under {lines[head]!r}, got {lines[head + 1]!r}"
+    )
+
+    rows = [lines[head]]
+    for line in lines[head + 2 :]:
+        if not line.strip():
+            break
+        rows.append(line)
+
+    for row in rows:
+        occupied = {index for index, char in enumerate(row) if char != " "}
+        inside = {index for start, end in spans for index in range(start, end)}
+        assert occupied <= inside, (
+            f"row {row!r} spills outside its columns "
+            f"(offsets {sorted(occupied - inside)}) under heading {lines[head]!r}"
+        )
+
+    # Within a column, every cell shares an edge: all flush left or all flush
+    # right. This is what keeps a heading sitting over its own numbers.
+    for start, end in spans:
+        cells = [row[start:end] for row in rows if row[start:end].strip()]
+        flush_left = not any(cell.startswith(" ") for cell in cells)
+        flush_right = not any(cell.endswith(" ") for cell in cells)
+        assert flush_left or flush_right, (
+            f"column at {start}:{end} mixes alignment: {cells!r}"
+        )
+
+
+@pytest.mark.parametrize(
+    ("df1_name", "df2_name", "column"),
+    [
+        ("left", "right", "val"),
+        ("warehouse_prod_snapshot", "stg", "val"),
+        ("a", "b", "a_column_name_far_longer_than_the_old_twenty_char_field"),
+    ],
+    ids=["short", "long_dataset_name", "long_column_name"],
+)
+def test_report_tables_stay_aligned(df1_name, df2_name, column):
+    """Long dataset and column names must not knock the tables out of line.
+
+    Column widths used to be hard coded, so a name wider than its field pushed
+    every column to its right and left the body out of step with the heading.
+    """
+    df1 = pd.DataFrame({"id": [1, 2], column: [1.0, 2.0]})
+    df2 = pd.DataFrame({"id": [1, 2], column: [1.0, 9.0]})
+    report = PandasCompare(
+        df1, df2, "id", df1_name=df1_name, df2_name=df2_name
+    ).report()
+
+    _assert_table_aligned(report, "DataFrame  ")
+    _assert_table_aligned(report, "Column  ")
+
+
+def test_report_truncates_overlong_column_names():
+    """A very long column name is truncated to a fixed display width."""
+    column = "a_column_name_far_longer_than_the_old_twenty_char_field"
+    df1 = pd.DataFrame({"id": [1, 2], column: [1.0, 2.0]})
+    df2 = pd.DataFrame({"id": [1, 2], column: [1.0, 9.0]})
+    report = PandasCompare(df1, df2, "id").report()
+
+    assert f"{column[:17]}..." in report
+    assert column not in report.split("Sample Rows")[0]

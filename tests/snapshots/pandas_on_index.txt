@@ -5,9 +5,9 @@ DataFrame Summary
 -----------------
 
 DataFrame  Columns  Rows
-------------------------
-df1               1     3
-df2               1     3
+---------  -------  ----
+df1              1     3
+df2              1     3
 
 
 Column Summary
@@ -41,9 +41,9 @@ Total number of values which compare unequal: 1
 Columns with Unequal Values or Types
 ------------------------------------
 
-Column               df1 dtype       df2 dtype        # Unequal   Max Diff  # Null Diff    Rel Tol    Abs Tol
--------------------- --------------- --------------- ---------- ---------- ------------ ---------- ----------
-val                  int64           int64                    1    79.0000            0     0.0000     0.0000
+Column  df1 dtype  df2 dtype  # Unequal  Max Diff  # Null Diff  Rel Tol  Abs Tol
+------  ---------  ---------  ---------  --------  -----------  -------  -------
+val     int64      int64              1   79.0000            0   0.0000   0.0000
 
 
 Sample Rows with Unequal Values

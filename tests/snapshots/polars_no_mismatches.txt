@@ -5,9 +5,9 @@ DataFrame Summary
 -----------------
 
 DataFrame  Columns  Rows
-------------------------
-left              2     3
-right             2     3
+---------  -------  ----
+left             2     3
+right            2     3
 
 
 Column Summary

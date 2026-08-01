@@ -4,10 +4,11 @@ DataComPy Comparison
 DataFrame Summary
 -----------------
 
-DataFrame  Columns  Rows
-------------------------
-{{ '%-10s %8d %5d'|format(df1_name, df1_shape[1], df1_shape[0]) }}
-{{ '%-10s %8d %5d'|format(df2_name, df2_shape[1], df2_shape[0]) }}
+{{ fixed_width_table(
+    ['DataFrame', 'Columns', 'Rows'],
+    [[df1_name, '{:,}'.format(df1_shape[1]), '{:,}'.format(df1_shape[0])],
+     [df2_name, '{:,}'.format(df2_shape[1]), '{:,}'.format(df2_shape[0])]],
+    'lrr') }}
 
 
 Column Summary
@@ -42,27 +43,29 @@ Total number of values which compare unequal: {{ "{:,}".format(column_comparison
 Columns with Unequal Values or Types
 ------------------------------------
 
-{% set headers = ['Column',
-                 mismatch_stats.df1_name + ' dtype',
-                 mismatch_stats.df2_name + ' dtype',
-                 '# Unequal',
-                 'Max Diff',
-                 '# Null Diff',
-                 'Rel Tol',
-                 'Abs Tol'] %}
-{{ '%-20s %-15s %-15s %10s %10s %12s %10s %10s'|format(headers[0], headers[1], headers[2], headers[3], headers[4], headers[5], headers[6], headers[7]) }}
-{{ '-' * 20 }} {{ '-' * 15 }} {{ '-' * 15 }} {{ '-' * 10 }} {{ '-' * 10 }} {{ '-' * 12 }} {{ '-' * 10 }} {{ '-' * 10 }}
+{% set stat_rows = [] %}
 {% for stat in mismatch_stats.stats %}
-{{ '%-20s %-15s %-15s %10d %10.4f %12d %10.4f %10.4f'|format(
-    stat.column[:18] + ('...' if stat.column|length > 18 else ''),
+{% do stat_rows.append([
+    stat.column if stat.column|length <= 20 else stat.column[:17] ~ '...',
     stat.dtype1,
     stat.dtype2,
-    stat.unequal_cnt,
-    stat.max_diff,
-    stat.null_diff,
-    stat.rel_tol,
-    stat.abs_tol) }}
+    '{:,}'.format(stat.unequal_cnt),
+    '%.4f'|format(stat.max_diff),
+    '{:,}'.format(stat.null_diff),
+    '%.4f'|format(stat.rel_tol),
+    '%.4f'|format(stat.abs_tol)]) %}
 {% endfor %}
+{{ fixed_width_table(
+    ['Column',
+     mismatch_stats.df1_name + ' dtype',
+     mismatch_stats.df2_name + ' dtype',
+     '# Unequal',
+     'Max Diff',
+     '# Null Diff',
+     'Rel Tol',
+     'Abs Tol'],
+    stat_rows,
+    'lllrrrrr') }}
 
 {% if mismatch_stats.has_samples %}
 
