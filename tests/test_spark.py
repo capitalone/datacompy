@@ -73,6 +73,18 @@ NULL|NULL|True"""
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+def test_columns_equal_builds_connect_expression_without_classic_context():
+    from pyspark.sql.connect.column import Column as ConnectColumn
+    from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
+
+    dataframe = mock.MagicMock(spec=ConnectDataFrame)
+    dataframe.dtypes = [("left", "string"), ("right", "string")]
+
+    result = columns_equal(dataframe, "left", "right")
+
+    assert isinstance(result, ConnectColumn)
+
+
 def test_numeric_columns_equal_rel(spark_session):
     data = """a|b|expected
 1|1|True

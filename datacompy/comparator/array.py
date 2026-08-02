@@ -29,12 +29,13 @@ POLARS_ARRAY_TYPE = ["List", "Array"]
 
 try:
     import pyspark as ps
-    import pyspark.sql.functions as psf
 
-    from datacompy.comparator.utility import get_spark_column_dtypes
+    from datacompy.comparator.utility import (
+        get_spark_column_dtypes,
+        get_spark_functions,
+    )
 except ImportError:
     ps = None
-    psf = None
 
 try:
     import snowflake.snowpark as sp
@@ -154,8 +155,11 @@ class SparkArrayLikeComparator(BaseComparator):
         """
         base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
         if base_dtype.startswith("array") and compare_dtype.startswith("array"):
-            when_clause = psf.col(col1).eqNullSafe(psf.col(col2))
-            return psf.when(when_clause, psf.lit(True)).otherwise(psf.lit(False))
+            functions = get_spark_functions(dataframe)
+            when_clause = functions.col(col1).eqNullSafe(functions.col(col2))
+            return functions.when(when_clause, functions.lit(True)).otherwise(
+                functions.lit(False)
+            )
         else:
             return None
 

@@ -15,6 +15,8 @@
 
 """Utility and helper functions for data comparison."""
 
+from typing import Any
+
 # Optional dependencies initialization
 ps = None
 sp = None
@@ -28,6 +30,36 @@ try:
     import snowflake.snowpark as sp
 except ImportError:
     pass
+
+
+def get_spark_functions(spark_object: object) -> Any:
+    """Return the functions module matching a classic or Connect Spark object."""
+    from pyspark.sql.connect.column import Column as ConnectColumn
+    from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
+
+    if isinstance(spark_object, ConnectColumn | ConnectDataFrame):
+        from pyspark.sql.connect import functions as connect_functions
+
+        return connect_functions
+
+    from pyspark.sql import functions as classic_functions
+
+    return classic_functions
+
+
+def get_spark_window(spark_object: object) -> Any:
+    """Return the Window class matching a classic or Connect Spark object."""
+    from pyspark.sql.connect.column import Column as ConnectColumn
+    from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
+
+    if isinstance(spark_object, ConnectColumn | ConnectDataFrame):
+        from pyspark.sql.connect.window import Window as ConnectWindow
+
+        return ConnectWindow
+
+    from pyspark.sql import Window as ClassicWindow
+
+    return ClassicWindow
 
 
 def get_spark_column_dtypes(

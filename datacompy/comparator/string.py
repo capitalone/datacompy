@@ -27,15 +27,16 @@ LOG = logging.getLogger(__name__)
 
 # Initialize optional dependencies
 ps = None
-psf = None
 sp = None
 spf = None
 
 try:
     import pyspark as ps
-    import pyspark.sql.functions as psf
 
-    from datacompy.comparator.utility import get_spark_column_dtypes
+    from datacompy.comparator.utility import (
+        get_spark_column_dtypes,
+        get_spark_functions,
+    )
 
     PYSPARK_STRING_TYPE = {"string", "char", "varchar"}
     PYSPARK_DATE_TYPE = {"date", "timestamp"}
@@ -307,23 +308,24 @@ class SparkStringComparator(BaseComparator):
             )
             or ((base_date_type) and (compare_date_type))  # date/date compare.
         ):
+            functions = get_spark_functions(dataframe)
             try:
                 if base_date_type and compare_date_type:
                     # Both are date/timestamp: compare directly, no string conversion needed.
-                    col1_expr = psf.col(col1)
-                    col2_expr = psf.col(col2)
+                    col1_expr = functions.col(col1)
+                    col2_expr = functions.col(col2)
                 elif base_date_type and compare_string_type:
                     # Cast the string to match the date column's type using TRY_CAST so
                     # malformed strings return NULL instead of throwing in ANSI mode.
-                    col1_expr = psf.col(col1)
-                    col2_expr = psf.expr(f"TRY_CAST(`{col2}` AS {base_dtype})")
+                    col1_expr = functions.col(col1)
+                    col2_expr = functions.expr(f"TRY_CAST(`{col2}` AS {base_dtype})")
                 elif base_string_type and compare_date_type:
-                    col1_expr = psf.expr(f"TRY_CAST(`{col1}` AS {compare_dtype})")
-                    col2_expr = psf.col(col2)
+                    col1_expr = functions.expr(f"TRY_CAST(`{col1}` AS {compare_dtype})")
+                    col2_expr = functions.col(col2)
                 else:
                     # Both strings: compare as-is with optional normalisation.
-                    col1_expr = psf.col(col1)
-                    col2_expr = psf.col(col2)
+                    col1_expr = functions.col(col1)
+                    col2_expr = functions.col(col2)
                 col1_expr = spark_normalize_string_column(
                     col1_expr, ignore_space, ignore_case
                 )
@@ -331,11 +333,11 @@ class SparkStringComparator(BaseComparator):
                     col2_expr, ignore_space, ignore_case
                 )
 
-                return psf.when(
-                    col1_expr.eqNullSafe(col2_expr), psf.lit(True)
-                ).otherwise(psf.lit(False))
+                return functions.when(
+                    col1_expr.eqNullSafe(col2_expr), functions.lit(True)
+                ).otherwise(functions.lit(False))
             except Exception:
-                return psf.lit(False)
+                return functions.lit(False)
         else:
             return None
 
@@ -504,10 +506,11 @@ def spark_normalize_string_column(
     pyspark.sql.Column
         The normalized column
     """
+    functions = get_spark_functions(column)
     if ignore_spaces:
-        column = psf.trim(column)
+        column = functions.trim(column)
     if ignore_case:
-        column = psf.upper(column)
+        column = functions.upper(column)
     return column
 
 

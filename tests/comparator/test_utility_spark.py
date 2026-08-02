@@ -20,7 +20,11 @@ import pytest
 
 pytest.importorskip("pyspark")
 
-from datacompy.comparator.utility import get_spark_column_dtypes
+from datacompy.comparator.utility import (
+    get_spark_column_dtypes,
+    get_spark_functions,
+    get_spark_window,
+)
 from pyspark.sql.types import (
     DateType,
     DecimalType,
@@ -85,3 +89,15 @@ def test_get_spark_column_dtypes_case_insensitive(spark_session):
     dtype1, dtype2 = get_spark_column_dtypes(df, "num", "str")
     assert dtype1 == "bigint"
     assert dtype2 == "string"
+
+
+def test_get_spark_helpers_for_connect_objects():
+    from pyspark.sql.connect import functions as connect_functions
+    from pyspark.sql.connect.column import Column as ConnectColumn
+    from pyspark.sql.connect.window import Window as ConnectWindow
+
+    column = connect_functions.col("value")
+
+    assert isinstance(column, ConnectColumn)
+    assert get_spark_functions(column) is connect_functions
+    assert get_spark_window(column) is ConnectWindow

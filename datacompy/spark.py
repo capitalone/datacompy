@@ -27,9 +27,7 @@ from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 import pyspark.sql
-import pyspark.sql.functions as F
 from ordered_set import OrderedSet
-from pyspark.sql import Window
 from pyspark.sql.connect.dataframe import DataFrame
 
 from datacompy.base import (
@@ -46,7 +44,11 @@ from datacompy.comparator import (
     SparkStringComparator,
 )
 from datacompy.comparator.base import BaseComparator
-from datacompy.comparator.utility import get_spark_column_dtypes
+from datacompy.comparator.utility import (
+    get_spark_column_dtypes,
+    get_spark_functions,
+    get_spark_window,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -223,6 +225,7 @@ class SparkSQLCompare(BaseCompare):
 
     def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
         """Hides sensitive columns of df1 or df2 if applicable in the compare."""
+        functions = get_spark_functions(self.df1)
         # Don't allow hiding columns again before first revealing
         if self.sensitive_columns:
             raise ValueError(
@@ -249,7 +252,9 @@ class SparkSQLCompare(BaseCompare):
                 continue
             # Maintains column ordering for the hide
             select_cols = [
-                F.lit("*******").alias(col) if col in cols_to_hide else F.col(col)
+                functions.lit("*******").alias(col)
+                if col in cols_to_hide
+                else functions.col(col)
                 for col in df.columns
             ]
             setattr(self, df_name, df.select(select_cols))
@@ -262,7 +267,9 @@ class SparkSQLCompare(BaseCompare):
         if not cols_to_hide:  # skip if empty
             return
         select_cols = [
-            F.lit("*******").alias(col) if col in cols_to_hide else F.col(col)
+            functions.lit("*******").alias(col)
+            if col in cols_to_hide
+            else functions.col(col)
             for col in self.intersect_rows.columns
         ]
         # avoid orphaned cached data (incl. unmasked sensitive vals) in executor memory
@@ -383,14 +390,15 @@ class SparkSQLCompare(BaseCompare):
 
         df1 = self.df1
         df2 = self.df2
+        functions = get_spark_functions(df1)
         temp_join_columns = deepcopy(self.join_columns)
 
         if self._any_dupes:
             LOG.debug("Duplicate rows found, deduping by order of remaining fields")
             # setting internal index
             LOG.info("Adding internal index to dataframes")
-            df1 = df1.withColumn("__index", F.monotonically_increasing_id())
-            df2 = df2.withColumn("__index", F.monotonically_increasing_id())
+            df1 = df1.withColumn("__index", functions.monotonically_increasing_id())
+            df2 = df2.withColumn("__index", functions.monotonically_increasing_id())
 
             # Create order column for uniqueness of match
             order_column = temp_column_name(df1, df2)
@@ -419,12 +427,12 @@ class SparkSQLCompare(BaseCompare):
                     next(dtype for name, dtype in df1.dtypes if name == column)
                     == "string"
                 ):
-                    df1 = df1.withColumn(column, F.trim(F.col(column)))
+                    df1 = df1.withColumn(column, functions.trim(functions.col(column)))
                 if (
                     next(dtype for name, dtype in df2.dtypes if name == column)
                     == "string"
                 ):
-                    df2 = df2.withColumn(column, F.trim(F.col(column)))
+                    df2 = df2.withColumn(column, functions.trim(functions.col(column)))
 
         df1_non_join_columns = OrderedSet(df1.columns) - OrderedSet(temp_join_columns)
         df2_non_join_columns = OrderedSet(df2.columns) - OrderedSet(temp_join_columns)
@@ -437,8 +445,8 @@ class SparkSQLCompare(BaseCompare):
         )
 
         # generate merge indicator
-        df1 = df1.withColumn("_merge_left", F.lit(True))
-        df2 = df2.withColumn("_merge_right", F.lit(True))
+        df1 = df1.withColumn("_merge_left", functions.lit(True))
+        df2 = df2.withColumn("_merge_right", functions.lit(True))
 
         df1 = df1.withColumnsRenamed(
             {c: f"{c}_{self.df1_name}" for c in temp_join_columns}
@@ -465,18 +473,20 @@ class SparkSQLCompare(BaseCompare):
             + on
         )
 
-        outer_join = outer_join.withColumn("_merge", F.lit(None))  # initialize col
+        outer_join = outer_join.withColumn(
+            "_merge", functions.lit(None)
+        )  # initialize col
 
         # process merge indicator
         outer_join = outer_join.withColumn(
             "_merge",
-            F.when(
+            functions.when(
                 (outer_join["_merge_left"] == True)  # noqa: E712
-                & (F.isnull(outer_join["_merge_right"])),
+                & (functions.isnull(outer_join["_merge_right"])),
                 "left_only",
             )
             .when(
-                (F.isnull(outer_join["_merge_left"]))
+                (functions.isnull(outer_join["_merge_left"]))
                 & (outer_join["_merge_right"] == True),  # noqa: E712
                 "right_only",
             )
@@ -544,6 +554,7 @@ class SparkSQLCompare(BaseCompare):
         otherwise.
         """
         LOG.debug("Comparing intersection")
+        functions = get_spark_functions(self.intersect_rows)
         max_diff: float
         null_diff: int
         exprs = {}
@@ -572,7 +583,9 @@ class SparkSQLCompare(BaseCompare):
 
         if exprs:
             agg_exprs = [
-                F.sum(F.when(F.col(c) == True, 1).otherwise(0)).alias(f"{c}_count")  # noqa: E712
+                functions.sum(
+                    functions.when(functions.col(c) == True, 1).otherwise(0)  # noqa: E712
+                ).alias(f"{c}_count")
                 for c in exprs
             ]
             match_counts = self.intersect_rows.agg(*agg_exprs).first()
@@ -742,15 +755,18 @@ class SparkSQLCompare(BaseCompare):
             "pertinent" columns, for rows that don't match on the provided
             column.
         """
+        functions = get_spark_functions(self.intersect_rows)
         if not self.only_join_columns() and column not in self.join_columns:
             row_cnt = self.intersect_rows.count()
             col_match = self.intersect_rows.select(f"{column}_match")
             match_cnt = col_match.where(
-                F.col(f"{column}_match") == True  # noqa: E712
+                functions.col(f"{column}_match") == True  # noqa: E712
             ).count()
             sample_count = min(sample_count, row_cnt - match_cnt)
             sample = (
-                self.intersect_rows.where(F.col(f"{column}_match") == False)  # noqa: E712
+                self.intersect_rows.where(
+                    functions.col(f"{column}_match") == False  # noqa: E712
+                )
                 .drop(f"{column}_match")
                 .limit(sample_count)
             )
@@ -808,6 +824,7 @@ class SparkSQLCompare(BaseCompare):
         pyspark.sql.DataFrame
             All rows of the intersection dataframe, containing any columns, that don't match.
         """
+        functions = get_spark_functions(self.intersect_rows)
         match_list = []
         return_list = []
         if self.only_join_columns():
@@ -822,7 +839,9 @@ class SparkSQLCompare(BaseCompare):
 
         if match_cols:
             agg_exprs = [
-                F.sum(F.when(F.col(c) == False, 1).otherwise(0)).alias(f"{c}_count")  # noqa: E712
+                functions.sum(
+                    functions.when(functions.col(c) == False, 1).otherwise(0)  # noqa: E712
+                ).alias(f"{c}_count")
                 for c in match_cols
             ]
             mismatch_counts = self.intersect_rows.agg(*agg_exprs).first()
@@ -857,8 +876,8 @@ class SparkSQLCompare(BaseCompare):
             return to_return
 
         mm_rows = self.intersect_rows.withColumn(
-            "match_array", F.array(match_list)
-        ).where(F.array_contains("match_array", False))
+            "match_array", functions.array(match_list)
+        ).where(functions.array_contains("match_array", False))
 
         mm_rows = mm_rows.withColumnsRenamed(
             {f"{c}_{self.df1_name}": c for c in self.join_columns}
@@ -986,7 +1005,7 @@ def columns_equal(
             )
             return compare
 
-    compare = F.lit(False)
+    compare = get_spark_functions(dataframe).lit(False)
     return compare
 
 
@@ -1042,6 +1061,7 @@ def calculate_max_diff(
     float
         max diff
     """
+    functions = get_spark_functions(dataframe)
     dtype1, dtype2 = get_spark_column_dtypes(dataframe, col_1, col_2)
     if dtype1.startswith("array") and dtype2.startswith("array"):
         LOG.warning(
@@ -1050,13 +1070,13 @@ def calculate_max_diff(
         return 0
     diff = dataframe.select(
         (
-            F.expr(f"TRY_CAST(`{col_1}` AS DOUBLE)")
-            - F.expr(f"TRY_CAST(`{col_2}` AS DOUBLE)")
+            functions.expr(f"TRY_CAST(`{col_1}` AS DOUBLE)")
+            - functions.expr(f"TRY_CAST(`{col_2}` AS DOUBLE)")
         ).alias("diff")
     )
-    abs_diff = diff.select(F.abs(F.col("diff")).alias("abs_diff"))
+    abs_diff = diff.select(functions.abs(functions.col("diff")).alias("abs_diff"))
     max_diff: float = (
-        abs_diff.where(F.isnan(F.col("abs_diff")) == False)  # noqa: E712
+        abs_diff.where(functions.isnan(functions.col("abs_diff")) == False)  # noqa: E712
         .agg({"abs_diff": "max"})
         .collect()[0][0]
     )
@@ -1086,23 +1106,32 @@ def calculate_null_diff(
     int
         null diff
     """
+    functions = get_spark_functions(dataframe)
     nulls_df = dataframe.withColumn(
         "col_1_null",
-        F.when(F.col(col_1).isNull() == True, F.lit(True)).otherwise(  # noqa: E712
-            F.lit(False)
-        ),
+        functions.when(
+            functions.col(col_1).isNull(),
+            functions.lit(True),
+        ).otherwise(functions.lit(False)),
     )
     nulls_df = nulls_df.withColumn(
         "col_2_null",
-        F.when(F.col(col_2).isNull() == True, F.lit(True)).otherwise(  # noqa: E712
-            F.lit(False)
-        ),
+        functions.when(
+            functions.col(col_2).isNull(),
+            functions.lit(True),
+        ).otherwise(functions.lit(False)),
     ).select(["col_1_null", "col_2_null"])
 
     # (not a and b) or (a and not b)
     null_diff = nulls_df.where(
-        ((F.col("col_1_null") == False) & (F.col("col_2_null") == True))  # noqa: E712
-        | ((F.col("col_1_null") == True) & (F.col("col_2_null") == False))  # noqa: E712
+        (
+            (functions.col("col_1_null") == False)  # noqa: E712
+            & (functions.col("col_2_null") == True)  # noqa: E712
+        )
+        | (
+            (functions.col("col_1_null") == True)  # noqa: E712
+            & (functions.col("col_2_null") == False)  # noqa: E712
+        )
     ).count()
 
     if pd.isna(null_diff) or pd.isnull(null_diff) or null_diff is None:
@@ -1133,6 +1162,8 @@ def _generate_id_within_group(
     pyspark.sql.DataFrame
         Original dataframe with the ID column that's unique in each group
     """
+    functions = get_spark_functions(dataframe)
+    window = get_spark_window(dataframe)
     default_value = "DATACOMPY_NULL"
     null_cols = [f"any(isnull({c}))" for c in join_columns]
     default_cols = [
@@ -1148,12 +1179,17 @@ def _generate_id_within_group(
 
         return (
             dataframe.select(
-                *(F.col(c).cast("string").alias(c) for c in [*join_columns, "__index"])
+                *(
+                    functions.col(c).cast("string").alias(c)
+                    for c in [*join_columns, "__index"]
+                )
             )
             .fillna(default_value)
             .withColumn(
                 order_column_name,
-                F.row_number().over(Window.orderBy("__index").partitionBy(join_columns))
+                functions.row_number().over(
+                    window.orderBy("__index").partitionBy(join_columns)
+                )
                 - 1,
             )
             .select(["__index", order_column_name])
@@ -1163,7 +1199,9 @@ def _generate_id_within_group(
             dataframe.select([*join_columns, "__index"])
             .withColumn(
                 order_column_name,
-                F.row_number().over(Window.orderBy("__index").partitionBy(join_columns))
+                functions.row_number().over(
+                    window.orderBy("__index").partitionBy(join_columns)
+                )
                 - 1,
             )
             .select(["__index", order_column_name])
