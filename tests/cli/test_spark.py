@@ -98,6 +98,29 @@ def test_spark_matches_identical_files(left_csv, tmp_path, left_frame, capsys):
     assert exit_code == MATCH
 
 
+def test_spark_infers_mixed_csv_and_tsv_delimiters(tmp_path, left_frame, capsys):
+    csv_path = tmp_path / "left.csv"
+    tsv_path = tmp_path / "right.tsv"
+    left_frame.to_csv(csv_path, index=False)
+    left_frame.to_csv(tsv_path, index=False, sep="\t")
+
+    exit_code = main(
+        [
+            "compare",
+            "--left",
+            str(csv_path),
+            "--right",
+            str(tsv_path),
+            "--on",
+            "id",
+            "--backend",
+            "spark",
+        ]
+    )
+
+    assert exit_code == MATCH
+
+
 def test_spark_session_is_stopped_even_when_loading_fails(
     no_borrowed_session, tmp_path, capsys
 ):

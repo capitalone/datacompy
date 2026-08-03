@@ -586,37 +586,54 @@ def test_custom_csv_delimiter(tmp_path, left_frame, backend, capsys):
     )
 
 
-def test_tsv_extension_is_not_inferred(cli, tmp_path, left_frame, backend, capsys):
-    """``.tsv`` is not in the extension table, so it asks for an explicit format.
-
-    Inferring it as CSV would pick the right reader and the wrong delimiter,
-    since ``--csv-delimiter`` applies to both sides at once and defaults to a
-    comma. Failing with a message that names the flag beats parsing the file
-    into a single mangled column.
-    """
-    left = tmp_path / "left.tsv"
-    right = tmp_path / "right.tsv"
+@pytest.mark.parametrize("suffix", ["tsv", "tab"])
+def test_tab_separated_extensions_are_inferred(
+    tmp_path, left_frame, backend, capsys, suffix
+):
+    left = tmp_path / f"left.{suffix}"
+    right = tmp_path / f"right.{suffix}"
     left_frame.to_csv(left, index=False, sep="\t")
     left_frame.to_csv(right, index=False, sep="\t")
 
     assert (
-        cli("--left", str(left), "--right", str(right), "--backend", backend) == ERROR
+        main(
+            [
+                "compare",
+                "--left",
+                str(left),
+                "--right",
+                str(right),
+                "--on",
+                "id",
+                "--backend",
+                backend,
+            ]
+        )
+        == MATCH
     )
-    assert "--input-format" in capsys.readouterr().err
 
-    # Forcing both the format and the delimiter still works.
+
+def test_mixed_csv_and_tsv_delimiters_are_inferred_per_file(
+    tmp_path, left_frame, backend, capsys
+):
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.tsv"
+    left_frame.to_csv(left, index=False)
+    left_frame.to_csv(right, index=False, sep="\t")
+
     assert (
-        cli(
-            "--left",
-            str(left),
-            "--right",
-            str(right),
-            "--input-format",
-            "csv",
-            "--csv-delimiter",
-            r"\t",
-            "--backend",
-            backend,
+        main(
+            [
+                "compare",
+                "--left",
+                str(left),
+                "--right",
+                str(right),
+                "--on",
+                "id",
+                "--backend",
+                backend,
+            ]
         )
         == MATCH
     )
