@@ -296,7 +296,6 @@ OPTIONS: tuple[Opt, ...] = (
         ),
         group=GROUP_INPUT,
         backends=FILE_BACKENDS,
-        default=",",
         options={"type": single_char, "metavar": "CHAR"},
     ),
     Opt(

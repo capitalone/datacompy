@@ -48,19 +48,18 @@ from datacompy.cli.parser import OPTIONS
 
 #: File extension to canonical format name.
 #:
-#: ``.tsv`` is deliberately absent. Mapping it to ``csv`` would pick the right
-#: reader but not the right delimiter, which stays comma unless
-#: ``--csv-delimiter`` says otherwise, so a ``.tsv`` file would be recognised
-#: and then misparsed. Until the delimiter is inferred per file, a tab
-#: separated file is read with an explicit ``--input-format csv``.
 _EXTENSION_FORMATS = {
     ".csv": "csv",
+    ".tab": "csv",
+    ".tsv": "csv",
     ".parquet": "parquet",
     ".pq": "parquet",
     ".json": "json",
     ".jsonl": "json",
     ".ndjson": "json",
 }
+
+_DELIMITER_EXTENSIONS = {".tab": "\t", ".tsv": "\t"}
 
 _NDJSON_EXTENSIONS = frozenset({".jsonl", ".ndjson"})
 
@@ -98,6 +97,18 @@ def infer_format(ref: str, override: str | None) -> str:
             f"cannot infer the format of {ref!r} from its extension "
             f"{extension or '(none)'!r}. Pass --input-format csv|parquet|json."
         ) from None
+
+
+def infer_delimiter(ref: str, override: str | None) -> str:
+    """Return the field delimiter for *ref*.
+
+    An explicit ``--csv-delimiter`` takes precedence over extension based
+    inference. CSV files and paths with no recognised delimiter extension use
+    a comma.
+    """
+    if override is not None:
+        return override
+    return _DELIMITER_EXTENSIONS.get(Path(ref).suffix.lower(), ",")
 
 
 def _is_ndjson(ref: str) -> bool:
@@ -203,7 +214,9 @@ class PandasBackend(CLIBackend):
         fmt = infer_format(ref, namespace.input_format)
         try:
             if fmt == "csv":
-                return pd.read_csv(ref, sep=namespace.csv_delimiter)
+                return pd.read_csv(
+                    ref, sep=infer_delimiter(ref, namespace.csv_delimiter)
+                )
             if fmt == "parquet":
                 return pd.read_parquet(ref)
             return pd.read_json(ref, lines=_is_ndjson(ref))
@@ -227,7 +240,9 @@ class PolarsBackend(CLIBackend):
         fmt = infer_format(ref, namespace.input_format)
         try:
             if fmt == "csv":
-                return pl.read_csv(ref, separator=namespace.csv_delimiter)
+                return pl.read_csv(
+                    ref, separator=infer_delimiter(ref, namespace.csv_delimiter)
+                )
             if fmt == "parquet":
                 return pl.read_parquet(ref)
             if _is_ndjson(ref):
@@ -296,7 +311,7 @@ class SparkBackend(CLIBackend):
                     ref,
                     header=True,
                     inferSchema=True,
-                    sep=namespace.csv_delimiter,
+                    sep=infer_delimiter(ref, namespace.csv_delimiter),
                 )
             if fmt == "parquet":
                 return session.read.parquet(ref)
