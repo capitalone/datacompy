@@ -1,5 +1,23 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+#
+# Matrix design. The Spark jobs are the entire cost of this workflow (~20 min
+# each); lint and the four basic-install jobs finish in under a minute. So the
+# test axes are covered independently rather than as a cross product:
+#
+#   * python 3.10-3.13 breadth comes from the four cheap basic-install jobs,
+#     which exercise all the pandas/polars/base/report/comparator code.
+#   * pandas 2 vs 3 is a real API split, so both appear -- pandas 2.3.3 on the
+#     python 3.10 Spark job (3.10 cannot take pandas 3), pandas 3.0.3 on 3.12.
+#   * spark 3.5 vs 4 is a real API split, so both appear.
+#   * ANSI mode and Spark Connect are spark-side semantics, orthogonal to the
+#     python and pandas versions, so they run once on the 3.12 baseline rather
+#     than on every Spark job.
+#
+# Known gap: no Spark job runs on python 3.11 or 3.13, so a Spark break
+# specific to those runtimes would not be caught. Widening is one entry in the
+# test-with-spark-4-install include list (and one line in tox.ini's envlist,
+# which mirrors this file job for job).
 
 name: Test package
 
@@ -29,29 +47,18 @@ jobs:
       - name: Formatting by ruff
         run: ruff format --check
 
+  # Legacy Spark path. One job is enough to prove 3.5 still works; the wider
+  # combinations remain available locally via `tox -e py310-spark35-pandas2`
+  # and friends.
   test-with-spark-3-install:
+    name: spark 3.5 (py3.11, pandas 2.3.3)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11"]
-        spark-version: [3.5.8]
-        pandas-version: ["2.3.3", "3.0.3"]
-        exclude:
-          - python-version: "3.10"
-            pandas-version: "3.0.3"
-
-    env:
-      PYTHON_VERSION: ${{ matrix.python-version }}
-      SPARK_VERSION: ${{ matrix.spark-version }}
-      PANDAS_VERSION: ${{ matrix.pandas-version }}
-
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.11
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
       - name: Setup Java JDK
         uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287  # v5.3.0
         with:
@@ -59,37 +66,32 @@ jobs:
           distribution: "adopt"
       - name: Install pyspark
         run: |
-          python -m pip install pyspark[connect]==${{ matrix.spark-version }}
+          python -m pip install pyspark[connect]==3.5.8
       - name: Install pandas
         run: |
-          python -m pip install pandas==${{ matrix.pandas-version }}
+          python -m pip install pandas==2.3.3
       - name: Install datacompy
         run: |
           python -m pip install ."[spark, qa, tests, tests-spark]"
       - name: Test with pytest
         run: |
           python -m pytest --cov=datacompy --cov-report=xml --cov-report=term-missing
-      - name: Test with pytest (ANSI mode)
-        run: |
-          python -m pytest -c pytest-ansi.ini --cov=datacompy --cov-report=xml --cov-report=term-missing
-
 
   test-with-spark-4-install:
+    name: spark 4 (py${{ matrix.python-version }}, pandas ${{ matrix.pandas-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
-        spark-version: [4.1.2]
-        pandas-version: ["2.3.3", "3.0.3"]
-        exclude:
+        include:
+          # python 3.10 cannot take pandas 3, so it carries the pandas 2 slot.
           - python-version: "3.10"
+            pandas-version: "2.3.3"
+            extended: false
+          # The baseline. Also the only job running ANSI mode and Spark Connect.
+          - python-version: "3.12"
             pandas-version: "3.0.3"
-
-    env:
-      PYTHON_VERSION: ${{ matrix.python-version }}
-      SPARK_VERSION: ${{ matrix.spark-version }}
-      PANDAS_VERSION: ${{ matrix.pandas-version }}
+            extended: true
 
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
@@ -104,7 +106,7 @@ jobs:
           distribution: "adopt"
       - name: Install pyspark
         run: |
-          python -m pip install pyspark[connect]==${{ matrix.spark-version }}
+          python -m pip install pyspark[connect]==4.1.2
       - name: Install pandas
         run: |
           python -m pip install pandas==${{ matrix.pandas-version }}
@@ -115,6 +117,7 @@ jobs:
         run: |
           python -m pytest --cov=datacompy --cov-report=xml --cov-report=term-missing
       - name: Test with pytest (ANSI mode)
+        if: matrix.extended
         run: |
           python -m pytest -c pytest-ansi.ini --cov=datacompy --cov-report=xml --cov-report=term-missing
       # Spark Connect runs in two separate pytest processes: a classic and a
@@ -124,21 +127,22 @@ jobs:
       # Only on Spark 4.x: the Connect server jar is bundled in the 4.x wheel,
       # whereas Spark 3.5 requires resolving it via --packages.
       - name: Test with pytest (Spark Connect - existing suite)
+        if: matrix.extended
         run: |
           python -m pytest -c pytest-connect.ini tests/test_spark.py tests/comparator/
       - name: Test with pytest (Spark Connect - regression suite)
+        if: matrix.extended
         run: |
           python -m pytest -m spark_connect tests/test_spark_connect.py
 
+  # Cheap (<1 min each) and the only job that proves datacompy imports and
+  # works with no pyspark installed, so it keeps the full python range.
   test-basic-install:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
-
-    env:
-      PYTHON_VERSION: ${{ matrix.python-version }}
 
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
