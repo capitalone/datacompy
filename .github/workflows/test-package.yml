@@ -117,6 +117,18 @@ jobs:
       - name: Test with pytest (ANSI mode)
         run: |
           python -m pytest -c pytest-ansi.ini --cov=datacompy --cov-report=xml --cov-report=term-missing
+      # Spark Connect runs in two separate pytest processes: a classic and a
+      # Connect session cannot share one, because starting a local Connect
+      # server sets SPARK_LOCAL_REMOTE, after which every later
+      # SparkSession.builder.getOrCreate() returns the Connect session.
+      # Only on Spark 4.x: the Connect server jar is bundled in the 4.x wheel,
+      # whereas Spark 3.5 requires resolving it via --packages.
+      - name: Test with pytest (Spark Connect - existing suite)
+        run: |
+          python -m pytest -c pytest-connect.ini tests/test_spark.py tests/comparator/
+      - name: Test with pytest (Spark Connect - regression suite)
+        run: |
+          python -m pytest -m spark_connect tests/test_spark_connect.py
 
   test-basic-install:
     runs-on: ubuntu-latest

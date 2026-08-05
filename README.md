@@ -15,7 +15,7 @@ and lets you tweak how accurate matches have to be). Supported types include:
 
 - Pandas
 - Polars
-- Spark
+- Spark (classic and Spark Connect)
 - Snowflake
 
 > [!IMPORTANT]
