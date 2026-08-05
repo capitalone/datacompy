@@ -33,6 +33,7 @@ SNOWFLAKE_ENV = (
     "SNOWFLAKE_USER",
     "SNOWFLAKE_PASSWORD",
     "SNOWFLAKE_AUTHENTICATOR",
+    "SNOWFLAKE_TOKEN",
     "SNOWFLAKE_ROLE",
     "SNOWFLAKE_WAREHOUSE",
     "SNOWFLAKE_DATABASE",
@@ -207,9 +208,55 @@ def test_sso_authenticator_replaces_the_password(monkeypatch, clean_env):
     assert "password" not in params
 
 
+def test_a_bare_token_selects_oauth_without_a_user(monkeypatch, clean_env):
+    monkeypatch.setenv("SNOWFLAKE_ACCOUNT", "acct")
+    monkeypatch.setenv("SNOWFLAKE_TOKEN", "tok")
+
+    assert _snowflake_params(None) == {
+        "account": "acct",
+        "token": "tok",
+        "authenticator": "oauth",
+    }
+
+
+def test_an_explicit_oauth_authenticator_is_left_alone(monkeypatch, clean_env):
+    monkeypatch.setenv("SNOWFLAKE_ACCOUNT", "acct")
+    monkeypatch.setenv("SNOWFLAKE_AUTHENTICATOR", "OAuth")
+    monkeypatch.setenv("SNOWFLAKE_TOKEN", "tok")
+
+    params = _snowflake_params(None)
+    assert params["authenticator"] == "OAuth"
+    assert params["token"] == "tok"
+
+
+def test_a_user_is_still_passed_through_under_oauth(monkeypatch, clean_env):
+    monkeypatch.setenv("SNOWFLAKE_ACCOUNT", "acct")
+    monkeypatch.setenv("SNOWFLAKE_TOKEN", "tok")
+    monkeypatch.setenv("SNOWFLAKE_USER", "u")
+
+    assert _snowflake_params(None)["user"] == "u"
+
+
+def test_oauth_without_a_token_is_rejected(monkeypatch, clean_env):
+    monkeypatch.setenv("SNOWFLAKE_ACCOUNT", "acct")
+    monkeypatch.setenv("SNOWFLAKE_USER", "u")
+    monkeypatch.setenv("SNOWFLAKE_AUTHENTICATOR", "oauth")
+
+    with pytest.raises(BadArgsError, match="SNOWFLAKE_TOKEN"):
+        _snowflake_params(None)
+
+
 def test_missing_required_environment_variables_are_named(monkeypatch, clean_env):
     monkeypatch.setenv("SNOWFLAKE_PASSWORD", "p")
     with pytest.raises(BadArgsError, match="SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER"):
+        _snowflake_params(None)
+
+
+def test_a_user_is_still_required_outside_oauth(monkeypatch, clean_env):
+    monkeypatch.setenv("SNOWFLAKE_ACCOUNT", "acct")
+    monkeypatch.setenv("SNOWFLAKE_AUTHENTICATOR", "externalbrowser")
+
+    with pytest.raises(BadArgsError, match="SNOWFLAKE_USER"):
         _snowflake_params(None)
 
 

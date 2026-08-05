@@ -36,8 +36,7 @@ from typing import Any
 
 from datacompy.cli.errors import BadArgsError
 
-BACKEND_NAMES = ("pandas", "polars", "spark", "snowflake")
-ALL_BACKENDS = frozenset(BACKEND_NAMES)
+ALL_BACKENDS = frozenset({"pandas", "polars", "spark", "snowflake"})
 FILE_BACKENDS = frozenset({"pandas", "polars", "spark"})
 INPUT_FORMATS = ("csv", "parquet", "json")
 REPORT_FORMATS = ("text", "json", "html")
@@ -334,7 +333,7 @@ OPTIONS: tuple[Opt, ...] = (
         ),
         group=GROUP_BACKEND,
         default="polars",
-        options={"choices": list(BACKEND_NAMES)},
+        options={"choices": sorted(ALL_BACKENDS)},
     ),
     Opt(
         flags=("--abs-tol",),
@@ -498,10 +497,11 @@ OPTIONS: tuple[Opt, ...] = (
         flags=("--snowflake-config",),
         help=(
             "Path to a JSON file of Snowflake connection parameters. When "
-            "omitted the session is built from SNOWFLAKE_ACCOUNT, "
-            "SNOWFLAKE_USER, and SNOWFLAKE_PASSWORD or "
-            "SNOWFLAKE_AUTHENTICATOR, plus the optional SNOWFLAKE_ROLE, "
-            "SNOWFLAKE_WAREHOUSE, SNOWFLAKE_DATABASE, and SNOWFLAKE_SCHEMA."
+            "omitted the session is built from SNOWFLAKE_ACCOUNT plus one of "
+            "SNOWFLAKE_TOKEN (OAuth), SNOWFLAKE_AUTHENTICATOR, or "
+            "SNOWFLAKE_PASSWORD. SNOWFLAKE_USER is required for everything "
+            "except OAuth, and SNOWFLAKE_ROLE, SNOWFLAKE_WAREHOUSE, "
+            "SNOWFLAKE_DATABASE, and SNOWFLAKE_SCHEMA are optional."
         ),
         group=GROUP_BACKEND_SPECIFIC,
         backends=frozenset({"snowflake"}),

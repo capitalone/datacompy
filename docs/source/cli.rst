@@ -249,18 +249,19 @@ example ``account``, ``user``, ``password``, ``role``, ``warehouse``,
 
 Without ``--snowflake-config``, the session is built from the environment:
 
-==================================  ==========================================
+==================================  ===============================================
 Variable                            Notes
-==================================  ==========================================
+==================================  ===============================================
 ``SNOWFLAKE_ACCOUNT``               Required
-``SNOWFLAKE_USER``                  Required
-``SNOWFLAKE_PASSWORD``              Required unless an authenticator is set
-``SNOWFLAKE_AUTHENTICATOR``         For SSO, for example ``externalbrowser``
+``SNOWFLAKE_USER``                  Required, except under OAuth
+``SNOWFLAKE_PASSWORD``              Required unless a token or authenticator is set
+``SNOWFLAKE_TOKEN``                 OAuth access token; implies OAuth on its own
+``SNOWFLAKE_AUTHENTICATOR``         ``oauth``, or SSO such as ``externalbrowser``
 ``SNOWFLAKE_ROLE``                  Optional
 ``SNOWFLAKE_WAREHOUSE``             Optional
 ``SNOWFLAKE_DATABASE``              Optional, qualifies two part references
 ``SNOWFLAKE_SCHEMA``                Optional
-==================================  ==========================================
+==================================  ===============================================
 
 Full option list
 ----------------

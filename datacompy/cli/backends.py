@@ -403,26 +403,45 @@ def _snowflake_params(config_path: Path | None) -> dict[str, str]:
     user = os.environ.get("SNOWFLAKE_USER")
     password = os.environ.get("SNOWFLAKE_PASSWORD")
     authenticator = os.environ.get("SNOWFLAKE_AUTHENTICATOR")
+    token = os.environ.get("SNOWFLAKE_TOKEN")
 
-    missing = [
-        name
-        for name, value in (("SNOWFLAKE_ACCOUNT", account), ("SNOWFLAKE_USER", user))
-        if not value
-    ]
+    # The connector only reads ``token`` as an OAuth access token when the
+    # authenticator says so, so a bare SNOWFLAKE_TOKEN implies OAuth.
+    if token and not authenticator:
+        authenticator = "oauth"
+    oauth = authenticator is not None and authenticator.lower() == "oauth"
+
+    required = [("SNOWFLAKE_ACCOUNT", account)]
+    if not oauth:
+        # Under OAuth the access token carries the identity, so a user name is
+        # optional. Every other authenticator still needs one.
+        required.append(("SNOWFLAKE_USER", user))
+    missing = [name for name, value in required if not value]
     if missing:
         raise BadArgsError(
             f"missing required environment variable(s): {', '.join(missing)}. "
             "Set them or pass --snowflake-config path/to/connection.json."
         )
+    if oauth and not token:
+        raise BadArgsError(
+            "SNOWFLAKE_AUTHENTICATOR=oauth requires an access token in "
+            "SNOWFLAKE_TOKEN, or pass --snowflake-config for full control over "
+            "the connection parameters."
+        )
     if not password and not authenticator:
         raise BadArgsError(
-            "set SNOWFLAKE_PASSWORD or SNOWFLAKE_AUTHENTICATOR, or pass "
-            "--snowflake-config for full control over the connection parameters."
+            "set SNOWFLAKE_PASSWORD, SNOWFLAKE_TOKEN, or SNOWFLAKE_AUTHENTICATOR, "
+            "or pass --snowflake-config for full control over the connection "
+            "parameters."
         )
 
-    params: dict[str, str] = {"account": str(account), "user": str(user)}
+    params: dict[str, str] = {"account": str(account)}
+    if user:
+        params["user"] = user
     if password:
         params["password"] = password
+    if token:
+        params["token"] = token
     if authenticator:
         params["authenticator"] = authenticator
     for variable, key in (
