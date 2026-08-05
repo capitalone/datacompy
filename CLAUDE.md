@@ -4,9 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DataComPy is a Python library for comparing two DataFrames/tables across multiple backends: Pandas, Polars, Spark, and Snowflake. It originated as a replacement for SAS's `PROC COMPARE`. v1 is GA; the version lives in `datacompy/__version__` and `pyproject.toml` derives the distribution version from it.
-
-This file is the single AI agent guide for the repository. `.github/copilot-instructions.md` used to duplicate it and was removed; put new guidance here rather than starting a second copy.
+DataComPy is a Python library for comparing two DataFrames/tables across multiple backends: Pandas, Polars, Spark, and Snowflake. It originated as a replacement for SAS's `PROC COMPARE`. v1 is released; `datacompy/__init__.py`'s `__version__` is the source of truth for the current version.
 
 ## Common Commands
 
@@ -17,6 +15,7 @@ pre-commit install
 ```
 
 ### Testing
+
 ```bash
 pytest                                          # all tests
 pytest tests/test_pandas.py                     # single backend
@@ -27,18 +26,39 @@ pytest -c pytest-connect.ini tests/test_spark.py tests/comparator/  # existing S
 pytest -m spark_connect tests/test_spark_connect.py                # Spark Connect regression suite
 ```
 
-CI runs the suite twice, once with the default `pytest.ini` and once with `-c pytest-ansi.ini`, which only differs by `spark.sql.ansi.enabled`. A change touching Spark casting or null handling needs both.
+The Makefile wraps each of these: `make test`, `test-ansi`, `test-connect`, `test-connect-regression`, `test-cov`, `test-all`, plus `test-no-snowflake` / `test-all-no-snowflake`.
 
-**Coverage:** always target the top-level package (`--cov=datacompy`). Passing a dotted submodule such as `--cov=datacompy.cli` triggers a numpy double-import in some environments and fails ~100 otherwise-passing tests with a confusing `_NoValueType` `TypeError`.
+There are three pytest configs, and `-c` **replaces** the config file rather than layering on it — anything a run needs (markers, `testpaths`, `spark_options`) must be present in the file it names:
 
-**Spark** needs `pyspark` and **Java 17** (newer JDKs fail with `py4j.protocol` errors). If the JDK came from conda (`conda install openjdk=17`, as `[edgetest.envs.core]` does), it is at `$CONDA_PREFIX/lib/jvm` and `JAVA_HOME` must point there. Activating the env normally sets this; a non-interactive shell will not inherit it:
-```bash
-export JAVA_HOME=$CONDA_PREFIX/lib/jvm
-```
+- `pytest.ini` — classic Spark session, ANSI off
+- `pytest-ansi.ini` — same, `spark.sql.ansi.enabled=true`
+- `pytest-connect.ini` — Spark Connect session (`spark_connect_url`); must not set `spark.master`, since PySpark rejects a session with both
 
-**Snowflake** tests need a live session, or `--snowflake-session local` for Snowpark's local testing mode. Local mode is an emulator, not Snowflake: `eqNullSafe` returns `True` for every row and high-precision decimals are truncated on DataFrame creation. Tests that depend on either must request the `requires_live_snowflake_session` fixture (`tests/conftest.py`), which skips them in local mode.
+All three set `testpaths = tests`. Without it a bare `pytest` walks the whole repo, and a git worktree checked out under the repo root contributes a second `tests/conftest.py` that collides with the real one — pytest then aborts the entire run with `ImportPathMismatchError`. Keep PR-review worktrees outside the repo.
+
+Spark tests require Java 17 and `pyspark` installed. Snowflake tests require a live Snowflake session; `--snowflake-session local` is *not* a substitute, as Snowpark's local testing mode is an emulator that most of the Snowflake suite fails against.
+
+`benchmarks/` holds pytest-benchmark suites (`benchmark.py`, `benchmark_spark.py`). They sit outside `testpaths`, so no ordinary run collects them, and they read parquet fixtures that `python benchmarks/generate_data.py` has to write first. Results are written up in `docs/source/benchmark.rst`.
 
 The two Spark Connect commands must each run in their own pytest process, and are excluded from the default run via `addopts`. Starting a local Spark Connect server sets `SPARK_LOCAL_REMOTE`, after which every later `SparkSession.builder.getOrCreate()` in that process returns the Connect session — so a classic and a Connect session cannot coexist in one run.
+
+### Local CI matrix (tox)
+
+`tox.ini` mirrors `.github/workflows/test-package.yml` job for job, using `tox-conda` so Java and PySpark come from conda-forge rather than a system JDK. It needs `pip install "tox<4" tox-conda` — tox-conda 0.10.x only supports tox 3.
+
+```bash
+tox                            # the whole envlist
+tox -e lint                    # ruff check + ruff format --check
+tox -e py312-spark4-pandas3    # the one env covering ANSI + Spark Connect
+tox -e typecheck               # mypy (not in envlist; not run by CI)
+```
+
+Both files deliberately cover the test axes independently rather than as a cross product, because the Spark jobs are the entire cost of a run (~20 min each) while the four no-Spark jobs finish in under a minute. Python breadth comes from the cheap no-Spark envs; ANSI mode and Spark Connect are Spark-side semantics and run once on the 3.12 baseline. Read `tox.ini`'s header before widening the matrix — it records the known gap and what closing it costs.
+
+Two traps that cost real time to rediscover, both documented in `tox.ini`:
+
+- **Never loosen the `openjdk>=17.0.8,<18` floor** in the Spark envs. conda-forge ships GraalVM builds of openjdk 17 below that floor; selecting one pulls in `graalpy-graalvm`, which silently replaces CPython with GraalPy, and pip then dies with a Truffle `Unable to load native posix support library` error. It only affects Python 3.10 envs, since GraalPy implements 3.10.
+- **`{envpython}` substitutes to the string `None` in tox 3.28** — use `{envbindir}/python`. The absolute path also avoids tox 3's silent fallback to a `$PATH` interpreter when a command is missing from a freshly-created env, which otherwise runs the suite against the wrong Python and only warns.
 
 ### Linting & Formatting
 ```bash
@@ -49,9 +69,9 @@ ruff format                # apply formatting
 mypy .                     # type-check (strict mode)
 ```
 
-**Use the `ruff` version pinned in `.pre-commit-config.yaml`.** The config uses recent selectors, and an older ruff fails to parse `pyproject.toml` at all rather than degrading gracefully. `pre-commit run --all-files` fetches the right version itself.
+`pyproject.toml` uses selectors (`noqa-comments`, `rule-codes-in-selectors`) that only exist in recent ruff, hence the `ruff>=0.16` floor on the `qa` extra. An older ruff fails while *parsing* the config with `Unknown rule selector`, before linting anything. Note that ruff formats Python code blocks inside Markdown, so `CLAUDE.md` and other docs are in scope for `ruff format --check`.
 
-**`mypy .` has a large pre-existing error baseline** (~185, mostly in `snowflake.py`, `polars.py`, and `pandas.py`) and is enforced by neither CI nor pre-commit; CI lint runs only `ruff check` and `ruff format --check`. New code is still expected to be clean, so check that your diff introduces no *new* errors rather than that the run is empty, and do not refactor unrelated modules to chase the baseline. Missing-stub errors for `pyspark` and `snowflake.snowpark` mean those extras are not installed in the current environment, not a code defect.
+`mypy` is **not** a pre-commit hook and is not run by CI — the hooks are ruff, ruff-format, trailing-whitespace, debug-statements, end-of-file-fixer, and pyproject-fmt. Run it explicitly or via `tox -e typecheck`.
 
 ### Documentation
 ```bash
@@ -80,21 +100,30 @@ Beyond the report, each backend exposes `df1_unq_rows`, `df2_unq_rows`, and `int
 
 `datacompy/comparator/` provides type-specific column comparison logic, also using a strategy pattern:
 
-- `base.py` → `BaseComparator` ABC with `compare(col1, col2)` method
+- `base.py` → `BaseComparator` ABC with `compare(col1, col2, **kwargs)` method
 - `numeric.py` → Numeric comparators per backend (handles tolerances)
 - `string.py` → String comparators per backend
+- `boolean.py` → Boolean comparators per backend
 - `array.py` → Array-like comparators per backend
 - `utility.py` → Shared Spark/Snowflake helpers, including `get_spark_functions` / `get_spark_window`
 
 Each type has backend-specific implementations: `Pandas*Comparator`, `Polars*Comparator`, `Spark*Comparator`, `Snowflake*Comparator`.
+
+**Dispatch protocol** — the column-compare helper in each backend module (`columns_equal` and friends) walks a comparator list in order and takes the first result that isn't `None`:
+
+- **`compare()` returning `None` means "not my type, try the next one."** This is how type dispatch happens — there is no `can_compare()`. A comparator that raises instead of returning `None` breaks the chain.
+- Order matters. Each backend defines `_<BACKEND>_DEFAULT_COMPARATORS` (array-like → boolean → numeric → string) at module scope.
+- All four backends accept `custom_comparators=[...]` on the constructor; `_get_comparators()` puts them **before** the defaults, so a custom comparator can pre-empt a built-in for a column type.
+- The dispatch loop passes the built-ins their type-specific kwargs via `isinstance` branches (tolerances to numeric, `ignore_spaces`/`ignore_case` to string), and passes custom comparators **everything** as `**kwargs`. Custom comparators must therefore accept and ignore kwargs they don't use.
+- If every comparator returns `None`, the column compares as all-`False` rather than erroring.
 
 ### Spark Connect
 
 Never import `pyspark.sql.functions` or `pyspark.sql.Window` at module scope in Spark code paths. Those dispatch to the Spark Connect implementations only when the process-global `SPARK_CONNECT_MODE_ENABLED` environment variable is set, which a Connect session from a notebook or serverless runtime does not necessarily set. Instead resolve them from the DataFrame or Column being operated on:
 
 ```python
-F = get_spark_functions(dataframe)       # datacompy/spark.py
-psf = get_spark_functions(dataframe)     # datacompy/comparator/*.py
+F = get_spark_functions(dataframe)  # datacompy/spark.py
+psf = get_spark_functions(dataframe)  # datacompy/comparator/*.py
 Window = get_spark_window(dataframe)
 ```
 
@@ -103,6 +132,8 @@ Because there is no module-level binding, ruff's `F821` flags any call site that
 ### Reporting
 
 Reports use Jinja2 templates from `datacompy/templates/report_template.j2`. The `render()` function in `base.py` handles template resolution. Custom templates can be passed via `report(template_path=...)`.
+
+`build_report_data()` (defined once on `BaseCompare`) is the structured counterpart to `report()`, returning a typed `ReportData` object for dashboards or JSON export without parsing the string report. `ReportData` and its member dataclasses (`RowSummary`, `ColumnSummary`, `ColumnComparison`, `MismatchStat`, `MismatchStats`, `UniqueRowsData`) live in `datacompy/report.py` and are re-exported from `datacompy/__init__.py` — unlike the backends, they are unconditional top-level exports. It is public API — changes to its shape are breaking. Snapshot tests in `tests/test_report_snapshots.py` compare rendered output against fixtures in `tests/snapshots/`, which are excluded from the trailing-whitespace and end-of-file pre-commit hooks because their exact bytes are the assertion.
 
 ### Tolerance Handling
 
@@ -138,8 +169,6 @@ Tolerances (`abs_tol`, `rel_tol`) can be a single float (applied globally) or a 
 
 ## Branching
 
-- `main` is the release branch and currently the most advanced one. Recent release commits land here, so branch from `main` unless told otherwise.
-- `develop` predates the v1 GA and lags `main`. Do not assume it is the integration branch without checking `git log origin/main origin/develop`.
-- `support/0.19.x` is maintained for v0 users (bug fixes only).
-
-CI (`.github/workflows/test-package.yml`) runs on `develop`, `main`, `release/*`, `release-*`, and `support/*`.
+- `main` is the default branch and the target for all active development (this changed with the v1 release — `develop` still exists and CI still builds it, but it is no longer where work lands)
+- `support/0.19.x` is archived: critical security fixes only, best-effort, no features or regular maintenance
+- CI runs on pushes and PRs to `develop`, `main`, `release/*`, `release-*`, and `support/*`
