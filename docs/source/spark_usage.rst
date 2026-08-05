@@ -3,7 +3,9 @@ Spark Usage
 
 - ``on_index`` is not supported.
 - Joining is done using ``<=>`` which is the equality test that is safe for null values.
-- ``SparkSQLCompare`` compares ``pyspark.sql.DataFrame``'s
+- ``SparkSQLCompare`` compares ``pyspark.sql.DataFrame``'s, including Spark
+  Connect DataFrames (``pyspark.sql.connect.dataframe.DataFrame``). See
+  `Spark Connect`_ below.
 
 
 SparkSQLCompare
@@ -58,25 +60,49 @@ join column(s).
     print(compare.report())
 
 
-Caching
--------
+Spark Connect
+-------------
 
-``SparkSQLCompare`` caches intermediate DataFrames by default, which avoids
-recomputing the joined data for every part of the report. Some environments,
-Databricks Serverless among them, do not support caching. Pass
-``cache_intermediates=False`` there:
+``SparkSQLCompare`` works with Spark Connect sessions as well as classic
+JVM-backed ones. Nothing changes in how you call it -- pass the Connect session
+and its DataFrames exactly as above:
 
 .. code-block:: python
 
-    compare = SparkSQLCompare(
-        spark,
-        df1,
-        df2,
-        join_columns='acct_id',
-        cache_intermediates=False,
-    )
+    from datacompy import SparkSQLCompare
+    from pyspark.sql import SparkSession
 
-The command line equivalent is ``--no-cache-intermediates``. See :doc:`cli`.
+    spark = SparkSession.builder.remote("sc://localhost:15002").getOrCreate()
+
+    df1 = spark.createDataFrame(pd.read_csv(StringIO(data1)))
+    df2 = spark.createDataFrame(pd.read_csv(StringIO(data2)))
+
+    compare = SparkSQLCompare(spark, df1, df2, join_columns='acct_id')
+    print(compare.report())
+
+This also covers a Connect session you did not create yourself -- one provided
+by a notebook or serverless runtime, or handed over by another framework.
+datacompy selects the classic or Spark Connect expression API from the
+DataFrame you pass in, rather than from PySpark's process-global
+``SPARK_CONNECT_MODE_ENABLED`` environment variable, which such a session does
+not necessarily set.
+
+.. note::
+
+    ``pip install datacompy[spark]`` installs ``pyspark[connect]``, which
+    covers both flavours. If you manage PySpark yourself, Spark Connect
+    requires the ``connect`` extra (``pip install "pyspark[connect]"``), which
+    pulls in ``grpcio``.
+
+.. note::
+
+    On runtimes that do not permit caching, such as Databricks Serverless, pass
+    ``cache_intermediates=False``.
+
+.. note::
+
+    ``spark.sql.execution.arrow.pyspark.enabled`` has no effect under Spark
+    Connect -- Arrow is always used on the wire.
 
 
 Reports

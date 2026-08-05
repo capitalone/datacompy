@@ -18,12 +18,13 @@ pre-commit install
 
 ### Testing
 ```bash
-pytest                                              # all tests
-pytest tests/test_pandas.py                         # single backend
-pytest tests/test_pandas.py::test_numeric_columns_equal_abs   # single test
-pytest -k "tolerance and not spark"                 # by expression
-pytest --cov=datacompy --cov-report=term-missing    # with coverage
-pytest -c pytest-ansi.ini                           # Spark ANSI mode
+pytest                                          # all tests
+pytest tests/test_pandas.py                     # single backend
+pytest tests/test_pandas.py::TestPandasCompare::test_method  # single test
+pytest --cov=datacompy --cov-report=term-missing  # with coverage
+
+pytest -c pytest-connect.ini tests/test_spark.py tests/comparator/  # existing Spark suite, against Spark Connect
+pytest -m spark_connect tests/test_spark_connect.py                # Spark Connect regression suite
 ```
 
 CI runs the suite twice, once with the default `pytest.ini` and once with `-c pytest-ansi.ini`, which only differs by `spark.sql.ansi.enabled`. A change touching Spark casting or null handling needs both.
@@ -36,6 +37,8 @@ export JAVA_HOME=$CONDA_PREFIX/lib/jvm
 ```
 
 **Snowflake** tests need a live session, or `--snowflake-session local` for Snowpark's local testing mode. Local mode is an emulator, not Snowflake: `eqNullSafe` returns `True` for every row and high-precision decimals are truncated on DataFrame creation. Tests that depend on either must request the `requires_live_snowflake_session` fixture (`tests/conftest.py`), which skips them in local mode.
+
+The two Spark Connect commands must each run in their own pytest process, and are excluded from the default run via `addopts`. Starting a local Spark Connect server sets `SPARK_LOCAL_REMOTE`, after which every later `SparkSession.builder.getOrCreate()` in that process returns the Connect session — so a classic and a Connect session cannot coexist in one run.
 
 ### Linting & Formatting
 ```bash
@@ -81,8 +84,21 @@ Beyond the report, each backend exposes `df1_unq_rows`, `df2_unq_rows`, and `int
 - `numeric.py` → Numeric comparators per backend (handles tolerances)
 - `string.py` → String comparators per backend
 - `array.py` → Array-like comparators per backend
+- `utility.py` → Shared Spark/Snowflake helpers, including `get_spark_functions` / `get_spark_window`
 
 Each type has backend-specific implementations: `Pandas*Comparator`, `Polars*Comparator`, `Spark*Comparator`, `Snowflake*Comparator`.
+
+### Spark Connect
+
+Never import `pyspark.sql.functions` or `pyspark.sql.Window` at module scope in Spark code paths. Those dispatch to the Spark Connect implementations only when the process-global `SPARK_CONNECT_MODE_ENABLED` environment variable is set, which a Connect session from a notebook or serverless runtime does not necessarily set. Instead resolve them from the DataFrame or Column being operated on:
+
+```python
+F = get_spark_functions(dataframe)       # datacompy/spark.py
+psf = get_spark_functions(dataframe)     # datacompy/comparator/*.py
+Window = get_spark_window(dataframe)
+```
+
+Because there is no module-level binding, ruff's `F821` flags any call site that forgets the local. For the same reason, never import `pyspark.sql.connect.*` at module scope — that package requires the optional `grpcio` dependency, and `__init__.py`'s `except ImportError` would silently drop `SparkSQLCompare` from the package. Use `is_spark_connect_object()` instead.
 
 ### Reporting
 

@@ -20,7 +20,12 @@ import pytest
 
 pytest.importorskip("pyspark")
 
-from datacompy.comparator.utility import get_spark_column_dtypes
+from datacompy.comparator.utility import (
+    get_spark_column_dtypes,
+    get_spark_functions,
+    get_spark_window,
+    is_spark_connect_object,
+)
 from pyspark.sql.types import (
     DateType,
     DecimalType,
@@ -85,3 +90,64 @@ def test_get_spark_column_dtypes_case_insensitive(spark_session):
     dtype1, dtype2 = get_spark_column_dtypes(df, "num", "str")
     assert dtype1 == "bigint"
     assert dtype2 == "string"
+
+
+@pytest.mark.pyspark
+def test_is_spark_connect_object_connect_branch():
+    """A Spark Connect Column is built without any session or SparkContext."""
+    import pandas as pd
+    from pyspark.sql.connect import functions as connect_functions
+
+    assert is_spark_connect_object(connect_functions.col("value"))
+    assert not is_spark_connect_object(pd.DataFrame({"a": [1]}))
+    assert not is_spark_connect_object(object())
+
+
+@pytest.mark.pyspark
+def test_get_spark_helpers_connect_branch():
+    """Spark Connect objects resolve to the Spark Connect implementations."""
+    from pyspark.sql.connect import functions as connect_functions
+    from pyspark.sql.connect.window import Window as ConnectWindow
+
+    column = connect_functions.col("value")
+
+    assert get_spark_functions(column) is connect_functions
+    assert get_spark_window(column) is ConnectWindow
+
+
+@pytest.mark.pyspark
+def test_get_spark_helpers_match_the_session(spark_session):
+    """The helpers must agree with the flavour of the session under test.
+
+    This runs under both lanes -- the default classic run and the Spark Connect
+    run driven by ``pytest-connect.ini`` -- so it asserts against whichever
+    flavour ``spark_session`` actually is. The negative assertions matter:
+    without them an implementation that always returned one flavour would pass.
+    """
+    import pyspark.sql.functions as classic_functions
+    from pyspark.sql import Window as ClassicWindow
+    from pyspark.sql.connect import functions as connect_functions
+    from pyspark.sql.connect.window import Window as ConnectWindow
+
+    df = spark_session.range(1)
+
+    if is_spark_connect_object(df):
+        assert get_spark_functions(df) is connect_functions
+        assert get_spark_functions(df) is not classic_functions
+        assert get_spark_window(df) is ConnectWindow
+        assert get_spark_window(df) is not ClassicWindow
+    else:
+        assert get_spark_functions(df) is classic_functions
+        assert get_spark_functions(df) is not connect_functions
+        assert get_spark_window(df) is ClassicWindow
+        assert get_spark_window(df) is not ConnectWindow
+
+
+@pytest.mark.pyspark
+def test_get_spark_helpers_default_to_classic():
+    """Anything that is not a Spark Connect object falls back to classic."""
+    import pyspark.sql.functions as classic_functions
+    from pyspark.sql import Window as ClassicWindow
+
+    assert get_spark_functions(object()) is classic_functions
+    assert get_spark_window(object()) is ClassicWindow
