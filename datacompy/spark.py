@@ -24,13 +24,11 @@ two dataframes.
 import logging
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple
+from uuid import uuid4
 
 import pandas as pd
 import pyspark.sql
-import pyspark.sql.functions as F
 from ordered_set import OrderedSet
-from pyspark.sql import Window
-from pyspark.sql.connect.dataframe import DataFrame
 
 from datacompy.base import (
     BaseCompare,
@@ -46,7 +44,12 @@ from datacompy.comparator import (
     SparkStringComparator,
 )
 from datacompy.comparator.base import BaseComparator
-from datacompy.comparator.utility import get_spark_column_dtypes
+from datacompy.comparator.utility import (
+    get_spark_column_dtypes,
+    get_spark_functions,
+    get_spark_window,
+    is_spark_connect_object,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -223,6 +226,7 @@ class SparkSQLCompare(BaseCompare):
 
     def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
         """Hides sensitive columns of df1 or df2 if applicable in the compare."""
+        F = get_spark_functions(self.df1)
         # Don't allow hiding columns again before first revealing
         if self.sensitive_columns:
             raise ValueError(
@@ -287,9 +291,15 @@ class SparkSQLCompare(BaseCompare):
         None
         """
         dataframe = getattr(self, index)
-        instances = (pyspark.sql.DataFrame, DataFrame)
 
-        if not isinstance(dataframe, instances):
+        # On PySpark 4.x the Spark Connect DataFrame subclasses the classic one,
+        # so the isinstance check alone would be enough. On 3.5 it does not,
+        # hence the second check -- which deliberately avoids importing
+        # pyspark.sql.connect, since that package requires the optional grpcio
+        # dependency and raises ImportError without it.
+        if not isinstance(dataframe, pyspark.sql.DataFrame) and not (
+            is_spark_connect_object(dataframe)
+        ):
             raise TypeError(
                 f"{index} must be a pyspark.sql.DataFrame or pyspark.sql.connect.dataframe.DataFrame (Spark 3.4.0 and above)"
             )
@@ -383,6 +393,7 @@ class SparkSQLCompare(BaseCompare):
 
         df1 = self.df1
         df2 = self.df2
+        F = get_spark_functions(df1)
         temp_join_columns = deepcopy(self.join_columns)
 
         if self._any_dupes:
@@ -447,19 +458,28 @@ class SparkSQLCompare(BaseCompare):
             {c: f"{c}_{self.df2_name}" for c in temp_join_columns}
         )
 
-        # NULL SAFE Outer join using ON
-        df1.createOrReplaceTempView("df1")
-        df2.createOrReplaceTempView("df2")
+        # NULL SAFE Outer join using ON.
+        # The view names are unique per merge. Fixed names would let a later
+        # comparison on the same session replace the views this plan refers to,
+        # and would clobber any user view called "df1" or "df2". Spark Connect
+        # resolves views lazily, so that surfaces as an unresolved column when
+        # the plan is finally executed rather than silently comparing the wrong
+        # data.
+        suffix = uuid4().hex
+        df1_view = f"datacompy_df1_{suffix}"
+        df2_view = f"datacompy_df2_{suffix}"
+        df1.createOrReplaceTempView(df1_view)
+        df2.createOrReplaceTempView(df2_view)
         on = " and ".join(
             [
-                f"df1.`{c}_{self.df1_name}` <=> df2.`{c}_{self.df2_name}`"
+                f"{df1_view}.`{c}_{self.df1_name}` <=> {df2_view}.`{c}_{self.df2_name}`"
                 for c in params["on"]
             ]
         )
         outer_join = self.spark_session.sql(
-            """
+            f"""
         SELECT * FROM
-        df1 FULL OUTER JOIN df2
+        {df1_view} FULL OUTER JOIN {df2_view}
         ON
         """
             + on
@@ -544,6 +564,7 @@ class SparkSQLCompare(BaseCompare):
         otherwise.
         """
         LOG.debug("Comparing intersection")
+        F = get_spark_functions(self.intersect_rows)
         max_diff: float
         null_diff: int
         exprs = {}
@@ -567,7 +588,11 @@ class SparkSQLCompare(BaseCompare):
                 comparators=self._get_comparators(),
             )
 
-        self.intersect_rows = self.intersect_rows.withColumns(exprs)
+        if exprs:
+            # Guarded because Spark Connect asserts on an empty column mapping,
+            # where classic Spark treats it as a no-op. This is reached when the
+            # dataframes share nothing but the join columns.
+            self.intersect_rows = self.intersect_rows.withColumns(exprs)
         all_rows_count = self.intersect_rows.count()
 
         if exprs:
@@ -742,6 +767,7 @@ class SparkSQLCompare(BaseCompare):
             "pertinent" columns, for rows that don't match on the provided
             column.
         """
+        F = get_spark_functions(self.intersect_rows)
         if not self.only_join_columns() and column not in self.join_columns:
             row_cnt = self.intersect_rows.count()
             col_match = self.intersect_rows.select(f"{column}_match")
@@ -808,6 +834,7 @@ class SparkSQLCompare(BaseCompare):
         pyspark.sql.DataFrame
             All rows of the intersection dataframe, containing any columns, that don't match.
         """
+        F = get_spark_functions(self.intersect_rows)
         match_list = []
         return_list = []
         if self.only_join_columns():
@@ -986,6 +1013,7 @@ def columns_equal(
             )
             return compare
 
+    F = get_spark_functions(dataframe)
     compare = F.lit(False)
     return compare
 
@@ -1042,6 +1070,7 @@ def calculate_max_diff(
     float
         max diff
     """
+    F = get_spark_functions(dataframe)
     dtype1, dtype2 = get_spark_column_dtypes(dataframe, col_1, col_2)
     if dtype1.startswith("array") and dtype2.startswith("array"):
         LOG.warning(
@@ -1086,6 +1115,7 @@ def calculate_null_diff(
     int
         null diff
     """
+    F = get_spark_functions(dataframe)
     nulls_df = dataframe.withColumn(
         "col_1_null",
         F.when(F.col(col_1).isNull() == True, F.lit(True)).otherwise(  # noqa: E712
@@ -1133,6 +1163,8 @@ def _generate_id_within_group(
     pyspark.sql.DataFrame
         Original dataframe with the ID column that's unique in each group
     """
+    F = get_spark_functions(dataframe)
+    Window = get_spark_window(dataframe)
     default_value = "DATACOMPY_NULL"
     null_cols = [f"any(isnull({c}))" for c in join_columns]
     default_cols = [

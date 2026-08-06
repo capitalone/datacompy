@@ -710,6 +710,17 @@ def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) 
     str
         String representation of the DataFrame
     """
+    # Handle Spark DataFrame and Snowflake DataFrame.
+    # This must come *before* the ``to_string`` check below: a Spark Connect
+    # DataFrame synthesizes a Column for any unknown attribute, so
+    # ``hasattr(df, "to_string")`` is True for it and it would otherwise take
+    # the pandas branch. Nothing else is caught here -- pandas has no
+    # ``toPandas`` and Polars exposes ``to_pandas``, not ``toPandas``.
+    if hasattr(df, "toPandas"):
+        if sample_count is not None:
+            df = df.limit(sample_count)
+        return df.toPandas().to_string()
+
     # Handle pandas DataFrame
     if hasattr(df, "to_string"):
         if sample_count is not None and len(df) > sample_count:
@@ -717,12 +728,6 @@ def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) 
         if not on_index and hasattr(df, "reset_index"):
             df = df.reset_index(drop=True)
         return df.to_string()
-
-    # Handle Spark DataFrame and Snowflake DataFrame
-    if hasattr(df, "toPandas"):
-        if sample_count is not None:
-            df = df.limit(sample_count)
-        return df.toPandas().to_string()
 
     # Handle Polars DataFrame
     if hasattr(df, "to_pandas"):
