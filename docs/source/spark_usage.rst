@@ -58,6 +58,27 @@ join column(s).
     print(compare.report())
 
 
+Caching
+-------
+
+``SparkSQLCompare`` caches intermediate DataFrames by default, which avoids
+recomputing the joined data for every part of the report. Some environments,
+Databricks Serverless among them, do not support caching. Pass
+``cache_intermediates=False`` there:
+
+.. code-block:: python
+
+    compare = SparkSQLCompare(
+        spark,
+        df1,
+        df2,
+        join_columns='acct_id',
+        cache_intermediates=False,
+    )
+
+The command line equivalent is ``--no-cache-intermediates``. See :doc:`cli`.
+
+
 Reports
 -------
 

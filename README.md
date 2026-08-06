@@ -55,6 +55,28 @@ pip install datacompy[snowflake]
 - Snowflake/Snowpark: ([See documentation](https://capitalone.github.io/datacompy/snowflake_usage.html))
 
 
+## Command Line Interface
+
+DataComPy ships a `datacompy` command, so ad hoc checks and CI pipelines do not
+need a throw-away script ([see documentation](https://capitalone.github.io/datacompy/cli.html)):
+
+```bash
+# Compare two files and print a report
+datacompy compare --left before.csv --right after.csv --on id
+
+# Fail a build on any difference, with a JSON report saved as an artifact
+datacompy compare \
+    --left before.parquet --right after.parquet \
+    --on account_id,as_of_date \
+    --abs-tol balance=0.01 \
+    --max-unequal-rows 0 \
+    --report-format json --output reports/diff.json --quiet
+```
+
+It exits `0` when the datasets match, `1` when they differ, and `2` on error.
+CSV, Parquet, and JSON inputs are supported on the pandas, polars, and Spark
+backends, and Snowflake tables can be compared in place.
+
 ## Programmatic Report Access
 
 Every compare object exposes `build_report_data()` which returns a typed

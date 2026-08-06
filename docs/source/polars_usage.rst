@@ -1,11 +1,6 @@
 Polars Usage
 ============
 
-.. important::
-
-    Please note that Polars support is experimental and new in ``datacompy``
-    as of v0.11.0
-
 Overview
 --------
 
