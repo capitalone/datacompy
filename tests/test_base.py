@@ -32,6 +32,7 @@ from datacompy.base import (
     BaseCompare,
     _resolve_template_path,
     df_to_str,
+    fixed_width_table,
     get_column_tolerance,
     render,
     save_html_report,
@@ -444,3 +445,31 @@ def test_get_column_tolerance_column_is_default():
     """Test get_column_tolerance returns the value for 'default' if column is literally 'default'."""
     tol_dict = {"default": 0.07}
     assert get_column_tolerance("default", tol_dict) == pytest.approx(0.07)
+
+
+def test_fixed_width_table_sizes_columns_to_content():
+    """Every column is as wide as its widest cell, heading included."""
+    table = fixed_width_table(["Name", "N"], [["ab", 1], ["cdefg", 22]], "lr")
+    assert table == "Name    N\n-----  --\nab      1\ncdefg  22"
+
+
+def test_fixed_width_table_defaults_to_left_alignment():
+    """An omitted or short align string leaves the remaining columns left aligned."""
+    assert fixed_width_table(["Name", "N"], [["ab", 1]]) == "Name  N\n----  -\nab    1"
+
+
+def test_fixed_width_table_no_rows():
+    """A table with no body rows still emits the heading and the separator."""
+    assert fixed_width_table(["A", "B"], []) == "A  B\n-  -"
+
+
+def test_fixed_width_table_rejects_ragged_rows():
+    """A row whose cell count disagrees with the headings is a programming error."""
+    with pytest.raises(ValueError, match="row 1 has 1 cells but there are 2 headers"):
+        fixed_width_table(["A", "B"], [["x", "y"], ["z"]])
+
+
+def test_fixed_width_table_has_no_trailing_whitespace():
+    """Trailing padding is stripped so snapshots stay diff friendly."""
+    table = fixed_width_table(["Name", "Note"], [["a", "x"], ["bbbb", "y"]], "ll")
+    assert all(line == line.rstrip() for line in table.splitlines())

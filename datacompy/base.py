@@ -24,6 +24,7 @@ two dataframes.
 import logging
 from abc import ABC, abstractmethod
 from collections import Counter
+from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, TypedDict
 
@@ -532,6 +533,79 @@ def _resolve_template_path(template_name: str) -> tuple[str, str]:
     )
 
 
+#: Spaces between adjacent columns of a report table.
+TABLE_GUTTER = "  "
+
+
+def fixed_width_table(
+    headers: Sequence[str],
+    rows: Sequence[Sequence[Any]],
+    align: str = "",
+) -> str:
+    """Lay out a plain text table, sizing every column to its widest cell.
+
+    Exposed to templates as ``fixed_width_table``. Cells are stringified but not
+    otherwise formatted, so the template stays in charge of how a number is
+    presented and this function stays in charge only of how wide the column is.
+    That split is what keeps the header rule, the separator, and the body
+    aligned no matter how long a dataset name or dtype turns out to be.
+
+    Parameters
+    ----------
+    headers : sequence of str
+        Column headings. Also the minimum width of each column.
+    rows : sequence of sequence
+        Body rows. Each row must have one cell per heading.
+    align : str, optional
+        One character per column, ``"l"`` for left and ``"r"`` for right.
+        Columns beyond the end of the string, and an omitted *align*, default
+        to left.
+
+    Returns
+    -------
+    str
+        The heading row, a separator row of dashes, and one row per entry,
+        newline separated and free of trailing whitespace.
+
+    Raises
+    ------
+    ValueError
+        If a row does not have one cell per heading.
+
+    Examples
+    --------
+    >>> print(fixed_width_table(["Name", "N"], [["ab", 1], ["cdefg", 22]], "lr"))
+    Name    N
+    -----  --
+    ab      1
+    cdefg  22
+    """
+    body = [[str(cell) for cell in row] for row in rows]
+    for index, row in enumerate(body):
+        if len(row) != len(headers):
+            raise ValueError(
+                f"row {index} has {len(row)} cells but there are {len(headers)} headers"
+            )
+
+    widths = [
+        max(len(header), *(len(row[column]) for row in body)) if body else len(header)
+        for column, header in enumerate(headers)
+    ]
+
+    def lay_out(cells: Sequence[str]) -> str:
+        padded = [
+            cell.rjust(width)
+            if align[column : column + 1] == "r"
+            else cell.ljust(width)
+            for column, (cell, width) in enumerate(zip(cells, widths, strict=True))
+        ]
+        return TABLE_GUTTER.join(padded).rstrip()
+
+    lines = [lay_out(headers), TABLE_GUTTER.join("-" * width for width in widths)]
+    lines.extend(lay_out(row) for row in body)
+    return "\n".join(lines)
+
+
 def render(template_name: str, **context: Any) -> str:
     """Render a template using Jinja2.
 
@@ -563,7 +637,11 @@ def render(template_name: str, **context: Any) -> str:
         autoescape=select_autoescape(),
         trim_blocks=True,
         lstrip_blocks=True,
+        # ``do`` lets the template assemble table rows in a loop, so cell
+        # formatting stays next to the table it belongs to.
+        extensions=["jinja2.ext.do"],
     )
+    env.globals["fixed_width_table"] = fixed_width_table
     template = env.get_template(template_file)
     return template.render(**context).strip()
 
