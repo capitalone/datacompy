@@ -18,9 +18,9 @@
 import argparse
 from contextlib import ExitStack
 
-from datacompy.cli.backends import BACKENDS
+from datacompy.cli.backends import BACKENDS, suspect_delimiter
 from datacompy.cli.errors import BadArgsError
-from datacompy.cli.output import emit
+from datacompy.cli.output import emit, print_warning
 from datacompy.cli.parser import OPTIONS, OPTIONS_BY_FLAG, fill_defaults
 from datacompy.report import ReportData
 
@@ -52,6 +52,15 @@ def run_compare(namespace: argparse.Namespace) -> int:
         session = backend.open_session(namespace, stack)
         left = backend.load(session, namespace.left, namespace)
         right = backend.load(session, namespace.right, namespace)
+
+        # Warn before building, so a wrong delimiter is named ahead of the
+        # missing join column it causes, and is still reported under
+        # --on-index, where nothing fails at all.
+        for ref, frame in ((namespace.left, left), (namespace.right, right)):
+            suspect = suspect_delimiter(ref, namespace, frame)
+            if suspect is not None:
+                print_warning(suspect)
+
         try:
             comparison = backend.build(namespace, session, left, right)
         except ValueError as exc:

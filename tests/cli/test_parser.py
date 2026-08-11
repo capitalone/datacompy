@@ -19,7 +19,7 @@ import argparse
 import inspect
 
 import pytest
-from datacompy.cli.backends import BACKENDS, compare_kwargs
+from datacompy.cli.backends import _EXTENSIONS, BACKENDS, compare_kwargs
 from datacompy.cli.errors import BadArgsError, MissingExtraError
 from datacompy.cli.parser import (
     ALL_BACKENDS,
@@ -258,6 +258,35 @@ def test_repeating_a_bare_tolerance_is_rejected():
     namespace = _minimal("--rel-tol", "0.01", "--rel-tol", "0.02")
     with pytest.raises(BadArgsError, match="more than once"):
         OPTIONS_BY_FLAG["--rel-tol"].resolved(namespace)
+
+
+# ---------------------------------------------------------------------------
+# Input format and delimiter tables
+# ---------------------------------------------------------------------------
+
+
+def test_every_csv_extension_has_a_delimiter_and_no_other_format_does():
+    """The invariant that keeps a recognised file from being misparsed.
+
+    An extension mapped to ``csv`` with no delimiter behind it reaches the right
+    reader and is then split on the wrong character, which is why format and
+    delimiter share one table.
+    """
+    for extension, (fmt, delimiter) in _EXTENSIONS.items():
+        if fmt == "csv":
+            assert delimiter, f"{extension} maps to csv with no delimiter"
+        else:
+            assert delimiter is None, (
+                f"{extension} is not csv but carries {delimiter!r}"
+            )
+
+
+def test_csv_delimiter_help_describes_inference_not_a_comma_default():
+    """The help is the only place the escape hatch is documented."""
+    help_text = OPTIONS_BY_FLAG["--csv-delimiter"].help
+    assert "default: comma" not in help_text
+    assert "Inferred from each file extension" in help_text
+    assert "','" in help_text
 
 
 # ---------------------------------------------------------------------------

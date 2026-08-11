@@ -103,3 +103,12 @@ def emit(
 def print_error(message: str) -> None:
     """Write *message* to stderr with a ``datacompy:`` prefix."""
     print(f"datacompy: {message}", file=sys.stderr)
+
+
+def print_warning(message: str) -> None:
+    """Write *message* to stderr with a ``datacompy: warning:`` prefix.
+
+    Warnings are diagnostics rather than output, so they ignore ``--quiet``,
+    which suppresses the report itself.
+    """
+    print(f"datacompy: warning: {message}", file=sys.stderr)
