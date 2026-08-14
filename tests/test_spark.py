@@ -1277,6 +1277,34 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows(spark_se
     assert not ("dollar_amt_df1" in output and "dollar_amt_df1" in output)
 
 
+def test_all_mismatch_ignore_matching_cols_empty_intersection(spark_session):
+    # No join keys in common, so intersect_rows carries the _match columns but
+    # no rows. SUM over zero rows is NULL, which used to raise a TypeError when
+    # the counts were compared against 0.
+    df1 = spark_session.createDataFrame([(1, "a"), (2, "b")], ["acct_id", "name"])
+    df2 = spark_session.createDataFrame([(3, "a"), (4, "b")], ["acct_id", "name"])
+    compare = SparkSQLCompare(spark_session, df1, df2, "acct_id")
+
+    assert compare.intersect_rows.count() == 0
+    # Falls back to the unique rows, as it does with ignore_matching_cols=False.
+    assert compare.all_mismatch(ignore_matching_cols=True).count() == 4
+
+
+def test_compare_registers_no_temp_views(spark_session):
+    # The merge used to register a temp view per dataframe per comparison and
+    # never drop them, so a long-lived session accumulated them without bound.
+    before = {t.name for t in spark_session.catalog.listTables()}
+
+    df1 = spark_session.createDataFrame([(1, "a"), (2, "b")], ["acct_id", "name"])
+    df2 = spark_session.createDataFrame([(1, "a"), (2, "z")], ["acct_id", "name"])
+    for _ in range(3):
+        compare = SparkSQLCompare(spark_session, df1, df2, "acct_id")
+        assert not compare.matches()
+
+    after = {t.name for t in spark_session.catalog.listTables()}
+    assert after == before
+
+
 def test_all_mismatch_ignore_matching_cols_some_cols_matching(spark_session):
     # Columns dollar_amt and name are matching
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld

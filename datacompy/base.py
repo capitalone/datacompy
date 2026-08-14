@@ -716,21 +716,25 @@ def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) 
     # ``hasattr(df, "to_string")`` is True for it and it would otherwise take
     # the pandas branch. Nothing else is caught here -- pandas has no
     # ``toPandas`` and Polars exposes ``to_pandas``, not ``toPandas``.
-    if hasattr(df, "toPandas"):
+    #
+    # Every branch tests ``callable`` rather than mere existence, because the
+    # same attribute-synthesizing behaviour cuts both ways: ``df.toPandas`` on a
+    # pandas frame with a column of that name is a Series, not a method.
+    if callable(getattr(df, "toPandas", None)):
         if sample_count is not None:
             df = df.limit(sample_count)
         return df.toPandas().to_string()
 
     # Handle pandas DataFrame
-    if hasattr(df, "to_string"):
+    if callable(getattr(df, "to_string", None)):
         if sample_count is not None and len(df) > sample_count:
             df = df.head(sample_count)
-        if not on_index and hasattr(df, "reset_index"):
+        if not on_index and callable(getattr(df, "reset_index", None)):
             df = df.reset_index(drop=True)
         return df.to_string()
 
     # Handle Polars DataFrame
-    if hasattr(df, "to_pandas"):
+    if callable(getattr(df, "to_pandas", None)):
         if sample_count is not None and len(df) > sample_count:
             df = df.head(sample_count)
         return str(df)
