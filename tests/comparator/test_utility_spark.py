@@ -24,6 +24,7 @@ from datacompy.comparator.utility import (
     get_spark_column_dtypes,
     get_spark_functions,
     get_spark_window,
+    is_spark_connect_dataframe,
     is_spark_connect_object,
 )
 from pyspark.sql.types import (
@@ -95,6 +96,8 @@ def test_get_spark_column_dtypes_case_insensitive(spark_session):
 @pytest.mark.pyspark
 def test_is_spark_connect_object_connect_branch():
     """A Spark Connect Column is built without any session or SparkContext."""
+    pytest.importorskip("grpc")
+
     import pandas as pd
     from pyspark.sql.connect import functions as connect_functions
 
@@ -104,8 +107,28 @@ def test_is_spark_connect_object_connect_branch():
 
 
 @pytest.mark.pyspark
+def test_is_spark_connect_dataframe_is_narrower_than_is_connect_object():
+    """Only a Connect DataFrame passes, so type validation stays meaningful."""
+    pytest.importorskip("grpc")
+
+    import pandas as pd
+    from pyspark.sql.connect import functions as connect_functions
+
+    column = connect_functions.col("value")
+
+    # A Connect Column is a Spark Connect object, but it is not a DataFrame.
+    assert is_spark_connect_object(column)
+    assert not is_spark_connect_dataframe(column)
+
+    assert not is_spark_connect_dataframe(pd.DataFrame({"a": [1]}))
+    assert not is_spark_connect_dataframe(object())
+
+
+@pytest.mark.pyspark
 def test_get_spark_helpers_connect_branch():
     """Spark Connect objects resolve to the Spark Connect implementations."""
+    pytest.importorskip("grpc")
+
     from pyspark.sql.connect import functions as connect_functions
     from pyspark.sql.connect.window import Window as ConnectWindow
 
@@ -124,12 +147,18 @@ def test_get_spark_helpers_match_the_session(spark_session):
     flavour ``spark_session`` actually is. The negative assertions matter:
     without them an implementation that always returned one flavour would pass.
     """
+    pytest.importorskip("grpc")
+
     import pyspark.sql.functions as classic_functions
     from pyspark.sql import Window as ClassicWindow
     from pyspark.sql.connect import functions as connect_functions
     from pyspark.sql.connect.window import Window as ConnectWindow
 
     df = spark_session.range(1)
+
+    # For a DataFrame the broad and the narrow check must agree, whichever
+    # lane this is running in.
+    assert is_spark_connect_dataframe(df) == is_spark_connect_object(df)
 
     if is_spark_connect_object(df):
         assert get_spark_functions(df) is connect_functions

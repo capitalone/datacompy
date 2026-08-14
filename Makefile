@@ -40,10 +40,14 @@ test-all: test test-ansi test-connect test-connect-regression
 # Everything except the Snowflake suites, which error without a live session.
 # `--snowflake-session local` is not an alternative here: Snowpark's local
 # testing mode is an emulator and most of the Snowflake suite fails against it.
-test-no-snowflake: PYTEST_ARGS += -k "not snowflake"
+#
+# `override` is required: a command-line assignment (`make PYTEST_ARGS=-x
+# test-no-snowflake`) beats a plain target-specific one, which would silently
+# drop the deselection and run the Snowflake suites anyway.
+test-no-snowflake: override PYTEST_ARGS += -k "not snowflake"
 test-no-snowflake: test
 
-test-all-no-snowflake: PYTEST_ARGS += -k "not snowflake"
+test-all-no-snowflake: override PYTEST_ARGS += -k "not snowflake"
 test-all-no-snowflake: test-all
 
 sphinx:

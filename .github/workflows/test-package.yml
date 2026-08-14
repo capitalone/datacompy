@@ -11,8 +11,12 @@
 #     python 3.10 Spark job (3.10 cannot take pandas 3), pandas 3.0.3 on 3.12.
 #   * spark 3.5 vs 4 is a real API split, so both appear.
 #   * ANSI mode and Spark Connect are spark-side semantics, orthogonal to the
-#     python and pandas versions, so they run once on the 3.12 baseline rather
-#     than on every Spark job.
+#     python and pandas versions, so they run once per Spark job rather than on
+#     every python/pandas combination. ANSI is NOT orthogonal to the Spark
+#     version -- `spark.sql.ansi.enabled` defaults to false on 3.5 and true on
+#     4.x, and the TRY_CAST / integer-cast code in datacompy/comparator/ exists
+#     to bridge exactly that -- so both Spark jobs run it. Spark Connect stays
+#     on Spark 4 only, because 3.5 does not bundle the Connect server jar.
 #
 # Known gap: no Spark job runs on python 3.11 or 3.13, so a Spark break
 # specific to those runtimes would not be caught. Widening is one entry in the
@@ -76,6 +80,11 @@ jobs:
       - name: Test with pytest
         run: |
           python -m pytest --cov=datacompy --cov-report=xml --cov-report=term-missing
+      # ANSI defaults to false on Spark 3.5 and true on 4.x, so an ANSI-mode
+      # break that only reproduces on 3.5 needs this job to catch it.
+      - name: Test with pytest (ANSI mode)
+        run: |
+          python -m pytest -c pytest-ansi.ini --cov=datacompy --cov-report=xml --cov-report=term-missing
 
   test-with-spark-4-install:
     name: spark 4 (py${{ matrix.python-version }}, pandas ${{ matrix.pandas-version }})

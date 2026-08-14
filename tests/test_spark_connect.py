@@ -53,15 +53,30 @@ def connect_session():
     """
     from pyspark.sql import SparkSession
 
-    try:
-        session = (
-            SparkSession.builder.remote("local[2]")
-            .config("spark.sql.shuffle.partitions", "4")
-            .config("spark.sql.adaptive.enabled", "false")
-            .getOrCreate()
-        )
-    except Exception as exc:  # pragma: no cover - depends on the environment
-        pytest.skip(f"could not start a local Spark Connect server: {exc}")
+    # Deliberately not wrapped in try/except+skip. pyspark and grpc being absent
+    # is the only environment difference that may legitimately skip this file,
+    # and the importorskips above cover it. A server that fails to start is a
+    # failure: swallowing it would let the whole regression suite disappear
+    # while CI still reported the step green, which is precisely how the issue
+    # #535 class of bug got in.
+    #
+    # The binding addresses mirror pytest-connect.ini. Without them PySpark
+    # starts the bundled Connect server on *:15002, i.e. an unauthenticated
+    # endpoint on every interface of the machine running the tests.
+    # `spark.driver.host` has to be pinned alongside `spark.driver.bindAddress`:
+    # with only the latter, the driver still advertises the machine hostname, and
+    # the executor class loader fails to fetch isolated artifacts from it
+    # (RemoteClassLoaderError) once the Connect plugin turns artifact isolation
+    # on.
+    session = (
+        SparkSession.builder.remote("local[2]")
+        .config("spark.connect.grpc.binding.address", "127.0.0.1")
+        .config("spark.driver.host", "localhost")
+        .config("spark.driver.bindAddress", "127.0.0.1")
+        .config("spark.sql.shuffle.partitions", "4")
+        .config("spark.sql.adaptive.enabled", "false")
+        .getOrCreate()
+    )
 
     os.environ.pop("SPARK_CONNECT_MODE_ENABLED", None)
     yield session
@@ -224,3 +239,8 @@ def test_validate_dataframe_accepts_connect_dataframe(connect_session):
 
     with pytest.raises(TypeError):
         SparkSQLCompare(connect_session, "not a dataframe", df, join_columns="acct_id")
+
+    # A Column is a Spark Connect object but not a DataFrame, so the type check
+    # has to reject it rather than fail later on with something unrelated.
+    with pytest.raises(TypeError):
+        SparkSQLCompare(connect_session, df["acct_id"], df, join_columns="acct_id")

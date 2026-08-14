@@ -34,6 +34,36 @@ except ImportError:
 
 
 _CONNECT_MODULE_PREFIX = "pyspark.sql.connect."
+_CONNECT_DATAFRAME_MODULE = "pyspark.sql.connect.dataframe"
+
+
+def is_spark_connect_dataframe(spark_object: Any) -> bool:
+    """Check whether an object is a Spark Connect ``DataFrame``.
+
+    Narrower than :func:`is_spark_connect_object`, which answers "does this come
+    from the Spark Connect API at all" and is therefore True for a ``Column``, a
+    ``GroupedData`` or a ``SparkSession`` as well. Type validation needs the
+    narrow question, so that passing a ``Column`` where a ``DataFrame`` is
+    expected still raises a useful ``TypeError``.
+
+    Like :func:`is_spark_connect_object` this compares module names instead of
+    using ``isinstance``, to avoid importing ``pyspark.sql.connect`` and its
+    optional ``grpcio`` dependency.
+
+    Parameters
+    ----------
+    spark_object : Any
+        Any object.
+
+    Returns
+    -------
+    bool
+        True if the object is a Spark Connect ``DataFrame``, False otherwise.
+    """
+    return any(
+        klass.__module__ == _CONNECT_DATAFRAME_MODULE and klass.__name__ == "DataFrame"
+        for klass in type(spark_object).__mro__
+    )
 
 
 def is_spark_connect_object(spark_object: Any) -> bool:

@@ -23,8 +23,9 @@ two dataframes.
 
 import logging
 from copy import deepcopy
+from functools import reduce
+from operator import and_
 from typing import Any, Dict, List, Tuple
-from uuid import uuid4
 
 import pandas as pd
 import pyspark.sql
@@ -48,7 +49,7 @@ from datacompy.comparator.utility import (
     get_spark_column_dtypes,
     get_spark_functions,
     get_spark_window,
-    is_spark_connect_object,
+    is_spark_connect_dataframe,
 )
 
 LOG = logging.getLogger(__name__)
@@ -296,9 +297,12 @@ class SparkSQLCompare(BaseCompare):
         # so the isinstance check alone would be enough. On 3.5 it does not,
         # hence the second check -- which deliberately avoids importing
         # pyspark.sql.connect, since that package requires the optional grpcio
-        # dependency and raises ImportError without it.
+        # dependency and raises ImportError without it. It must stay specific to
+        # the DataFrame class: a check for "any Spark Connect object" would let a
+        # Column or a GroupedData through, and the failure would surface later as
+        # an unrelated error instead of the TypeError below.
         if not isinstance(dataframe, pyspark.sql.DataFrame) and not (
-            is_spark_connect_object(dataframe)
+            is_spark_connect_dataframe(dataframe)
         ):
             raise TypeError(
                 f"{index} must be a pyspark.sql.DataFrame or pyspark.sql.connect.dataframe.DataFrame (Spark 3.4.0 and above)"
@@ -422,8 +426,6 @@ class SparkSQLCompare(BaseCompare):
             df1 = df1.drop("__index")
             df2 = df2.drop("__index")
 
-        params = {"on": temp_join_columns}
-
         if ignore_spaces:
             for column in self.join_columns:
                 if (
@@ -458,32 +460,22 @@ class SparkSQLCompare(BaseCompare):
             {c: f"{c}_{self.df2_name}" for c in temp_join_columns}
         )
 
-        # NULL SAFE Outer join using ON.
-        # The view names are unique per merge. Fixed names would let a later
-        # comparison on the same session replace the views this plan refers to,
-        # and would clobber any user view called "df1" or "df2". Spark Connect
-        # resolves views lazily, so that surfaces as an unresolved column when
-        # the plan is finally executed rather than silently comparing the wrong
-        # data.
-        suffix = uuid4().hex
-        df1_view = f"datacompy_df1_{suffix}"
-        df2_view = f"datacompy_df2_{suffix}"
-        df1.createOrReplaceTempView(df1_view)
-        df2.createOrReplaceTempView(df2_view)
-        on = " and ".join(
+        # NULL SAFE Outer join, built with the DataFrame API rather than SQL so
+        # that no temp views have to be registered at all. Registering them is a
+        # trap either way: fixed names ("df1"/"df2") are replaced by the next
+        # comparison on the same session and clobber any user view of that name,
+        # while unique names accumulate for the life of the session, because a
+        # Spark Connect plan holds the SQL text and re-resolves the views on
+        # every action -- so they can never safely be dropped afterwards.
+        # eqNullSafe is the DataFrame-API spelling of <=>.
+        join_condition = reduce(
+            and_,
             [
-                f"{df1_view}.`{c}_{self.df1_name}` <=> {df2_view}.`{c}_{self.df2_name}`"
-                for c in params["on"]
-            ]
+                df1[f"{c}_{self.df1_name}"].eqNullSafe(df2[f"{c}_{self.df2_name}"])
+                for c in temp_join_columns
+            ],
         )
-        outer_join = self.spark_session.sql(
-            f"""
-        SELECT * FROM
-        {df1_view} FULL OUTER JOIN {df2_view}
-        ON
-        """
-            + on
-        )
+        outer_join = df1.join(df2, on=join_condition, how="full_outer")
 
         outer_join = outer_join.withColumn("_merge", F.lit(None))  # initialize col
 
@@ -860,8 +852,11 @@ class SparkSQLCompare(BaseCompare):
             if c.endswith("_match"):
                 orig_col_name = c[:-6]
 
+                # SUM over zero rows is NULL, so default to 0 the way
+                # _intersect_compare does: with an empty intersection every
+                # count comes back None and the comparison would raise.
                 if not ignore_matching_cols or (
-                    ignore_matching_cols and mismatch_counts[f"{c}_count"] > 0
+                    ignore_matching_cols and (mismatch_counts[f"{c}_count"] or 0) > 0
                 ):
                     LOG.debug(f"Adding column {orig_col_name} to the result.")
                     match_list.append(c)
