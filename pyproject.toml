@@ -36,7 +36,7 @@ dependencies = [
   "numpy>=1.26.4,<2.6",
   "ordered-set>=4.0.2,<=4.1",
   "pandas>=2.2,<3.1",
-  "polars[pandas]>=0.20.4,<1.44",
+  "polars[pandas]>=0.20.4,<1.45",
 ]
 optional-dependencies.build = [ "build", "twine", "wheel" ]
 optional-dependencies.dev = [
