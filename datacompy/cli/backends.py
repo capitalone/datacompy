@@ -36,6 +36,7 @@ import re
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from contextlib import ExitStack
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -103,6 +104,41 @@ def infer_format(ref: str, override: str | None) -> str:
 def _is_ndjson(ref: str) -> bool:
     """Return ``True`` when *ref* looks like newline delimited JSON."""
     return Path(ref).suffix.lower() in _NDJSON_EXTENSIONS
+
+
+#: Delimiter characters worth naming when a CSV parse collapses to one column.
+#: A header line read with the wrong separator keeps whichever of these it was
+#: meant to be split on.
+_SUSPICIOUS_DELIMITERS = (",", "\t", ";", "|")
+
+
+@dataclass(frozen=True)
+class ParsedInput:
+    """What a file backend's :meth:`CLIBackend.load` did with one input.
+
+    Recorded per side and carried through
+    :func:`datacompy.cli.compare.run_compare` so that a later join column
+    failure can point at a delimiter mistake rather than leave the user
+    studying their join keys. The snowflake backend produces ``None`` instead,
+    since its inputs are table references, not parsed files.
+    """
+
+    ref: str
+    fmt: str
+    delimiter: str | None
+    columns: tuple[str, ...]
+
+    @property
+    def looks_misparsed(self) -> bool:
+        """Whether this looks like a CSV read with the wrong delimiter.
+
+        The tell is a CSV input that collapsed to a single column whose name
+        still carries a plausible delimiter, which is exactly the shape of a
+        header line split on the wrong character.
+        """
+        if self.fmt != "csv" or len(self.columns) != 1:
+            return False
+        return any(char in self.columns[0] for char in _SUSPICIOUS_DELIMITERS)
 
 
 def compare_kwargs(namespace: argparse.Namespace, backend: str) -> dict[str, Any]:
@@ -181,6 +217,27 @@ class CLIBackend(ABC):
     @abstractmethod
     def load(self, session: Any, ref: str, namespace: argparse.Namespace) -> Any:
         """Turn *ref* into whatever the backend's comparison accepts."""
+
+    def describe(
+        self, ref: str, namespace: argparse.Namespace, payload: Any
+    ) -> ParsedInput | None:
+        """Record how :meth:`load` read *ref*, for diagnostics after the fact.
+
+        Returns ``None`` when *payload* is not a parsed frame, which is the case
+        for the snowflake backend where *payload* is a table name. Called only
+        after :meth:`load` has succeeded, so :func:`infer_format` cannot raise
+        here.
+        """
+        columns = getattr(payload, "columns", None)
+        if columns is None:
+            return None
+        fmt = infer_format(ref, namespace.input_format)
+        return ParsedInput(
+            ref=ref,
+            fmt=fmt,
+            delimiter=namespace.csv_delimiter if fmt == "csv" else None,
+            columns=tuple(str(col) for col in columns),
+        )
 
     def build(
         self, namespace: argparse.Namespace, session: Any, left: Any, right: Any

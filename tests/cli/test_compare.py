@@ -586,6 +586,137 @@ def test_custom_csv_delimiter(tmp_path, left_frame, backend, capsys):
     )
 
 
+@pytest.mark.parametrize("delimiter", ["\t", ";", "|"])
+def test_wrong_delimiter_is_named_as_a_likely_cause(
+    tmp_path, left_frame, backend, delimiter, capsys
+):
+    """A CSV read with the wrong delimiter collapses to one column.
+
+    The join then fails on a column that "does not exist", and without the hint
+    the user is left staring at their join keys rather than the delimiter.
+    """
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    left_frame.to_csv(left, index=False, sep=delimiter)
+    left_frame.to_csv(right, index=False, sep=delimiter)
+
+    assert (
+        main(
+            [
+                "compare",
+                "--left",
+                str(left),
+                "--right",
+                str(right),
+                "--on",
+                "id",
+                "--backend",
+                backend,
+            ]
+        )
+        == ERROR
+    )
+    err = capsys.readouterr().err
+    assert "must have all columns from join_columns" in err
+    assert "Hint:" in err
+    assert "left.csv" in err
+    assert "--csv-delimiter" in err
+    # The hint names the delimiter that was actually used, a comma by default.
+    assert "','" in err
+
+
+def test_delimiter_hint_names_only_the_offending_side(
+    tmp_path, left_frame, right_frame, left_csv, backend, capsys
+):
+    """Only the left file is misparsed, so only the left file is named."""
+    mangled = tmp_path / "mangled.csv"
+    left_frame.to_csv(mangled, index=False, sep="\t")
+
+    assert (
+        main(
+            [
+                "compare",
+                "--left",
+                str(mangled),
+                "--right",
+                str(left_csv),
+                "--on",
+                "id",
+                "--backend",
+                backend,
+            ]
+        )
+        == ERROR
+    )
+    err = capsys.readouterr().err
+    assert "Hint:" in err
+    assert "mangled.csv" in err
+    assert "left.csv" not in err.split("Hint:", 1)[1]
+
+
+def test_genuine_missing_join_column_gets_no_hint(cli, backend, capsys):
+    """A correctly parsed file with a real typo in --on is left unchanged."""
+    assert cli("--on", "nope", "--backend", backend) == ERROR
+    err = capsys.readouterr().err
+    assert "nope" in err
+    assert "Hint:" not in err
+
+
+def test_single_column_csv_without_a_delimiter_in_the_header_gets_no_hint(
+    tmp_path, backend, capsys
+):
+    """One legitimate column whose name has no delimiter character is not flagged."""
+    single = tmp_path / "single.csv"
+    single.write_text("value\n1\n2\n")
+
+    assert (
+        main(
+            [
+                "compare",
+                "--left",
+                str(single),
+                "--right",
+                str(single),
+                "--on",
+                "missing",
+                "--backend",
+                backend,
+            ]
+        )
+        == ERROR
+    )
+    err = capsys.readouterr().err
+    assert "missing" in err
+    assert "Hint:" not in err
+
+
+def test_on_index_warns_when_a_side_looks_misparsed(tmp_path, left_frame, capsys):
+    """--on-index never raises on the mangled column, so warn before the report."""
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    left_frame.to_csv(left, index=False, sep="\t")
+    left_frame.to_csv(right, index=False, sep="\t")
+
+    exit_code = main(
+        [
+            "compare",
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--on-index",
+            "--backend",
+            "pandas",
+            "--quiet",
+        ]
+    )
+    assert exit_code in (MATCH, MISMATCH)
+    err = capsys.readouterr().err
+    assert "warning:" in err
+    assert "left.csv" in err
+    assert "--csv-delimiter" in err
+
+
 def test_tsv_extension_is_not_inferred(cli, tmp_path, left_frame, backend, capsys):
     """``.tsv`` is not in the extension table, so it asks for an explicit format.
 

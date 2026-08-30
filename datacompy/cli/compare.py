@@ -16,13 +16,24 @@
 """The ``datacompy compare`` subcommand."""
 
 import argparse
+import re
 from contextlib import ExitStack
 
-from datacompy.cli.backends import BACKENDS
+from datacompy.cli.backends import BACKENDS, ParsedInput
 from datacompy.cli.errors import BadArgsError
-from datacompy.cli.output import emit
+from datacompy.cli.output import emit, print_warning
 from datacompy.cli.parser import OPTIONS, OPTIONS_BY_FLAG, fill_defaults
 from datacompy.report import ReportData
+
+#: The join column error every backend raises, ``"df1 must have all columns
+#: from join_columns: ..."``. Group 1 names the offending side.
+_MISSING_JOIN_COLUMNS = re.compile(
+    r"^(df1|df2) must have all columns from join_columns\b"
+)
+
+#: The comparison classes speak of ``df1`` and ``df2``; the CLI user passed
+#: ``--left`` and ``--right``.
+_SIDE_FOR = {"df1": "left", "df2": "right"}
 
 
 def run_compare(namespace: argparse.Namespace) -> int:
@@ -52,6 +63,11 @@ def run_compare(namespace: argparse.Namespace) -> int:
         session = backend.open_session(namespace, stack)
         left = backend.load(session, namespace.left, namespace)
         right = backend.load(session, namespace.right, namespace)
+        parsed = {
+            "left": backend.describe(namespace.left, namespace, left),
+            "right": backend.describe(namespace.right, namespace, right),
+        }
+        warn_on_misparsed_index_join(namespace, parsed)
         try:
             comparison = backend.build(namespace, session, left, right)
         except ValueError as exc:
@@ -59,7 +75,7 @@ def run_compare(namespace: argparse.Namespace) -> int:
             # as join columns and tolerances with a plain ValueError. That is a
             # bad argument, not a bug, so report it as one instead of dumping a
             # traceback on the user.
-            raise BadArgsError(str(exc)) from exc
+            raise BadArgsError(add_delimiter_hint(str(exc), parsed)) from exc
 
         report_data = comparison.build_report_data(
             sample_count=namespace.sample_count,
@@ -73,6 +89,54 @@ def run_compare(namespace: argparse.Namespace) -> int:
         )
         matched = within_threshold(namespace, report_data)
     return 0 if matched else 1
+
+
+def _delimiter_hint(info: ParsedInput) -> str:
+    """Return the one line hint naming *info* as a likely delimiter mistake."""
+    return (
+        f"{info.ref!r} was read as CSV with delimiter {info.delimiter!r} and "
+        f"collapsed to a single column named {info.columns[0]!r}. The delimiter "
+        "is probably wrong; set it with --csv-delimiter."
+    )
+
+
+def add_delimiter_hint(message: str, parsed: dict[str, ParsedInput | None]) -> str:
+    """Append a delimiter hint to *message* when a join failure looks like a misparse.
+
+    Every backend reports an absent join column as ``"df1 must have all columns
+    from join_columns: ..."``. That is accurate but points nowhere near the
+    cause when the real problem is a CSV read with the wrong delimiter, which
+    collapses every row into a single column named after the header line. When
+    the side named in *message* looks exactly like that, say so; otherwise
+    return *message* untouched so genuine missing column errors are unchanged.
+    """
+    match = _MISSING_JOIN_COLUMNS.match(message)
+    if match is None:
+        return message
+    info = parsed.get(_SIDE_FOR[match.group(1)])
+    if info is None or not info.looks_misparsed:
+        return message
+    return f"{message}\nHint: {_delimiter_hint(info)}"
+
+
+def warn_on_misparsed_index_join(
+    namespace: argparse.Namespace, parsed: dict[str, ParsedInput | None]
+) -> None:
+    """Warn before an ``--on-index`` run that is about to compare a misparsed file.
+
+    A column join raises on the missing key and
+    :func:`add_delimiter_hint` gets its chance. ``--on-index`` joins on the row
+    index instead and will happily compare two mangled single string columns,
+    producing a report that means nothing and that nothing downstream flags.
+    Warn on stderr and let the comparison proceed, since the exit code should
+    still reflect the result.
+    """
+    if not namespace.on_index:
+        return
+    for side in ("left", "right"):
+        info = parsed[side]
+        if info is not None and info.looks_misparsed:
+            print_warning(_delimiter_hint(info))
 
 
 def validate_arguments(namespace: argparse.Namespace) -> None:

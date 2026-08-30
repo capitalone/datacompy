@@ -82,6 +82,14 @@ unusual, and ``--csv-delimiter`` for anything other than a comma:
     use the same delimiter. Comparing a comma separated file against a tab
     separated one is not currently supported.
 
+When a CSV is read with the wrong delimiter every row collapses into a single
+column named after the header line, and the comparison then fails on a join
+column that appears to be missing. The CLI recognises that shape and appends a
+hint naming the file and the delimiter, rather than leaving the error pointing
+only at the join keys. Under ``--on-index`` the same misparse is reported as a
+warning before the report, since the comparison would otherwise run silently on
+the mangled column.
+
 Cloud URIs such as ``s3://``, ``gs://``, and ``abfs://`` are handed straight to
 the underlying reader, so they work once the matching filesystem library
 (``s3fs``, ``gcsfs``, ``adlfs``) is installed.

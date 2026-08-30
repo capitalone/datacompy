@@ -103,3 +103,13 @@ def emit(
 def print_error(message: str) -> None:
     """Write *message* to stderr with a ``datacompy:`` prefix."""
     print(f"datacompy: {message}", file=sys.stderr)
+
+
+def print_warning(message: str) -> None:
+    """Write *message* to stderr with a ``datacompy: warning:`` prefix.
+
+    Unlike :func:`print_error` this does not accompany a non-zero exit. It is
+    for cases the CLI can see are probably wrong but cannot prove, such as a
+    comparison about to run on a file that looks misparsed.
+    """
+    print(f"datacompy: warning: {message}", file=sys.stderr)
