@@ -27,7 +27,9 @@ docs/source/api/
 test.html
 
 .coverage
+.coverage.*
 coverage.xml
+.tox/
 
 # benchmark datasets
 benchmarks/data/

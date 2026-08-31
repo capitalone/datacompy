@@ -29,6 +29,19 @@ Installing the package also provides the ``datacompy`` command line tool. See
 :doc:`cli`.
 
 
+Spark
+-----
+
+::
+
+    pip install datacompy[spark]
+
+This installs ``pyspark[connect]``, which covers both classic Spark and Spark
+Connect. If you manage PySpark yourself, a plain ``pip install pyspark`` is
+enough for classic Spark; Spark Connect additionally needs the ``connect``
+extra (``pip install "pyspark[connect]"``), which pulls in ``grpcio``.
+
+
 A Conda environment or virtual environment is highly recommended:
 
 conda (installs dependencies from Conda Forge)

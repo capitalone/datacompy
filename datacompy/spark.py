@@ -23,14 +23,13 @@ two dataframes.
 
 import logging
 from copy import deepcopy
+from functools import reduce
+from operator import and_
 from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 import pyspark.sql
-import pyspark.sql.functions as F
 from ordered_set import OrderedSet
-from pyspark.sql import Window
-from pyspark.sql.connect.dataframe import DataFrame
 
 from datacompy.base import (
     BaseCompare,
@@ -46,7 +45,12 @@ from datacompy.comparator import (
     SparkStringComparator,
 )
 from datacompy.comparator.base import BaseComparator
-from datacompy.comparator.utility import get_spark_column_dtypes
+from datacompy.comparator.utility import (
+    get_spark_column_dtypes,
+    get_spark_functions,
+    get_spark_window,
+    is_spark_connect_dataframe,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -223,6 +227,7 @@ class SparkSQLCompare(BaseCompare):
 
     def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
         """Hides sensitive columns of df1 or df2 if applicable in the compare."""
+        F = get_spark_functions(self.df1)
         # Don't allow hiding columns again before first revealing
         if self.sensitive_columns:
             raise ValueError(
@@ -287,9 +292,18 @@ class SparkSQLCompare(BaseCompare):
         None
         """
         dataframe = getattr(self, index)
-        instances = (pyspark.sql.DataFrame, DataFrame)
 
-        if not isinstance(dataframe, instances):
+        # On PySpark 4.x the Spark Connect DataFrame subclasses the classic one,
+        # so the isinstance check alone would be enough. On 3.5 it does not,
+        # hence the second check -- which deliberately avoids importing
+        # pyspark.sql.connect, since that package requires the optional grpcio
+        # dependency and raises ImportError without it. It must stay specific to
+        # the DataFrame class: a check for "any Spark Connect object" would let a
+        # Column or a GroupedData through, and the failure would surface later as
+        # an unrelated error instead of the TypeError below.
+        if not isinstance(dataframe, pyspark.sql.DataFrame) and not (
+            is_spark_connect_dataframe(dataframe)
+        ):
             raise TypeError(
                 f"{index} must be a pyspark.sql.DataFrame or pyspark.sql.connect.dataframe.DataFrame (Spark 3.4.0 and above)"
             )
@@ -383,6 +397,7 @@ class SparkSQLCompare(BaseCompare):
 
         df1 = self.df1
         df2 = self.df2
+        F = get_spark_functions(df1)
         temp_join_columns = deepcopy(self.join_columns)
 
         if self._any_dupes:
@@ -410,8 +425,6 @@ class SparkSQLCompare(BaseCompare):
             LOG.info("Dropping internal index")
             df1 = df1.drop("__index")
             df2 = df2.drop("__index")
-
-        params = {"on": temp_join_columns}
 
         if ignore_spaces:
             for column in self.join_columns:
@@ -447,23 +460,22 @@ class SparkSQLCompare(BaseCompare):
             {c: f"{c}_{self.df2_name}" for c in temp_join_columns}
         )
 
-        # NULL SAFE Outer join using ON
-        df1.createOrReplaceTempView("df1")
-        df2.createOrReplaceTempView("df2")
-        on = " and ".join(
+        # NULL SAFE Outer join, built with the DataFrame API rather than SQL so
+        # that no temp views have to be registered at all. Registering them is a
+        # trap either way: fixed names ("df1"/"df2") are replaced by the next
+        # comparison on the same session and clobber any user view of that name,
+        # while unique names accumulate for the life of the session, because a
+        # Spark Connect plan holds the SQL text and re-resolves the views on
+        # every action -- so they can never safely be dropped afterwards.
+        # eqNullSafe is the DataFrame-API spelling of <=>.
+        join_condition = reduce(
+            and_,
             [
-                f"df1.`{c}_{self.df1_name}` <=> df2.`{c}_{self.df2_name}`"
-                for c in params["on"]
-            ]
+                df1[f"{c}_{self.df1_name}"].eqNullSafe(df2[f"{c}_{self.df2_name}"])
+                for c in temp_join_columns
+            ],
         )
-        outer_join = self.spark_session.sql(
-            """
-        SELECT * FROM
-        df1 FULL OUTER JOIN df2
-        ON
-        """
-            + on
-        )
+        outer_join = df1.join(df2, on=join_condition, how="full_outer")
 
         outer_join = outer_join.withColumn("_merge", F.lit(None))  # initialize col
 
@@ -544,6 +556,7 @@ class SparkSQLCompare(BaseCompare):
         otherwise.
         """
         LOG.debug("Comparing intersection")
+        F = get_spark_functions(self.intersect_rows)
         max_diff: float
         null_diff: int
         exprs = {}
@@ -567,7 +580,11 @@ class SparkSQLCompare(BaseCompare):
                 comparators=self._get_comparators(),
             )
 
-        self.intersect_rows = self.intersect_rows.withColumns(exprs)
+        if exprs:
+            # Guarded because Spark Connect asserts on an empty column mapping,
+            # where classic Spark treats it as a no-op. This is reached when the
+            # dataframes share nothing but the join columns.
+            self.intersect_rows = self.intersect_rows.withColumns(exprs)
         all_rows_count = self.intersect_rows.count()
 
         if exprs:
@@ -742,6 +759,7 @@ class SparkSQLCompare(BaseCompare):
             "pertinent" columns, for rows that don't match on the provided
             column.
         """
+        F = get_spark_functions(self.intersect_rows)
         if not self.only_join_columns() and column not in self.join_columns:
             row_cnt = self.intersect_rows.count()
             col_match = self.intersect_rows.select(f"{column}_match")
@@ -808,6 +826,7 @@ class SparkSQLCompare(BaseCompare):
         pyspark.sql.DataFrame
             All rows of the intersection dataframe, containing any columns, that don't match.
         """
+        F = get_spark_functions(self.intersect_rows)
         match_list = []
         return_list = []
         if self.only_join_columns():
@@ -833,8 +852,11 @@ class SparkSQLCompare(BaseCompare):
             if c.endswith("_match"):
                 orig_col_name = c[:-6]
 
+                # SUM over zero rows is NULL, so default to 0 the way
+                # _intersect_compare does: with an empty intersection every
+                # count comes back None and the comparison would raise.
                 if not ignore_matching_cols or (
-                    ignore_matching_cols and mismatch_counts[f"{c}_count"] > 0
+                    ignore_matching_cols and (mismatch_counts[f"{c}_count"] or 0) > 0
                 ):
                     LOG.debug(f"Adding column {orig_col_name} to the result.")
                     match_list.append(c)
@@ -986,6 +1008,7 @@ def columns_equal(
             )
             return compare
 
+    F = get_spark_functions(dataframe)
     compare = F.lit(False)
     return compare
 
@@ -1042,6 +1065,7 @@ def calculate_max_diff(
     float
         max diff
     """
+    F = get_spark_functions(dataframe)
     dtype1, dtype2 = get_spark_column_dtypes(dataframe, col_1, col_2)
     if dtype1.startswith("array") and dtype2.startswith("array"):
         LOG.warning(
@@ -1086,6 +1110,7 @@ def calculate_null_diff(
     int
         null diff
     """
+    F = get_spark_functions(dataframe)
     nulls_df = dataframe.withColumn(
         "col_1_null",
         F.when(F.col(col_1).isNull() == True, F.lit(True)).otherwise(  # noqa: E712
@@ -1133,6 +1158,8 @@ def _generate_id_within_group(
     pyspark.sql.DataFrame
         Original dataframe with the ID column that's unique in each group
     """
+    F = get_spark_functions(dataframe)
+    Window = get_spark_window(dataframe)
     default_value = "DATACOMPY_NULL"
     null_cols = [f"any(isnull({c}))" for c in join_columns]
     default_cols = [
