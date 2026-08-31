@@ -731,19 +731,21 @@ def test_wrong_delimiter_warns_on_the_on_index_path(tmp_path, left_frame, capsys
     left_frame.to_csv(left, index=False)
     left_frame.to_csv(right, index=False)
 
-    main(
-        [
-            "compare",
-            "--left",
-            str(left),
-            "--right",
-            str(right),
-            "--on-index",
-            "--backend",
-            "pandas",
-        ]
+    assert (
+        main(
+            [
+                "compare",
+                "--left",
+                str(left),
+                "--right",
+                str(right),
+                "--on-index",
+                "--backend",
+                "pandas",
+            ]
+        )
+        == MATCH
     )
-
     assert "parsed into a single column" in capsys.readouterr().err
 
 
