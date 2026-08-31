@@ -159,9 +159,11 @@ def suspect_delimiter(
     -------
     str or None
         A warning message, or ``None`` when the parse looks fine. Only a single
-        column CSV whose one column name contains a delimiter other than the
-        one used is reported, so a genuine single column file and a plain typo
-        in ``--on`` stay quiet.
+        column CSV whose one column name *repeats* a delimiter other than the
+        one used is reported, because that is what a collapsed multi-column
+        header looks like. A genuine single column file, a name that merely
+        contains one such delimiter (for example ``a;b``), and a plain typo in
+        ``--on`` all stay quiet.
     """
     try:
         if infer_format(ref, namespace.input_format) != "csv":
@@ -181,7 +183,11 @@ def suspect_delimiter(
 
     name = str(columns[0])
     used = infer_delimiter(ref, namespace.csv_delimiter)
-    if not any(char != used and char in name for char in _PLAUSIBLE_DELIMITERS):
+    # A collapsed multi-column header repeats the real delimiter once per lost
+    # column, so a plausible delimiter appearing more than once is the mark of a
+    # misparse. A single occurrence is just as easily a genuine column name such
+    # as "a;b", so it is left alone rather than warned about on a correct run.
+    if not any(char != used and name.count(char) > 1 for char in _PLAUSIBLE_DELIMITERS):
         return None
     return (
         f"{ref} parsed into a single column named {name!r}. It was read with "

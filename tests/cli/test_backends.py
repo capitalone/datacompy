@@ -128,16 +128,54 @@ def test_a_frame_without_columns_is_not_diagnosed():
     assert suspect_delimiter("data.csv", _namespace(), Opaque()) is None
 
 
-def test_a_quoted_header_is_not_reported_as_a_misparse(frame_of):
-    """A single column genuinely named ``a,b`` survives a comma delimited read.
+@pytest.mark.parametrize(
+    ("ref", "csv_delimiter", "column_name", "warns"),
+    [
+        # Read with a comma (.csv): a lone foreign delimiter is an ordinary
+        # name...
+        ("data.csv", None, "a;b", False),
+        ("data.csv", None, "a|b", False),
+        ("data.csv", None, "a\tb", False),
+        # ...but a repeated one is a collapsed multi-column header.
+        ("data.csv", None, "a;b;c", True),
+        ("data.csv", None, "a|b|c", True),
+        ("data.csv", None, "a\tb\tc", True),
+        # The delimiter actually used never implicates itself, however often it
+        # appears (a quoted "a,b,c" survives a comma read as one column).
+        ("data.csv", None, "a,b", False),
+        ("data.csv", None, "a,b,c", False),
+        # Two different foreign delimiters, one each, stays ambiguous -> quiet.
+        ("data.csv", None, "a;b|c", False),
+        # Nothing plausible in the name.
+        ("data.csv", None, "id", False),
+        ("data.csv", None, "amount_usd", False),
+        # Read with a tab (.tsv): the mirror image.
+        ("data.tsv", None, "first,last", False),
+        ("data.tsv", None, "id,name,amount", True),
+        ("data.tsv", None, "a;b", False),
+        ("data.tsv", None, "a;b;c", True),
+        ("data.tsv", None, "a\tb\tc", False),  # tab is what it was read with
+        # An explicit --csv-delimiter is what "used" means, not the extension.
+        ("data.csv", ";", "id,name,amount", True),
+        ("data.csv", ";", "a;b;c", False),  # ';' is what it was read with
+        ("data.csv", ";", "a|b", False),
+        ("data.csv", ";", "a|b|c", True),
+    ],
+)
+def test_suspect_delimiter_decision_matrix(
+    frame_of, ref, csv_delimiter, column_name, warns
+):
+    """A single column is a misparse only when a foreign delimiter repeats.
 
-    The comma in that name is the delimiter the file was read with, so it
-    cannot be evidence that the wrong one was chosen. Without that check the
-    only correctly parsed file in the world with a comma in a column name gets
-    warned about on every run.
+    A plausible delimiter that appears more than once is what a collapsed
+    multi-column header leaves behind. A lone occurrence is just as easily a
+    genuine column name, and the delimiter the file was read with never
+    implicates itself. Parametrised over both in memory backends via
+    ``frame_of``.
     """
-    frame = frame_of("a,b")
-    assert suspect_delimiter("data.csv", _namespace(), frame) is None
+    namespace = _namespace(csv_delimiter=csv_delimiter)
+    message = suspect_delimiter(ref, namespace, frame_of(column_name))
+    assert (message is not None) == warns
 
 
 def test_a_genuine_single_column_frame_is_not_reported(frame_of):
