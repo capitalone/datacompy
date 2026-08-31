@@ -55,8 +55,8 @@ Inputs
 ------
 
 ``--left`` and ``--right`` accept local paths and cloud URIs. CSV, Parquet, and
-JSON are supported, including newline delimited JSON via a ``.jsonl`` or
-``.ndjson`` extension.
+JSON are supported, including tab separated CSV via a ``.tsv`` extension and
+newline delimited JSON via a ``.jsonl`` or ``.ndjson`` extension.
 
 The format is inferred per file from its extension, so mixed inputs work without
 any extra flags:
@@ -65,22 +65,32 @@ any extra flags:
 
     datacompy compare --left snapshot.csv --right snapshot.parquet --on id
 
-The extensions recognised are ``.csv``, ``.parquet``, ``.json``, ``.jsonl``,
-and ``.ndjson``. Use ``--input-format`` when the extension is missing or
-unusual, and ``--csv-delimiter`` for anything other than a comma:
+The extensions recognised are ``.csv``, ``.tsv``, ``.parquet``, ``.pq``,
+``.json``, ``.jsonl``, and ``.ndjson``. The delimiter is inferred the same way,
+a tab for ``.tsv`` and a comma for everything else, so a tab separated file
+compares against a comma separated one without any extra flags.
+
+Use ``--input-format`` when the extension is missing or unusual. It selects the
+reader only and says nothing about the delimiter, so pair it with
+``--csv-delimiter``, which overrides inference for both inputs:
 
 .. code-block:: bash
 
     datacompy compare --left extract.dat --right extract2.dat --on id \
         --input-format csv --csv-delimiter '\t'
 
-.. note::
+``--csv-delimiter`` is also the way to correct a misleading extension. A comma
+separated file named ``.tsv`` would otherwise be read with tabs, so force the
+comma explicitly:
 
-    ``--csv-delimiter`` applies to both datasets, and ``.tsv`` is not inferred
-    as a format for that reason. Read tab separated files with an explicit
-    ``--input-format csv --csv-delimiter '\t'``, which requires both sides to
-    use the same delimiter. Comparing a comma separated file against a tab
-    separated one is not currently supported.
+.. code-block:: bash
+
+    datacompy compare --left export.tsv --right export2.tsv --on id \
+        --csv-delimiter ','
+
+A file read with the wrong delimiter collapses into a single column, which
+surfaces as a missing join column. The CLI warns on stderr when it sees that,
+naming the file and the delimiter it used.
 
 Cloud URIs such as ``s3://``, ``gs://``, and ``abfs://`` are handed straight to
 the underlying reader, so they work once the matching filesystem library

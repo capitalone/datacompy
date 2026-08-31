@@ -46,21 +46,29 @@ from datacompy.base import BaseCompare
 from datacompy.cli.errors import BadArgsError, LoadError, MissingExtraError
 from datacompy.cli.parser import OPTIONS
 
-#: File extension to canonical format name.
+#: File extension to canonical format name and field delimiter.
 #:
-#: ``.tsv`` is deliberately absent. Mapping it to ``csv`` would pick the right
-#: reader but not the right delimiter, which stays comma unless
-#: ``--csv-delimiter`` says otherwise, so a ``.tsv`` file would be recognised
-#: and then misparsed. Until the delimiter is inferred per file, a tab
-#: separated file is read with an explicit ``--input-format csv``.
-_EXTENSION_FORMATS = {
-    ".csv": "csv",
-    ".parquet": "parquet",
-    ".pq": "parquet",
-    ".json": "json",
-    ".jsonl": "json",
-    ".ndjson": "json",
+#: Format and delimiter live in one table on purpose. Mapping an extension to
+#: ``csv`` without deciding its delimiter picks the right reader but not the
+#: right separator, so the file is recognised and then misparsed into a single
+#: column. Keeping the two in separate tables makes that mistake possible again
+#: every time an extension is added; here the second element cannot be
+#: forgotten. It is ``None`` for formats that have no delimiter.
+_EXTENSIONS: dict[str, tuple[str, str | None]] = {
+    ".csv": ("csv", ","),
+    ".tsv": ("csv", "\t"),
+    ".parquet": ("parquet", None),
+    ".pq": ("parquet", None),
+    ".json": ("json", None),
+    ".jsonl": ("json", None),
+    ".ndjson": ("json", None),
 }
+
+#: Delimiter for CSV input whose extension does not imply one.
+_DEFAULT_DELIMITER = ","
+
+#: Delimiters worth naming when an input parses into a single column.
+_PLAUSIBLE_DELIMITERS = (",", "\t", ";", "|")
 
 _NDJSON_EXTENSIONS = frozenset({".jsonl", ".ndjson"})
 
@@ -92,12 +100,100 @@ def infer_format(ref: str, override: str | None) -> str:
         return override
     extension = Path(ref).suffix.lower()
     try:
-        return _EXTENSION_FORMATS[extension]
+        return _EXTENSIONS[extension][0]
     except KeyError:
         raise BadArgsError(
             f"cannot infer the format of {ref!r} from its extension "
             f"{extension or '(none)'!r}. Pass --input-format csv|parquet|json."
         ) from None
+
+
+def infer_delimiter(ref: str, override: str | None) -> str:
+    """Return the field delimiter for *ref*.
+
+    Parameters
+    ----------
+    ref : str
+        File path or URI.
+    override : str, optional
+        Explicit ``--csv-delimiter`` value. Returned as is when provided, and
+        applied to both inputs. This is also how a comma is forced for a comma
+        delimited file that happens to be named ``.tsv``, because
+        ``--input-format`` selects the reader and says nothing about the
+        delimiter.
+
+    Returns
+    -------
+    str
+        The delimiter implied by the extension, or a comma for anything else.
+    """
+    if override is not None:
+        return override
+    _, delimiter = _EXTENSIONS.get(Path(ref).suffix.lower(), ("", None))
+    return delimiter or _DEFAULT_DELIMITER
+
+
+def suspect_delimiter(
+    ref: str, namespace: argparse.Namespace, frame: Any
+) -> str | None:
+    """Return a warning when *frame* looks like it was read with the wrong delimiter.
+
+    A CSV input read with the wrong delimiter collapses every row into one
+    column whose name is the entire header line. Nothing fails at that point:
+    the symptom surfaces later as a missing join column, or not at all under
+    ``--on-index``, where two mangled strings are compared instead. This is the
+    last place where the reference, the resolved format and the resolved
+    delimiter are all still in hand, so the guess is made here.
+
+    Parameters
+    ----------
+    ref : str
+        The ``--left`` or ``--right`` reference *frame* was read from.
+    namespace : argparse.Namespace
+        Parsed arguments, for the format and delimiter overrides.
+    frame : Any
+        The loaded DataFrame. Only ``columns`` is read, which every file
+        backend exposes without touching the data.
+
+    Returns
+    -------
+    str or None
+        A warning message, or ``None`` when the parse looks fine. Only a single
+        column CSV whose one column name *repeats* a delimiter other than the
+        one used is reported, because that is what a collapsed multi-column
+        header looks like. A genuine single column file, a name that merely
+        contains one such delimiter (for example ``a;b``), and a plain typo in
+        ``--on`` all stay quiet.
+    """
+    try:
+        if infer_format(ref, namespace.input_format) != "csv":
+            return None
+    except BadArgsError:
+        # Not a file this module recognises, for example a Snowflake table
+        # reference. Nothing to say about its delimiter.
+        return None
+
+    # A pandas Index has no usable truth value, so test for None explicitly.
+    frame_columns = getattr(frame, "columns", None)
+    if frame_columns is None:
+        return None
+    columns = list(frame_columns)
+    if len(columns) != 1:
+        return None
+
+    name = str(columns[0])
+    used = infer_delimiter(ref, namespace.csv_delimiter)
+    # A collapsed multi-column header repeats the real delimiter once per lost
+    # column, so a plausible delimiter appearing more than once is the mark of a
+    # misparse. A single occurrence is just as easily a genuine column name such
+    # as "a;b", so it is left alone rather than warned about on a correct run.
+    if not any(char != used and name.count(char) > 1 for char in _PLAUSIBLE_DELIMITERS):
+        return None
+    return (
+        f"{ref} parsed into a single column named {name!r}. It was read with "
+        f"{used!r}, which may be the wrong delimiter. Pass --csv-delimiter to "
+        "override the extension based default."
+    )
 
 
 def _is_ndjson(ref: str) -> bool:
@@ -203,7 +299,9 @@ class PandasBackend(CLIBackend):
         fmt = infer_format(ref, namespace.input_format)
         try:
             if fmt == "csv":
-                return pd.read_csv(ref, sep=namespace.csv_delimiter)
+                return pd.read_csv(
+                    ref, sep=infer_delimiter(ref, namespace.csv_delimiter)
+                )
             if fmt == "parquet":
                 return pd.read_parquet(ref)
             return pd.read_json(ref, lines=_is_ndjson(ref))
@@ -227,7 +325,9 @@ class PolarsBackend(CLIBackend):
         fmt = infer_format(ref, namespace.input_format)
         try:
             if fmt == "csv":
-                return pl.read_csv(ref, separator=namespace.csv_delimiter)
+                return pl.read_csv(
+                    ref, separator=infer_delimiter(ref, namespace.csv_delimiter)
+                )
             if fmt == "parquet":
                 return pl.read_parquet(ref)
             if _is_ndjson(ref):
@@ -296,7 +396,7 @@ class SparkBackend(CLIBackend):
                     ref,
                     header=True,
                     inferSchema=True,
-                    sep=namespace.csv_delimiter,
+                    sep=infer_delimiter(ref, namespace.csv_delimiter),
                 )
             if fmt == "parquet":
                 return session.read.parquet(ref)

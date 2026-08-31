@@ -75,7 +75,8 @@ datacompy compare \
 
 It exits `0` when the datasets match, `1` when they differ, and `2` on error.
 CSV, Parquet, and JSON inputs are supported on the pandas, polars, and Spark
-backends, and Snowflake tables can be compared in place.
+backends, including tab separated CSV via a `.tsv` extension, and Snowflake
+tables can be compared in place.
 
 ## Programmatic Report Access
 

@@ -586,40 +586,200 @@ def test_custom_csv_delimiter(tmp_path, left_frame, backend, capsys):
     )
 
 
-def test_tsv_extension_is_not_inferred(cli, tmp_path, left_frame, backend, capsys):
-    """``.tsv`` is not in the extension table, so it asks for an explicit format.
-
-    Inferring it as CSV would pick the right reader and the wrong delimiter,
-    since ``--csv-delimiter`` applies to both sides at once and defaults to a
-    comma. Failing with a message that names the flag beats parsing the file
-    into a single mangled column.
-    """
+def test_tsv_extension_is_inferred(tmp_path, left_frame, backend, capsys):
     left = tmp_path / "left.tsv"
     right = tmp_path / "right.tsv"
     left_frame.to_csv(left, index=False, sep="\t")
     left_frame.to_csv(right, index=False, sep="\t")
 
     assert (
-        cli("--left", str(left), "--right", str(right), "--backend", backend) == ERROR
-    )
-    assert "--input-format" in capsys.readouterr().err
-
-    # Forcing both the format and the delimiter still works.
-    assert (
-        cli(
-            "--left",
-            str(left),
-            "--right",
-            str(right),
-            "--input-format",
-            "csv",
-            "--csv-delimiter",
-            r"\t",
-            "--backend",
-            backend,
+        main(
+            [
+                "compare",
+                "--left",
+                str(left),
+                "--right",
+                str(right),
+                "--on",
+                "id",
+                "--backend",
+                backend,
+            ]
         )
         == MATCH
     )
+
+
+def test_mixed_csv_and_tsv_delimiters_are_inferred_per_file(
+    tmp_path, left_frame, backend, capsys
+):
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.tsv"
+    left_frame.to_csv(left, index=False)
+    left_frame.to_csv(right, index=False, sep="\t")
+
+    assert (
+        main(
+            [
+                "compare",
+                "--left",
+                str(left),
+                "--right",
+                str(right),
+                "--on",
+                "id",
+                "--backend",
+                backend,
+            ]
+        )
+        == MATCH
+    )
+
+
+def test_tab_extension_is_not_inferred(tmp_path, left_frame, backend, capsys):
+    """``.tab`` is deliberately unmapped: some tools mean "tabular" by it."""
+    left = tmp_path / "left.tab"
+    right = tmp_path / "right.tab"
+    left_frame.to_csv(left, index=False, sep="\t")
+    left_frame.to_csv(right, index=False, sep="\t")
+
+    assert (
+        main(
+            [
+                "compare",
+                "--left",
+                str(left),
+                "--right",
+                str(right),
+                "--on",
+                "id",
+                "--backend",
+                backend,
+            ]
+        )
+        == ERROR
+    )
+    assert "cannot infer the format" in capsys.readouterr().err
+
+
+def test_explicit_delimiter_overrides_the_extension(
+    tmp_path, left_frame, backend, capsys
+):
+    """The escape hatch for a comma separated file that carries a ``.tsv`` name.
+
+    Without this the two return statements in ``infer_delimiter`` could be
+    reordered and every other delimiter test would still pass.
+    """
+    left = tmp_path / "left.tsv"
+    right = tmp_path / "right.tsv"
+    left_frame.to_csv(left, index=False)
+    left_frame.to_csv(right, index=False)
+
+    argv = [
+        "compare",
+        "--left",
+        str(left),
+        "--right",
+        str(right),
+        "--on",
+        "id",
+        "--backend",
+        backend,
+    ]
+
+    assert main([*argv, "--csv-delimiter", ","]) == MATCH
+    # The extension is wrong about this file, so inference alone cannot read it.
+    assert main(argv) == ERROR
+
+
+def test_wrong_delimiter_warns_before_the_join_column_error(
+    tmp_path, left_frame, backend, capsys
+):
+    left = tmp_path / "left.tsv"
+    right = tmp_path / "right.tsv"
+    left_frame.to_csv(left, index=False)
+    left_frame.to_csv(right, index=False)
+
+    assert (
+        main(
+            [
+                "compare",
+                "--left",
+                str(left),
+                "--right",
+                str(right),
+                "--on",
+                "id",
+                "--backend",
+                backend,
+            ]
+        )
+        == ERROR
+    )
+
+    stderr = capsys.readouterr().err
+    assert "parsed into a single column" in stderr
+    assert "--csv-delimiter" in stderr
+    assert str(left) in stderr
+    assert "must have all columns from join_columns" in stderr
+
+
+def test_wrong_delimiter_warns_on_the_on_index_path(tmp_path, left_frame, capsys):
+    """``--on-index`` raises nothing, so the warning is the only signal."""
+    left = tmp_path / "left.tsv"
+    right = tmp_path / "right.tsv"
+    left_frame.to_csv(left, index=False)
+    left_frame.to_csv(right, index=False)
+
+    assert (
+        main(
+            [
+                "compare",
+                "--left",
+                str(left),
+                "--right",
+                str(right),
+                "--on-index",
+                "--backend",
+                "pandas",
+            ]
+        )
+        == MATCH
+    )
+    assert "parsed into a single column" in capsys.readouterr().err
+
+
+def test_a_correctly_parsed_input_is_not_warned_about(cli, backend, capsys):
+    assert cli("--backend", backend) == MISMATCH
+    assert "warning" not in capsys.readouterr().err
+
+
+def test_a_genuine_single_column_file_is_not_warned_about(
+    tmp_path, left_frame, backend, capsys
+):
+    """One column and no delimiter in its name is an ordinary file, not a misparse."""
+    left = tmp_path / "left.csv"
+    right = tmp_path / "right.csv"
+    left_frame[["id"]].to_csv(left, index=False)
+    left_frame[["id"]].to_csv(right, index=False)
+
+    assert (
+        main(
+            [
+                "compare",
+                "--left",
+                str(left),
+                "--right",
+                str(right),
+                "--on",
+                "id",
+                "--backend",
+                backend,
+            ]
+        )
+        == MATCH
+    )
+    assert "warning" not in capsys.readouterr().err
 
 
 # ---------------------------------------------------------------------------

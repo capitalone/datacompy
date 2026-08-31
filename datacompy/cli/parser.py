@@ -291,12 +291,14 @@ OPTIONS: tuple[Opt, ...] = (
     Opt(
         flags=("--csv-delimiter",),
         help=(
-            "Field delimiter for CSV input (default: comma). "
-            r"Use '\t' for tab separated files."
+            "Field delimiter for CSV input. Inferred from each file extension, "
+            "a tab for .tsv and a comma otherwise. This flag overrides "
+            r"inference for both inputs: use '\t' for a tab separated file "
+            "with an unusual extension, or ',' to force a comma for a comma "
+            "separated file named .tsv."
         ),
         group=GROUP_INPUT,
         backends=FILE_BACKENDS,
-        default=",",
         options={"type": single_char, "metavar": "CHAR"},
     ),
     Opt(
