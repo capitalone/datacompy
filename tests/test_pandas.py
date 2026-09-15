@@ -441,6 +441,19 @@ def test_mixed_column_with_ignore_spaces_and_case():
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+def test_all_null_object_column_equal():
+    df = pd.DataFrame({"a": [None, None, None], "b": [None, None, None]})
+    actual_out = columns_equal(df.a, df.b)
+    assert actual_out.tolist() == [True, True, True]
+
+
+def test_all_null_object_column_compare_matches():
+    df1 = pd.DataFrame({"id": [1, 2, 3], "note": [None, None, None]})
+    df2 = pd.DataFrame({"id": [1, 2, 3], "note": [None, None, None]})
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["id"])
+    assert compare.matches()
+
+
 def test_categorical_column():
     df = pd.DataFrame(
         {
