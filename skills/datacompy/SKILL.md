@@ -141,9 +141,12 @@ Each of these fails silently or with a confusing error.
   values after the join.
 - **Null join keys match each other.** A null in df1 joins a null in
   df2.
-- **`hide_sensitive_columns()` masks values in samples and unique-row
-  snippets, but `Max Diff` in the report still shows the numeric
-  difference.**
+- **`hide_sensitive_columns()` does not fully protect a masked column.**
+  Row-level values in samples and unique-row snippets are masked, but
+  `Max Diff` in the report still shows the raw numeric difference. If
+  one side of the comparison is already known, Max Diff can reveal the
+  other. Treat masking as partial, not a full guarantee, and warn users
+  who need to compare truly sensitive columns.
 - **A numeric string does not match a number.**
   `PandasCompare` of `{"v": ["1.0"]}` vs `{"v": [1.0]}` returns
   `matches() == False`. v0 (0.19.5) used to coerce these.
