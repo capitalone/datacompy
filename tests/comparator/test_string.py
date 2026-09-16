@@ -154,6 +154,22 @@ def test_pandas_string_comparator_error_handling():
     assert result is None
 
 
+def test_pandas_string_comparator_all_null_object_columns():
+    comparator = PandasStringComparator()
+    col1 = pd.Series([None, None, None], dtype=object)
+    col2 = pd.Series([None, None, None], dtype=object)
+    result = comparator.compare(col1, col2)
+    assert result.tolist() == [True, True, True]
+
+
+def test_pandas_string_comparator_all_null_object_vs_string():
+    comparator = PandasStringComparator()
+    col1 = pd.Series([None, None, None], dtype=object)
+    col2 = pd.Series(["a", None, "c"])
+    result = comparator.compare(col1, col2)
+    assert result.tolist() == [False, True, False]
+
+
 def test_pandas_compare_string_and_date_columns():
     # Test matching string and date columns
     str_col = pd.Series(["2023-01-01", "2023-02-01", "2023-03-01"])

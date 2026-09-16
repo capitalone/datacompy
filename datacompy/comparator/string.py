@@ -211,8 +211,11 @@ class PandasStringComparator(BaseComparator):
             col2_type in PANDAS_DATE_TYPES and col1_type in PANDAS_STRING_TYPE
         ):
             return pandas_compare_string_and_date_columns(col1, col2)
-        # if both are strings
-        elif col1_type in PANDAS_STRING_TYPE and col2_type in PANDAS_STRING_TYPE:
+        # if both are strings, treating an all-null column (infer_dtype reports
+        # "empty" when there's no non-null value to signal a type) as string-compatible
+        elif (col1_type in PANDAS_STRING_TYPE or col1_type == "empty") and (
+            col2_type in PANDAS_STRING_TYPE or col2_type == "empty"
+        ):
             col1 = pandas_normalize_string_column(col1, ignore_space, ignore_case)
             col2 = pandas_normalize_string_column(col2, ignore_space, ignore_case)
             try:
