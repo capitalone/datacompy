@@ -28,7 +28,6 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
-  "Programming Language :: Python :: 3.14",
 ]
 dynamic = [ "version" ]
 dependencies = [
@@ -50,7 +49,7 @@ optional-dependencies.dev = [
 ]
 optional-dependencies.docs = [ "furo", "myst-parser", "sphinx" ]
 optional-dependencies.edgetest = [ "edgetest", "edgetest-conda" ]
-optional-dependencies.qa = [ "mypy", "pandas-stubs", "pre-commit", "ruff" ]
+optional-dependencies.qa = [ "mypy", "pandas-stubs", "pre-commit", "ruff>=0.16" ]
 optional-dependencies.snowflake = [ "snowflake-snowpark-python>=1.37,<1.55" ]
 optional-dependencies.spark = [
   "pyspark[connect]>=3.5,!=4,<=4.2; python_version<='3.11'",

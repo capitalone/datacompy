@@ -94,6 +94,18 @@ def test_df_to_str_pandas_dataframe_without_index():
     assert result == expected
 
 
+def test_df_to_str_pandas_dataframe_with_spark_named_columns():
+    """A pandas column named after a Spark method must not pick the Spark branch.
+
+    ``df.toPandas`` on such a frame is a Series, not a method, so the branch is
+    selected on ``callable`` rather than on the attribute merely existing.
+    """
+    df = pd.DataFrame({"toPandas": [1, 2], "reset_index": [3, 4]})
+    result = df_to_str(df)
+    expected = df.to_string()
+    assert result == expected
+
+
 def test_df_to_str_other_type():
     """Test with a non-DataFrame type."""
     result = df_to_str([1, 2, 3])

@@ -48,9 +48,11 @@ def decimal_comparator():
 # Optional Spark dependencies
 try:
     import pyspark as ps
-    import pyspark.sql.functions as psf
 
-    from datacompy.comparator.utility import get_spark_column_dtypes
+    from datacompy.comparator.utility import (
+        get_spark_column_dtypes,
+        get_spark_functions,
+    )
 
     NUMERIC_PYSPARK_TYPES = [
         "tinyint",
@@ -64,7 +66,6 @@ try:
     SPARK_INTEGER_TYPES = {"tinyint", "smallint", "int", "bigint"}
 except ImportError:
     ps = None
-    psf = None
     NUMERIC_PYSPARK_TYPES = None
     SPARK_INTEGER_TYPES = None
 
@@ -284,6 +285,7 @@ class SparkNumericComparator(BaseComparator):
         - If either column contains NaN values, they are handled explicitly to avoid
           incorrect comparisons.
         """
+        psf = get_spark_functions(dataframe)
         base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
         base_numeric_type = any(base_dtype.startswith(t) for t in NUMERIC_PYSPARK_TYPES)
         compare_numeric_type = any(

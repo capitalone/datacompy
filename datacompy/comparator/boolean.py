@@ -15,6 +15,7 @@
 
 """Boolean comparator classes."""
 
+from types import ModuleType
 from typing import Any
 
 import pandas as pd
@@ -32,13 +33,14 @@ STRING_POLARS_TYPES = (pl.String, pl.Categorical, pl.Enum)
 # Optional Spark dependencies
 try:
     import pyspark as ps
-    import pyspark.sql.functions as psf
 
     from datacompy.comparator.numeric import NUMERIC_PYSPARK_TYPES
-    from datacompy.comparator.utility import get_spark_column_dtypes
+    from datacompy.comparator.utility import (
+        get_spark_column_dtypes,
+        get_spark_functions,
+    )
 except ImportError:
     ps = None
-    psf = None
     NUMERIC_PYSPARK_TYPES = None
 
 # Optional Snowflake dependencies
@@ -171,7 +173,9 @@ class SparkBooleanComparator(BaseComparator):
     """Comparator for Boolean columns in PySpark."""
 
     @staticmethod
-    def _boolean_equals_numeric(boolean_col: str, numeric_col: str) -> "ps.sql.Column":
+    def _boolean_equals_numeric(
+        boolean_col: str, numeric_col: str, psf: ModuleType
+    ) -> "ps.sql.Column":
         """Compare a Boolean column against a numeric column's 1/0 equivalents.
 
         The numeric side is compared against integer literals rather than both
@@ -186,6 +190,9 @@ class SparkBooleanComparator(BaseComparator):
             The name of the Boolean column.
         numeric_col : str
             The name of the numeric column.
+        psf : ModuleType
+            The ``functions`` module matching the DataFrame being compared,
+            classic or Spark Connect.
 
         Returns
         -------
@@ -254,6 +261,7 @@ class SparkBooleanComparator(BaseComparator):
         behaves identically under both settings and preserves the numeric
         column's precision.
         """
+        psf = get_spark_functions(dataframe)
         base_dtype, compare_dtype = get_spark_column_dtypes(dataframe, col1, col2)
         base_boolean_type = base_dtype == PYSPARK_BOOLEAN_TYPE
         compare_boolean_type = compare_dtype == PYSPARK_BOOLEAN_TYPE
@@ -265,9 +273,9 @@ class SparkBooleanComparator(BaseComparator):
         if base_boolean_type and compare_boolean_type:
             when_clause = psf.col(col1).eqNullSafe(psf.col(col2))
         elif base_boolean_type and compare_numeric_type:
-            when_clause = self._boolean_equals_numeric(col1, col2)
+            when_clause = self._boolean_equals_numeric(col1, col2, psf)
         elif compare_boolean_type and base_numeric_type:
-            when_clause = self._boolean_equals_numeric(col2, col1)
+            when_clause = self._boolean_equals_numeric(col2, col1, psf)
         else:
             return None
 
