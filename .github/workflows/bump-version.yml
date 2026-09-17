@@ -1,0 +1,121 @@
+# This workflow manually bumps the package version and opens a PR with the change.
+name: "Bump version"
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: "Semver part to increment (ignored if custom_version is set)"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+      custom_version:
+        description: "Exact version to set (must match MAJOR.MINOR.PATCH). Overrides bump_type."
+        type: string
+        default: ""
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
+
+      - name: Setup python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Bump version and push branch
+        id: bump
+        env:
+          BUMP_TYPE: ${{ inputs.bump_type }}
+          CUSTOM_VERSION: ${{ inputs.custom_version }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          OLD_VERSION=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' datacompy/__init__.py)
+          export OLD_VERSION
+
+          if [[ -n "$CUSTOM_VERSION" ]]; then
+            NEW_VERSION="$CUSTOM_VERSION"
+          else
+            NEW_VERSION=$(python3 - <<'EOF'
+          import os
+
+          major, minor, patch = map(int, os.environ["OLD_VERSION"].split("."))
+          bump = os.environ["BUMP_TYPE"]
+
+          if bump == "major":
+              major, minor, patch = major + 1, 0, 0
+          elif bump == "minor":
+              minor, patch = minor + 1, 0
+          else:
+              patch += 1
+
+          print(f"{major}.{minor}.{patch}")
+          EOF
+          )
+          fi
+
+          sed -i "s/^__version__ = \".*\"/__version__ = \"${NEW_VERSION}\"/" datacompy/__init__.py
+
+          BRANCH_NAME="bump-version-${NEW_VERSION}"
+
+          git switch -c "$BRANCH_NAME"
+          git add datacompy/__init__.py
+          git commit -m "chore: bump version to ${NEW_VERSION}"
+          git push -u origin "$BRANCH_NAME"
+
+          echo "old_version=$OLD_VERSION" >> "$GITHUB_OUTPUT"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71  # v9.0.0
+        env:
+          BRANCH_NAME: ${{ steps.bump.outputs.branch_name }}
+          OLD_VERSION: ${{ steps.bump.outputs.old_version }}
+          NEW_VERSION: ${{ steps.bump.outputs.new_version }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const head = `${owner}:${process.env.BRANCH_NAME}`;
+            const base = context.payload.repository.default_branch;
+            const newVersion = process.env.NEW_VERSION;
+            const oldVersion = process.env.OLD_VERSION;
+
+            const title = `chore: bump version to ${newVersion}`;
+            const body = `Bumps version from \`${oldVersion}\` to \`${newVersion}\`.`;
+
+            const existing = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'open',
+              head,
+              base
+            });
+
+            if (existing.data.length > 0) {
+              return;
+            }
+
+            await github.rest.pulls.create({
+              owner,
+              repo,
+              title,
+              head,
+              base,
+              body
+            });
