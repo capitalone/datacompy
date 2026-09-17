@@ -44,6 +44,7 @@ Spark or Snowpark frame to Pandas just to compare it.
 
 ```python
 import datacompy
+
 print(datacompy.__version__)  # expect 1.x
 ```
 
