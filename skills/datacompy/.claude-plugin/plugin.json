@@ -1,0 +1,22 @@
+{
+  "name": "datacompy",
+  "displayName": "DataComPy",
+  "version": "0.1.0",
+  "description": "Compare two DataFrames with DataComPy's v1 API. Covers PandasCompare, PolarsCompare, SparkSQLCompare, and SnowflakeCompare, including join keys, tolerances, reports, and v0 migration.",
+  "author": {
+    "name": "Capital One"
+  },
+  "homepage": "https://capitalone.github.io/datacompy/",
+  "repository": "https://github.com/capitalone/datacompy",
+  "license": "Apache-2.0",
+  "keywords": [
+    "datacompy",
+    "dataframes",
+    "pandas",
+    "polars",
+    "spark",
+    "snowflake",
+    "comparison",
+    "python"
+  ]
+}
