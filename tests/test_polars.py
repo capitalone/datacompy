@@ -2313,6 +2313,36 @@ def test_sensitive_columns_hide():
     compare.report()
 
 
+def test_sensitive_columns_hide_masks_max_diff():
+    # Issue #565: max_diff/null_diff are derived from raw values and must not
+    # leak through the report for a hidden column.
+    df1 = pl.DataFrame({"id": [1, 2], "salary": [50000, 60000]})
+    df2 = pl.DataFrame({"id": [1, 2], "salary": [79000, 60000]})
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    compare.hide_sensitive_columns(["salary"])
+
+    stat = next(s for s in compare.column_stats if s["column"] == "salary")
+    assert stat["max_diff"] is None
+    assert stat["null_diff"] is None
+
+    report = compare.report()
+    assert "29000" not in report
+    assert "*******" in report
+
+
+def test_sensitive_columns_reveal_restores_max_diff():
+    df1 = pl.DataFrame({"id": [1, 2], "salary": [50000, 60000]})
+    df2 = pl.DataFrame({"id": [1, 2], "salary": [79000, 60000]})
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    compare.hide_sensitive_columns(["salary"])
+    compare.reveal_sensitive_columns()
+
+    stat = next(s for s in compare.column_stats if s["column"] == "salary")
+    assert stat["max_diff"] == pytest.approx(29000.0)
+    assert stat["null_diff"] == 0
+    assert "29000.0000" in compare.report()
+
+
 def test_sensitive_columns_hide_hide():
     df1 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pl.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])

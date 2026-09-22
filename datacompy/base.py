@@ -38,7 +38,12 @@ LOG = logging.getLogger(__name__)
 
 
 class ColumnStat(TypedDict):
-    """Typed contract for per-column comparison statistics populated by each backend."""
+    """Typed contract for per-column comparison statistics populated by each backend.
+
+    ``max_diff`` and ``null_diff`` are ``None`` when the column is hidden via
+    :meth:`hide_sensitive_columns`, because those derived values are computed
+    from the raw data and would leak information about a masked column.
+    """
 
     column: str
     match_column: str
@@ -47,8 +52,8 @@ class ColumnStat(TypedDict):
     dtype1: str
     dtype2: str
     all_match: bool
-    max_diff: float
-    null_diff: int
+    max_diff: float | None
+    null_diff: int | None
     rel_tol: float
     abs_tol: float
 
@@ -117,6 +122,24 @@ class BaseCompare(ABC):
             LOG.warning(
                 f"sensitive columns not found in either df1 or df2 will be ignored: {unused}"
             )
+
+    def _mask_sensitive_column_stats(self) -> None:
+        """Blank out derived statistics for sensitive columns.
+
+        ``max_diff`` and ``null_diff`` are computed from the raw df1/df2
+        values before masking happens, so a hidden column's Max Diff can
+        reveal the underlying values when one side is already known (see
+        issue #565).  Backends call this from ``hide_sensitive_columns()``
+        after the row-level frames are masked; ``reveal_sensitive_columns()``
+        restores the statistics by re-running the comparison.
+        """
+        if not self.sensitive_columns:
+            return
+        sensitive = set(self.sensitive_columns)
+        for stat in self.column_stats:
+            if stat["column"] in sensitive:
+                stat["max_diff"] = None
+                stat["null_diff"] = None
 
     @abstractmethod
     def _validate_dataframe(

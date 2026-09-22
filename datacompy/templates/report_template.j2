@@ -50,8 +50,8 @@ Columns with Unequal Values or Types
     stat.dtype1,
     stat.dtype2,
     '{:,}'.format(stat.unequal_cnt),
-    '%.4f'|format(stat.max_diff),
-    '{:,}'.format(stat.null_diff),
+    '*******' if stat.max_diff is none else '%.4f'|format(stat.max_diff),
+    '*******' if stat.null_diff is none else '{:,}'.format(stat.null_diff),
     '%.4f'|format(stat.rel_tol),
     '%.4f'|format(stat.abs_tol)]) %}
 {% endfor %}
