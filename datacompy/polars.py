@@ -829,8 +829,11 @@ def calculate_max_diff(col_1: pl.Series, col_2: pl.Series) -> float:
     Returns
     -------
     Numeric
-        Numeric field, or zero.
+        Numeric field, or zero. Temporal columns give zero: cast to float they
+        count days or time units, so the difference would depend on the unit.
     """
+    if col_1.dtype.is_temporal() or col_2.dtype.is_temporal():
+        return 0.0
     try:
         return cast(
             float,
