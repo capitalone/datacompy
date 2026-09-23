@@ -55,11 +55,18 @@ def run_compare(namespace: argparse.Namespace) -> int:
 
         # Warn before building, so a wrong delimiter is named ahead of the
         # missing join column it causes, and is still reported under
-        # --on-index, where nothing fails at all.
-        for ref, frame in ((namespace.left, left), (namespace.right, right)):
+        # --on-index, where nothing fails at all. Kept per side (df1/df2, the
+        # same naming the comparison classes use for their own errors) so the
+        # except block below can attach the right hint to the right error.
+        suspects: dict[str, str] = {}
+        for index, ref, frame in (
+            ("df1", namespace.left, left),
+            ("df2", namespace.right, right),
+        ):
             suspect = suspect_delimiter(ref, namespace, frame)
             if suspect is not None:
                 print_warning(suspect)
+                suspects[index] = suspect
 
         try:
             comparison = backend.build(namespace, session, left, right)
@@ -67,8 +74,13 @@ def run_compare(namespace: argparse.Namespace) -> int:
             # The comparison classes validate user supplied configuration such
             # as join columns and tolerances with a plain ValueError. That is a
             # bad argument, not a bug, so report it as one instead of dumping a
-            # traceback on the user.
-            raise BadArgsError(str(exc)) from exc
+            # traceback on the user. Attach the matching delimiter hint, if any.
+            message = str(exc)
+            for index, suspect in suspects.items():
+                if message.lower().startswith(index):
+                    message = f"{message}\n{suspect}"
+                    break
+            raise BadArgsError(message) from exc
 
         report_data = comparison.build_report_data(
             sample_count=namespace.sample_count,

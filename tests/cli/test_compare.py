@@ -724,6 +724,52 @@ def test_wrong_delimiter_warns_before_the_join_column_error(
     assert "must have all columns from join_columns" in stderr
 
 
+def test_wrong_delimiter_hint_is_attached_to_the_join_column_error(
+    tmp_path, left_frame, backend, capsys
+):
+    """The BadArgsError itself names the delimiter, not just the warning above it.
+
+    The test above only proves both messages land somewhere in stderr, which
+    was already true before the fix: the warning and the error were two
+    unpaired lines. This checks the error line printed by ``print_error``
+    specifically, so a caller who only sees that one message (``--quiet``, or
+    a harness that captures just the raised exception) still gets the hint.
+    """
+    left = tmp_path / "left.tsv"
+    right = tmp_path / "right.tsv"
+    left_frame.to_csv(left, index=False)
+    left_frame.to_csv(right, index=False)
+
+    assert (
+        main(
+            [
+                "compare",
+                "--left",
+                str(left),
+                "--right",
+                str(right),
+                "--on",
+                "id",
+                "--backend",
+                backend,
+            ]
+        )
+        == ERROR
+    )
+
+    lines = capsys.readouterr().err.splitlines()
+    error_start = next(
+        i
+        for i, line in enumerate(lines)
+        if line.startswith("datacompy: ") and not line.startswith("datacompy: warning:")
+    )
+    error_message = "\n".join(lines[error_start:])
+    assert "must have all columns from join_columns" in error_message
+    assert "parsed into a single column" in error_message
+    assert "--csv-delimiter" in error_message
+    assert str(left) in error_message
+
+
 def test_wrong_delimiter_warns_on_the_on_index_path(tmp_path, left_frame, capsys):
     """``--on-index`` raises nothing, so the warning is the only signal."""
     left = tmp_path / "left.tsv"
