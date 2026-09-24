@@ -824,7 +824,7 @@ def validate_tolerance_parameter(
             col_key = str(col)
             if case_mode == "lower":
                 col_key = col_key.lower()
-            elif case_mode == "upper":
+            elif case_mode == "upper" and col_key != "default":
                 col_key = col_key.upper()
 
             result[col_key] = float(value)

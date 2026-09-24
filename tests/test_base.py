@@ -427,6 +427,12 @@ def test_case_sensitivity() -> None:
     result = validate_tolerance_parameter(tol_dict, "abs_tol", case_mode="upper")
     assert result == {"COL1": 0.1, "COL2": 0.2, "default": 0.0}
 
+    # The special "default" key is kept as is when upper casing
+    result = validate_tolerance_parameter(
+        {"col1": 0.1, "default": 0.5}, "abs_tol", case_mode="upper"
+    )
+    assert result == {"COL1": 0.1, "default": 0.5}
+
 
 def test_get_column_tolerance_exact_match():
     """Test get_column_tolerance returns the value for an exact column match."""
