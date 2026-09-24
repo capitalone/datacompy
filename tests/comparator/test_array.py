@@ -95,6 +95,17 @@ def test_pandas_compare_with_nans():
     assert result.all()
 
 
+def test_pandas_compare_string_lists():
+    col1 = pd.Series([["a", "b"], ["c"]])
+    col2 = pd.Series([["a", "b"], ["d"]])
+    comparator = PandasArrayLikeComparator()
+
+    result = comparator.compare(col1, col2)
+
+    assert isinstance(result, pd.Series)
+    assert result.tolist() == [True, False]
+
+
 def test_pandas_compare_different_shapes():
     # Setup
     col1 = pd.Series([np.array([1, 2]), np.array([3, 4]), np.array([3, 4])])
