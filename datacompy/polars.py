@@ -885,5 +885,5 @@ def generate_id_within_group(
         )
     else:
         return dataframe.select(
-            rn=pl.col(dataframe.columns[0]).cum_count().over(join_columns)
+            rn=pl.col(join_columns[0]).cum_count().over(join_columns)
         ).to_series()
