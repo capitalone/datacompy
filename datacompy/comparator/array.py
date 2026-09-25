@@ -90,7 +90,7 @@ class PandasArrayLikeComparator(BaseComparator):
             return None
 
 
-def _array_equal(left: Any, right: Any) -> bool:
+def _array_equal(left: list[Any] | np.ndarray, right: list[Any] | np.ndarray) -> bool:
     """Compare two array like values, treating NaN as equal where supported."""
     try:
         return bool(np.array_equal(left, right, equal_nan=True))
