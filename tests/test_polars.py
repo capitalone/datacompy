@@ -1236,6 +1236,49 @@ def test_dupes_with_nulls():
     assert comp.subset()
 
 
+def test_dupes_with_nulls_in_leading_non_join_column():
+    df1 = pl.DataFrame({"a": [None, None, "x"], "b": [1, 1, 1], "c": [1, 2, 3]})
+    df2 = pl.DataFrame({"a": [None, None, "x"], "b": [1, 1, 1], "c": [1, 2, 3]})
+    compare = PolarsCompare(df1, df2, join_columns=["b"])
+    assert compare.matches()
+    assert len(compare.intersect_rows) == 3
+
+
+def test_dupes_with_all_null_leading_non_join_column():
+    df1 = pl.DataFrame(
+        {"a": [None, None, None], "b": [1, 1, 2], "c": [1, 2, 3]},
+        schema_overrides={"a": pl.String},
+    )
+    df2 = pl.DataFrame(
+        {"a": [None, None, None], "b": [1, 1, 2], "c": [1, 5, 3]},
+        schema_overrides={"a": pl.String},
+    )
+    compare = PolarsCompare(df1, df2, join_columns=["b"])
+    assert not compare.matches()
+    assert len(compare.intersect_rows) == 3
+    assert len(compare.df1_unq_rows) == 0
+    assert len(compare.df2_unq_rows) == 0
+    assert compare.count_matching_rows() == 2
+
+
+def test_dupes_with_nulls_in_leading_non_join_column_multi_key():
+    df1 = pl.DataFrame(
+        {"a": [None, None, None, "y"], "b": [1, 1, 2, 2], "c": [10, 10, 20, 21]}
+    )
+    df2 = df1.clone()
+    compare = PolarsCompare(df1, df2, join_columns=["b", "c"])
+    assert compare.matches()
+    assert len(compare.intersect_rows) == 4
+
+    df3 = pl.DataFrame(
+        {"a": [None, "z", None, "y"], "b": [1, 1, 2, 2], "c": [10, 10, 20, 21]}
+    )
+    compare = PolarsCompare(df1, df3, join_columns=["b", "c"])
+    assert not compare.matches()
+    assert len(compare.intersect_rows) == 4
+    assert compare.count_matching_rows() == 3
+
+
 @pytest.mark.parametrize(
     "dataframe,expected",
     [
@@ -1269,6 +1312,14 @@ def test_dupes_with_nulls():
                 strict=False,
             ),
             pl.Series([1, 1, 2], strict=False),
+        ),
+        (
+            pl.DataFrame({"c": [None, None, 1], "a": [1, 1, 1], "b": [1, 1, 1]}),
+            pl.Series([1, 2, 3], strict=False),
+        ),
+        (
+            pl.DataFrame({"c": [None, "x", None], "a": [1, 1, 2], "b": [1, 1, 2]}),
+            pl.Series([1, 2, 1], strict=False),
         ),
     ],
 )
