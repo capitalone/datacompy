@@ -1261,6 +1261,24 @@ def test_dupes_with_all_null_leading_non_join_column():
     assert compare.count_matching_rows() == 2
 
 
+def test_dupes_with_nulls_in_leading_non_join_column_multi_key():
+    df1 = pl.DataFrame(
+        {"a": [None, None, None, "y"], "b": [1, 1, 2, 2], "c": [10, 10, 20, 21]}
+    )
+    df2 = df1.clone()
+    compare = PolarsCompare(df1, df2, join_columns=["b", "c"])
+    assert compare.matches()
+    assert len(compare.intersect_rows) == 4
+
+    df3 = pl.DataFrame(
+        {"a": [None, "z", None, "y"], "b": [1, 1, 2, 2], "c": [10, 10, 20, 21]}
+    )
+    compare = PolarsCompare(df1, df3, join_columns=["b", "c"])
+    assert not compare.matches()
+    assert len(compare.intersect_rows) == 4
+    assert compare.count_matching_rows() == 3
+
+
 @pytest.mark.parametrize(
     "dataframe,expected",
     [
