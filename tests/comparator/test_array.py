@@ -95,6 +95,52 @@ def test_pandas_compare_with_nans():
     assert result.all()
 
 
+def test_pandas_compare_string_lists():
+    col1 = pd.Series([["a", "b"], ["c"]])
+    col2 = pd.Series([["a", "b"], ["d"]])
+    comparator = PandasArrayLikeComparator()
+
+    result = comparator.compare(col1, col2)
+
+    assert isinstance(result, pd.Series)
+    assert result.tolist() == [True, False]
+
+
+def test_pandas_compare_string_lists_with_none():
+    col1 = pd.Series([["a", None], ["b"]])
+    col2 = pd.Series([["a", None], ["c"]])
+    comparator = PandasArrayLikeComparator()
+
+    result = comparator.compare(col1, col2)
+
+    assert isinstance(result, pd.Series)
+    assert result.tolist() == [True, False]
+
+
+def test_pandas_compare_mixed_int_string_lists():
+    col1 = pd.Series([[1, "a"], [2, "b"]])
+    col2 = pd.Series([[1, "a"], [2, "c"]])
+    comparator = PandasArrayLikeComparator()
+
+    result = comparator.compare(col1, col2)
+
+    assert isinstance(result, pd.Series)
+    assert result.tolist() == [True, False]
+
+
+def test_pandas_compare_nan_string_coercion():
+    # Known quirk: a mixed str/NaN list is coerced to strings by numpy, so a
+    # real NaN compares equal to the literal string "nan" on the fallback path.
+    col1 = pd.Series([["a", np.nan]])
+    col2 = pd.Series([["a", "nan"]])
+    comparator = PandasArrayLikeComparator()
+
+    result = comparator.compare(col1, col2)
+
+    assert isinstance(result, pd.Series)
+    assert result.tolist() == [True]
+
+
 def test_pandas_compare_different_shapes():
     # Setup
     col1 = pd.Series([np.array([1, 2]), np.array([3, 4]), np.array([3, 4])])
