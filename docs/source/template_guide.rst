@@ -71,8 +71,12 @@ the fields of :class:`~datacompy.report.ReportData` and its nested dataclasses.
    |                        | - ``stats`` (list of dict): one entry per mismatched column,                   |
    |                        |   sorted by column name. Each dict has ``column`` (str),                       |
    |                        |   ``dtype1`` (str), ``dtype2`` (str), ``unequal_cnt`` (int),                   |
-   |                        |   ``max_diff`` (float), ``null_diff`` (int),                                   |
-   |                        |   ``rel_tol`` (float), ``abs_tol`` (float)                                     |
+   |                        |   ``max_diff`` (float or ``None``), ``null_diff`` (int or                      |
+   |                        |   ``None``), ``rel_tol`` (float), ``abs_tol`` (float). The diff                |
+   |                        |   stats are ``None`` for columns hidden via                                    |
+   |                        |   ``hide_sensitive_columns()``; guard against them in custom                   |
+   |                        |   templates (e.g. ``'***' if col.max_diff is none else                         |
+   |                        |   "%.4f"|format(col.max_diff)``)                                               |
    |                        | - ``samples`` (list of str): pre-rendered ASCII tables of                      |
    |                        |   sample mismatched rows, one per column with mismatches                       |
    |                        | - ``df1_name``, ``df2_name`` (str): DataFrame labels                           |

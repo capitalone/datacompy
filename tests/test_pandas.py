@@ -2352,6 +2352,71 @@ def test_sensitive_columns_hide():
     compare.report()
 
 
+def test_sensitive_columns_hide_masks_max_diff():
+    # Issue #565: max_diff/null_diff are derived from raw values and must not
+    # leak through the report for a hidden column.
+    df1 = pd.DataFrame({"id": [1, 2], "salary": [50000, 60000]})
+    df2 = pd.DataFrame({"id": [1, 2], "salary": [79000, 60000]})
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["id"])
+    compare.hide_sensitive_columns(["salary"])
+
+    stat = next(s for s in compare.column_stats if s["column"] == "salary")
+    assert stat["max_diff"] is None
+    assert stat["null_diff"] is None
+
+    report = compare.report()
+    assert "29000" not in report
+    assert "*******" in report
+
+    mismatch_stat = next(
+        s
+        for s in compare.build_report_data().mismatch_stats.stats
+        if s.column == "salary"
+    )
+    assert mismatch_stat.max_diff is None
+    assert mismatch_stat.null_diff is None
+
+
+def test_sensitive_columns_hide_masks_null_diff():
+    df1 = pd.DataFrame({"id": [1, 2], "v": [None, 5]})
+    df2 = pd.DataFrame({"id": [1, 2], "v": [9, 5]})
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["id"])
+    compare.hide_sensitive_columns(["v"])
+
+    stat = next(s for s in compare.column_stats if s["column"] == "v")
+    assert stat["null_diff"] is None
+    assert stat["max_diff"] is None
+    assert "*******" in compare.report()
+
+
+def test_sensitive_columns_reveal_restores_max_diff():
+    df1 = pd.DataFrame({"id": [1, 2], "salary": [50000, 60000]})
+    df2 = pd.DataFrame({"id": [1, 2], "salary": [79000, 60000]})
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["id"])
+    compare.hide_sensitive_columns(["salary"])
+    compare.reveal_sensitive_columns()
+
+    stat = next(s for s in compare.column_stats if s["column"] == "salary")
+    assert stat["max_diff"] == pytest.approx(29000.0)
+    assert stat["null_diff"] == 0
+    assert "29000.0000" in compare.report()
+
+
+def test_sensitive_columns_hide_leaves_other_columns_visible():
+    df1 = pd.DataFrame({"id": [1, 2], "salary": [50000, 60000], "bonus": [1, 5]})
+    df2 = pd.DataFrame({"id": [1, 2], "salary": [79000, 60000], "bonus": [1, 2]})
+    compare = datacompy.PandasCompare(df1, df2, join_columns=["id"])
+    compare.hide_sensitive_columns(["salary"])
+
+    salary_stat = next(s for s in compare.column_stats if s["column"] == "salary")
+    bonus_stat = next(s for s in compare.column_stats if s["column"] == "bonus")
+    assert salary_stat["max_diff"] is None
+    assert bonus_stat["max_diff"] == pytest.approx(3.0)
+    report = compare.report()
+    assert "29000" not in report
+    assert "3.0000" in report
+
+
 def test_sensitive_columns_hide_hide():
     df1 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 1, "b": 0}])
     df2 = pd.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 0}])

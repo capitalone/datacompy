@@ -157,10 +157,13 @@ class MismatchStat:
         Data type in df2.
     unequal_cnt : int
         Number of rows where the values differ.
-    max_diff : float
+    max_diff : float or None
         Maximum absolute numeric difference (0.0 for non-numeric columns).
-    null_diff : int
+        ``None`` when the column is hidden via ``hide_sensitive_columns()``,
+        since the difference is derived from the masked values.
+    null_diff : int or None
         Number of rows where one value is null and the other is not.
+        ``None`` when the column is hidden via ``hide_sensitive_columns()``.
     rel_tol : float
         Relative tolerance applied to this column.
     abs_tol : float
@@ -171,8 +174,8 @@ class MismatchStat:
     dtype1: str
     dtype2: str
     unequal_cnt: int
-    max_diff: float
-    null_diff: int
+    max_diff: float | None
+    null_diff: int | None
     rel_tol: float
     abs_tol: float
 

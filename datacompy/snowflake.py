@@ -294,6 +294,9 @@ class SnowflakeCompare(BaseCompare):
         # Don't do anything if [] is passed (normalized to None)
         if not self.sensitive_columns:
             return
+        # Derived stats (max_diff, null_diff) come from raw values and must not
+        # survive masking (issue #565).
+        self._mask_sensitive_column_stats()
         sensitive = set(self.sensitive_columns)  # Otherwise this fails due to None
         sensitive_with_suffixes = (
             sensitive
