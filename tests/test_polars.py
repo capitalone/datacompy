@@ -23,7 +23,7 @@ import os
 import re
 import sys
 import tempfile
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from unittest import mock
 
@@ -1218,6 +1218,20 @@ def test_calculate_max_diff(column, expected):
     assert np.isclose(
         calculate_max_diff(MAX_DIFF_DF["base"], MAX_DIFF_DF[column]), expected
     )
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        [date(2020, 1, 1), date(2020, 1, 3)],
+        [datetime(2020, 1, 1), datetime(2020, 1, 3)],
+        [timedelta(days=1), timedelta(days=3)],
+    ],
+)
+def test_calculate_max_diff_temporal(values):
+    base = pl.Series([values[0], values[0]])
+    other = pl.Series(values)
+    assert calculate_max_diff(base, other) == 0
 
 
 def test_dupes_with_nulls():
