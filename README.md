@@ -113,5 +113,8 @@ See the [Report API documentation](https://capitalone.github.io/datacompy/report
 We welcome and appreciate your contributions! Before we can accept any contributions, we ask that you please be sure to
 sign the [Contributor License Agreement (CLA)](https://cla-assistant.io/capitalone/datacompy).
 
+To run the CI test matrix locally, including the Spark and Spark Connect tracks without a hand-managed JDK,
+see the [Developer Instructions](https://capitalone.github.io/datacompy/developer_instructions.html).
+
 This project adheres to the [Open Source Code of Conduct](https://developer.capitalone.com/resources/code-of-conduct/).
 By participating, you are expected to honor this code.
