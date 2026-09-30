@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Pandas Usage" href="pandas_usage.html"><link rel="prev" title="Installation" href="install.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Pandas Usage" href="pandas_usage.html"><link rel="prev" title="Command Line Interface" href="cli.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Comparator Framework Usage - datacompy 1.0.4 documentation</title>
+        <title>Comparator Framework Usage - datacompy 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 1.0.4 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.0.4 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -192,6 +192,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Comparator Framework Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
@@ -206,6 +207,7 @@
 <ul>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api/modules.html">datacompy</a><input aria-label="Toggle navigation of datacompy" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="api/datacompy.html">datacompy package</a><input aria-label="Toggle navigation of datacompy package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.cli.html">datacompy.cli package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.comparator.html">datacompy.comparator package</a></li>
 </ul>
 </li>
@@ -278,7 +280,7 @@ This class defines the interface that DataComPy’s comparison engine expects.</
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseComparator</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col1</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">col2</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if two columns are equal.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Check if two columns are equal."""</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -330,16 +332,16 @@ comparing.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datacompy.comparator.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseComparator</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">PhoneNumberComparator</span><span class="p">(</span><span class="n">BaseComparator</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Custom comparator for US phone numbers.</span>
 
 <span class="sd">    This comparator strips all non-numeric characters from strings</span>
 <span class="sd">    before comparing them.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col1</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">col2</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compare two series of phone numbers.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># 1. Check if this comparator is applicable. We only want to act on</span>
         <span class="c1">#    columns that are string or object type.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_string_dtype</span><span class="p">(</span><span class="n">col1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_string_dtype</span><span class="p">(</span><span class="n">col2</span><span class="p">)):</span>
@@ -347,8 +349,8 @@ comparing.</p>
 
         <span class="c1"># 2. Implement the custom comparison logic.</span>
         <span class="c1"># Strip non-numeric characters.</span>
-        <span class="n">norm_col1</span> <span class="o">=</span> <span class="n">col1</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^0-9]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">norm_col2</span> <span class="o">=</span> <span class="n">col2</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^0-9]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">norm_col1</span> <span class="o">=</span> <span class="n">col1</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">r</span><span class="s1">'[^0-9]'</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">norm_col2</span> <span class="o">=</span> <span class="n">col2</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">r</span><span class="s1">'[^0-9]'</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="c1"># 3. Return the boolean result. Handle NaNs to match default behavior.</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">norm_col1</span> <span class="o">==</span> <span class="n">norm_col2</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">col1</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span> <span class="o">&amp;</span> <span class="n">col2</span><span class="o">.</span><span class="n">isnull</span><span class="p">())</span>
@@ -366,13 +368,13 @@ argument of the <code class="docutils literal notranslate"><span class="pre">Com
 but with different formatting.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Sample DataFrames</span>
 <span class="n">df1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-    <span class="s1">&#39;cust_id&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
-    <span class="s1">&#39;phone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;123-456-7890&#39;</span><span class="p">,</span> <span class="s1">&#39;(987) 654-3210&#39;</span><span class="p">,</span> <span class="s1">&#39;555-555-5555&#39;</span><span class="p">],</span>
+    <span class="s1">'cust_id'</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="s1">'phone'</span><span class="p">:</span> <span class="p">[</span><span class="s1">'123-456-7890'</span><span class="p">,</span> <span class="s1">'(987) 654-3210'</span><span class="p">,</span> <span class="s1">'555-555-5555'</span><span class="p">],</span>
 <span class="p">})</span>
 
 <span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-    <span class="s1">&#39;cust_id&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
-    <span class="s1">&#39;phone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;123-456-7890&#39;</span><span class="p">,</span> <span class="s1">&#39;9876543210&#39;</span><span class="p">,</span> <span class="s1">&#39;555-123-4567&#39;</span><span class="p">],</span>
+    <span class="s1">'cust_id'</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="s1">'phone'</span><span class="p">:</span> <span class="p">[</span><span class="s1">'123-456-7890'</span><span class="p">,</span> <span class="s1">'9876543210'</span><span class="p">,</span> <span class="s1">'555-123-4567'</span><span class="p">],</span>
 <span class="p">})</span>
 </pre></div>
 </div>
@@ -385,7 +387,7 @@ will be marked as mismatches.</p>
 <span class="n">compare_default</span> <span class="o">=</span> <span class="n">datacompy</span><span class="o">.</span><span class="n">PandasCompare</span><span class="p">(</span>
     <span class="n">df1</span><span class="p">,</span>
     <span class="n">df2</span><span class="p">,</span>
-    <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;cust_id&#39;</span><span class="p">]</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'cust_id'</span><span class="p">]</span>
 <span class="p">)</span>
 <span class="c1"># This will show a mismatch for cust_id 2</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">compare_default</span><span class="o">.</span><span class="n">report</span><span class="p">())</span>
@@ -410,10 +412,10 @@ Sample Rows with Unequal Values
 <span class="n">compare_custom</span> <span class="o">=</span> <span class="n">datacompy</span><span class="o">.</span><span class="n">PandasCompare</span><span class="p">(</span>
     <span class="n">df1</span><span class="p">,</span>
     <span class="n">df2</span><span class="p">,</span>
-    <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;cust_id&#39;</span><span class="p">],</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'cust_id'</span><span class="p">],</span>
     <span class="n">custom_comparators</span><span class="o">=</span><span class="p">[</span><span class="n">PhoneNumberComparator</span><span class="p">()]</span>
 <span class="p">)</span>
-<span class="c1"># This will now show a match for cust_id 2&#39;s phone</span>
+<span class="c1"># This will now show a match for cust_id 2's phone</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">compare_custom</span><span class="o">.</span><span class="n">report</span><span class="p">())</span>
 </pre></div>
 </div>
@@ -449,14 +451,14 @@ specific data comparison needs.</p>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="install.html">
+          <a class="prev-page" href="cli.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Installation</div>
+                <div class="title">Command Line Interface</div>
                 
               </div>
             </a>
@@ -519,7 +521,7 @@ specific data comparison needs.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=71272d9f"></script>
+</div><script src="_static/documentation_options.js?v=fc837d61"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

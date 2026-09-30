@@ -9,6 +9,7 @@ Contents
     :maxdepth: 2
 
     Installation <install>
+    Command Line Interface <cli>
     Comparator Framework Usage <comparator_usage>
     Pandas Usage <pandas_usage>
     Spark Usage <spark_usage>

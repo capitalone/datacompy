@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="datacompy.comparator package" href="datacompy.comparator.html"><link rel="prev" title="datacompy" href="modules.html">
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="datacompy.cli package" href="datacompy.cli.html"><link rel="prev" title="datacompy" href="modules.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>datacompy package - datacompy 1.0.4 documentation</title>
+        <title>datacompy package - datacompy 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 1.0.4 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.0.4 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -192,6 +192,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul>
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../comparator_usage.html">Comparator Framework Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../spark_usage.html">Spark Usage</a></li>
@@ -206,6 +207,7 @@
 <ul class="current">
 <li class="toctree-l1 current has-children"><a class="reference internal" href="modules.html">datacompy</a><input aria-label="Toggle navigation of datacompy" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2 current has-children current-page"><a class="current reference internal" href="#">datacompy package</a><input aria-label="Toggle navigation of datacompy package" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html">datacompy.cli package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.comparator.html">datacompy.comparator package</a></li>
 </ul>
 </li>
@@ -256,6 +258,120 @@
 <h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="datacompy.cli.html">datacompy.cli package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datacompy.cli.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datacompy.cli.html#module-datacompy.cli.backends">datacompy.cli.backends module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.CLIBackend"><code class="docutils literal notranslate"><span class="pre">CLIBackend</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.CLIBackend.build"><code class="docutils literal notranslate"><span class="pre">CLIBackend.build()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.CLIBackend.class_name"><code class="docutils literal notranslate"><span class="pre">CLIBackend.class_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.CLIBackend.compare_cls"><code class="docutils literal notranslate"><span class="pre">CLIBackend.compare_cls</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.CLIBackend.extra"><code class="docutils literal notranslate"><span class="pre">CLIBackend.extra</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.CLIBackend.load"><code class="docutils literal notranslate"><span class="pre">CLIBackend.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.CLIBackend.module"><code class="docutils literal notranslate"><span class="pre">CLIBackend.module</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.CLIBackend.name"><code class="docutils literal notranslate"><span class="pre">CLIBackend.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.CLIBackend.open_session"><code class="docutils literal notranslate"><span class="pre">CLIBackend.open_session()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.PandasBackend"><code class="docutils literal notranslate"><span class="pre">PandasBackend</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.PandasBackend.class_name"><code class="docutils literal notranslate"><span class="pre">PandasBackend.class_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.PandasBackend.load"><code class="docutils literal notranslate"><span class="pre">PandasBackend.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.PandasBackend.module"><code class="docutils literal notranslate"><span class="pre">PandasBackend.module</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.PandasBackend.name"><code class="docutils literal notranslate"><span class="pre">PandasBackend.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.PolarsBackend"><code class="docutils literal notranslate"><span class="pre">PolarsBackend</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.PolarsBackend.class_name"><code class="docutils literal notranslate"><span class="pre">PolarsBackend.class_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.PolarsBackend.load"><code class="docutils literal notranslate"><span class="pre">PolarsBackend.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.PolarsBackend.module"><code class="docutils literal notranslate"><span class="pre">PolarsBackend.module</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.PolarsBackend.name"><code class="docutils literal notranslate"><span class="pre">PolarsBackend.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SnowflakeBackend"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SnowflakeBackend.build"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.build()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SnowflakeBackend.class_name"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.class_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SnowflakeBackend.extra"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.extra</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SnowflakeBackend.load"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SnowflakeBackend.module"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.module</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SnowflakeBackend.name"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SnowflakeBackend.open_session"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.open_session()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SparkBackend"><code class="docutils literal notranslate"><span class="pre">SparkBackend</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SparkBackend.build"><code class="docutils literal notranslate"><span class="pre">SparkBackend.build()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SparkBackend.class_name"><code class="docutils literal notranslate"><span class="pre">SparkBackend.class_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SparkBackend.extra"><code class="docutils literal notranslate"><span class="pre">SparkBackend.extra</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SparkBackend.load"><code class="docutils literal notranslate"><span class="pre">SparkBackend.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SparkBackend.module"><code class="docutils literal notranslate"><span class="pre">SparkBackend.module</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SparkBackend.name"><code class="docutils literal notranslate"><span class="pre">SparkBackend.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.SparkBackend.open_session"><code class="docutils literal notranslate"><span class="pre">SparkBackend.open_session()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.compare_kwargs"><code class="docutils literal notranslate"><span class="pre">compare_kwargs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.infer_delimiter"><code class="docutils literal notranslate"><span class="pre">infer_delimiter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.infer_format"><code class="docutils literal notranslate"><span class="pre">infer_format()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.backends.suspect_delimiter"><code class="docutils literal notranslate"><span class="pre">suspect_delimiter()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datacompy.cli.html#module-datacompy.cli.compare">datacompy.cli.compare module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.compare.run_compare"><code class="docutils literal notranslate"><span class="pre">run_compare()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.compare.validate_arguments"><code class="docutils literal notranslate"><span class="pre">validate_arguments()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.compare.within_threshold"><code class="docutils literal notranslate"><span class="pre">within_threshold()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datacompy.cli.html#module-datacompy.cli.errors">datacompy.cli.errors module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.errors.BadArgsError"><code class="docutils literal notranslate"><span class="pre">BadArgsError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.errors.CLIError"><code class="docutils literal notranslate"><span class="pre">CLIError</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.errors.CLIError.exit_code"><code class="docutils literal notranslate"><span class="pre">CLIError.exit_code</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.errors.LoadError"><code class="docutils literal notranslate"><span class="pre">LoadError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.errors.MissingExtraError"><code class="docutils literal notranslate"><span class="pre">MissingExtraError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.errors.OutputError"><code class="docutils literal notranslate"><span class="pre">OutputError</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datacompy.cli.html#module-datacompy.cli.output">datacompy.cli.output module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.output.emit"><code class="docutils literal notranslate"><span class="pre">emit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.output.print_error"><code class="docutils literal notranslate"><span class="pre">print_error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.output.print_warning"><code class="docutils literal notranslate"><span class="pre">print_warning()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.output.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datacompy.cli.html#module-datacompy.cli.parser">datacompy.cli.parser module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.GROUP_INPUT"><code class="docutils literal notranslate"><span class="pre">GROUP_INPUT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.OPTIONS_BY_FLAG"><code class="docutils literal notranslate"><span class="pre">OPTIONS_BY_FLAG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt"><code class="docutils literal notranslate"><span class="pre">Opt</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt.backends"><code class="docutils literal notranslate"><span class="pre">Opt.backends</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt.default"><code class="docutils literal notranslate"><span class="pre">Opt.default</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt.dest"><code class="docutils literal notranslate"><span class="pre">Opt.dest</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt.flags"><code class="docutils literal notranslate"><span class="pre">Opt.flags</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt.group"><code class="docutils literal notranslate"><span class="pre">Opt.group</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt.help"><code class="docutils literal notranslate"><span class="pre">Opt.help</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt.kwarg"><code class="docutils literal notranslate"><span class="pre">Opt.kwarg</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt.options"><code class="docutils literal notranslate"><span class="pre">Opt.options</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt.resolve"><code class="docutils literal notranslate"><span class="pre">Opt.resolve</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt.resolved"><code class="docutils literal notranslate"><span class="pre">Opt.resolved()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt.value"><code class="docutils literal notranslate"><span class="pre">Opt.value()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.Opt.was_given"><code class="docutils literal notranslate"><span class="pre">Opt.was_given()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.build_parser"><code class="docutils literal notranslate"><span class="pre">build_parser()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.default_dataset_name"><code class="docutils literal notranslate"><span class="pre">default_dataset_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.fill_defaults"><code class="docutils literal notranslate"><span class="pre">fill_defaults()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.join_column_group"><code class="docutils literal notranslate"><span class="pre">join_column_group()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.non_negative_int"><code class="docutils literal notranslate"><span class="pre">non_negative_int()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.package_version"><code class="docutils literal notranslate"><span class="pre">package_version()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.single_char"><code class="docutils literal notranslate"><span class="pre">single_char()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.parser.tolerance"><code class="docutils literal notranslate"><span class="pre">tolerance()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="datacompy.cli.html#module-datacompy.cli">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.COMMANDS"><code class="docutils literal notranslate"><span class="pre">COMMANDS</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.build_parser"><code class="docutils literal notranslate"><span class="pre">build_parser()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html#datacompy.cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="datacompy.comparator.html">datacompy.comparator package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="datacompy.comparator.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="datacompy.comparator.html#module-datacompy.comparator.array">datacompy.comparator.array module</a><ul>
@@ -351,6 +467,10 @@
 <li class="toctree-l2"><a class="reference internal" href="datacompy.comparator.html#module-datacompy.comparator.utility">datacompy.comparator.utility module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.comparator.html#datacompy.comparator.utility.get_snowflake_column_dtypes"><code class="docutils literal notranslate"><span class="pre">get_snowflake_column_dtypes()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.comparator.html#datacompy.comparator.utility.get_spark_column_dtypes"><code class="docutils literal notranslate"><span class="pre">get_spark_column_dtypes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.comparator.html#datacompy.comparator.utility.get_spark_functions"><code class="docutils literal notranslate"><span class="pre">get_spark_functions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.comparator.html#datacompy.comparator.utility.get_spark_window"><code class="docutils literal notranslate"><span class="pre">get_spark_window()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.comparator.html#datacompy.comparator.utility.is_spark_connect_dataframe"><code class="docutils literal notranslate"><span class="pre">is_spark_connect_dataframe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.comparator.html#datacompy.comparator.utility.is_spark_connect_object"><code class="docutils literal notranslate"><span class="pre">is_spark_connect_object()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="datacompy.comparator.html#module-datacompy.comparator">Module contents</a><ul>
@@ -498,10 +618,10 @@ columns and potentially rerunning comparisons on a subset of the data.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">compare</span> <span class="o">=</span> <span class="n">PandasCompare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">compare</span> <span class="o">=</span> <span class="n">PandasCompare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'id'</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mismatched_cols</span> <span class="o">=</span> <span class="n">compare</span><span class="o">.</span><span class="n">columns_with_mismatches</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">mismatched_cols</span><span class="p">)</span>
-<span class="go">[&#39;col_a&#39;, &#39;col_b&#39;]</span>
+<span class="go">['col_a', 'col_b']</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -630,6 +750,9 @@ to avoid redundant computations.</p></li>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.base.</span></span><span class="sig-name descname"><span class="pre">ColumnStat</span></span><a class="headerlink" href="#datacompy.base.ColumnStat" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedDict</span></code></p>
 <p>Typed contract for per-column comparison statistics populated by each backend.</p>
+<p><code class="docutils literal notranslate"><span class="pre">max_diff</span></code> and <code class="docutils literal notranslate"><span class="pre">null_diff</span></code> are <code class="docutils literal notranslate"><span class="pre">None</span></code> when the column is hidden via
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">hide_sensitive_columns()</span></code>, because those derived values are computed
+from the raw data and would leak information about a masked column.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="datacompy.base.ColumnStat.abs_tol">
 <span class="sig-name descname"><span class="pre">abs_tol</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#datacompy.base.ColumnStat.abs_tol" title="Link to this definition">¶</a></dt>
@@ -667,12 +790,12 @@ to avoid redundant computations.</p></li>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="datacompy.base.ColumnStat.max_diff">
-<span class="sig-name descname"><span class="pre">max_diff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#datacompy.base.ColumnStat.max_diff" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">max_diff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#datacompy.base.ColumnStat.max_diff" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="datacompy.base.ColumnStat.null_diff">
-<span class="sig-name descname"><span class="pre">null_diff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#datacompy.base.ColumnStat.null_diff" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">null_diff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#datacompy.base.ColumnStat.null_diff" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -685,6 +808,12 @@ to avoid redundant computations.</p></li>
 <span class="sig-name descname"><span class="pre">unequal_cnt</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#datacompy.base.ColumnStat.unequal_cnt" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="datacompy.base.TABLE_GUTTER">
+<span class="sig-prename descclassname"><span class="pre">datacompy.base.</span></span><span class="sig-name descname"><span class="pre">TABLE_GUTTER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'</span>&#160; <span class="pre">'</span></span><a class="headerlink" href="#datacompy.base.TABLE_GUTTER" title="Link to this definition">¶</a></dt>
+<dd><p>Spaces between adjacent columns of a report table.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -708,6 +837,46 @@ DataFrame types (pandas, Spark, Polars, etc.)</p>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.base.fixed_width_table">
+<span class="sig-prename descclassname"><span class="pre">datacompy.base.</span></span><span class="sig-name descname"><span class="pre">fixed_width_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">headers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rows</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">align</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.base.fixed_width_table" title="Link to this definition">¶</a></dt>
+<dd><p>Lay out a plain text table, sizing every column to its widest cell.</p>
+<p>Exposed to templates as <code class="docutils literal notranslate"><span class="pre">fixed_width_table</span></code>. Cells are stringified but not
+otherwise formatted, so the template stays in charge of how a number is
+presented and this function stays in charge only of how wide the column is.
+That split is what keeps the header rule, the separator, and the body
+aligned no matter how long a dataset name or dtype turns out to be.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>headers</strong> (<em>sequence</em><em> of </em><em>str</em>) – Column headings. Also the minimum width of each column.</p></li>
+<li><p><strong>rows</strong> (<em>sequence</em><em> of </em><em>sequence</em>) – Body rows. Each row must have one cell per heading.</p></li>
+<li><p><strong>align</strong> (<em>str</em><em>, </em><em>optional</em>) – One character per column, <code class="docutils literal notranslate"><span class="pre">&quot;l&quot;</span></code> for left and <code class="docutils literal notranslate"><span class="pre">&quot;r&quot;</span></code> for right.
+Columns beyond the end of the string, and an omitted <em>align</em>, default
+to left.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The heading row, a separator row of dashes, and one row per entry,
+newline separated and free of trailing whitespace.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If a row does not have one cell per heading.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">fixed_width_table</span><span class="p">([</span><span class="s2">"Name"</span><span class="p">,</span> <span class="s2">"N"</span><span class="p">],</span> <span class="p">[[</span><span class="s2">"ab"</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="s2">"cdefg"</span><span class="p">,</span> <span class="mi">22</span><span class="p">]],</span> <span class="s2">"lr"</span><span class="p">))</span>
+<span class="go">Name    N</span>
+<span class="go">-----  --</span>
+<span class="go">ab      1</span>
+<span class="go">cdefg  22</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -1336,7 +1505,8 @@ shared columns.</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Numeric field, or zero.</p>
+<dd class="field-even"><p>Numeric field, or zero. Temporal columns give zero: cast to float they
+count days or time units, so the difference would depend on the unit.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Numeric</p>
@@ -1437,7 +1607,7 @@ text and HTML, and exposes <code class="docutils literal notranslate"><span clas
 <p>Render to text and save HTML:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">compare</span><span class="o">.</span><span class="n">build_report_data</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">render</span><span class="p">())</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;comparison.html&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"comparison.html"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Export as JSON-serializable dict:</p>
@@ -1533,7 +1703,7 @@ text and HTML, and exposes <code class="docutils literal notranslate"><span clas
 
 <dl class="py class">
 <dt class="sig sig-object py" id="datacompy.report.MismatchStat">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.report.</span></span><span class="sig-name descname"><span class="pre">MismatchStat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unequal_cnt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">null_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.report.MismatchStat" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.report.</span></span><span class="sig-name descname"><span class="pre">MismatchStat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unequal_cnt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">null_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.report.MismatchStat" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Per-column mismatch statistics.</p>
 <dl class="field-list simple">
@@ -1543,8 +1713,11 @@ text and HTML, and exposes <code class="docutils literal notranslate"><span clas
 <li><p><strong>dtype1</strong> (<em>str</em>) – Data type in df1.</p></li>
 <li><p><strong>dtype2</strong> (<em>str</em>) – Data type in df2.</p></li>
 <li><p><strong>unequal_cnt</strong> (<em>int</em>) – Number of rows where the values differ.</p></li>
-<li><p><strong>max_diff</strong> (<em>float</em>) – Maximum absolute numeric difference (0.0 for non-numeric columns).</p></li>
-<li><p><strong>null_diff</strong> (<em>int</em>) – Number of rows where one value is null and the other is not.</p></li>
+<li><p><strong>max_diff</strong> (<em>float</em><em> or </em><em>None</em>) – Maximum absolute numeric difference (0.0 for non-numeric columns).
+<code class="docutils literal notranslate"><span class="pre">None</span></code> when the column is hidden via <code class="docutils literal notranslate"><span class="pre">hide_sensitive_columns()</span></code>,
+since the difference is derived from the masked values.</p></li>
+<li><p><strong>null_diff</strong> (<em>int</em><em> or </em><em>None</em>) – Number of rows where one value is null and the other is not.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> when the column is hidden via <code class="docutils literal notranslate"><span class="pre">hide_sensitive_columns()</span></code>.</p></li>
 <li><p><strong>rel_tol</strong> (<em>float</em>) – Relative tolerance applied to this column.</p></li>
 <li><p><strong>abs_tol</strong> (<em>float</em>) – Absolute tolerance applied to this column.</p></li>
 </ul>
@@ -1572,12 +1745,12 @@ text and HTML, and exposes <code class="docutils literal notranslate"><span clas
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="datacompy.report.MismatchStat.max_diff">
-<span class="sig-name descname"><span class="pre">max_diff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#datacompy.report.MismatchStat.max_diff" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">max_diff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#datacompy.report.MismatchStat.max_diff" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="datacompy.report.MismatchStat.null_diff">
-<span class="sig-name descname"><span class="pre">null_diff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#datacompy.report.MismatchStat.null_diff" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">null_diff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#datacompy.report.MismatchStat.null_diff" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2515,14 +2688,14 @@ trigger True on two nulls or exact matches.</p></li>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pyspark.sql</span><span class="w"> </span><span class="kn">import</span> <span class="n">SparkSession</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">([</span>
-<span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="s2">&quot;ABC&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-<span class="gp">... </span>    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;DEF &quot;</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">),</span>
-<span class="gp">... </span>    <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;ghi&quot;</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
-<span class="gp">... </span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;col1&quot;</span><span class="p">,</span> <span class="s2">&quot;col2&quot;</span><span class="p">,</span> <span class="s2">&quot;col3&quot;</span><span class="p">])</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="s2">"ABC"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s2">"DEF "</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"ghi"</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">],</span> <span class="p">[</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">"col1"</span><span class="p">,</span> <span class="s2">"col2"</span><span class="p">,</span> <span class="s2">"col3"</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Compare numeric columns with tolerance</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;col1_equals_col3&quot;</span><span class="p">,</span> <span class="n">columns_equal</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s2">&quot;col1&quot;</span><span class="p">,</span> <span class="s2">&quot;col3&quot;</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">"col1_equals_col3"</span><span class="p">,</span> <span class="n">columns_equal</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s2">"col1"</span><span class="p">,</span> <span class="s2">"col3"</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Compare string columns ignoring case and spaces</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;col2_normalized&quot;</span><span class="p">,</span> <span class="n">columns_equal</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s2">&quot;col2&quot;</span><span class="p">,</span> <span class="s2">&quot;col2&quot;</span><span class="p">,</span> <span class="n">ignore_spaces</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_case</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">"col2_normalized"</span><span class="p">,</span> <span class="n">columns_equal</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s2">"col2"</span><span class="p">,</span> <span class="s2">"col2"</span><span class="p">,</span> <span class="n">ignore_spaces</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_case</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 </pre></div>
 </div>
 <div class="admonition note">
@@ -2642,10 +2815,10 @@ columns and potentially rerunning comparisons on a subset of the data.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">compare</span> <span class="o">=</span> <span class="n">PandasCompare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">compare</span> <span class="o">=</span> <span class="n">PandasCompare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'id'</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mismatched_cols</span> <span class="o">=</span> <span class="n">compare</span><span class="o">.</span><span class="n">columns_with_mismatches</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">mismatched_cols</span><span class="p">)</span>
-<span class="go">[&#39;col_a&#39;, &#39;col_b&#39;]</span>
+<span class="go">['col_a', 'col_b']</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -2857,7 +3030,7 @@ to avoid redundant computations.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="datacompy.MismatchStat">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.</span></span><span class="sig-name descname"><span class="pre">MismatchStat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unequal_cnt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">null_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.MismatchStat" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.</span></span><span class="sig-name descname"><span class="pre">MismatchStat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unequal_cnt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">null_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.MismatchStat" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Per-column mismatch statistics.</p>
 <dl class="field-list simple">
@@ -2867,8 +3040,11 @@ to avoid redundant computations.</p></li>
 <li><p><strong>dtype1</strong> (<em>str</em>) – Data type in df1.</p></li>
 <li><p><strong>dtype2</strong> (<em>str</em>) – Data type in df2.</p></li>
 <li><p><strong>unequal_cnt</strong> (<em>int</em>) – Number of rows where the values differ.</p></li>
-<li><p><strong>max_diff</strong> (<em>float</em>) – Maximum absolute numeric difference (0.0 for non-numeric columns).</p></li>
-<li><p><strong>null_diff</strong> (<em>int</em>) – Number of rows where one value is null and the other is not.</p></li>
+<li><p><strong>max_diff</strong> (<em>float</em><em> or </em><em>None</em>) – Maximum absolute numeric difference (0.0 for non-numeric columns).
+<code class="docutils literal notranslate"><span class="pre">None</span></code> when the column is hidden via <code class="docutils literal notranslate"><span class="pre">hide_sensitive_columns()</span></code>,
+since the difference is derived from the masked values.</p></li>
+<li><p><strong>null_diff</strong> (<em>int</em><em> or </em><em>None</em>) – Number of rows where one value is null and the other is not.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> when the column is hidden via <code class="docutils literal notranslate"><span class="pre">hide_sensitive_columns()</span></code>.</p></li>
 <li><p><strong>rel_tol</strong> (<em>float</em>) – Relative tolerance applied to this column.</p></li>
 <li><p><strong>abs_tol</strong> (<em>float</em>) – Absolute tolerance applied to this column.</p></li>
 </ul>
@@ -2896,12 +3072,12 @@ to avoid redundant computations.</p></li>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="datacompy.MismatchStat.max_diff">
-<span class="sig-name descname"><span class="pre">max_diff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#datacompy.MismatchStat.max_diff" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">max_diff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#datacompy.MismatchStat.max_diff" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="datacompy.MismatchStat.null_diff">
-<span class="sig-name descname"><span class="pre">null_diff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#datacompy.MismatchStat.null_diff" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">null_diff</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#datacompy.MismatchStat.null_diff" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -4018,12 +4194,12 @@ shared columns.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="datacompy.comparator.html">
+          <a class="next-page" href="datacompy.cli.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">datacompy.comparator package</div>
+                <div class="title">datacompy.cli package</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -4108,7 +4284,9 @@ shared columns.</p>
 <li><a class="reference internal" href="#datacompy.base.ColumnStat.unequal_cnt"><code class="docutils literal notranslate"><span class="pre">ColumnStat.unequal_cnt</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#datacompy.base.TABLE_GUTTER"><code class="docutils literal notranslate"><span class="pre">TABLE_GUTTER</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.base.df_to_str"><code class="docutils literal notranslate"><span class="pre">df_to_str()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.base.fixed_width_table"><code class="docutils literal notranslate"><span class="pre">fixed_width_table()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.base.get_column_tolerance"><code class="docutils literal notranslate"><span class="pre">get_column_tolerance()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.base.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.base.save_html_report"><code class="docutils literal notranslate"><span class="pre">save_html_report()</span></code></a></li>
@@ -4473,7 +4651,7 @@ shared columns.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=71272d9f"></script>
+</div><script src="../_static/documentation_options.js?v=fc837d61"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

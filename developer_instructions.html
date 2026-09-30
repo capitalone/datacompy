@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="datacompy" href="api/modules.html"><link rel="prev" title="Benchmarks" href="benchmark.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Developer Instructions - datacompy 1.0.4 documentation</title>
+        <title>Developer Instructions - datacompy 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 1.0.4 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.0.4 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -192,6 +192,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="comparator_usage.html">Comparator Framework Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
@@ -206,6 +207,7 @@
 <ul>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api/modules.html">datacompy</a><input aria-label="Toggle navigation of datacompy" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="api/datacompy.html">datacompy package</a><input aria-label="Toggle navigation of datacompy package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.cli.html">datacompy.cli package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.comparator.html">datacompy.comparator package</a></li>
 </ul>
 </li>
@@ -282,25 +284,44 @@ Just make sure Sphinx 1.3 or above is installed.</p>
 </section>
 <section id="run-unit-tests">
 <h2>Run unit tests<a class="headerlink" href="#run-unit-tests" title="Link to this heading">¶</a></h2>
-<p>Run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pytest</span></code> to run all unittests defined in the subfolder
-<code class="docutils literal notranslate"><span class="pre">tests</span></code> with the help of <a class="reference external" href="http://pytest.org/">py.test</a> and
-<a class="reference external" href="https://pypi.python.org/pypi/pytest-runner">pytest-runner</a>.</p>
+<p>Run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pytest</span></code> to run all tests defined in the <code class="docutils literal notranslate"><span class="pre">tests</span></code> subfolder.</p>
+<p>CI runs the suite twice, once with the default <code class="docutils literal notranslate"><span class="pre">pytest.ini</span></code> and once with
+<code class="docutils literal notranslate"><span class="pre">pytest-ansi.ini</span></code>, which differs only by enabling <code class="docutils literal notranslate"><span class="pre">spark.sql.ansi.enabled</span></code>.
+A change touching Spark casting or null handling should be run both ways:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pytest</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pytest</span> <span class="o">-</span><span class="n">c</span> <span class="n">pytest</span><span class="o">-</span><span class="n">ansi</span><span class="o">.</span><span class="n">ini</span>
+</pre></div>
+</div>
+<p>The Spark tests need the <code class="docutils literal notranslate"><span class="pre">spark</span></code> extra and Java 17. Newer JDKs fail with
+<code class="docutils literal notranslate"><span class="pre">py4j.protocol</span></code> errors. If the JDK came from conda, <code class="docutils literal notranslate"><span class="pre">JAVA_HOME</span></code> has to point
+at it, which a non-interactive shell will not inherit:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export JAVA_HOME=$CONDA_PREFIX/lib/jvm
+</pre></div>
+</div>
 </section>
 <section id="snowflake-testing">
 <h2>Snowflake testing<a class="headerlink" href="#snowflake-testing" title="Link to this heading">¶</a></h2>
-<p>Testing the Snowflake compare requires the use of a Snowflake cluster, as Snowflake does not support local running.
-This means that Snowflake tests do not get run in CICD, and changes to the Snowflake Compare must be validated by
-the process of running these tests locally.</p>
-<p>Note that you must have the following environment variables set in order to instantiate a Snowflake Connection (for testing purposes):</p>
+<p>The Snowflake tests run either against a live Snowflake session or against
+Snowpark’s local testing mode:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pytest</span> <span class="n">tests</span><span class="o">/</span><span class="n">test_snowflake</span><span class="o">.</span><span class="n">py</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pytest</span> <span class="n">tests</span><span class="o">/</span><span class="n">test_snowflake</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">snowflake</span><span class="o">-</span><span class="n">session</span> <span class="n">local</span>
+</pre></div>
+</div>
+<p>Local testing mode is an emulator rather than Snowflake, and two of its
+limitations matter here: <code class="docutils literal notranslate"><span class="pre">eqNullSafe</span></code> returns <code class="docutils literal notranslate"><span class="pre">True</span></code> for every row, and
+high-precision decimals are truncated when a DataFrame is created. Tests that
+depend on either request the <code class="docutils literal notranslate"><span class="pre">requires_live_snowflake_session</span></code> fixture, which
+skips them in local mode. Changes to <code class="docutils literal notranslate"><span class="pre">SnowflakeCompare</span></code> still need a live
+session to be fully validated, and that validation does not happen in CI.</p>
+<p>A live session is built from the following environment variables, using
+external browser authentication rather than a password:</p>
 <ul class="simple">
-<li><p>“SF_ACCOUNT”: with your SF account</p></li>
-<li><p>“SF_UID”: with your SF username</p></li>
-<li><p>“SF_PWD”: with your SF password</p></li>
-<li><p>“SF_WAREHOUSE”: with your desired SF warehouse</p></li>
-<li><p>“SF_DATABASE”: with a valid database with which you have access</p></li>
-<li><p>“SF_SCHEMA”: with a valid schema belonging to the provided database</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SF_ACCOUNT</span></code>: your Snowflake account</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SF_UID</span></code>: your Snowflake username</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SF_WAREHOUSE</span></code>: the warehouse to use</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SF_DATABASE</span></code>: a database you have access to</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SF_SCHEMA</span></code>: a schema belonging to that database</p></li>
 </ul>
-<p>Once these are set, you are free to run the suite of Snowflake tests.</p>
 </section>
 <section id="management-of-requirements">
 <h2>Management of Requirements<a class="headerlink" href="#management-of-requirements" title="Link to this heading">¶</a></h2>
@@ -311,8 +332,8 @@ documentation, or code quality are added to <code class="docutils literal notran
 <h2>edgetest<a class="headerlink" href="#edgetest" title="Link to this heading">¶</a></h2>
 <p>edgetest is a utility to help keep requirements up to date and ensure a subset of testing requirements still work.
 More on edgetest <a class="reference external" href="https://github.com/capitalone/edgetest">here</a>.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> has configuration details on how to run edgetest. This process can be automated via GitHub Actions.
-(A future addition, which will come soon).</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> has configuration details on how to run edgetest. The process is automated by the
+<code class="docutils literal notranslate"><span class="pre">edgetest</span></code> GitHub Actions workflow, which opens a pull request with any dependency bumps it finds.</p>
 <p>In order to execute edgetest locally you can run the following after install <code class="docutils literal notranslate"><span class="pre">edgetest</span></code>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>edgetest<span class="w"> </span>-c<span class="w"> </span>pyproject.toml<span class="w"> </span>--export
 </pre></div>
@@ -448,7 +469,7 @@ from <a class="reference external" href="https://packaging.python.org/tutorials/
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=71272d9f"></script>
+</div><script src="_static/documentation_options.js?v=fc837d61"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Comparator Framework Usage" href="comparator_usage.html"><link rel="prev" title="DataComPy" href="index.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Command Line Interface" href="cli.html"><link rel="prev" title="DataComPy" href="index.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Installation - datacompy 1.0.4 documentation</title>
+        <title>Installation - datacompy 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 1.0.4 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.0.4 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -192,6 +192,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="comparator_usage.html">Comparator Framework Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
@@ -206,6 +207,7 @@
 <ul>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api/modules.html">datacompy</a><input aria-label="Toggle navigation of datacompy" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="api/datacompy.html">datacompy package</a><input aria-label="Toggle navigation of datacompy package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.cli.html">datacompy.cli package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.comparator.html">datacompy.comparator package</a></li>
 </ul>
 </li>
@@ -252,16 +254,38 @@
         <article role="main" id="furo-main-content">
           <section id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h1>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>If you are using Python 3.12 and above, please note that not all functioanlity will be supported.
-Pandas and Polars support should work fine and are tested.</p>
-</div>
+<p>DataComPy requires Python 3.10 or later. Every backend is tested against each
+supported version.</p>
 <section id="pypi-basic">
 <h2>PyPI (basic)<a class="headerlink" href="#pypi-basic" title="Link to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span>
 </pre></div>
 </div>
+</section>
+<section id="installing-extras">
+<h2>Installing extras<a class="headerlink" href="#installing-extras" title="Link to this heading">¶</a></h2>
+<p>Pandas and Polars work out of the box. Spark and Snowflake are optional:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span><span class="p">[</span><span class="n">spark</span><span class="p">]</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span><span class="p">[</span><span class="n">snowflake</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On Python 3.12 and above the <code class="docutils literal notranslate"><span class="pre">spark</span></code> extra resolves to PySpark 4. The
+dependency markers pick the right version, so nothing extra is needed.</p>
+</div>
+<p>Installing the package also provides the <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> command line tool. See
+<a class="reference internal" href="cli.html"><span class="doc">Command Line Interface</span></a>.</p>
+</section>
+<section id="spark">
+<h2>Spark<a class="headerlink" href="#spark" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">datacompy</span><span class="p">[</span><span class="n">spark</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>This installs <code class="docutils literal notranslate"><span class="pre">pyspark[connect]</span></code>, which covers both classic Spark and Spark
+Connect. If you manage PySpark yourself, a plain <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">pyspark</span></code> is
+enough for classic Spark; Spark Connect additionally needs the <code class="docutils literal notranslate"><span class="pre">connect</span></code>
+extra (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;pyspark[connect]&quot;</span></code>), which pulls in <code class="docutils literal notranslate"><span class="pre">grpcio</span></code>.</p>
 <p>A Conda environment or virtual environment is highly recommended:</p>
 </section>
 <section id="conda-installs-dependencies-from-conda-forge">
@@ -289,12 +313,12 @@ Pandas and Polars support should work fine and are tested.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="comparator_usage.html">
+          <a class="next-page" href="cli.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Comparator Framework Usage</div>
+                <div class="title">Command Line Interface</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -341,6 +365,8 @@ Pandas and Polars support should work fine and are tested.</p>
             <ul>
 <li><a class="reference internal" href="#">Installation</a><ul>
 <li><a class="reference internal" href="#pypi-basic">PyPI (basic)</a></li>
+<li><a class="reference internal" href="#installing-extras">Installing extras</a></li>
+<li><a class="reference internal" href="#spark">Spark</a></li>
 <li><a class="reference internal" href="#conda-installs-dependencies-from-conda-forge">conda (installs dependencies from Conda Forge)</a></li>
 <li><a class="reference internal" href="#virtualenv-install-dependencies-from-pypi">virtualenv (install dependencies from PyPI)</a></li>
 </ul>
@@ -354,7 +380,7 @@ Pandas and Polars support should work fine and are tested.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=71272d9f"></script>
+</div><script src="_static/documentation_options.js?v=fc837d61"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

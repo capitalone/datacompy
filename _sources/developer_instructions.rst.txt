@@ -38,27 +38,46 @@ Just make sure Sphinx 1.3 or above is installed.
 Run unit tests
 --------------
 
-Run ``python -m pytest`` to run all unittests defined in the subfolder
-``tests`` with the help of `py.test <http://pytest.org/>`_ and
-`pytest-runner <https://pypi.python.org/pypi/pytest-runner>`_.
+Run ``python -m pytest`` to run all tests defined in the ``tests`` subfolder.
+
+CI runs the suite twice, once with the default ``pytest.ini`` and once with
+``pytest-ansi.ini``, which differs only by enabling ``spark.sql.ansi.enabled``.
+A change touching Spark casting or null handling should be run both ways::
+
+    python -m pytest
+    python -m pytest -c pytest-ansi.ini
+
+The Spark tests need the ``spark`` extra and Java 17. Newer JDKs fail with
+``py4j.protocol`` errors. If the JDK came from conda, ``JAVA_HOME`` has to point
+at it, which a non-interactive shell will not inherit::
+
+    export JAVA_HOME=$CONDA_PREFIX/lib/jvm
 
 
 Snowflake testing
 -----------------
-Testing the Snowflake compare requires the use of a Snowflake cluster, as Snowflake does not support local running.
-This means that Snowflake tests do not get run in CICD, and changes to the Snowflake Compare must be validated by
-the process of running these tests locally.
 
-Note that you must have the following environment variables set in order to instantiate a Snowflake Connection (for testing purposes):
+The Snowflake tests run either against a live Snowflake session or against
+Snowpark's local testing mode::
 
-- "SF_ACCOUNT": with your SF account
-- "SF_UID": with your SF username
-- "SF_PWD": with your SF password
-- "SF_WAREHOUSE": with your desired SF warehouse
-- "SF_DATABASE": with a valid database with which you have access
-- "SF_SCHEMA": with a valid schema belonging to the provided database
+    python -m pytest tests/test_snowflake.py
+    python -m pytest tests/test_snowflake.py --snowflake-session local
 
-Once these are set, you are free to run the suite of Snowflake tests.
+Local testing mode is an emulator rather than Snowflake, and two of its
+limitations matter here: ``eqNullSafe`` returns ``True`` for every row, and
+high-precision decimals are truncated when a DataFrame is created. Tests that
+depend on either request the ``requires_live_snowflake_session`` fixture, which
+skips them in local mode. Changes to ``SnowflakeCompare`` still need a live
+session to be fully validated, and that validation does not happen in CI.
+
+A live session is built from the following environment variables, using
+external browser authentication rather than a password:
+
+- ``SF_ACCOUNT``: your Snowflake account
+- ``SF_UID``: your Snowflake username
+- ``SF_WAREHOUSE``: the warehouse to use
+- ``SF_DATABASE``: a database you have access to
+- ``SF_SCHEMA``: a schema belonging to that database
 
 
 Management of Requirements
@@ -75,8 +94,8 @@ edgetest
 edgetest is a utility to help keep requirements up to date and ensure a subset of testing requirements still work.
 More on edgetest `here <https://github.com/capitalone/edgetest>`_.
 
-The ``pyproject.toml`` has configuration details on how to run edgetest. This process can be automated via GitHub Actions.
-(A future addition, which will come soon).
+The ``pyproject.toml`` has configuration details on how to run edgetest. The process is automated by the
+``edgetest`` GitHub Actions workflow, which opens a pull request with any dependency bumps it finds.
 
 In order to execute edgetest locally you can run the following after install ``edgetest``:
 

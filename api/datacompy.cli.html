@@ -1,0 +1,1191 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="datacompy.comparator package" href="datacompy.comparator.html"><link rel="prev" title="datacompy package" href="datacompy.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>datacompy.cli package - datacompy 1.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comparator_usage.html">Comparator Framework Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pandas_usage.html">Pandas Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../snowflake_usage.html">Snowflake Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../polars_usage.html">Polars Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../template_guide.html">Template Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../report_api.html">Report API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark.html">Benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_instructions.html">Developer Instructions</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="modules.html">datacompy</a><input aria-label="Toggle navigation of datacompy" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2 current has-children"><a class="reference internal" href="datacompy.html">datacompy package</a><input aria-label="Toggle navigation of datacompy package" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">datacompy.cli package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.comparator.html">datacompy.comparator package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/capitalone/datacompy">Github Repo</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/api/datacompy.cli.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="datacompy-cli-package">
+<h1>datacompy.cli package<a class="headerlink" href="#datacompy-cli-package" title="Link to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-datacompy.cli.backends">
+<span id="datacompy-cli-backends-module"></span><h2>datacompy.cli.backends module<a class="headerlink" href="#module-datacompy.cli.backends" title="Link to this heading">¶</a></h2>
+<p>Backend strategies for the DataComPy CLI.</p>
+<p>Each <a class="reference internal" href="#datacompy.cli.backends.CLIBackend" title="datacompy.cli.backends.CLIBackend"><code class="xref py py-class docutils literal notranslate"><span class="pre">CLIBackend</span></code></a> owns the three things that vary between backends:
+opening a session (Spark and Snowflake only), turning a <code class="docutils literal notranslate"><span class="pre">--left</span></code> or
+<code class="docutils literal notranslate"><span class="pre">--right</span></code> reference into something the comparison accepts, and calling the
+right <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> constructor.</p>
+<p>The constructor keyword arguments themselves are not written out here. They are
+derived from <code class="xref py py-data docutils literal notranslate"><span class="pre">datacompy.cli.parser.OPTIONS</span></code> by <a class="reference internal" href="#datacompy.cli.backends.compare_kwargs" title="datacompy.cli.backends.compare_kwargs"><code class="xref py py-func docutils literal notranslate"><span class="pre">compare_kwargs()</span></code></a>, so
+the parser and the constructor call site cannot drift apart.</p>
+<p>Imports of <code class="docutils literal notranslate"><span class="pre">pyspark</span></code> and <code class="docutils literal notranslate"><span class="pre">snowflake.snowpark</span></code> are deferred into methods,
+following the same pattern as <code class="docutils literal notranslate"><span class="pre">datacompy/__init__.py</span></code>.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.cli.backends.CLIBackend">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.cli.backends.</span></span><span class="sig-name descname"><span class="pre">CLIBackend</span></span><a class="headerlink" href="#datacompy.cli.backends.CLIBackend" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Strategy describing how the CLI drives one comparison backend.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.backends.CLIBackend.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare" title="datacompy.base.BaseCompare"><span class="pre">BaseCompare</span></a></span></span><a class="headerlink" href="#datacompy.cli.backends.CLIBackend.build" title="Link to this definition">¶</a></dt>
+<dd><p>Construct the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.CLIBackend.class_name">
+<span class="sig-name descname"><span class="pre">class_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#datacompy.cli.backends.CLIBackend.class_name" title="Link to this definition">¶</a></dt>
+<dd><p>Name of the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> class within <a class="reference internal" href="#datacompy.cli.backends.CLIBackend.module" title="datacompy.cli.backends.CLIBackend.module"><code class="xref py py-attr docutils literal notranslate"><span class="pre">module</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="datacompy.cli.backends.CLIBackend.compare_cls">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">compare_cls</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare" title="datacompy.base.BaseCompare"><span class="pre">BaseCompare</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#datacompy.cli.backends.CLIBackend.compare_cls" title="Link to this definition">¶</a></dt>
+<dd><p>Import and return the backend’s <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> class.</p>
+<p>Typed as a callable rather than <code class="docutils literal notranslate"><span class="pre">type[BaseCompare]</span></code> because the
+constructor signatures differ between backends, which is exactly what
+<a class="reference internal" href="#datacompy.cli.backends.compare_kwargs" title="datacompy.cli.backends.compare_kwargs"><code class="xref py py-func docutils literal notranslate"><span class="pre">compare_kwargs()</span></code></a> and the drift guard in <code class="docutils literal notranslate"><span class="pre">tests/cli</span></code> exist to
+reconcile.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#datacompy.cli.errors.MissingExtraError" title="datacompy.cli.errors.MissingExtraError"><strong>MissingExtraError</strong></a> – When the backend needs an optional dependency that is not installed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.CLIBackend.extra">
+<span class="sig-name descname"><span class="pre">extra</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#datacompy.cli.backends.CLIBackend.extra" title="Link to this definition">¶</a></dt>
+<dd><p>Optional dependency extra required by this backend, if any.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.backends.CLIBackend.load">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#datacompy.cli.backends.CLIBackend.load" title="Link to this definition">¶</a></dt>
+<dd><p>Turn <em>ref</em> into whatever the backend’s comparison accepts.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.CLIBackend.module">
+<span class="sig-name descname"><span class="pre">module</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#datacompy.cli.backends.CLIBackend.module" title="Link to this definition">¶</a></dt>
+<dd><p>Module holding the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> class, imported on demand.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.CLIBackend.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#datacompy.cli.backends.CLIBackend.name" title="Link to this definition">¶</a></dt>
+<dd><p>Value accepted by <code class="docutils literal notranslate"><span class="pre">--backend</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.backends.CLIBackend.open_session">
+<span class="sig-name descname"><span class="pre">open_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stack</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ExitStack</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#datacompy.cli.backends.CLIBackend.open_session" title="Link to this definition">¶</a></dt>
+<dd><p>Return a session for this backend, or <code class="docutils literal notranslate"><span class="pre">None</span></code> when none is needed.</p>
+<p>Implementations register teardown on <em>stack</em> so the session is closed on
+both the success and the failure path.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.cli.backends.PandasBackend">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.cli.backends.</span></span><span class="sig-name descname"><span class="pre">PandasBackend</span></span><a class="headerlink" href="#datacompy.cli.backends.PandasBackend" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.cli.backends.CLIBackend" title="datacompy.cli.backends.CLIBackend"><code class="xref py py-class docutils literal notranslate"><span class="pre">CLIBackend</span></code></a></p>
+<p>Compare two files in memory with pandas.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.PandasBackend.class_name">
+<span class="sig-name descname"><span class="pre">class_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'PandasCompare'</span></span><a class="headerlink" href="#datacompy.cli.backends.PandasBackend.class_name" title="Link to this definition">¶</a></dt>
+<dd><p>Name of the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> class within <a class="reference internal" href="#datacompy.cli.backends.PandasBackend.module" title="datacompy.cli.backends.PandasBackend.module"><code class="xref py py-attr docutils literal notranslate"><span class="pre">module</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.backends.PandasBackend.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.cli.backends.PandasBackend.load" title="Link to this definition">¶</a></dt>
+<dd><p>Read <em>ref</em> into a <code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.PandasBackend.module">
+<span class="sig-name descname"><span class="pre">module</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'datacompy.pandas'</span></span><a class="headerlink" href="#datacompy.cli.backends.PandasBackend.module" title="Link to this definition">¶</a></dt>
+<dd><p>Module holding the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> class, imported on demand.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.PandasBackend.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'pandas'</span></span><a class="headerlink" href="#datacompy.cli.backends.PandasBackend.name" title="Link to this definition">¶</a></dt>
+<dd><p>Value accepted by <code class="docutils literal notranslate"><span class="pre">--backend</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.cli.backends.PolarsBackend">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.cli.backends.</span></span><span class="sig-name descname"><span class="pre">PolarsBackend</span></span><a class="headerlink" href="#datacompy.cli.backends.PolarsBackend" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.cli.backends.CLIBackend" title="datacompy.cli.backends.CLIBackend"><code class="xref py py-class docutils literal notranslate"><span class="pre">CLIBackend</span></code></a></p>
+<p>Compare two files in memory with polars.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.PolarsBackend.class_name">
+<span class="sig-name descname"><span class="pre">class_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'PolarsCompare'</span></span><a class="headerlink" href="#datacompy.cli.backends.PolarsBackend.class_name" title="Link to this definition">¶</a></dt>
+<dd><p>Name of the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> class within <a class="reference internal" href="#datacompy.cli.backends.PolarsBackend.module" title="datacompy.cli.backends.PolarsBackend.module"><code class="xref py py-attr docutils literal notranslate"><span class="pre">module</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.backends.PolarsBackend.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#datacompy.cli.backends.PolarsBackend.load" title="Link to this definition">¶</a></dt>
+<dd><p>Read <em>ref</em> into a <code class="xref py py-class docutils literal notranslate"><span class="pre">polars.DataFrame</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.PolarsBackend.module">
+<span class="sig-name descname"><span class="pre">module</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'datacompy.polars'</span></span><a class="headerlink" href="#datacompy.cli.backends.PolarsBackend.module" title="Link to this definition">¶</a></dt>
+<dd><p>Module holding the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> class, imported on demand.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.PolarsBackend.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'polars'</span></span><a class="headerlink" href="#datacompy.cli.backends.PolarsBackend.name" title="Link to this definition">¶</a></dt>
+<dd><p>Value accepted by <code class="docutils literal notranslate"><span class="pre">--backend</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SnowflakeBackend">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.cli.backends.</span></span><span class="sig-name descname"><span class="pre">SnowflakeBackend</span></span><a class="headerlink" href="#datacompy.cli.backends.SnowflakeBackend" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.cli.backends.CLIBackend" title="datacompy.cli.backends.CLIBackend"><code class="xref py py-class docutils literal notranslate"><span class="pre">CLIBackend</span></code></a></p>
+<p>Compare two Snowflake tables in place.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--left</span></code> and <code class="docutils literal notranslate"><span class="pre">--right</span></code> are always table references for this backend,
+either <code class="docutils literal notranslate"><span class="pre">db.schema.table</span></code> or <code class="docutils literal notranslate"><span class="pre">schema.table</span></code>. Local files are read with
+<code class="docutils literal notranslate"><span class="pre">--backend</span> <span class="pre">pandas</span></code> or <code class="docutils literal notranslate"><span class="pre">--backend</span> <span class="pre">polars</span></code> instead.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SnowflakeBackend.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare" title="datacompy.base.BaseCompare"><span class="pre">BaseCompare</span></a></span></span><a class="headerlink" href="#datacompy.cli.backends.SnowflakeBackend.build" title="Link to this definition">¶</a></dt>
+<dd><p>Construct a <a class="reference internal" href="datacompy.html#datacompy.snowflake.SnowflakeCompare" title="datacompy.snowflake.SnowflakeCompare"><code class="xref py py-class docutils literal notranslate"><span class="pre">SnowflakeCompare</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SnowflakeBackend.class_name">
+<span class="sig-name descname"><span class="pre">class_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'SnowflakeCompare'</span></span><a class="headerlink" href="#datacompy.cli.backends.SnowflakeBackend.class_name" title="Link to this definition">¶</a></dt>
+<dd><p>Name of the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> class within <a class="reference internal" href="#datacompy.cli.backends.SnowflakeBackend.module" title="datacompy.cli.backends.SnowflakeBackend.module"><code class="xref py py-attr docutils literal notranslate"><span class="pre">module</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SnowflakeBackend.extra">
+<span class="sig-name descname"><span class="pre">extra</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'snowflake'</span></span><a class="headerlink" href="#datacompy.cli.backends.SnowflakeBackend.extra" title="Link to this definition">¶</a></dt>
+<dd><p>Optional dependency extra required by this backend, if any.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SnowflakeBackend.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.cli.backends.SnowflakeBackend.load" title="Link to this definition">¶</a></dt>
+<dd><p>Validate <em>ref</em> and return it as a fully qualified table name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#datacompy.cli.errors.BadArgsError" title="datacompy.cli.errors.BadArgsError"><strong>BadArgsError</strong></a> – When <em>ref</em> is not a two or three part dotted identifier, or when a
+    two part reference cannot be qualified because the session has no
+    current database.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SnowflakeBackend.module">
+<span class="sig-name descname"><span class="pre">module</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'datacompy.snowflake'</span></span><a class="headerlink" href="#datacompy.cli.backends.SnowflakeBackend.module" title="Link to this definition">¶</a></dt>
+<dd><p>Module holding the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> class, imported on demand.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SnowflakeBackend.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'snowflake'</span></span><a class="headerlink" href="#datacompy.cli.backends.SnowflakeBackend.name" title="Link to this definition">¶</a></dt>
+<dd><p>Value accepted by <code class="docutils literal notranslate"><span class="pre">--backend</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SnowflakeBackend.open_session">
+<span class="sig-name descname"><span class="pre">open_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stack</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ExitStack</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#datacompy.cli.backends.SnowflakeBackend.open_session" title="Link to this definition">¶</a></dt>
+<dd><p>Return a Snowpark session built from <code class="docutils literal notranslate"><span class="pre">--snowflake-config</span></code> or the environment.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SparkBackend">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.cli.backends.</span></span><span class="sig-name descname"><span class="pre">SparkBackend</span></span><a class="headerlink" href="#datacompy.cli.backends.SparkBackend" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.cli.backends.CLIBackend" title="datacompy.cli.backends.CLIBackend"><code class="xref py py-class docutils literal notranslate"><span class="pre">CLIBackend</span></code></a></p>
+<p>Compare two files with Spark SQL.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SparkBackend.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare" title="datacompy.base.BaseCompare"><span class="pre">BaseCompare</span></a></span></span><a class="headerlink" href="#datacompy.cli.backends.SparkBackend.build" title="Link to this definition">¶</a></dt>
+<dd><p>Construct a <a class="reference internal" href="datacompy.html#datacompy.spark.SparkSQLCompare" title="datacompy.spark.SparkSQLCompare"><code class="xref py py-class docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SparkBackend.class_name">
+<span class="sig-name descname"><span class="pre">class_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'SparkSQLCompare'</span></span><a class="headerlink" href="#datacompy.cli.backends.SparkBackend.class_name" title="Link to this definition">¶</a></dt>
+<dd><p>Name of the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> class within <a class="reference internal" href="#datacompy.cli.backends.SparkBackend.module" title="datacompy.cli.backends.SparkBackend.module"><code class="xref py py-attr docutils literal notranslate"><span class="pre">module</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SparkBackend.extra">
+<span class="sig-name descname"><span class="pre">extra</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'spark'</span></span><a class="headerlink" href="#datacompy.cli.backends.SparkBackend.extra" title="Link to this definition">¶</a></dt>
+<dd><p>Optional dependency extra required by this backend, if any.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SparkBackend.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#datacompy.cli.backends.SparkBackend.load" title="Link to this definition">¶</a></dt>
+<dd><p>Read <em>ref</em> into a PySpark DataFrame.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SparkBackend.module">
+<span class="sig-name descname"><span class="pre">module</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'datacompy.spark'</span></span><a class="headerlink" href="#datacompy.cli.backends.SparkBackend.module" title="Link to this definition">¶</a></dt>
+<dd><p>Module holding the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> class, imported on demand.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SparkBackend.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'spark'</span></span><a class="headerlink" href="#datacompy.cli.backends.SparkBackend.name" title="Link to this definition">¶</a></dt>
+<dd><p>Value accepted by <code class="docutils literal notranslate"><span class="pre">--backend</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.backends.SparkBackend.open_session">
+<span class="sig-name descname"><span class="pre">open_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stack</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ExitStack</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#datacompy.cli.backends.SparkBackend.open_session" title="Link to this definition">¶</a></dt>
+<dd><p>Return a <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.sql.SparkSession</span></code>, stopping it only if we made it.</p>
+<p>A SparkSession is process wide, so <code class="docutils literal notranslate"><span class="pre">getOrCreate</span></code> returns the caller’s
+existing session when there is one. <a class="reference internal" href="#datacompy.cli.main" title="datacompy.cli.main"><code class="xref py py-func docutils literal notranslate"><span class="pre">datacompy.cli.main()</span></code></a> is a
+public function that can be called in process from a notebook or an
+Airflow task, and stopping a session the CLI did not create would kill
+the caller’s <code class="docutils literal notranslate"><span class="pre">SparkContext</span></code> along with it. Teardown is therefore
+registered only when this call is the one that created the session.</p>
+<p>For the same reason <code class="docutils literal notranslate"><span class="pre">--spark-app-name</span></code> has no effect when a session
+already exists: an application name cannot be changed once the
+<code class="docutils literal notranslate"><span class="pre">SparkContext</span></code> is running.</p>
+<p>The log level defaults to <code class="docutils literal notranslate"><span class="pre">ERROR</span></code> so PySpark’s INFO and WARN chatter
+stays out of the CLI’s own output. Override it with
+<code class="docutils literal notranslate"><span class="pre">DATACOMPY_SPARK_LOG_LEVEL</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.backends.compare_kwargs">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.backends.</span></span><span class="sig-name descname"><span class="pre">compare_kwargs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.cli.backends.compare_kwargs" title="Link to this definition">¶</a></dt>
+<dd><p>Build the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> constructor keyword arguments for <em>backend</em>.</p>
+<p>Walks <code class="xref py py-data docutils literal notranslate"><span class="pre">datacompy.cli.parser.OPTIONS</span></code>, keeping the rows that name a
+constructor keyword and that apply to this backend. Values that resolve to
+<code class="docutils literal notranslate"><span class="pre">None</span></code> are omitted so the library default applies.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.backends.infer_delimiter">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.backends.</span></span><span class="sig-name descname"><span class="pre">infer_delimiter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.cli.backends.infer_delimiter" title="Link to this definition">¶</a></dt>
+<dd><p>Return the field delimiter for <em>ref</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ref</strong> (<em>str</em>) – File path or URI.</p></li>
+<li><p><strong>override</strong> (<em>str</em><em>, </em><em>optional</em>) – Explicit <code class="docutils literal notranslate"><span class="pre">--csv-delimiter</span></code> value. Returned as is when provided, and
+applied to both inputs. This is also how a comma is forced for a comma
+delimited file that happens to be named <code class="docutils literal notranslate"><span class="pre">.tsv</span></code>, because
+<code class="docutils literal notranslate"><span class="pre">--input-format</span></code> selects the reader and says nothing about the
+delimiter.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The delimiter implied by the extension, or a comma for anything else.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.backends.infer_format">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.backends.</span></span><span class="sig-name descname"><span class="pre">infer_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.cli.backends.infer_format" title="Link to this definition">¶</a></dt>
+<dd><p>Return the input format for <em>ref</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ref</strong> (<em>str</em>) – File path or URI.</p></li>
+<li><p><strong>override</strong> (<em>str</em><em>, </em><em>optional</em>) – Explicit <code class="docutils literal notranslate"><span class="pre">--input-format</span></code> value. Returned as is when provided.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One of <code class="docutils literal notranslate"><span class="pre">&quot;csv&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;parquet&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;json&quot;</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#datacompy.cli.errors.BadArgsError" title="datacompy.cli.errors.BadArgsError"><strong>BadArgsError</strong></a> – When the extension is unrecognised and no override was given.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.backends.suspect_delimiter">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.backends.</span></span><span class="sig-name descname"><span class="pre">suspect_delimiter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.cli.backends.suspect_delimiter" title="Link to this definition">¶</a></dt>
+<dd><p>Return a warning when <em>frame</em> looks like it was read with the wrong delimiter.</p>
+<p>A CSV input read with the wrong delimiter collapses every row into one
+column whose name is the entire header line. Nothing fails at that point:
+the symptom surfaces later as a missing join column, or not at all under
+<code class="docutils literal notranslate"><span class="pre">--on-index</span></code>, where two mangled strings are compared instead. This is the
+last place where the reference, the resolved format and the resolved
+delimiter are all still in hand, so the guess is made here.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ref</strong> (<em>str</em>) – The <code class="docutils literal notranslate"><span class="pre">--left</span></code> or <code class="docutils literal notranslate"><span class="pre">--right</span></code> reference <em>frame</em> was read from.</p></li>
+<li><p><strong>namespace</strong> (<em>argparse.Namespace</em>) – Parsed arguments, for the format and delimiter overrides.</p></li>
+<li><p><strong>frame</strong> (<em>Any</em>) – The loaded DataFrame. Only <code class="docutils literal notranslate"><span class="pre">columns</span></code> is read, which every file
+backend exposes without touching the data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A warning message, or <code class="docutils literal notranslate"><span class="pre">None</span></code> when the parse looks fine. Only a single
+column CSV whose one column name <em>repeats</em> a delimiter other than the
+one used is reported, because that is what a collapsed multi-column
+header looks like. A genuine single column file, a name that merely
+contains one such delimiter (for example <code class="docutils literal notranslate"><span class="pre">a;b</span></code>), and a plain typo in
+<code class="docutils literal notranslate"><span class="pre">--on</span></code> all stay quiet.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-datacompy.cli.compare">
+<span id="datacompy-cli-compare-module"></span><h2>datacompy.cli.compare module<a class="headerlink" href="#module-datacompy.cli.compare" title="Link to this heading">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">datacompy</span> <span class="pre">compare</span></code> subcommand.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.compare.run_compare">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.compare.</span></span><span class="sig-name descname"><span class="pre">run_compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#datacompy.cli.compare.run_compare" title="Link to this definition">¶</a></dt>
+<dd><p>Run a comparison and return the process exit code.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>namespace</strong> (<em>argparse.Namespace</em>) – Parsed arguments from the <code class="docutils literal notranslate"><span class="pre">compare</span></code> subparser.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">0</span></code> when the datasets match or stay within <code class="docutils literal notranslate"><span class="pre">--max-unequal-rows</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">1</span></code> when they differ. Problems with the arguments, the input
+files, or the backend raise a
+<a class="reference internal" href="#datacompy.cli.errors.CLIError" title="datacompy.cli.errors.CLIError"><code class="xref py py-class docutils literal notranslate"><span class="pre">CLIError</span></code></a>, which
+<a class="reference internal" href="#datacompy.cli.main" title="datacompy.cli.main"><code class="xref py py-func docutils literal notranslate"><span class="pre">datacompy.cli.main()</span></code></a> turns into exit code <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.compare.validate_arguments">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.compare.</span></span><span class="sig-name descname"><span class="pre">validate_arguments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.cli.compare.validate_arguments" title="Link to this definition">¶</a></dt>
+<dd><p>Reject argument combinations that argparse cannot express.</p>
+<p>Per value rules (delimiter length, non negative counts, tolerance syntax)
+are enforced by the <code class="docutils literal notranslate"><span class="pre">type=</span></code> callables in
+<a class="reference internal" href="#module-datacompy.cli.parser" title="datacompy.cli.parser"><code class="xref py py-mod docutils literal notranslate"><span class="pre">datacompy.cli.parser</span></code></a>. This function covers the rules that need to
+look at more than one argument at a time.</p>
+<p>Must run before <a class="reference internal" href="#datacompy.cli.parser.fill_defaults" title="datacompy.cli.parser.fill_defaults"><code class="xref py py-func docutils literal notranslate"><span class="pre">datacompy.cli.parser.fill_defaults()</span></code></a>, which is what
+makes <a class="reference internal" href="#datacompy.cli.parser.Opt.was_given" title="datacompy.cli.parser.Opt.was_given"><code class="xref py py-meth docutils literal notranslate"><span class="pre">was_given()</span></code></a> distinguish an explicitly
+passed flag from an absent one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#datacompy.cli.errors.BadArgsError" title="datacompy.cli.errors.BadArgsError"><strong>BadArgsError</strong></a> – On any invalid combination.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.compare.within_threshold">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.compare.</span></span><span class="sig-name descname"><span class="pre">within_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="datacompy.html#datacompy.report.ReportData" title="datacompy.report.ReportData"><span class="pre">ReportData</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.cli.compare.within_threshold" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> when the comparison counts as a pass.</p>
+<p>Without <code class="docutils literal notranslate"><span class="pre">--max-unequal-rows</span></code> this reproduces
+<a class="reference internal" href="datacompy.html#datacompy.base.BaseCompare.matches" title="datacompy.base.BaseCompare.matches"><code class="xref py py-meth docutils literal notranslate"><span class="pre">matches()</span></code></a>. With it, the datasets pass
+while the number of differing rows stays at or below the threshold, and
+while the columns line up unless <code class="docutils literal notranslate"><span class="pre">--ignore-extra-columns</span></code> was given.</p>
+<p>Both branches read <em>report_data</em>, which <code class="docutils literal notranslate"><span class="pre">build_report_data</span></code> has already
+computed. Calling <code class="docutils literal notranslate"><span class="pre">matches()</span></code> here instead would recount straight from the
+DataFrames, and on Spark and Snowflake each of those counts is a distributed
+action, so the default invocation would scan the data a second time after
+the report had already been rendered.</p>
+</dd></dl>
+
+</section>
+<section id="module-datacompy.cli.errors">
+<span id="datacompy-cli-errors-module"></span><h2>datacompy.cli.errors module<a class="headerlink" href="#module-datacompy.cli.errors" title="Link to this heading">¶</a></h2>
+<p>Exception hierarchy for the DataComPy command line interface.</p>
+<p>Every exception defined here carries an <code class="docutils literal notranslate"><span class="pre">exit_code</span></code> so that
+<a class="reference internal" href="#datacompy.cli.main" title="datacompy.cli.main"><code class="xref py py-func docutils literal notranslate"><span class="pre">datacompy.cli.main()</span></code></a> can catch <a class="reference internal" href="#datacompy.cli.errors.CLIError" title="datacompy.cli.errors.CLIError"><code class="xref py py-class docutils literal notranslate"><span class="pre">CLIError</span></code></a> at a single site and
+translate it into a friendly message plus the right process exit code.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="datacompy.cli.errors.BadArgsError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.cli.errors.</span></span><span class="sig-name descname"><span class="pre">BadArgsError</span></span><a class="headerlink" href="#datacompy.cli.errors.BadArgsError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.cli.errors.CLIError" title="datacompy.cli.errors.CLIError"><code class="xref py py-class docutils literal notranslate"><span class="pre">CLIError</span></code></a></p>
+<p>Raised when arguments are individually valid but invalid in combination.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="datacompy.cli.errors.CLIError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.cli.errors.</span></span><span class="sig-name descname"><span class="pre">CLIError</span></span><a class="headerlink" href="#datacompy.cli.errors.CLIError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Base class for expected CLI failures. Always maps to exit code 2.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.errors.CLIError.exit_code">
+<span class="sig-name descname"><span class="pre">exit_code</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></span><a class="headerlink" href="#datacompy.cli.errors.CLIError.exit_code" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="datacompy.cli.errors.LoadError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.cli.errors.</span></span><span class="sig-name descname"><span class="pre">LoadError</span></span><a class="headerlink" href="#datacompy.cli.errors.LoadError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.cli.errors.CLIError" title="datacompy.cli.errors.CLIError"><code class="xref py py-class docutils literal notranslate"><span class="pre">CLIError</span></code></a></p>
+<p>Raised when a dataset cannot be read.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="datacompy.cli.errors.MissingExtraError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.cli.errors.</span></span><span class="sig-name descname"><span class="pre">MissingExtraError</span></span><a class="headerlink" href="#datacompy.cli.errors.MissingExtraError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.cli.errors.CLIError" title="datacompy.cli.errors.CLIError"><code class="xref py py-class docutils literal notranslate"><span class="pre">CLIError</span></code></a></p>
+<p>Raised when a backend needs an optional dependency that is not installed.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="datacompy.cli.errors.OutputError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.cli.errors.</span></span><span class="sig-name descname"><span class="pre">OutputError</span></span><a class="headerlink" href="#datacompy.cli.errors.OutputError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#datacompy.cli.errors.CLIError" title="datacompy.cli.errors.CLIError"><code class="xref py py-class docutils literal notranslate"><span class="pre">CLIError</span></code></a></p>
+<p>Raised when the report cannot be written to the requested destination.</p>
+</dd></dl>
+
+</section>
+<section id="module-datacompy.cli.output">
+<span id="datacompy-cli-output-module"></span><h2>datacompy.cli.output module<a class="headerlink" href="#module-datacompy.cli.output" title="Link to this heading">¶</a></h2>
+<p>Report rendering and delivery for the DataComPy CLI.</p>
+<p>Rendering and destination are independent: <code class="docutils literal notranslate"><span class="pre">--report-format</span></code> chooses between
+text, JSON, and HTML, and <code class="docutils literal notranslate"><span class="pre">--output</span></code> chooses between stdout and a file. All
+three renderings come from <a class="reference internal" href="datacompy.html#datacompy.report.ReportData" title="datacompy.report.ReportData"><code class="xref py py-class docutils literal notranslate"><span class="pre">datacompy.report.ReportData</span></code></a>, so the CLI adds
+no templating of its own.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.output.emit">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.output.</span></span><span class="sig-name descname"><span class="pre">emit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">report_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="datacompy.html#datacompy.report.ReportData" title="datacompy.report.ReportData"><span class="pre">ReportData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.cli.output.emit" title="Link to this definition">¶</a></dt>
+<dd><p>Write the report to stdout, to <em>output</em>, or to both.</p>
+<p><code class="docutils literal notranslate"><span class="pre">quiet</span></code> suppresses stdout only. A file requested with <code class="docutils literal notranslate"><span class="pre">--output</span></code> is
+always written, since asking for a file is an explicit request for it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#datacompy.cli.errors.OutputError" title="datacompy.cli.errors.OutputError"><strong>OutputError</strong></a> – When the destination file cannot be written.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.output.print_error">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.output.</span></span><span class="sig-name descname"><span class="pre">print_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.cli.output.print_error" title="Link to this definition">¶</a></dt>
+<dd><p>Write <em>message</em> to stderr with a <code class="docutils literal notranslate"><span class="pre">datacompy:</span></code> prefix.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.output.print_warning">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.output.</span></span><span class="sig-name descname"><span class="pre">print_warning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.cli.output.print_warning" title="Link to this definition">¶</a></dt>
+<dd><p>Write <em>message</em> to stderr with a <code class="docutils literal notranslate"><span class="pre">datacompy:</span> <span class="pre">warning:</span></code> prefix.</p>
+<p>Warnings are diagnostics rather than output, so they ignore <code class="docutils literal notranslate"><span class="pre">--quiet</span></code>,
+which suppresses the report itself.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.output.render">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.output.</span></span><span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">report_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="datacompy.html#datacompy.report.ReportData" title="datacompy.report.ReportData"><span class="pre">ReportData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.cli.output.render" title="Link to this definition">¶</a></dt>
+<dd><p>Render <em>report_data</em> in the requested format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>report_data</strong> (<a class="reference internal" href="datacompy.html#datacompy.report.ReportData" title="datacompy.report.ReportData"><em>datacompy.report.ReportData</em></a>) – Structured comparison result from <code class="docutils literal notranslate"><span class="pre">compare.build_report_data()</span></code>.</p></li>
+<li><p><strong>report_format</strong> (<em>{&quot;text&quot;</em><em>, </em><em>&quot;json&quot;</em><em>, </em><em>&quot;html&quot;}</em>) – Rendering to produce.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The rendered report.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-datacompy.cli.parser">
+<span id="datacompy-cli-parser-module"></span><h2>datacompy.cli.parser module<a class="headerlink" href="#module-datacompy.cli.parser" title="Link to this heading">¶</a></h2>
+<p>Declarative argument specification for the DataComPy CLI.</p>
+<p>The module holds a single source of truth, <code class="xref py py-data docutils literal notranslate"><span class="pre">OPTIONS</span></code>, describing every
+option the <code class="docutils literal notranslate"><span class="pre">compare</span></code> subcommand accepts. Each <a class="reference internal" href="#datacompy.cli.parser.Opt" title="datacompy.cli.parser.Opt"><code class="xref py py-class docutils literal notranslate"><span class="pre">Opt</span></code></a> records both how
+argparse should register the flag and which <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> constructor keyword it
+maps to, so <a class="reference internal" href="#datacompy.cli.parser.build_parser" title="datacompy.cli.parser.build_parser"><code class="xref py py-func docutils literal notranslate"><span class="pre">build_parser()</span></code></a> and
+<a class="reference internal" href="#datacompy.cli.backends.compare_kwargs" title="datacompy.cli.backends.compare_kwargs"><code class="xref py py-func docutils literal notranslate"><span class="pre">datacompy.cli.backends.compare_kwargs()</span></code></a> are generated from the same data
+rather than maintained as two parallel hand-written lists.</p>
+<p>Adding a library keyword argument to the CLI is therefore a single new row, and
+<code class="docutils literal notranslate"><span class="pre">tests/cli/test_parser.py</span></code> checks every <a class="reference internal" href="#datacompy.cli.parser.Opt.kwarg" title="datacompy.cli.parser.Opt.kwarg"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Opt.kwarg</span></code></a> against the real
+constructor signature so the two can never silently drift apart.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="datacompy.cli.parser.GROUP_INPUT">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.parser.</span></span><span class="sig-name descname"><span class="pre">GROUP_INPUT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'input'</span></span><a class="headerlink" href="#datacompy.cli.parser.GROUP_INPUT" title="Link to this definition">¶</a></dt>
+<dd><p>Argument group headings, in the order they appear in <code class="docutils literal notranslate"><span class="pre">--help</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="datacompy.cli.parser.OPTIONS_BY_FLAG">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.parser.</span></span><span class="sig-name descname"><span class="pre">OPTIONS_BY_FLAG</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#datacompy.cli.parser.Opt" title="datacompy.cli.parser.Opt"><span class="pre">Opt</span></a><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'--abs-tol':</span> <span class="pre">Opt(flags=('--abs-tol',),</span> <span class="pre">help='Absolute</span> <span class="pre">tolerance</span> <span class="pre">for</span> <span class="pre">numeric</span> <span class="pre">comparisons</span> <span class="pre">(default</span> <span class="pre">0).</span> <span class="pre">Accepts</span> <span class="pre">a</span> <span class="pre">single</span> <span class="pre">number</span> <span class="pre">applied</span> <span class="pre">to</span> <span class="pre">every</span> <span class="pre">column,</span> <span class="pre">or</span> <span class="pre">repeated</span> <span class="pre">COLUMN=VALUE</span> <span class="pre">pairs</span> <span class="pre">for</span> <span class="pre">per</span> <span class="pre">column</span> <span class="pre">tolerances.',</span> <span class="pre">group='comparison',</span> <span class="pre">kwarg='abs_tol',</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=functools.partial(&lt;function</span> <span class="pre">_combine_tolerances&gt;,</span> <span class="pre">flag='--abs-tol'),</span> <span class="pre">default=None,</span> <span class="pre">options={'action':</span> <span class="pre">'append',</span> <span class="pre">'type':</span> <span class="pre">&lt;function</span> <span class="pre">tolerance&gt;,</span> <span class="pre">'metavar':</span> <span class="pre">'N|COL=N'}),</span> <span class="pre">'--backend':</span> <span class="pre">Opt(flags=('--backend',),</span> <span class="pre">help='Comparison</span> <span class="pre">backend.</span> <span class="pre">Polars</span> <span class="pre">is</span> <span class="pre">fast</span> <span class="pre">and</span> <span class="pre">the</span> <span class="pre">default.</span> <span class="pre">Use</span> <span class="pre">pandas</span> <span class="pre">for</span> <span class="pre">index</span> <span class="pre">based</span> <span class="pre">joins,</span> <span class="pre">spark</span> <span class="pre">for</span> <span class="pre">distributed</span> <span class="pre">data,</span> <span class="pre">or</span> <span class="pre">snowflake</span> <span class="pre">to</span> <span class="pre">compare</span> <span class="pre">tables</span> <span class="pre">in</span> <span class="pre">place.',</span> <span class="pre">group='backend',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default='polars',</span> <span class="pre">options={'choices':</span> <span class="pre">['pandas',</span> <span class="pre">'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark']}),</span> <span class="pre">'--cache-intermediates':</span> <span class="pre">Opt(flags=('--cache-intermediates',),</span> <span class="pre">help='Cache</span> <span class="pre">intermediate</span> <span class="pre">DataFrames</span> <span class="pre">(default:</span> <span class="pre">enabled).</span> <span class="pre">Pass</span> <span class="pre">--no-cache-intermediates</span> <span class="pre">on</span> <span class="pre">Databricks</span> <span class="pre">Serverless</span> <span class="pre">and</span> <span class="pre">other</span> <span class="pre">environments</span> <span class="pre">that</span> <span class="pre">do</span> <span class="pre">not</span> <span class="pre">support</span> <span class="pre">caching.',</span> <span class="pre">group='backend</span> <span class="pre">specific',</span> <span class="pre">kwarg='cache_intermediates',</span> <span class="pre">backends=frozenset({'spark'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=True,</span> <span class="pre">options={'action':</span> <span class="pre">&lt;class</span> <span class="pre">'argparse.BooleanOptionalAction'&gt;}),</span> <span class="pre">'--cast-column-names-lower':</span> <span class="pre">Opt(flags=('--cast-column-names-lower',),</span> <span class="pre">help='Cast</span> <span class="pre">column</span> <span class="pre">names</span> <span class="pre">to</span> <span class="pre">lowercase</span> <span class="pre">before</span> <span class="pre">comparing</span> <span class="pre">(default:</span> <span class="pre">enabled).</span> <span class="pre">Not</span> <span class="pre">applicable</span> <span class="pre">to</span> <span class="pre">snowflake,</span> <span class="pre">which</span> <span class="pre">normalises</span> <span class="pre">identifiers</span> <span class="pre">to</span> <span class="pre">uppercase.',</span> <span class="pre">group='comparison',</span> <span class="pre">kwarg='cast_column_names_lower',</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=True,</span> <span class="pre">options={'action':</span> <span class="pre">&lt;class</span> <span class="pre">'argparse.BooleanOptionalAction'&gt;}),</span> <span class="pre">'--column-count':</span> <span class="pre">Opt(flags=('--column-count',),</span> <span class="pre">help='Maximum</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">columns</span> <span class="pre">to</span> <span class="pre">show</span> <span class="pre">in</span> <span class="pre">unique</span> <span class="pre">row</span> <span class="pre">samples</span> <span class="pre">(default</span> <span class="pre">10).',</span> <span class="pre">group='report',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=10,</span> <span class="pre">options={'type':</span> <span class="pre">&lt;function</span> <span class="pre">non_negative_int&gt;,</span> <span class="pre">'metavar':</span> <span class="pre">'N'}),</span> <span class="pre">'--csv-delimiter':</span> <span class="pre">Opt(flags=('--csv-delimiter',),</span> <span class="pre">help=&quot;Field</span> <span class="pre">delimiter</span> <span class="pre">for</span> <span class="pre">CSV</span> <span class="pre">input.</span> <span class="pre">Inferred</span> <span class="pre">from</span> <span class="pre">each</span> <span class="pre">file</span> <span class="pre">extension,</span> <span class="pre">a</span> <span class="pre">tab</span> <span class="pre">for</span> <span class="pre">.tsv</span> <span class="pre">and</span> <span class="pre">a</span> <span class="pre">comma</span> <span class="pre">otherwise.</span> <span class="pre">This</span> <span class="pre">flag</span> <span class="pre">overrides</span> <span class="pre">inference</span> <span class="pre">for</span> <span class="pre">both</span> <span class="pre">inputs:</span> <span class="pre">use</span> <span class="pre">'\\t'</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">tab</span> <span class="pre">separated</span> <span class="pre">file</span> <span class="pre">with</span> <span class="pre">an</span> <span class="pre">unusual</span> <span class="pre">extension,</span> <span class="pre">or</span> <span class="pre">','</span> <span class="pre">to</span> <span class="pre">force</span> <span class="pre">a</span> <span class="pre">comma</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">comma</span> <span class="pre">separated</span> <span class="pre">file</span> <span class="pre">named</span> <span class="pre">.tsv.&quot;,</span> <span class="pre">group='input',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=None,</span> <span class="pre">options={'type':</span> <span class="pre">&lt;function</span> <span class="pre">single_char&gt;,</span> <span class="pre">'metavar':</span> <span class="pre">'CHAR'}),</span> <span class="pre">'--df1-name':</span> <span class="pre">Opt(flags=('--df1-name',),</span> <span class="pre">help='Label</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">left</span> <span class="pre">dataset</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">report</span> <span class="pre">(default:</span> <span class="pre">derived</span> <span class="pre">from</span> <span class="pre">--left).',</span> <span class="pre">group='naming',</span> <span class="pre">kwarg='df1_name',</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=functools.partial(&lt;function</span> <span class="pre">_resolve_dataset_name&gt;,</span> <span class="pre">side='left'),</span> <span class="pre">default=None,</span> <span class="pre">options={'metavar':</span> <span class="pre">'NAME'}),</span> <span class="pre">'--df2-name':</span> <span class="pre">Opt(flags=('--df2-name',),</span> <span class="pre">help='Label</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">right</span> <span class="pre">dataset</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">report</span> <span class="pre">(default:</span> <span class="pre">derived</span> <span class="pre">from</span> <span class="pre">--right).',</span> <span class="pre">group='naming',</span> <span class="pre">kwarg='df2_name',</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=functools.partial(&lt;function</span> <span class="pre">_resolve_dataset_name&gt;,</span> <span class="pre">side='right'),</span> <span class="pre">default=None,</span> <span class="pre">options={'metavar':</span> <span class="pre">'NAME'}),</span> <span class="pre">'--ignore-case':</span> <span class="pre">Opt(flags=('--ignore-case',),</span> <span class="pre">help='Ignore</span> <span class="pre">case</span> <span class="pre">in</span> <span class="pre">string</span> <span class="pre">columns.',</span> <span class="pre">group='comparison',</span> <span class="pre">kwarg='ignore_case',</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=False,</span> <span class="pre">options={'action':</span> <span class="pre">'store_true'}),</span> <span class="pre">'--ignore-extra-columns':</span> <span class="pre">Opt(flags=('--ignore-extra-columns',),</span> <span class="pre">help='Treat</span> <span class="pre">the</span> <span class="pre">datasets</span> <span class="pre">as</span> <span class="pre">matching</span> <span class="pre">even</span> <span class="pre">when</span> <span class="pre">one</span> <span class="pre">side</span> <span class="pre">has</span> <span class="pre">columns</span> <span class="pre">the</span> <span class="pre">other</span> <span class="pre">does</span> <span class="pre">not.',</span> <span class="pre">group='comparison',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=False,</span> <span class="pre">options={'action':</span> <span class="pre">'store_true'}),</span> <span class="pre">'--ignore-spaces':</span> <span class="pre">Opt(flags=('--ignore-spaces',),</span> <span class="pre">help='Ignore</span> <span class="pre">leading</span> <span class="pre">and</span> <span class="pre">trailing</span> <span class="pre">whitespace</span> <span class="pre">in</span> <span class="pre">string</span> <span class="pre">columns.',</span> <span class="pre">group='comparison',</span> <span class="pre">kwarg='ignore_spaces',</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=False,</span> <span class="pre">options={'action':</span> <span class="pre">'store_true'}),</span> <span class="pre">'--ignore-unique-rows':</span> <span class="pre">Opt(flags=('--ignore-unique-rows',),</span> <span class="pre">help='With</span> <span class="pre">--max-unequal-rows,</span> <span class="pre">exclude</span> <span class="pre">rows</span> <span class="pre">that</span> <span class="pre">exist</span> <span class="pre">in</span> <span class="pre">only</span> <span class="pre">one</span> <span class="pre">dataset</span> <span class="pre">from</span> <span class="pre">the</span> <span class="pre">difference</span> <span class="pre">count.',</span> <span class="pre">group='report',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=False,</span> <span class="pre">options={'action':</span> <span class="pre">'store_true'}),</span> <span class="pre">'--input-format':</span> <span class="pre">Opt(flags=('--input-format',),</span> <span class="pre">help='Force</span> <span class="pre">the</span> <span class="pre">input</span> <span class="pre">file</span> <span class="pre">format</span> <span class="pre">for</span> <span class="pre">both</span> <span class="pre">datasets.</span> <span class="pre">Omit</span> <span class="pre">to</span> <span class="pre">infer</span> <span class="pre">it</span> <span class="pre">from</span> <span class="pre">each</span> <span class="pre">file</span> <span class="pre">extension,</span> <span class="pre">which</span> <span class="pre">also</span> <span class="pre">handles</span> <span class="pre">mixed</span> <span class="pre">format</span> <span class="pre">inputs.',</span> <span class="pre">group='input',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=None,</span> <span class="pre">options={'choices':</span> <span class="pre">['csv',</span> <span class="pre">'parquet',</span> <span class="pre">'json']}),</span> <span class="pre">'--left':</span> <span class="pre">Opt(flags=('--left',),</span> <span class="pre">help='Path,</span> <span class="pre">URI,</span> <span class="pre">or</span> <span class="pre">Snowflake</span> <span class="pre">table</span> <span class="pre">reference</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">left</span> <span class="pre">dataset.',</span> <span class="pre">group='input',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=None,</span> <span class="pre">options={'required':</span> <span class="pre">True,</span> <span class="pre">'metavar':</span> <span class="pre">'REF'}),</span> <span class="pre">'--max-unequal-rows':</span> <span class="pre">Opt(flags=('--max-unequal-rows',),</span> <span class="pre">help='Exit</span> <span class="pre">0</span> <span class="pre">when</span> <span class="pre">the</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">differing</span> <span class="pre">rows</span> <span class="pre">is</span> <span class="pre">at</span> <span class="pre">most</span> <span class="pre">N,</span> <span class="pre">and</span> <span class="pre">1</span> <span class="pre">otherwise.</span> <span class="pre">Counts</span> <span class="pre">value</span> <span class="pre">mismatches</span> <span class="pre">plus</span> <span class="pre">rows</span> <span class="pre">present</span> <span class="pre">in</span> <span class="pre">only</span> <span class="pre">one</span> <span class="pre">dataset;</span> <span class="pre">pass</span> <span class="pre">--ignore-unique-rows</span> <span class="pre">to</span> <span class="pre">count</span> <span class="pre">value</span> <span class="pre">mismatches</span> <span class="pre">only.',</span> <span class="pre">group='report',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=None,</span> <span class="pre">options={'type':</span> <span class="pre">&lt;function</span> <span class="pre">non_negative_int&gt;,</span> <span class="pre">'metavar':</span> <span class="pre">'N'}),</span> <span class="pre">'--on':</span> <span class="pre">Opt(flags=('--on',),</span> <span class="pre">help='Join</span> <span class="pre">column.</span> <span class="pre">Accepts</span> <span class="pre">a</span> <span class="pre">comma</span> <span class="pre">separated</span> <span class="pre">list</span> <span class="pre">(--on</span> <span class="pre">id,date)</span> <span class="pre">or</span> <span class="pre">repeated</span> <span class="pre">flags</span> <span class="pre">(--on</span> <span class="pre">id</span> <span class="pre">--on</span> <span class="pre">date).</span> <span class="pre">Use</span> <span class="pre">the</span> <span class="pre">repeated</span> <span class="pre">form</span> <span class="pre">for</span> <span class="pre">column</span> <span class="pre">names</span> <span class="pre">that</span> <span class="pre">contain</span> <span class="pre">a</span> <span class="pre">comma.',</span> <span class="pre">group='join</span> <span class="pre">keys',</span> <span class="pre">kwarg='join_columns',</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=&lt;function</span> <span class="pre">_flatten_join_columns&gt;,</span> <span class="pre">default=None,</span> <span class="pre">options={'action':</span> <span class="pre">'append',</span> <span class="pre">'type':</span> <span class="pre">&lt;function</span> <span class="pre">join_column_group&gt;,</span> <span class="pre">'metavar':</span> <span class="pre">'COL[,COL...]'}),</span> <span class="pre">'--on-index':</span> <span class="pre">Opt(flags=('--on-index',),</span> <span class="pre">help='Join</span> <span class="pre">on</span> <span class="pre">the</span> <span class="pre">DataFrame</span> <span class="pre">index</span> <span class="pre">instead</span> <span class="pre">of</span> <span class="pre">columns.</span> <span class="pre">Pandas</span> <span class="pre">backend</span> <span class="pre">only.',</span> <span class="pre">group='join</span> <span class="pre">keys',</span> <span class="pre">kwarg='on_index',</span> <span class="pre">backends=frozenset({'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=False,</span> <span class="pre">options={'action':</span> <span class="pre">'store_true'}),</span> <span class="pre">'--output':</span> <span class="pre">Opt(flags=('--output',),</span> <span class="pre">help='Write</span> <span class="pre">the</span> <span class="pre">report</span> <span class="pre">to</span> <span class="pre">this</span> <span class="pre">file</span> <span class="pre">instead</span> <span class="pre">of</span> <span class="pre">stdout.</span> <span class="pre">Parent</span> <span class="pre">directories</span> <span class="pre">are</span> <span class="pre">created</span> <span class="pre">as</span> <span class="pre">needed.',</span> <span class="pre">group='output',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=None,</span> <span class="pre">options={'type':</span> <span class="pre">&lt;class</span> <span class="pre">'pathlib.Path'&gt;,</span> <span class="pre">'metavar':</span> <span class="pre">'PATH'}),</span> <span class="pre">'--quiet':</span> <span class="pre">Opt(flags=('--quiet',),</span> <span class="pre">help='Do</span> <span class="pre">not</span> <span class="pre">print</span> <span class="pre">the</span> <span class="pre">report</span> <span class="pre">to</span> <span class="pre">stdout.</span> <span class="pre">A</span> <span class="pre">file</span> <span class="pre">named</span> <span class="pre">by</span> <span class="pre">--output</span> <span class="pre">is</span> <span class="pre">still</span> <span class="pre">written.</span> <span class="pre">The</span> <span class="pre">exit</span> <span class="pre">code</span> <span class="pre">still</span> <span class="pre">reflects</span> <span class="pre">the</span> <span class="pre">result.',</span> <span class="pre">group='output',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=False,</span> <span class="pre">options={'action':</span> <span class="pre">'store_true'}),</span> <span class="pre">'--rel-tol':</span> <span class="pre">Opt(flags=('--rel-tol',),</span> <span class="pre">help='Relative</span> <span class="pre">tolerance</span> <span class="pre">for</span> <span class="pre">numeric</span> <span class="pre">comparisons</span> <span class="pre">(default</span> <span class="pre">0).</span> <span class="pre">Accepts</span> <span class="pre">a</span> <span class="pre">single</span> <span class="pre">number</span> <span class="pre">or</span> <span class="pre">repeated</span> <span class="pre">COLUMN=VALUE</span> <span class="pre">pairs.',</span> <span class="pre">group='comparison',</span> <span class="pre">kwarg='rel_tol',</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=functools.partial(&lt;function</span> <span class="pre">_combine_tolerances&gt;,</span> <span class="pre">flag='--rel-tol'),</span> <span class="pre">default=None,</span> <span class="pre">options={'action':</span> <span class="pre">'append',</span> <span class="pre">'type':</span> <span class="pre">&lt;function</span> <span class="pre">tolerance&gt;,</span> <span class="pre">'metavar':</span> <span class="pre">'N|COL=N'}),</span> <span class="pre">'--report-format':</span> <span class="pre">Opt(flags=('--report-format',),</span> <span class="pre">help='Report</span> <span class="pre">rendering</span> <span class="pre">(default:</span> <span class="pre">text).',</span> <span class="pre">group='output',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default='text',</span> <span class="pre">options={'choices':</span> <span class="pre">['text',</span> <span class="pre">'json',</span> <span class="pre">'html']}),</span> <span class="pre">'--right':</span> <span class="pre">Opt(flags=('--right',),</span> <span class="pre">help='Path,</span> <span class="pre">URI,</span> <span class="pre">or</span> <span class="pre">Snowflake</span> <span class="pre">table</span> <span class="pre">reference</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">right</span> <span class="pre">dataset.',</span> <span class="pre">group='input',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=None,</span> <span class="pre">options={'required':</span> <span class="pre">True,</span> <span class="pre">'metavar':</span> <span class="pre">'REF'}),</span> <span class="pre">'--sample-count':</span> <span class="pre">Opt(flags=('--sample-count',),</span> <span class="pre">help='Maximum</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">sample</span> <span class="pre">mismatch</span> <span class="pre">rows</span> <span class="pre">to</span> <span class="pre">show</span> <span class="pre">per</span> <span class="pre">column</span> <span class="pre">(default</span> <span class="pre">10).',</span> <span class="pre">group='report',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark',</span> <span class="pre">'pandas'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=10,</span> <span class="pre">options={'type':</span> <span class="pre">&lt;function</span> <span class="pre">non_negative_int&gt;,</span> <span class="pre">'metavar':</span> <span class="pre">'N'}),</span> <span class="pre">'--snowflake-config':</span> <span class="pre">Opt(flags=('--snowflake-config',),</span> <span class="pre">help='Path</span> <span class="pre">to</span> <span class="pre">a</span> <span class="pre">JSON</span> <span class="pre">file</span> <span class="pre">of</span> <span class="pre">Snowflake</span> <span class="pre">connection</span> <span class="pre">parameters.</span> <span class="pre">When</span> <span class="pre">omitted</span> <span class="pre">the</span> <span class="pre">session</span> <span class="pre">is</span> <span class="pre">built</span> <span class="pre">from</span> <span class="pre">SNOWFLAKE_ACCOUNT</span> <span class="pre">plus</span> <span class="pre">one</span> <span class="pre">of</span> <span class="pre">SNOWFLAKE_TOKEN</span> <span class="pre">(OAuth),</span> <span class="pre">SNOWFLAKE_AUTHENTICATOR,</span> <span class="pre">or</span> <span class="pre">SNOWFLAKE_PASSWORD.</span> <span class="pre">SNOWFLAKE_USER</span> <span class="pre">is</span> <span class="pre">required</span> <span class="pre">for</span> <span class="pre">everything</span> <span class="pre">except</span> <span class="pre">OAuth,</span> <span class="pre">and</span> <span class="pre">SNOWFLAKE_ROLE,</span> <span class="pre">SNOWFLAKE_WAREHOUSE,</span> <span class="pre">SNOWFLAKE_DATABASE,</span> <span class="pre">and</span> <span class="pre">SNOWFLAKE_SCHEMA</span> <span class="pre">are</span> <span class="pre">optional.',</span> <span class="pre">group='backend</span> <span class="pre">specific',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'snowflake'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default=None,</span> <span class="pre">options={'type':</span> <span class="pre">&lt;class</span> <span class="pre">'pathlib.Path'&gt;,</span> <span class="pre">'metavar':</span> <span class="pre">'PATH'}),</span> <span class="pre">'--spark-app-name':</span> <span class="pre">Opt(flags=('--spark-app-name',),</span> <span class="pre">help='Spark</span> <span class="pre">application</span> <span class="pre">name.',</span> <span class="pre">group='backend</span> <span class="pre">specific',</span> <span class="pre">kwarg=None,</span> <span class="pre">backends=frozenset({'spark'}),</span> <span class="pre">resolve=None,</span> <span class="pre">default='datacompy-cli',</span> <span class="pre">options={'metavar':</span> <span class="pre">'NAME'})}</span></span><a class="headerlink" href="#datacompy.cli.parser.OPTIONS_BY_FLAG" title="Link to this definition">¶</a></dt>
+<dd><p>Lookup from primary flag to specification row, for targeted validation.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">datacompy.cli.parser.</span></span><span class="sig-name descname"><span class="pre">Opt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">flags:</span> <span class="pre">tuple[str,</span> <span class="pre">...],</span> <span class="pre">help:</span> <span class="pre">str,</span> <span class="pre">group:</span> <span class="pre">str,</span> <span class="pre">kwarg:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">backends:</span> <span class="pre">frozenset[str]</span> <span class="pre">=</span> <span class="pre">frozenset({'pandas',</span> <span class="pre">'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark'}),</span> <span class="pre">resolve:</span> <span class="pre">~collections.abc.Callable[[~typing.Any,</span> <span class="pre">~argparse.Namespace],</span> <span class="pre">~typing.Any]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">default:</span> <span class="pre">~typing.Any</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">options:</span> <span class="pre">dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#datacompy.cli.parser.Opt" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>One command line option and its mapping onto a <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> keyword.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flags</strong> (<em>tuple</em><em> of </em><em>str</em>) – Option strings passed to <code class="docutils literal notranslate"><span class="pre">argparse.ArgumentParser.add_argument</span></code>.</p></li>
+<li><p><strong>help</strong> (<em>str</em>) – Help text shown in <code class="docutils literal notranslate"><span class="pre">--help</span></code>.</p></li>
+<li><p><strong>group</strong> (<em>str</em>) – Argument group heading the option is listed under.</p></li>
+<li><p><strong>kwarg</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the <code class="docutils literal notranslate"><span class="pre">*Compare</span></code> constructor keyword this option supplies.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> marks the option as CLI only (for example <code class="docutils literal notranslate"><span class="pre">--output</span></code>).</p></li>
+<li><p><strong>backends</strong> (<em>frozenset</em><em> of </em><em>str</em>) – Backends that accept this option. Passing the flag with any other
+backend is rejected by
+<a class="reference internal" href="#datacompy.cli.compare.validate_arguments" title="datacompy.cli.compare.validate_arguments"><code class="xref py py-func docutils literal notranslate"><span class="pre">datacompy.cli.compare.validate_arguments()</span></code></a>.</p></li>
+<li><p><strong>resolve</strong> (<em>callable</em><em>, </em><em>optional</em>) – Post-processing applied to the raw parsed value before it is handed to
+the constructor. Receives <code class="docutils literal notranslate"><span class="pre">(raw_value,</span> <span class="pre">namespace)</span></code>. Used where the
+parsed shape differs from the library shape, such as flattening
+repeated <code class="docutils literal notranslate"><span class="pre">--on</span></code> groups into a single list.</p></li>
+<li><p><strong>default</strong> (<em>Any</em>) – Value used when the flag is absent. Options are registered with
+<code class="docutils literal notranslate"><span class="pre">argparse.SUPPRESS</span></code> so that “left at the default” stays
+distinguishable from “explicitly passed”.</p></li>
+<li><p><strong>options</strong> (<em>dict</em>) – Extra keyword arguments forwarded to <code class="docutils literal notranslate"><span class="pre">add_argument</span></code> (<code class="docutils literal notranslate"><span class="pre">action</span></code>,
+<code class="docutils literal notranslate"><span class="pre">type</span></code>, <code class="docutils literal notranslate"><span class="pre">choices</span></code>, <code class="docutils literal notranslate"><span class="pre">metavar</span></code>, <code class="docutils literal notranslate"><span class="pre">required</span></code>).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt.backends">
+<span class="sig-name descname"><span class="pre">backends</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">frozenset</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'pandas',</span> <span class="pre">'polars',</span> <span class="pre">'snowflake',</span> <span class="pre">'spark'})</span></span><a class="headerlink" href="#datacompy.cli.parser.Opt.backends" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt.default">
+<span class="sig-name descname"><span class="pre">default</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#datacompy.cli.parser.Opt.default" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt.dest">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">dest</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#datacompy.cli.parser.Opt.dest" title="Link to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">argparse</span></code> destination attribute, derived from the first flag.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt.flags">
+<span class="sig-name descname"><span class="pre">flags</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#datacompy.cli.parser.Opt.flags" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt.group">
+<span class="sig-name descname"><span class="pre">group</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#datacompy.cli.parser.Opt.group" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt.help">
+<span class="sig-name descname"><span class="pre">help</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#datacompy.cli.parser.Opt.help" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt.kwarg">
+<span class="sig-name descname"><span class="pre">kwarg</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#datacompy.cli.parser.Opt.kwarg" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt.options">
+<span class="sig-name descname"><span class="pre">options</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#datacompy.cli.parser.Opt.options" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt.resolve">
+<span class="sig-name descname"><span class="pre">resolve</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Namespace</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#datacompy.cli.parser.Opt.resolve" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt.resolved">
+<span class="sig-name descname"><span class="pre">resolved</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#datacompy.cli.parser.Opt.resolved" title="Link to this definition">¶</a></dt>
+<dd><p>Return the value in the shape the library constructor expects.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt.value">
+<span class="sig-name descname"><span class="pre">value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#datacompy.cli.parser.Opt.value" title="Link to this definition">¶</a></dt>
+<dd><p>Return the parsed value, falling back to <a class="reference internal" href="#datacompy.cli.parser.Opt.default" title="datacompy.cli.parser.Opt.default"><code class="xref py py-attr docutils literal notranslate"><span class="pre">default</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="datacompy.cli.parser.Opt.was_given">
+<span class="sig-name descname"><span class="pre">was_given</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.cli.parser.Opt.was_given" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> when the user actually passed this flag.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.parser.build_parser">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.parser.</span></span><span class="sig-name descname"><span class="pre">build_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ArgumentParser</span></span></span><a class="headerlink" href="#datacompy.cli.parser.build_parser" title="Link to this definition">¶</a></dt>
+<dd><p>Build the top level <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> argument parser.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.parser.default_dataset_name">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.parser.</span></span><span class="sig-name descname"><span class="pre">default_dataset_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.cli.parser.default_dataset_name" title="Link to this definition">¶</a></dt>
+<dd><p>Derive a report label from a file path or Snowflake table reference.</p>
+<p>File paths use the stem, so <code class="docutils literal notranslate"><span class="pre">sales_data.parquet</span></code> becomes <code class="docutils literal notranslate"><span class="pre">sales_data</span></code>.
+Snowflake references use the final segment, so <code class="docutils literal notranslate"><span class="pre">PROD.ANALYTICS.SALES</span></code>
+becomes <code class="docutils literal notranslate"><span class="pre">SALES</span></code> rather than the misleading <code class="docutils literal notranslate"><span class="pre">PROD.ANALYTICS</span></code> that
+<code class="docutils literal notranslate"><span class="pre">Path.stem</span></code> would produce.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.parser.fill_defaults">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.parser.</span></span><span class="sig-name descname"><span class="pre">fill_defaults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#datacompy.cli.parser.fill_defaults" title="Link to this definition">¶</a></dt>
+<dd><p>Populate <em>namespace</em> in place with the default for every absent option.</p>
+<p>Options are registered with <code class="docutils literal notranslate"><span class="pre">argparse.SUPPRESS</span></code> so that an absent flag
+leaves no attribute behind, which is what makes <a class="reference internal" href="#datacompy.cli.parser.Opt.was_given" title="datacompy.cli.parser.Opt.was_given"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Opt.was_given()</span></code></a>
+meaningful. Call <a class="reference internal" href="#datacompy.cli.compare.validate_arguments" title="datacompy.cli.compare.validate_arguments"><code class="xref py py-func docutils literal notranslate"><span class="pre">datacompy.cli.compare.validate_arguments()</span></code></a> before
+this function, because afterwards every option looks as though it was
+explicitly passed.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.parser.join_column_group">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.parser.</span></span><span class="sig-name descname"><span class="pre">join_column_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.cli.parser.join_column_group" title="Link to this definition">¶</a></dt>
+<dd><p>Split a single <code class="docutils literal notranslate"><span class="pre">--on</span></code> value on commas.</p>
+<p>Combined with <code class="docutils literal notranslate"><span class="pre">action=&quot;append&quot;</span></code> this makes <code class="docutils literal notranslate"><span class="pre">--on</span> <span class="pre">id,date</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--on</span> <span class="pre">id</span> <span class="pre">--on</span> <span class="pre">date</span></code> and any mix of the two equivalent. Column names that
+genuinely contain a comma must use the repeated form.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.parser.non_negative_int">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.parser.</span></span><span class="sig-name descname"><span class="pre">non_negative_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#datacompy.cli.parser.non_negative_int" title="Link to this definition">¶</a></dt>
+<dd><p>Accept a non negative integer.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.parser.package_version">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.parser.</span></span><span class="sig-name descname"><span class="pre">package_version</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.cli.parser.package_version" title="Link to this definition">¶</a></dt>
+<dd><p>Return the datacompy version.</p>
+<p>Read from the package itself rather than from installed distribution
+metadata, because <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> derives the distribution version from
+<code class="docutils literal notranslate"><span class="pre">datacompy.__version__</span></code> and an editable install can carry stale metadata.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.parser.single_char">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.parser.</span></span><span class="sig-name descname"><span class="pre">single_char</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.cli.parser.single_char" title="Link to this definition">¶</a></dt>
+<dd><p>Accept a one character delimiter, translating a literal <code class="docutils literal notranslate"><span class="pre">\t</span></code> to a tab.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.parser.tolerance">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.parser.</span></span><span class="sig-name descname"><span class="pre">tolerance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#datacompy.cli.parser.tolerance" title="Link to this definition">¶</a></dt>
+<dd><p>Parse a tolerance as either a bare number or a <code class="docutils literal notranslate"><span class="pre">COLUMN=VALUE</span></code> pair.</p>
+<p>A bare number applies to every numeric column. Repeated <code class="docutils literal notranslate"><span class="pre">COLUMN=VALUE</span></code>
+pairs are collected into the per column dictionary that
+<a class="reference internal" href="datacompy.html#datacompy.base.validate_tolerance_parameter" title="datacompy.base.validate_tolerance_parameter"><code class="xref py py-func docutils literal notranslate"><span class="pre">datacompy.base.validate_tolerance_parameter()</span></code></a> accepts.</p>
+</dd></dl>
+
+</section>
+<section id="module-datacompy.cli">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-datacompy.cli" title="Link to this heading">¶</a></h2>
+<p>DataComPy command line interface.</p>
+<p>Invoked as <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> once installed, or as <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">datacompy</span></code>.</p>
+<p class="rubric">Examples</p>
+<p>Compare two CSV files with the polars backend, which is the default:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>before.csv<span class="w"> </span>--right<span class="w"> </span>after.csv<span class="w"> </span>--on<span class="w"> </span>id
+</pre></div>
+</div>
+<p>Emit a machine readable report for a CI pipeline and rely on the exit code:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>a.parquet<span class="w"> </span>--right<span class="w"> </span>b.parquet<span class="w"> </span>--on<span class="w"> </span>id,date<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--report-format<span class="w"> </span>json<span class="w"> </span>--max-unequal-rows<span class="w"> </span><span class="m">0</span>
+</pre></div>
+</div>
+<p>Write an HTML report to a file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>a.csv<span class="w"> </span>--right<span class="w"> </span>b.csv<span class="w"> </span>--on<span class="w"> </span>id<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--report-format<span class="w"> </span>html<span class="w"> </span>--output<span class="w"> </span>report.html
+</pre></div>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="datacompy.cli.COMMANDS">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.</span></span><span class="sig-name descname"><span class="pre">COMMANDS</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Namespace</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'compare':</span> <span class="pre">&lt;function</span> <span class="pre">run_compare&gt;}</span></span><a class="headerlink" href="#datacompy.cli.COMMANDS" title="Link to this definition">¶</a></dt>
+<dd><p>Subcommand name to handler. Adding a command is additive.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.build_parser">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.</span></span><span class="sig-name descname"><span class="pre">build_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ArgumentParser</span></span></span><a class="headerlink" href="#datacompy.cli.build_parser" title="Link to this definition">¶</a></dt>
+<dd><p>Build the top level <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> argument parser.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.cli.main">
+<span class="sig-prename descclassname"><span class="pre">datacompy.cli.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">argv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#datacompy.cli.main" title="Link to this definition">¶</a></dt>
+<dd><p>Parse <em>argv</em>, dispatch the subcommand, and return the exit code.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>argv</strong> (<em>sequence</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Argument list. When <code class="docutils literal notranslate"><span class="pre">None</span></code>, argparse reads <code class="xref py py-data docutils literal notranslate"><span class="pre">sys.argv</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">0</span></code> on a match, <code class="docutils literal notranslate"><span class="pre">1</span></code> on a mismatch, <code class="docutils literal notranslate"><span class="pre">2</span></code> on an expected error, and
+<code class="docutils literal notranslate"><span class="pre">130</span></code> on interrupt. Argparse exits with <code class="docutils literal notranslate"><span class="pre">2</span></code> itself on a parse
+failure, before this function returns.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="datacompy.comparator.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">datacompy.comparator package</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="datacompy.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">datacompy package</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, Capital One
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">datacompy.cli package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-datacompy.cli.backends">datacompy.cli.backends module</a><ul>
+<li><a class="reference internal" href="#datacompy.cli.backends.CLIBackend"><code class="docutils literal notranslate"><span class="pre">CLIBackend</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.cli.backends.CLIBackend.build"><code class="docutils literal notranslate"><span class="pre">CLIBackend.build()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.CLIBackend.class_name"><code class="docutils literal notranslate"><span class="pre">CLIBackend.class_name</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.CLIBackend.compare_cls"><code class="docutils literal notranslate"><span class="pre">CLIBackend.compare_cls</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.CLIBackend.extra"><code class="docutils literal notranslate"><span class="pre">CLIBackend.extra</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.CLIBackend.load"><code class="docutils literal notranslate"><span class="pre">CLIBackend.load()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.CLIBackend.module"><code class="docutils literal notranslate"><span class="pre">CLIBackend.module</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.CLIBackend.name"><code class="docutils literal notranslate"><span class="pre">CLIBackend.name</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.CLIBackend.open_session"><code class="docutils literal notranslate"><span class="pre">CLIBackend.open_session()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.cli.backends.PandasBackend"><code class="docutils literal notranslate"><span class="pre">PandasBackend</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.cli.backends.PandasBackend.class_name"><code class="docutils literal notranslate"><span class="pre">PandasBackend.class_name</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.PandasBackend.load"><code class="docutils literal notranslate"><span class="pre">PandasBackend.load()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.PandasBackend.module"><code class="docutils literal notranslate"><span class="pre">PandasBackend.module</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.PandasBackend.name"><code class="docutils literal notranslate"><span class="pre">PandasBackend.name</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.cli.backends.PolarsBackend"><code class="docutils literal notranslate"><span class="pre">PolarsBackend</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.cli.backends.PolarsBackend.class_name"><code class="docutils literal notranslate"><span class="pre">PolarsBackend.class_name</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.PolarsBackend.load"><code class="docutils literal notranslate"><span class="pre">PolarsBackend.load()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.PolarsBackend.module"><code class="docutils literal notranslate"><span class="pre">PolarsBackend.module</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.PolarsBackend.name"><code class="docutils literal notranslate"><span class="pre">PolarsBackend.name</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SnowflakeBackend"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.cli.backends.SnowflakeBackend.build"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.build()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SnowflakeBackend.class_name"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.class_name</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SnowflakeBackend.extra"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.extra</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SnowflakeBackend.load"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.load()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SnowflakeBackend.module"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.module</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SnowflakeBackend.name"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.name</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SnowflakeBackend.open_session"><code class="docutils literal notranslate"><span class="pre">SnowflakeBackend.open_session()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SparkBackend"><code class="docutils literal notranslate"><span class="pre">SparkBackend</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.cli.backends.SparkBackend.build"><code class="docutils literal notranslate"><span class="pre">SparkBackend.build()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SparkBackend.class_name"><code class="docutils literal notranslate"><span class="pre">SparkBackend.class_name</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SparkBackend.extra"><code class="docutils literal notranslate"><span class="pre">SparkBackend.extra</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SparkBackend.load"><code class="docutils literal notranslate"><span class="pre">SparkBackend.load()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SparkBackend.module"><code class="docutils literal notranslate"><span class="pre">SparkBackend.module</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SparkBackend.name"><code class="docutils literal notranslate"><span class="pre">SparkBackend.name</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.SparkBackend.open_session"><code class="docutils literal notranslate"><span class="pre">SparkBackend.open_session()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.cli.backends.compare_kwargs"><code class="docutils literal notranslate"><span class="pre">compare_kwargs()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.infer_delimiter"><code class="docutils literal notranslate"><span class="pre">infer_delimiter()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.infer_format"><code class="docutils literal notranslate"><span class="pre">infer_format()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.backends.suspect_delimiter"><code class="docutils literal notranslate"><span class="pre">suspect_delimiter()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-datacompy.cli.compare">datacompy.cli.compare module</a><ul>
+<li><a class="reference internal" href="#datacompy.cli.compare.run_compare"><code class="docutils literal notranslate"><span class="pre">run_compare()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.compare.validate_arguments"><code class="docutils literal notranslate"><span class="pre">validate_arguments()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.compare.within_threshold"><code class="docutils literal notranslate"><span class="pre">within_threshold()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-datacompy.cli.errors">datacompy.cli.errors module</a><ul>
+<li><a class="reference internal" href="#datacompy.cli.errors.BadArgsError"><code class="docutils literal notranslate"><span class="pre">BadArgsError</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.errors.CLIError"><code class="docutils literal notranslate"><span class="pre">CLIError</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.cli.errors.CLIError.exit_code"><code class="docutils literal notranslate"><span class="pre">CLIError.exit_code</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.cli.errors.LoadError"><code class="docutils literal notranslate"><span class="pre">LoadError</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.errors.MissingExtraError"><code class="docutils literal notranslate"><span class="pre">MissingExtraError</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.errors.OutputError"><code class="docutils literal notranslate"><span class="pre">OutputError</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-datacompy.cli.output">datacompy.cli.output module</a><ul>
+<li><a class="reference internal" href="#datacompy.cli.output.emit"><code class="docutils literal notranslate"><span class="pre">emit()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.output.print_error"><code class="docutils literal notranslate"><span class="pre">print_error()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.output.print_warning"><code class="docutils literal notranslate"><span class="pre">print_warning()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.output.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-datacompy.cli.parser">datacompy.cli.parser module</a><ul>
+<li><a class="reference internal" href="#datacompy.cli.parser.GROUP_INPUT"><code class="docutils literal notranslate"><span class="pre">GROUP_INPUT</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.OPTIONS_BY_FLAG"><code class="docutils literal notranslate"><span class="pre">OPTIONS_BY_FLAG</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt"><code class="docutils literal notranslate"><span class="pre">Opt</span></code></a><ul>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt.backends"><code class="docutils literal notranslate"><span class="pre">Opt.backends</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt.default"><code class="docutils literal notranslate"><span class="pre">Opt.default</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt.dest"><code class="docutils literal notranslate"><span class="pre">Opt.dest</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt.flags"><code class="docutils literal notranslate"><span class="pre">Opt.flags</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt.group"><code class="docutils literal notranslate"><span class="pre">Opt.group</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt.help"><code class="docutils literal notranslate"><span class="pre">Opt.help</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt.kwarg"><code class="docutils literal notranslate"><span class="pre">Opt.kwarg</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt.options"><code class="docutils literal notranslate"><span class="pre">Opt.options</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt.resolve"><code class="docutils literal notranslate"><span class="pre">Opt.resolve</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt.resolved"><code class="docutils literal notranslate"><span class="pre">Opt.resolved()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt.value"><code class="docutils literal notranslate"><span class="pre">Opt.value()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.Opt.was_given"><code class="docutils literal notranslate"><span class="pre">Opt.was_given()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#datacompy.cli.parser.build_parser"><code class="docutils literal notranslate"><span class="pre">build_parser()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.default_dataset_name"><code class="docutils literal notranslate"><span class="pre">default_dataset_name()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.fill_defaults"><code class="docutils literal notranslate"><span class="pre">fill_defaults()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.join_column_group"><code class="docutils literal notranslate"><span class="pre">join_column_group()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.non_negative_int"><code class="docutils literal notranslate"><span class="pre">non_negative_int()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.package_version"><code class="docutils literal notranslate"><span class="pre">package_version()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.single_char"><code class="docutils literal notranslate"><span class="pre">single_char()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.parser.tolerance"><code class="docutils literal notranslate"><span class="pre">tolerance()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-datacompy.cli">Module contents</a><ul>
+<li><a class="reference internal" href="#datacompy.cli.COMMANDS"><code class="docutils literal notranslate"><span class="pre">COMMANDS</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.build_parser"><code class="docutils literal notranslate"><span class="pre">build_parser()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=fc837d61"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

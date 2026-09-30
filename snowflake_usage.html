@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Polars Usage" href="polars_usage.html"><link rel="prev" title="Spark Usage" href="spark_usage.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Snowpark/Snowflake Usage - datacompy 1.0.4 documentation</title>
+        <title>Snowpark/Snowflake Usage - datacompy 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 1.0.4 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.0.4 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -192,6 +192,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="comparator_usage.html">Comparator Framework Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
@@ -206,6 +207,7 @@
 <ul>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api/modules.html">datacompy</a><input aria-label="Toggle navigation of datacompy" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="api/datacompy.html">datacompy package</a><input aria-label="Toggle navigation of datacompy package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.cli.html">datacompy.cli package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.comparator.html">datacompy.comparator package</a></li>
 </ul>
 </li>
@@ -278,24 +280,24 @@ when creating the Compare object.</p></li>
 <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">configs</span><span class="p">(</span><span class="n">connection_parameters</span><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 
 <span class="n">data1</span> <span class="o">=</span> <span class="p">[</span>
-<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Maharis&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.1555</span><span class="p">,</span>
+<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'George Maharis'</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.1555</span><span class="p">,</span>
     <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'Michael Bluth'</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001236</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'George Bluth'</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Bob Loblaw&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">,</span>
+<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'Bob Loblaw'</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">,</span>
     <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001239</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Lucille Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001239</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'Lucille Bluth'</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">date_fld</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2017</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
 <span class="p">]</span>
 
 <span class="n">data2</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.4</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.155</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Michael Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;George Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Robert Loblaw&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">),</span>
-    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001238</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Loose Seal Bluth&#39;</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">111.0</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001234</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123.4</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'George Michael Bluth'</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">14530.155</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001235</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'Michael Bluth'</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1345.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'George Bluth'</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001237</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">123456.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'Robert Loblaw'</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">345.12</span><span class="p">),</span>
+    <span class="n">Row</span><span class="p">(</span><span class="n">acct_id</span><span class="o">=</span><span class="mi">10000001238</span><span class="p">,</span> <span class="n">dollar_amt</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">'Loose Seal Bluth'</span><span class="p">,</span> <span class="n">float_fld</span><span class="o">=</span><span class="mf">111.0</span><span class="p">),</span>
 <span class="p">]</span>
 
 <span class="n">df_1</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">data1</span><span class="p">)</span>
@@ -305,9 +307,9 @@ when creating the Compare object.</p></li>
     <span class="n">session</span><span class="p">,</span>
     <span class="n">df_1</span><span class="p">,</span>
     <span class="n">df_2</span><span class="p">,</span>
-    <span class="c1">#df1_name=&#39;original&#39;, # optional param for naming df1</span>
-    <span class="c1">#df2_name=&#39;new&#39; # optional param for naming df2</span>
-    <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;acct_id&#39;</span><span class="p">],</span>
+    <span class="c1">#df1_name='original', # optional param for naming df1</span>
+    <span class="c1">#df2_name='new' # optional param for naming df2</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'acct_id'</span><span class="p">],</span>
     <span class="n">rel_tol</span><span class="o">=</span><span class="mf">1e-03</span><span class="p">,</span>
     <span class="n">abs_tol</span><span class="o">=</span><span class="mf">1e-04</span><span class="p">,</span>
 <span class="p">)</span>
@@ -321,16 +323,16 @@ when creating the Compare object.</p></li>
 <section id="provide-the-full-name-db-schema-table-name-of-valid-snowflake-tables">
 <h3>Provide the full name (<code class="docutils literal notranslate"><span class="pre">db.schema.table_name</span></code>) of valid Snowflake tables<a class="headerlink" href="#provide-the-full-name-db-schema-table-name-of-valid-snowflake-tables" title="Link to this heading">¶</a></h3>
 <p>Given the dataframes from the prior examples…</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df_1</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">save_as_table</span><span class="p">(</span><span class="s2">&quot;toy_table_1&quot;</span><span class="p">)</span>
-<span class="n">df_2</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">save_as_table</span><span class="p">(</span><span class="s2">&quot;toy_table_2&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df_1</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s2">"overwrite"</span><span class="p">)</span><span class="o">.</span><span class="n">save_as_table</span><span class="p">(</span><span class="s2">"toy_table_1"</span><span class="p">)</span>
+<span class="n">df_2</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s2">"overwrite"</span><span class="p">)</span><span class="o">.</span><span class="n">save_as_table</span><span class="p">(</span><span class="s2">"toy_table_2"</span><span class="p">)</span>
 
 <span class="n">compare</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">SnowflakeCompare</span><span class="p">(</span>
     <span class="n">session</span><span class="p">,</span>
-    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">db</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">schema</span><span class="si">}</span><span class="s2">.toy_table_1&quot;</span><span class="p">,</span>
-    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">db</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">schema</span><span class="si">}</span><span class="s2">.toy_table_2&quot;</span><span class="p">,</span>
-    <span class="c1">#df1_name=&#39;original&#39;, # optional param for naming df1</span>
-    <span class="c1">#df2_name=&#39;new&#39; # optional param for naming df2</span>
-    <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;acct_id&#39;</span><span class="p">],</span>
+    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">db</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">schema</span><span class="si">}</span><span class="s2">.toy_table_1"</span><span class="p">,</span>
+    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">db</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">schema</span><span class="si">}</span><span class="s2">.toy_table_2"</span><span class="p">,</span>
+    <span class="c1">#df1_name='original', # optional param for naming df1</span>
+    <span class="c1">#df2_name='new' # optional param for naming df2</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'acct_id'</span><span class="p">],</span>
     <span class="n">rel_tol</span><span class="o">=</span><span class="mf">1e-03</span><span class="p">,</span>
     <span class="n">abs_tol</span><span class="o">=</span><span class="mf">1e-04</span><span class="p">,</span>
 <span class="p">)</span>
@@ -427,9 +429,9 @@ dataframes, then the names will default to <code class="docutils literal notrans
 <section id="convenience-methods">
 <h2>Convenience Methods<a class="headerlink" href="#convenience-methods" title="Link to this heading">¶</a></h2>
 <p>There are a few convenience methods and attributes available after the comparison has been run:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_rows</span><span class="p">[[</span><span class="s1">&#39;name_df1&#39;</span><span class="p">,</span> <span class="s1">&#39;name_df2&#39;</span><span class="p">,</span> <span class="s1">&#39;name_match&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_rows</span><span class="p">[[</span><span class="s1">'name_df1'</span><span class="p">,</span> <span class="s1">'name_df2'</span><span class="p">,</span> <span class="s1">'name_match'</span><span class="p">]]</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <span class="c1"># --------------------------------------------------------</span>
-<span class="c1"># |&quot;NAME_DF1&quot;      |&quot;NAME_DF2&quot;            |&quot;NAME_MATCH&quot;  |</span>
+<span class="c1"># |"NAME_DF1"      |"NAME_DF2"            |"NAME_MATCH"  |</span>
 <span class="c1"># --------------------------------------------------------</span>
 <span class="c1"># |George Maharis  |George Michael Bluth  |False         |</span>
 <span class="c1"># |Michael Bluth   |Michael Bluth         |True          |</span>
@@ -439,23 +441,23 @@ dataframes, then the names will default to <code class="docutils literal notrans
 
 <span class="n">compare</span><span class="o">.</span><span class="n">df1_unq_rows</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <span class="c1"># ---------------------------------------------------------------------------------------</span>
-<span class="c1"># |&quot;ACCT_ID_DF1&quot;  |&quot;DOLLAR_AMT_DF1&quot;  |&quot;NAME_DF1&quot;     |&quot;FLOAT_FLD_DF1&quot;  |&quot;DATE_FLD_DF1&quot;  |</span>
+<span class="c1"># |"ACCT_ID_DF1"  |"DOLLAR_AMT_DF1"  |"NAME_DF1"     |"FLOAT_FLD_DF1"  |"DATE_FLD_DF1"  |</span>
 <span class="c1"># ---------------------------------------------------------------------------------------</span>
 <span class="c1"># |10000001239    |1.05              |Lucille Bluth  |NULL             |2017-01-01      |</span>
 <span class="c1"># ---------------------------------------------------------------------------------------</span>
 
 <span class="n">compare</span><span class="o">.</span><span class="n">df2_unq_rows</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <span class="c1"># -------------------------------------------------------------------------</span>
-<span class="c1"># |&quot;ACCT_ID_DF2&quot;  |&quot;DOLLAR_AMT_DF2&quot;  |&quot;NAME_DF2&quot;        |&quot;FLOAT_FLD_DF2&quot;  |</span>
+<span class="c1"># |"ACCT_ID_DF2"  |"DOLLAR_AMT_DF2"  |"NAME_DF2"        |"FLOAT_FLD_DF2"  |</span>
 <span class="c1"># -------------------------------------------------------------------------</span>
 <span class="c1"># |10000001238    |1.05              |Loose Seal Bluth  |111.0            |</span>
 <span class="c1"># -------------------------------------------------------------------------</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_columns</span><span class="p">())</span>
-<span class="c1"># OrderedSet([&#39;acct_id&#39;, &#39;dollar_amt&#39;, &#39;name&#39;, &#39;float_fld&#39;])</span>
+<span class="c1"># OrderedSet(['acct_id', 'dollar_amt', 'name', 'float_fld'])</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">df1_unq_columns</span><span class="p">())</span>
-<span class="c1"># OrderedSet([&#39;date_fld&#39;])</span>
+<span class="c1"># OrderedSet(['date_fld'])</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">df2_unq_columns</span><span class="p">())</span>
 <span class="c1"># OrderedSet()</span>
@@ -657,7 +659,7 @@ columns with the same name differentiated only be case sensitivity.</p></li>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=71272d9f"></script>
+</div><script src="_static/documentation_options.js?v=fc837d61"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

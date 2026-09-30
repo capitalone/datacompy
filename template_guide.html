@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Report API" href="report_api.html"><link rel="prev" title="Polars Usage" href="polars_usage.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Template Customization Guide - datacompy 1.0.4 documentation</title>
+        <title>Template Customization Guide - datacompy 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 1.0.4 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.0.4 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -192,6 +192,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="comparator_usage.html">Comparator Framework Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
@@ -206,6 +207,7 @@
 <ul>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api/modules.html">datacompy</a><input aria-label="Toggle navigation of datacompy" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="api/datacompy.html">datacompy package</a><input aria-label="Toggle navigation of datacompy package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.cli.html">datacompy.cli package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.comparator.html">datacompy.comparator package</a></li>
 </ul>
 </li>
@@ -259,7 +261,7 @@ This guide explains how to create and use custom templates for comparison report
 <p>Custom templates are Jinja2 templates that receive comparison data and format it according to your needs.
 The template context is produced by calling <code class="docutils literal notranslate"><span class="pre">dataclasses.asdict()</span></code> on the
 <a class="reference internal" href="api/datacompy.html#datacompy.report.ReportData" title="datacompy.report.ReportData"><code class="xref py py-class docutils literal notranslate"><span class="pre">ReportData</span></code></a> instance, so every field is passed in
-with its <strong>typed value</strong> — no pre-formatting is applied.  All formatting
+with its <strong>typed value</strong>, and no pre-formatting is applied. All formatting
 decisions belong in the template.</p>
 </section>
 <section id="available-template-variables">
@@ -338,8 +340,12 @@ has unequal values or types</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">stats</span></code> (list of dict): one entry per mismatched column,
 sorted by column name. Each dict has <code class="docutils literal notranslate"><span class="pre">column</span></code> (str),
 <code class="docutils literal notranslate"><span class="pre">dtype1</span></code> (str), <code class="docutils literal notranslate"><span class="pre">dtype2</span></code> (str), <code class="docutils literal notranslate"><span class="pre">unequal_cnt</span></code> (int),
-<code class="docutils literal notranslate"><span class="pre">max_diff</span></code> (float), <code class="docutils literal notranslate"><span class="pre">null_diff</span></code> (int),
-<code class="docutils literal notranslate"><span class="pre">rel_tol</span></code> (float), <code class="docutils literal notranslate"><span class="pre">abs_tol</span></code> (float)</p></li>
+<code class="docutils literal notranslate"><span class="pre">max_diff</span></code> (float or <code class="docutils literal notranslate"><span class="pre">None</span></code>), <code class="docutils literal notranslate"><span class="pre">null_diff</span></code> (int or
+<code class="docutils literal notranslate"><span class="pre">None</span></code>), <code class="docutils literal notranslate"><span class="pre">rel_tol</span></code> (float), <code class="docutils literal notranslate"><span class="pre">abs_tol</span></code> (float). The diff
+stats are <code class="docutils literal notranslate"><span class="pre">None</span></code> for columns hidden via
+<code class="docutils literal notranslate"><span class="pre">hide_sensitive_columns()</span></code>; guard against them in custom
+templates (e.g. <code class="docutils literal notranslate"><span class="pre">'***'</span> <span class="pre">if</span> <span class="pre">col.max_diff</span> <span class="pre">is</span> <span class="pre">none</span> <span class="pre">else</span>
+<span class="pre">&quot;%.4f&quot;|format(col.max_diff)</span></code>)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">samples</span></code> (list of str): pre-rendered ASCII tables of
 sample mismatched rows, one per column with mismatches</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">df1_name</span></code>, <code class="docutils literal notranslate"><span class="pre">df2_name</span></code> (str): DataFrame labels</p></li>
@@ -365,13 +371,13 @@ there are no unique rows</p></li>
 <p>Because field values are typed (not pre-formatted), use Jinja2 expressions
 to produce display strings where needed.  Three common patterns:</p>
 <div class="highlight-jinja notranslate"><div class="highlight"><pre><span></span><span class="c">{# match_columns is a list; on_index is a bool #}</span>
-<span class="x">Matched on: </span><span class="cp">{{</span> <span class="s2">&quot;index&quot;</span> <span class="k">if</span> <span class="nv">row_summary.on_index</span> <span class="k">else</span> <span class="nv">row_summary.match_columns</span> <span class="o">|</span> <span class="nf">join</span><span class="o">(</span><span class="s2">&quot;, &quot;</span><span class="o">)</span> <span class="cp">}}</span>
+<span class="x">Matched on: </span><span class="cp">{{</span> <span class="s2">"index"</span> <span class="k">if</span> <span class="nv">row_summary.on_index</span> <span class="k">else</span> <span class="nv">row_summary.match_columns</span> <span class="o">|</span> <span class="nf">join</span><span class="o">(</span><span class="s2">", "</span><span class="o">)</span> <span class="cp">}}</span>
 
 <span class="c">{# has_duplicates is a bool #}</span>
-<span class="x">Duplicates: </span><span class="cp">{{</span> <span class="s2">&quot;Yes&quot;</span> <span class="k">if</span> <span class="nv">row_summary.has_duplicates</span> <span class="k">else</span> <span class="s2">&quot;No&quot;</span> <span class="cp">}}</span>
+<span class="x">Duplicates: </span><span class="cp">{{</span> <span class="s2">"Yes"</span> <span class="k">if</span> <span class="nv">row_summary.has_duplicates</span> <span class="k">else</span> <span class="s2">"No"</span> <span class="cp">}}</span>
 
 <span class="c">{# df1_unique is an int; df1_unique_columns is a list #}</span>
-<span class="x">Unique to df1: </span><span class="cp">{{</span> <span class="nv">column_summary.df1_unique</span> <span class="o">~</span> <span class="s2">&quot; &quot;</span> <span class="o">~</span> <span class="nv">column_summary.df1_unique_columns</span> <span class="k">if</span> <span class="nv">column_summary.df1_unique_columns</span> <span class="k">else</span> <span class="nv">column_summary.df1_unique</span> <span class="cp">}}</span>
+<span class="x">Unique to df1: </span><span class="cp">{{</span> <span class="nv">column_summary.df1_unique</span> <span class="o">~</span> <span class="s2">" "</span> <span class="o">~</span> <span class="nv">column_summary.df1_unique_columns</span> <span class="k">if</span> <span class="nv">column_summary.df1_unique_columns</span> <span class="k">else</span> <span class="nv">column_summary.df1_unique</span> <span class="cp">}}</span>
 </pre></div>
 </div>
 </section>
@@ -397,11 +403,11 @@ to produce display strings where needed.  Three common patterns:</p>
 
 <span class="x">## Column Summary</span>
 <span class="x">- Common columns: </span><span class="cp">{{</span> <span class="nv">column_summary.common_columns</span> <span class="cp">}}</span>
-<span class="x">- Columns only in </span><span class="cp">{{</span> <span class="nv">df1_name</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">column_summary.df1_unique</span> <span class="o">~</span> <span class="s2">&quot; &quot;</span> <span class="o">~</span> <span class="nv">column_summary.df1_unique_columns</span> <span class="k">if</span> <span class="nv">column_summary.df1_unique_columns</span> <span class="k">else</span> <span class="nv">column_summary.df1_unique</span> <span class="cp">}}</span>
-<span class="x">- Columns only in </span><span class="cp">{{</span> <span class="nv">df2_name</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">column_summary.df2_unique</span> <span class="o">~</span> <span class="s2">&quot; &quot;</span> <span class="o">~</span> <span class="nv">column_summary.df2_unique_columns</span> <span class="k">if</span> <span class="nv">column_summary.df2_unique_columns</span> <span class="k">else</span> <span class="nv">column_summary.df2_unique</span> <span class="cp">}}</span>
+<span class="x">- Columns only in </span><span class="cp">{{</span> <span class="nv">df1_name</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">column_summary.df1_unique</span> <span class="o">~</span> <span class="s2">" "</span> <span class="o">~</span> <span class="nv">column_summary.df1_unique_columns</span> <span class="k">if</span> <span class="nv">column_summary.df1_unique_columns</span> <span class="k">else</span> <span class="nv">column_summary.df1_unique</span> <span class="cp">}}</span>
+<span class="x">- Columns only in </span><span class="cp">{{</span> <span class="nv">df2_name</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">column_summary.df2_unique</span> <span class="o">~</span> <span class="s2">" "</span> <span class="o">~</span> <span class="nv">column_summary.df2_unique_columns</span> <span class="k">if</span> <span class="nv">column_summary.df2_unique_columns</span> <span class="k">else</span> <span class="nv">column_summary.df2_unique</span> <span class="cp">}}</span>
 
 <span class="x">## Row Summary</span>
-<span class="x">- Matched on: </span><span class="cp">{{</span> <span class="s2">&quot;index&quot;</span> <span class="k">if</span> <span class="nv">row_summary.on_index</span> <span class="k">else</span> <span class="nv">row_summary.match_columns</span> <span class="o">|</span> <span class="nf">join</span><span class="o">(</span><span class="s2">&quot;, &quot;</span><span class="o">)</span> <span class="cp">}}</span>
+<span class="x">- Matched on: </span><span class="cp">{{</span> <span class="s2">"index"</span> <span class="k">if</span> <span class="nv">row_summary.on_index</span> <span class="k">else</span> <span class="nv">row_summary.match_columns</span> <span class="o">|</span> <span class="nf">join</span><span class="o">(</span><span class="s2">", "</span><span class="o">)</span> <span class="cp">}}</span>
 <span class="x">- Rows in common: </span><span class="cp">{{</span> <span class="nv">row_summary.common_rows</span> <span class="cp">}}</span>
 <span class="x">- Rows with all columns equal: </span><span class="cp">{{</span> <span class="nv">row_summary.equal_rows</span> <span class="cp">}}</span>
 <span class="x">- Rows with some columns unequal: </span><span class="cp">{{</span> <span class="nv">row_summary.unequal_rows</span> <span class="cp">}}</span>
@@ -409,7 +415,7 @@ to produce display strings where needed.  Three common patterns:</p>
 <span class="cp">{%</span> <span class="k">if</span> <span class="nv">mismatch_stats.has_mismatches</span> <span class="cp">%}</span>
 <span class="x">## Mismatched Columns</span>
 <span class="cp">{%</span> <span class="k">for</span> <span class="nv">col</span> <span class="k">in</span> <span class="nv">mismatch_stats.stats</span> <span class="cp">%}</span>
-<span class="x">- </span><span class="cp">{{</span> <span class="nv">col.column</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">col.unequal_cnt</span> <span class="cp">}}</span><span class="x"> unequal value(s), max diff </span><span class="cp">{{</span> <span class="s2">&quot;%.4f&quot;</span><span class="o">|</span><span class="nf">format</span><span class="o">(</span><span class="nv">col.max_diff</span><span class="o">)</span> <span class="cp">}}</span>
+<span class="x">- </span><span class="cp">{{</span> <span class="nv">col.column</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">col.unequal_cnt</span> <span class="cp">}}</span><span class="x"> unequal value(s), max diff </span><span class="cp">{{</span> <span class="s2">"%.4f"</span><span class="o">|</span><span class="nf">format</span><span class="o">(</span><span class="nv">col.max_diff</span><span class="o">)</span> <span class="cp">}}</span>
 <span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
 <span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span>
 </pre></div>
@@ -420,10 +426,10 @@ to produce display strings where needed.  Three common patterns:</p>
 <p>To use your custom template, pass its path to the <code class="docutils literal notranslate"><span class="pre">report()</span></code> method:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datacompy</span><span class="w"> </span><span class="kn">import</span> <span class="n">PandasCompare</span>
 
-<span class="n">compare</span> <span class="o">=</span> <span class="n">PandasCompare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+<span class="n">compare</span> <span class="o">=</span> <span class="n">PandasCompare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'id'</span><span class="p">])</span>
 
 <span class="c1"># Generate report with custom template</span>
-<span class="n">report</span> <span class="o">=</span> <span class="n">compare</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="n">template_path</span><span class="o">=</span><span class="s1">&#39;path/to/your/template.j2&#39;</span><span class="p">)</span>
+<span class="n">report</span> <span class="o">=</span> <span class="n">compare</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="n">template_path</span><span class="o">=</span><span class="s1">'path/to/your/template.j2'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -533,7 +539,7 @@ You can use this as a reference when creating your own templates.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=71272d9f"></script>
+</div><script src="_static/documentation_options.js?v=fc837d61"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

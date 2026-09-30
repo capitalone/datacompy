@@ -1,0 +1,53 @@
+datacompy.cli package
+=====================
+
+Submodules
+----------
+
+datacompy.cli.backends module
+-----------------------------
+
+.. automodule:: datacompy.cli.backends
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+datacompy.cli.compare module
+----------------------------
+
+.. automodule:: datacompy.cli.compare
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+datacompy.cli.errors module
+---------------------------
+
+.. automodule:: datacompy.cli.errors
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+datacompy.cli.output module
+---------------------------
+
+.. automodule:: datacompy.cli.output
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+datacompy.cli.parser module
+---------------------------
+
+.. automodule:: datacompy.cli.parser
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: datacompy.cli
+   :members:
+   :show-inheritance:
+   :undoc-members:

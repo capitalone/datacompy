@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Snowpark/Snowflake Usage" href="snowflake_usage.html"><link rel="prev" title="Pandas Usage" href="pandas_usage.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Spark Usage - datacompy 1.0.4 documentation</title>
+        <title>Spark Usage - datacompy 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 1.0.4 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.0.4 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -192,6 +192,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="comparator_usage.html">Comparator Framework Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Spark Usage</a></li>
@@ -206,6 +207,7 @@
 <ul>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api/modules.html">datacompy</a><input aria-label="Toggle navigation of datacompy" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="api/datacompy.html">datacompy package</a><input aria-label="Toggle navigation of datacompy package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.cli.html">datacompy.cli package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.comparator.html">datacompy.comparator package</a></li>
 </ul>
 </li>
@@ -255,7 +257,9 @@
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">on_index</span></code> is not supported.</p></li>
 <li><p>Joining is done using <code class="docutils literal notranslate"><span class="pre">&lt;=&gt;</span></code> which is the equality test that is safe for null values.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code> compares <code class="docutils literal notranslate"><span class="pre">pyspark.sql.DataFrame</span></code>’s</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code> compares <code class="docutils literal notranslate"><span class="pre">pyspark.sql.DataFrame</span></code>’s, including Spark
+Connect DataFrames (<code class="docutils literal notranslate"><span class="pre">pyspark.sql.connect.dataframe.DataFrame</span></code>). See
+<a class="reference internal" href="#spark-connect">Spark Connect</a> below.</p></li>
 </ul>
 <section id="sparksqlcompare">
 <h2>SparkSQLCompare<a class="headerlink" href="#sparksqlcompare" title="Link to this heading">¶</a></h2>
@@ -268,21 +272,21 @@ join column(s).</p>
 
 <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
 
-<span class="n">data1</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld,date_fld</span>
+<span class="n">data1</span> <span class="o">=</span> <span class="s2">"""acct_id,dollar_amt,name,float_fld,date_fld</span>
 <span class="s2">10000001234,123.45,George Maharis,14530.1555,2017-01-01</span>
 <span class="s2">10000001235,0.45,Michael Bluth,1,2017-01-01</span>
 <span class="s2">10000001236,1345,George Bluth,,2017-01-01</span>
 <span class="s2">10000001237,123456,Bob Loblaw,345.12,2017-01-01</span>
 <span class="s2">10000001239,1.05,Lucille Bluth,,2017-01-01</span>
-<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">"""</span>
 
-<span class="n">data2</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;acct_id,dollar_amt,name,float_fld</span>
+<span class="n">data2</span> <span class="o">=</span> <span class="s2">"""acct_id,dollar_amt,name,float_fld</span>
 <span class="s2">10000001234,123.4,George Michael Bluth,14530.155</span>
 <span class="s2">10000001235,0.45,Michael Bluth,</span>
 <span class="s2">10000001236,1345,George Bluth,1</span>
 <span class="s2">10000001237,123456,Robert Loblaw,345.12</span>
 <span class="s2">10000001238,1.05,Loose Seal Bluth,111</span>
-<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">"""</span>
 
 <span class="c1"># SparkSQLCompare</span>
 <span class="n">df1</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data1</span><span class="p">)))</span>
@@ -292,17 +296,58 @@ join column(s).</p>
     <span class="n">spark</span><span class="p">,</span>
     <span class="n">df1</span><span class="p">,</span>
     <span class="n">df2</span><span class="p">,</span>
-    <span class="n">join_columns</span><span class="o">=</span><span class="s1">&#39;acct_id&#39;</span><span class="p">,</span>  <span class="c1"># You can also specify a list of columns</span>
+    <span class="n">join_columns</span><span class="o">=</span><span class="s1">'acct_id'</span><span class="p">,</span>  <span class="c1"># You can also specify a list of columns</span>
     <span class="n">abs_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Optional, defaults to 0</span>
     <span class="n">rel_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Optional, defaults to 0</span>
-    <span class="n">df1_name</span><span class="o">=</span><span class="s1">&#39;Original&#39;</span><span class="p">,</span>  <span class="c1"># Optional, defaults to &#39;df1&#39;</span>
-    <span class="n">df2_name</span><span class="o">=</span><span class="s1">&#39;New&#39;</span>  <span class="c1"># Optional, defaults to &#39;df2&#39;</span>
+    <span class="n">df1_name</span><span class="o">=</span><span class="s1">'Original'</span><span class="p">,</span>  <span class="c1"># Optional, defaults to 'df1'</span>
+    <span class="n">df2_name</span><span class="o">=</span><span class="s1">'New'</span>  <span class="c1"># Optional, defaults to 'df2'</span>
 <span class="p">)</span>
 <span class="n">compare</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">ignore_extra_columns</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="c1"># False</span>
 <span class="c1"># This method prints out a human-readable report summarizing and sampling differences</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">report</span><span class="p">())</span>
 </pre></div>
+</div>
+</section>
+<section id="spark-connect">
+<h2>Spark Connect<a class="headerlink" href="#spark-connect" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">SparkSQLCompare</span></code> works with Spark Connect sessions as well as classic
+JVM-backed ones. Nothing changes in how you call it – pass the Connect session
+and its DataFrames exactly as above:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datacompy</span><span class="w"> </span><span class="kn">import</span> <span class="n">SparkSQLCompare</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyspark.sql</span><span class="w"> </span><span class="kn">import</span> <span class="n">SparkSession</span>
+
+<span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="s2">"sc://localhost:15002"</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+
+<span class="n">df1</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data1</span><span class="p">)))</span>
+<span class="n">df2</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data2</span><span class="p">)))</span>
+
+<span class="n">compare</span> <span class="o">=</span> <span class="n">SparkSQLCompare</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="s1">'acct_id'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">report</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>This also covers a Connect session you did not create yourself – one provided
+by a notebook or serverless runtime, or handed over by another framework.
+datacompy selects the classic or Spark Connect expression API from the
+DataFrame you pass in, rather than from PySpark’s process-global
+<code class="docutils literal notranslate"><span class="pre">SPARK_CONNECT_MODE_ENABLED</span></code> environment variable, which such a session does
+not necessarily set.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">datacompy[spark]</span></code> installs <code class="docutils literal notranslate"><span class="pre">pyspark[connect]</span></code>, which
+covers both flavours. If you manage PySpark yourself, Spark Connect
+requires the <code class="docutils literal notranslate"><span class="pre">connect</span></code> extra (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;pyspark[connect]&quot;</span></code>), which
+pulls in <code class="docutils literal notranslate"><span class="pre">grpcio</span></code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On runtimes that do not permit caching, such as Databricks Serverless, pass
+<code class="docutils literal notranslate"><span class="pre">cache_intermediates=False</span></code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">spark.sql.execution.arrow.pyspark.enabled</span></code> has no effect under Spark
+Connect – Arrow is always used on the wire.</p>
 </div>
 </section>
 <section id="reports">
@@ -390,7 +435,7 @@ and/or “df2”.):</p>
 <section id="convenience-methods">
 <h2>Convenience Methods<a class="headerlink" href="#convenience-methods" title="Link to this heading">¶</a></h2>
 <p>There are a few convenience methods and attributes available after the comparison has been run:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_rows</span><span class="p">[[</span><span class="s1">&#39;name_df1&#39;</span><span class="p">,</span> <span class="s1">&#39;name_df2&#39;</span><span class="p">,</span> <span class="s1">&#39;name_match&#39;</span><span class="p">]])</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_rows</span><span class="p">[[</span><span class="s1">'name_df1'</span><span class="p">,</span> <span class="s1">'name_df2'</span><span class="p">,</span> <span class="s1">'name_match'</span><span class="p">]])</span>
 <span class="c1">#          name_df1              name_df2  name_match</span>
 <span class="c1"># 0  George Maharis  George Michael Bluth       False</span>
 <span class="c1"># 1   Michael Bluth         Michael Bluth        True</span>
@@ -406,10 +451,10 @@ and/or “df2”.):</p>
 <span class="c1"># 4  10000001238            1.05  Loose Seal Bluth          111.0          True</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">intersect_columns</span><span class="p">())</span>
-<span class="c1"># OrderedSet([&#39;acct_id&#39;, &#39;dollar_amt&#39;, &#39;name&#39;, &#39;float_fld&#39;])</span>
+<span class="c1"># OrderedSet(['acct_id', 'dollar_amt', 'name', 'float_fld'])</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">df1_unq_columns</span><span class="p">())</span>
-<span class="c1"># OrderedSet([&#39;date_fld&#39;])</span>
+<span class="c1"># OrderedSet(['date_fld'])</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">compare</span><span class="o">.</span><span class="n">df2_unq_columns</span><span class="p">())</span>
 <span class="c1"># OrderedSet()</span>
@@ -581,6 +626,7 @@ as uniquely in the second.</p>
             <ul>
 <li><a class="reference internal" href="#">Spark Usage</a><ul>
 <li><a class="reference internal" href="#sparksqlcompare">SparkSQLCompare</a></li>
+<li><a class="reference internal" href="#spark-connect">Spark Connect</a></li>
 <li><a class="reference internal" href="#reports">Reports</a></li>
 <li><a class="reference internal" href="#convenience-methods">Convenience Methods</a></li>
 <li><a class="reference internal" href="#duplicate-rows">Duplicate rows</a></li>
@@ -595,7 +641,7 @@ as uniquely in the second.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=71272d9f"></script>
+</div><script src="_static/documentation_options.js?v=fc837d61"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

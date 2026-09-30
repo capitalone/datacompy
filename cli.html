@@ -1,0 +1,631 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Comparator Framework Usage" href="comparator_usage.html"><link rel="prev" title="Installation" href="install.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Command Line Interface - datacompy 1.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="comparator_usage.html">Comparator Framework Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="snowflake_usage.html">Snowflake Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="polars_usage.html">Polars Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="template_guide.html">Template Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="report_api.html">Report API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark.html">Benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_instructions.html">Developer Instructions</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/modules.html">datacompy</a><input aria-label="Toggle navigation of datacompy" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="api/datacompy.html">datacompy package</a><input aria-label="Toggle navigation of datacompy package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.cli.html">datacompy.cli package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.comparator.html">datacompy.comparator package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/capitalone/datacompy">Github Repo</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/cli.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="command-line-interface">
+<h1>Command Line Interface<a class="headerlink" href="#command-line-interface" title="Link to this heading">¶</a></h1>
+<p>DataComPy ships a <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> command so you can compare two datasets without
+writing a script. It is aimed at ad hoc checks from a shell and at CI pipelines
+that run as shell tasks, such as an Airflow <code class="docutils literal notranslate"><span class="pre">BashOperator</span></code>, a GitHub Actions
+step, or a GitLab CI job.</p>
+<section id="quick-start">
+<h2>Quick start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>before.csv<span class="w"> </span>--right<span class="w"> </span>after.csv<span class="w"> </span>--on<span class="w"> </span>id
+</pre></div>
+</div>
+<p>The command is also available as a module, which is handy when the console
+script is not on <code class="docutils literal notranslate"><span class="pre">PATH</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>before.csv<span class="w"> </span>--right<span class="w"> </span>after.csv<span class="w"> </span>--on<span class="w"> </span>id
+</pre></div>
+</div>
+</section>
+<section id="exit-codes">
+<h2>Exit codes<a class="headerlink" href="#exit-codes" title="Link to this heading">¶</a></h2>
+<p>The exit code is the contract for automation.</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Code</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>The datasets match, or stay within <code class="docutils literal notranslate"><span class="pre">--max-unequal-rows</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">1</span></code></p></td>
+<td><p>The datasets differ, or the threshold was exceeded</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">2</span></code></p></td>
+<td><p>Bad arguments, unreadable input, or a missing optional backend</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">130</span></code></p></td>
+<td><p>Interrupted</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Anything unexpected propagates as a traceback. Pass <code class="docutils literal notranslate"><span class="pre">--debug</span></code> to see the full
+traceback for an error that would otherwise be reported as a short message.</p>
+</section>
+<section id="choosing-a-backend">
+<h2>Choosing a backend<a class="headerlink" href="#choosing-a-backend" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">--backend</span></code> selects the comparison engine. Polars is the default.</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Backend</p></th>
+<th class="head"><p>Use it for</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">polars</span></code></p></td>
+<td><p>The default. Fast, in memory, no extra install</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pandas</span></code></p></td>
+<td><p>Index based joins (<code class="docutils literal notranslate"><span class="pre">--on-index</span></code>), or wider ecosystem parity</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">spark</span></code></p></td>
+<td><p>Distributed data. Needs <code class="docutils literal notranslate"><span class="pre">datacompy[spark]</span></code> and Java 17</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">snowflake</span></code></p></td>
+<td><p>Comparing two tables in place. Needs <code class="docutils literal notranslate"><span class="pre">datacompy[snowflake]</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="inputs">
+<h2>Inputs<a class="headerlink" href="#inputs" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">--left</span></code> and <code class="docutils literal notranslate"><span class="pre">--right</span></code> accept local paths and cloud URIs. CSV, Parquet, and
+JSON are supported, including tab separated CSV via a <code class="docutils literal notranslate"><span class="pre">.tsv</span></code> extension and
+newline delimited JSON via a <code class="docutils literal notranslate"><span class="pre">.jsonl</span></code> or <code class="docutils literal notranslate"><span class="pre">.ndjson</span></code> extension.</p>
+<p>The format is inferred per file from its extension, so mixed inputs work without
+any extra flags:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>snapshot.csv<span class="w"> </span>--right<span class="w"> </span>snapshot.parquet<span class="w"> </span>--on<span class="w"> </span>id
+</pre></div>
+</div>
+<p>The extensions recognised are <code class="docutils literal notranslate"><span class="pre">.csv</span></code>, <code class="docutils literal notranslate"><span class="pre">.tsv</span></code>, <code class="docutils literal notranslate"><span class="pre">.parquet</span></code>, <code class="docutils literal notranslate"><span class="pre">.pq</span></code>,
+<code class="docutils literal notranslate"><span class="pre">.json</span></code>, <code class="docutils literal notranslate"><span class="pre">.jsonl</span></code>, and <code class="docutils literal notranslate"><span class="pre">.ndjson</span></code>. The delimiter is inferred the same way,
+a tab for <code class="docutils literal notranslate"><span class="pre">.tsv</span></code> and a comma for everything else, so a tab separated file
+compares against a comma separated one without any extra flags.</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">--input-format</span></code> when the extension is missing or unusual. It selects the
+reader only and says nothing about the delimiter, so pair it with
+<code class="docutils literal notranslate"><span class="pre">--csv-delimiter</span></code>, which overrides inference for both inputs:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>extract.dat<span class="w"> </span>--right<span class="w"> </span>extract2.dat<span class="w"> </span>--on<span class="w"> </span>id<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--input-format<span class="w"> </span>csv<span class="w"> </span>--csv-delimiter<span class="w"> </span><span class="s1">'\t'</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">--csv-delimiter</span></code> is also the way to correct a misleading extension. A comma
+separated file named <code class="docutils literal notranslate"><span class="pre">.tsv</span></code> would otherwise be read with tabs, so force the
+comma explicitly:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>export.tsv<span class="w"> </span>--right<span class="w"> </span>export2.tsv<span class="w"> </span>--on<span class="w"> </span>id<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--csv-delimiter<span class="w"> </span><span class="s1">','</span>
+</pre></div>
+</div>
+<p>A file read with the wrong delimiter collapses into a single column, which
+surfaces as a missing join column. The CLI warns on stderr when it sees that,
+naming the file and the delimiter it used.</p>
+<p>Cloud URIs such as <code class="docutils literal notranslate"><span class="pre">s3://</span></code>, <code class="docutils literal notranslate"><span class="pre">gs://</span></code>, and <code class="docutils literal notranslate"><span class="pre">abfs://</span></code> are handed straight to
+the underlying reader, so they work once the matching filesystem library
+(<code class="docutils literal notranslate"><span class="pre">s3fs</span></code>, <code class="docutils literal notranslate"><span class="pre">gcsfs</span></code>, <code class="docutils literal notranslate"><span class="pre">adlfs</span></code>) is installed.</p>
+<p>For <code class="docutils literal notranslate"><span class="pre">--backend</span> <span class="pre">snowflake</span></code>, <code class="docutils literal notranslate"><span class="pre">--left</span></code> and <code class="docutils literal notranslate"><span class="pre">--right</span></code> are always table
+references, either <code class="docutils literal notranslate"><span class="pre">db.schema.table</span></code> or <code class="docutils literal notranslate"><span class="pre">schema.table</span></code>. A two part reference
+is qualified with the session’s current database. The CLI does not read local
+files into Snowflake; use the pandas or polars backend for files, or load the
+data into a table first.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--backend<span class="w"> </span>snowflake<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--left<span class="w"> </span>PROD.ANALYTICS.SALES<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--right<span class="w"> </span>STAGE.ANALYTICS.SALES<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--on<span class="w"> </span>sale_id
+</pre></div>
+</div>
+</section>
+<section id="join-keys">
+<h2>Join keys<a class="headerlink" href="#join-keys" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">--on</span></code> accepts a comma separated list, a repeated flag, or a mix of the two:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>a.csv<span class="w"> </span>--right<span class="w"> </span>b.csv<span class="w"> </span>--on<span class="w"> </span>id,date
+datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>a.csv<span class="w"> </span>--right<span class="w"> </span>b.csv<span class="w"> </span>--on<span class="w"> </span>id<span class="w"> </span>--on<span class="w"> </span>date
+</pre></div>
+</div>
+<p>Use the repeated form for column names that contain a comma.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--on-index</span></code> joins on the DataFrame index instead, and is only available with
+<code class="docutils literal notranslate"><span class="pre">--backend</span> <span class="pre">pandas</span></code>.</p>
+</section>
+<section id="tolerances">
+<h2>Tolerances<a class="headerlink" href="#tolerances" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">--abs-tol</span></code> and <code class="docutils literal notranslate"><span class="pre">--rel-tol</span></code> take either a single number that applies to every
+numeric column, or repeated <code class="docutils literal notranslate"><span class="pre">COLUMN=VALUE</span></code> pairs for per column tolerances:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>a.parquet<span class="w"> </span>--right<span class="w"> </span>b.parquet<span class="w"> </span>--on<span class="w"> </span>account_id<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--abs-tol<span class="w"> </span><span class="m">0</span>.01<span class="w"> </span>--rel-tol<span class="w"> </span><span class="m">0</span>.001
+
+datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>a.parquet<span class="w"> </span>--right<span class="w"> </span>b.parquet<span class="w"> </span>--on<span class="w"> </span>account_id<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--abs-tol<span class="w"> </span><span class="nv">price</span><span class="o">=</span><span class="m">0</span>.01<span class="w"> </span>--abs-tol<span class="w"> </span><span class="nv">quantity</span><span class="o">=</span><span class="m">0</span>
+</pre></div>
+</div>
+<p>The two forms cannot be mixed on the same flag, because the library takes either
+a single tolerance or a per column mapping.</p>
+</section>
+<section id="normalisation">
+<h2>Normalisation<a class="headerlink" href="#normalisation" title="Link to this heading">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>a.csv<span class="w"> </span>--right<span class="w"> </span>b.csv<span class="w"> </span>--on<span class="w"> </span>id<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ignore-spaces<span class="w"> </span>--ignore-case
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">--ignore-extra-columns</span></code> treats the datasets as matching even when one side has
+columns the other does not. Column names are lowercased before comparison by
+default; pass <code class="docutils literal notranslate"><span class="pre">--no-cast-column-names-lower</span></code> to compare them as written. That
+flag does not apply to Snowflake, which normalises identifiers to uppercase
+itself.</p>
+</section>
+<section id="reports">
+<h2>Reports<a class="headerlink" href="#reports" title="Link to this heading">¶</a></h2>
+<p>Rendering and destination are separate. <code class="docutils literal notranslate"><span class="pre">--report-format</span></code> picks between
+<code class="docutils literal notranslate"><span class="pre">text</span></code> (the default), <code class="docutils literal notranslate"><span class="pre">json</span></code>, and <code class="docutils literal notranslate"><span class="pre">html</span></code>. <code class="docutils literal notranslate"><span class="pre">--output</span></code> writes to a file
+instead of, or as well as, stdout.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Human readable, to the terminal</span>
+datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>a.csv<span class="w"> </span>--right<span class="w"> </span>b.csv<span class="w"> </span>--on<span class="w"> </span>id
+
+<span class="c1"># Machine readable, piped into another tool</span>
+datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>a.csv<span class="w"> </span>--right<span class="w"> </span>b.csv<span class="w"> </span>--on<span class="w"> </span>id<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--report-format<span class="w"> </span>json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.row_summary.unequal_rows'</span>
+
+<span class="c1"># An HTML report saved for a build artifact, nothing on stdout</span>
+datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>a.csv<span class="w"> </span>--right<span class="w"> </span>b.csv<span class="w"> </span>--on<span class="w"> </span>id<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--report-format<span class="w"> </span>html<span class="w"> </span>--output<span class="w"> </span>reports/diff.html<span class="w"> </span>--quiet
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">--quiet</span></code> suppresses stdout only. A file named by <code class="docutils literal notranslate"><span class="pre">--output</span></code> is always
+written, and parent directories are created as needed. The exit code is
+unaffected by either flag.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--sample-count</span></code> and <code class="docutils literal notranslate"><span class="pre">--column-count</span></code> control how many sample rows and
+columns the report shows.</p>
+</section>
+<section id="failing-a-build">
+<h2>Failing a build<a class="headerlink" href="#failing-a-build" title="Link to this heading">¶</a></h2>
+<p>Without a threshold, any difference exits <code class="docutils literal notranslate"><span class="pre">1</span></code>. <code class="docutils literal notranslate"><span class="pre">--max-unequal-rows</span></code> lets a
+known amount of drift pass:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fail on any difference at all</span>
+datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>before.parquet<span class="w"> </span>--right<span class="w"> </span>after.parquet<span class="w"> </span>--on<span class="w"> </span>id<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--max-unequal-rows<span class="w"> </span><span class="m">0</span><span class="w"> </span>--quiet
+
+<span class="c1"># Tolerate up to 5 differing rows</span>
+datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>before.parquet<span class="w"> </span>--right<span class="w"> </span>after.parquet<span class="w"> </span>--on<span class="w"> </span>id<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--max-unequal-rows<span class="w"> </span><span class="m">5</span><span class="w"> </span>--quiet
+</pre></div>
+</div>
+<p>By default the count includes both value mismatches and rows present in only one
+dataset. Add <code class="docutils literal notranslate"><span class="pre">--ignore-unique-rows</span></code> to count value mismatches in common rows
+only:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>before.parquet<span class="w"> </span>--right<span class="w"> </span>after.parquet<span class="w"> </span>--on<span class="w"> </span>id<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--max-unequal-rows<span class="w"> </span><span class="m">0</span><span class="w"> </span>--ignore-unique-rows<span class="w"> </span>--quiet
+</pre></div>
+</div>
+<p>A threshold run also fails when one side has extra columns, unless
+<code class="docutils literal notranslate"><span class="pre">--ignore-extra-columns</span></code> is given.</p>
+<p>A GitHub Actions step looks like this:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Check the nightly load against the previous snapshot</span>
+<span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">    </span><span class="no">datacompy compare \</span>
+<span class="w">      </span><span class="no">--left s3://warehouse/snapshots/previous.parquet \</span>
+<span class="w">      </span><span class="no">--right s3://warehouse/snapshots/current.parquet \</span>
+<span class="w">      </span><span class="no">--on account_id,as_of_date \</span>
+<span class="w">      </span><span class="no">--abs-tol balance=0.01 \</span>
+<span class="w">      </span><span class="no">--max-unequal-rows 0 \</span>
+<span class="w">      </span><span class="no">--report-format json \</span>
+<span class="w">      </span><span class="no">--output reports/diff.json</span>
+</pre></div>
+</div>
+</section>
+<section id="backend-credentials">
+<h2>Backend credentials<a class="headerlink" href="#backend-credentials" title="Link to this heading">¶</a></h2>
+<section id="spark">
+<h3>Spark<a class="headerlink" href="#spark" title="Link to this heading">¶</a></h3>
+<p>The CLI creates its own session and stops it when the command finishes, on both
+the success and the failure path. A session that already exists is borrowed and
+left running, so calling the CLI from a process that owns a session is safe.
+<code class="docutils literal notranslate"><span class="pre">--spark-app-name</span></code> sets the application name, and has no effect when a session
+already exists. PySpark’s INFO and WARN logging is suppressed so it does not mix
+with the report; set <code class="docutils literal notranslate"><span class="pre">DATACOMPY_SPARK_LOG_LEVEL</span></code> to override that.</p>
+<p>Intermediate DataFrames are cached by default. Pass
+<code class="docutils literal notranslate"><span class="pre">--no-cache-intermediates</span></code> on Databricks Serverless and other environments
+that do not support caching.</p>
+</section>
+<section id="snowflake">
+<h3>Snowflake<a class="headerlink" href="#snowflake" title="Link to this heading">¶</a></h3>
+<p>Connection parameters come either from a JSON file or from the environment.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--backend<span class="w"> </span>snowflake<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--left<span class="w"> </span>PROD.ANALYTICS.SALES<span class="w"> </span>--right<span class="w"> </span>STAGE.ANALYTICS.SALES<span class="w"> </span>--on<span class="w"> </span>sale_id<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--snowflake-config<span class="w"> </span>~/.snowflake/connection.json
+</pre></div>
+</div>
+<p>The JSON file holds Snowpark connection parameters as top level keys, for
+example <code class="docutils literal notranslate"><span class="pre">account</span></code>, <code class="docutils literal notranslate"><span class="pre">user</span></code>, <code class="docutils literal notranslate"><span class="pre">password</span></code>, <code class="docutils literal notranslate"><span class="pre">role</span></code>, <code class="docutils literal notranslate"><span class="pre">warehouse</span></code>,
+<code class="docutils literal notranslate"><span class="pre">database</span></code>, and <code class="docutils literal notranslate"><span class="pre">schema</span></code>.</p>
+<p>Without <code class="docutils literal notranslate"><span class="pre">--snowflake-config</span></code>, the session is built from the environment:</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SNOWFLAKE_ACCOUNT</span></code></p></td>
+<td><p>Required</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SNOWFLAKE_USER</span></code></p></td>
+<td><p>Required, except under OAuth</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SNOWFLAKE_PASSWORD</span></code></p></td>
+<td><p>Required unless a token or authenticator is set</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SNOWFLAKE_TOKEN</span></code></p></td>
+<td><p>OAuth access token; implies OAuth on its own</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SNOWFLAKE_AUTHENTICATOR</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">oauth</span></code>, or SSO such as <code class="docutils literal notranslate"><span class="pre">externalbrowser</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SNOWFLAKE_ROLE</span></code></p></td>
+<td><p>Optional</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SNOWFLAKE_WAREHOUSE</span></code></p></td>
+<td><p>Optional</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SNOWFLAKE_DATABASE</span></code></p></td>
+<td><p>Optional, qualifies two part references</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SNOWFLAKE_SCHEMA</span></code></p></td>
+<td><p>Optional</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="full-option-list">
+<h2>Full option list<a class="headerlink" href="#full-option-list" title="Link to this heading">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>datacompy<span class="w"> </span>compare<span class="w"> </span>--help
+</pre></div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="comparator_usage.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Comparator Framework Usage</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="install.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Installation</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, Capital One
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Command Line Interface</a><ul>
+<li><a class="reference internal" href="#quick-start">Quick start</a></li>
+<li><a class="reference internal" href="#exit-codes">Exit codes</a></li>
+<li><a class="reference internal" href="#choosing-a-backend">Choosing a backend</a></li>
+<li><a class="reference internal" href="#inputs">Inputs</a></li>
+<li><a class="reference internal" href="#join-keys">Join keys</a></li>
+<li><a class="reference internal" href="#tolerances">Tolerances</a></li>
+<li><a class="reference internal" href="#normalisation">Normalisation</a></li>
+<li><a class="reference internal" href="#reports">Reports</a></li>
+<li><a class="reference internal" href="#failing-a-build">Failing a build</a></li>
+<li><a class="reference internal" href="#backend-credentials">Backend credentials</a><ul>
+<li><a class="reference internal" href="#spark">Spark</a></li>
+<li><a class="reference internal" href="#snowflake">Snowflake</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#full-option-list">Full option list</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=fc837d61"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

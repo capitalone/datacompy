@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="prev" title="datacompy package" href="datacompy.html">
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="prev" title="datacompy.cli package" href="datacompy.cli.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>datacompy.comparator package - datacompy 1.0.4 documentation</title>
+        <title>datacompy.comparator package - datacompy 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 1.0.4 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.0.4 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -192,6 +192,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul>
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../comparator_usage.html">Comparator Framework Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../spark_usage.html">Spark Usage</a></li>
@@ -206,6 +207,7 @@
 <ul class="current">
 <li class="toctree-l1 current has-children"><a class="reference internal" href="modules.html">datacompy</a><input aria-label="Toggle navigation of datacompy" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2 current has-children"><a class="reference internal" href="datacompy.html">datacompy package</a><input aria-label="Toggle navigation of datacompy package" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html">datacompy.cli package</a></li>
 <li class="toctree-l3 current current-page"><a class="current reference internal" href="#">datacompy.comparator package</a></li>
 </ul>
 </li>
@@ -1151,6 +1153,98 @@ values don’t match.</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.comparator.utility.get_spark_functions">
+<span class="sig-prename descclassname"><span class="pre">datacompy.comparator.utility.</span></span><span class="sig-name descname"><span class="pre">get_spark_functions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark_object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ModuleType</span></span></span><a class="headerlink" href="#datacompy.comparator.utility.get_spark_functions" title="Link to this definition">¶</a></dt>
+<dd><p>Get the <code class="docutils literal notranslate"><span class="pre">functions</span></code> module matching a classic or Spark Connect object.</p>
+<p><code class="docutils literal notranslate"><span class="pre">pyspark.sql.functions</span></code> only forwards to the Spark Connect implementations
+when the process-global <code class="docutils literal notranslate"><span class="pre">SPARK_CONNECT_MODE_ENABLED</span></code> environment variable
+is set, which is not the case for a Connect session handed over by a
+notebook runtime or another framework. Selecting the module from the object
+being operated on is correct however the session was created.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>spark_object</strong> (<em>Any</em>) – The <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> or <code class="docutils literal notranslate"><span class="pre">Column</span></code> the expression is being built for.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">pyspark.sql.connect.functions</span></code> for a Spark Connect object,
+<code class="docutils literal notranslate"><span class="pre">pyspark.sql.functions</span></code> otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ModuleType</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.comparator.utility.get_spark_window">
+<span class="sig-prename descclassname"><span class="pre">datacompy.comparator.utility.</span></span><span class="sig-name descname"><span class="pre">get_spark_window</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark_object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#datacompy.comparator.utility.get_spark_window" title="Link to this definition">¶</a></dt>
+<dd><p>Get the <code class="docutils literal notranslate"><span class="pre">Window</span></code> class matching a classic or Spark Connect object.</p>
+<p><code class="docutils literal notranslate"><span class="pre">pyspark.sql.Window</span></code> dispatches through <code class="docutils literal notranslate"><span class="pre">dispatch_window_method</span></code> on the
+same process-global flag that <a class="reference internal" href="#datacompy.comparator.utility.get_spark_functions" title="datacompy.comparator.utility.get_spark_functions"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_spark_functions()</span></code></a> works around.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>spark_object</strong> (<em>Any</em>) – The <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> or <code class="docutils literal notranslate"><span class="pre">Column</span></code> the window is being built for.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">pyspark.sql.connect.window.Window</span></code> for a Spark Connect object,
+<code class="docutils literal notranslate"><span class="pre">pyspark.sql.Window</span></code> otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.comparator.utility.is_spark_connect_dataframe">
+<span class="sig-prename descclassname"><span class="pre">datacompy.comparator.utility.</span></span><span class="sig-name descname"><span class="pre">is_spark_connect_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark_object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.comparator.utility.is_spark_connect_dataframe" title="Link to this definition">¶</a></dt>
+<dd><p>Check whether an object is a Spark Connect <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code>.</p>
+<p>Narrower than <a class="reference internal" href="#datacompy.comparator.utility.is_spark_connect_object" title="datacompy.comparator.utility.is_spark_connect_object"><code class="xref py py-func docutils literal notranslate"><span class="pre">is_spark_connect_object()</span></code></a>, which answers “does this come
+from the Spark Connect API at all” and is therefore True for a <code class="docutils literal notranslate"><span class="pre">Column</span></code>, a
+<code class="docutils literal notranslate"><span class="pre">GroupedData</span></code> or a <code class="docutils literal notranslate"><span class="pre">SparkSession</span></code> as well. Type validation needs the
+narrow question, so that passing a <code class="docutils literal notranslate"><span class="pre">Column</span></code> where a <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> is
+expected still raises a useful <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>.</p>
+<p>Like <a class="reference internal" href="#datacompy.comparator.utility.is_spark_connect_object" title="datacompy.comparator.utility.is_spark_connect_object"><code class="xref py py-func docutils literal notranslate"><span class="pre">is_spark_connect_object()</span></code></a> this compares module names instead of
+using <code class="docutils literal notranslate"><span class="pre">isinstance</span></code>, to avoid importing <code class="docutils literal notranslate"><span class="pre">pyspark.sql.connect</span></code> and its
+optional <code class="docutils literal notranslate"><span class="pre">grpcio</span></code> dependency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>spark_object</strong> (<em>Any</em>) – Any object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the object is a Spark Connect <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code>, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.comparator.utility.is_spark_connect_object">
+<span class="sig-prename descclassname"><span class="pre">datacompy.comparator.utility.</span></span><span class="sig-name descname"><span class="pre">is_spark_connect_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark_object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#datacompy.comparator.utility.is_spark_connect_object" title="Link to this definition">¶</a></dt>
+<dd><p>Check whether an object belongs to the Spark Connect API.</p>
+<p>Walks the MRO comparing module names instead of using <code class="docutils literal notranslate"><span class="pre">isinstance</span></code> against
+the Spark Connect classes: importing <code class="docutils literal notranslate"><span class="pre">pyspark.sql.connect</span></code> runs
+<code class="docutils literal notranslate"><span class="pre">check_dependencies()</span></code>, which raises <code class="docutils literal notranslate"><span class="pre">ImportError</span></code> when the optional
+<code class="docutils literal notranslate"><span class="pre">grpcio</span></code> dependency is missing. A classic-only PySpark installation must
+never pay that cost. Walking the MRO rather than only looking at
+<code class="docutils literal notranslate"><span class="pre">type(obj).__module__</span></code> also covers subclasses layered on top by other
+runtimes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>spark_object</strong> (<em>Any</em>) – Any object, typically a <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> or a <code class="docutils literal notranslate"><span class="pre">Column</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the object comes from the Spark Connect API, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-datacompy.comparator">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-datacompy.comparator" title="Link to this heading">¶</a></h2>
@@ -1821,14 +1915,14 @@ incorrect comparisons.</p></li>
         
         <div class="related-pages">
           
-          <a class="prev-page" href="datacompy.html">
+          <a class="prev-page" href="datacompy.cli.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">datacompy package</div>
+                <div class="title">datacompy.cli package</div>
                 
               </div>
             </a>
@@ -1957,6 +2051,10 @@ incorrect comparisons.</p></li>
 <li><a class="reference internal" href="#module-datacompy.comparator.utility">datacompy.comparator.utility module</a><ul>
 <li><a class="reference internal" href="#datacompy.comparator.utility.get_snowflake_column_dtypes"><code class="docutils literal notranslate"><span class="pre">get_snowflake_column_dtypes()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.comparator.utility.get_spark_column_dtypes"><code class="docutils literal notranslate"><span class="pre">get_spark_column_dtypes()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.comparator.utility.get_spark_functions"><code class="docutils literal notranslate"><span class="pre">get_spark_functions()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.comparator.utility.get_spark_window"><code class="docutils literal notranslate"><span class="pre">get_spark_window()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.comparator.utility.is_spark_connect_dataframe"><code class="docutils literal notranslate"><span class="pre">is_spark_connect_dataframe()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.comparator.utility.is_spark_connect_object"><code class="docutils literal notranslate"><span class="pre">is_spark_connect_object()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-datacompy.comparator">Module contents</a><ul>
@@ -2037,7 +2135,7 @@ incorrect comparisons.</p></li>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=71272d9f"></script>
+</div><script src="../_static/documentation_options.js?v=fc837d61"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

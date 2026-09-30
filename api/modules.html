@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="datacompy package" href="datacompy.html"><link rel="prev" title="Developer Instructions" href="../developer_instructions.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>datacompy - datacompy 1.0.4 documentation</title>
+        <title>datacompy - datacompy 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 1.0.4 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.0.4 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -192,6 +192,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul>
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../comparator_usage.html">Comparator Framework Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../spark_usage.html">Spark Usage</a></li>
@@ -206,6 +207,7 @@
 <ul class="current">
 <li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">datacompy</a><input aria-label="Toggle navigation of datacompy" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="datacompy.html">datacompy package</a><input aria-label="Toggle navigation of datacompy package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html">datacompy.cli package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.comparator.html">datacompy.comparator package</a></li>
 </ul>
 </li>
@@ -256,6 +258,16 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="datacompy.html">datacompy package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="datacompy.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.cli.html">datacompy.cli package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#module-datacompy.cli.backends">datacompy.cli.backends module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#module-datacompy.cli.compare">datacompy.cli.compare module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#module-datacompy.cli.errors">datacompy.cli.errors module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#module-datacompy.cli.output">datacompy.cli.output module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#module-datacompy.cli.parser">datacompy.cli.parser module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="datacompy.cli.html#module-datacompy.cli">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.comparator.html">datacompy.comparator package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="datacompy.comparator.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="datacompy.comparator.html#module-datacompy.comparator.array">datacompy.comparator.array module</a></li>
@@ -307,7 +319,9 @@
 <li class="toctree-l4"><a class="reference internal" href="datacompy.html#datacompy.base.ColumnStat.unequal_cnt"><code class="docutils literal notranslate"><span class="pre">ColumnStat.unequal_cnt</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.base.TABLE_GUTTER"><code class="docutils literal notranslate"><span class="pre">TABLE_GUTTER</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.base.df_to_str"><code class="docutils literal notranslate"><span class="pre">df_to_str()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.base.fixed_width_table"><code class="docutils literal notranslate"><span class="pre">fixed_width_table()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.base.get_column_tolerance"><code class="docutils literal notranslate"><span class="pre">get_column_tolerance()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.base.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="datacompy.html#datacompy.base.save_html_report"><code class="docutils literal notranslate"><span class="pre">save_html_report()</span></code></a></li>
@@ -716,7 +730,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=71272d9f"></script>
+</div><script src="../_static/documentation_options.js?v=fc837d61"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

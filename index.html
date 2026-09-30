@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Installation" href="install.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>datacompy 1.0.4 documentation</title>
+        <title>datacompy 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="#"><div class="brand">datacompy 1.0.4 documentation</div></a>
+      <a href="#"><div class="brand">datacompy 1.1.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
   
-  <span class="sidebar-brand-text">datacompy 1.0.4 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -192,6 +192,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="comparator_usage.html">Comparator Framework Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pandas_usage.html">Pandas Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a></li>
@@ -206,6 +207,7 @@
 <ul>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api/modules.html">datacompy</a><input aria-label="Toggle navigation of datacompy" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2 has-children"><a class="reference internal" href="api/datacompy.html">datacompy package</a><input aria-label="Toggle navigation of datacompy package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/datacompy.cli.html">datacompy.cli package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.comparator.html">datacompy.comparator package</a></li>
 </ul>
 </li>
@@ -265,7 +267,7 @@ and lets you tweak how accurate matches have to be). Supported types include:</p
 <ul class="simple">
 <li><p>Pandas</p></li>
 <li><p>Polars</p></li>
-<li><p>Spark</p></li>
+<li><p>Spark (classic and Spark Connect)</p></li>
 <li><p>Snowflake</p></li>
 </ul>
 <blockquote>
@@ -301,6 +303,27 @@ pip<span class="w"> </span>install<span class="w"> </span>datacompy<span class="
 <li><p>Snowflake/Snowpark: (<a class="reference external" href="https://capitalone.github.io/datacompy/snowflake_usage.html">See documentation</a>)</p></li>
 </ul>
 </section>
+<section id="command-line-interface">
+<h2>Command Line Interface<a class="headerlink" href="#command-line-interface" title="Link to this heading">¶</a></h2>
+<p>DataComPy ships a <code class="docutils literal notranslate"><span class="pre">datacompy</span></code> command, so ad hoc checks and CI pipelines do not
+need a throw-away script (<a class="reference external" href="https://capitalone.github.io/datacompy/cli.html">see documentation</a>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compare two files and print a report</span>
+datacompy<span class="w"> </span>compare<span class="w"> </span>--left<span class="w"> </span>before.csv<span class="w"> </span>--right<span class="w"> </span>after.csv<span class="w"> </span>--on<span class="w"> </span>id
+
+<span class="c1"># Fail a build on any difference, with a JSON report saved as an artifact</span>
+datacompy<span class="w"> </span>compare<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--left<span class="w"> </span>before.parquet<span class="w"> </span>--right<span class="w"> </span>after.parquet<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--on<span class="w"> </span>account_id,as_of_date<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--abs-tol<span class="w"> </span><span class="nv">balance</span><span class="o">=</span><span class="m">0</span>.01<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--max-unequal-rows<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--report-format<span class="w"> </span>json<span class="w"> </span>--output<span class="w"> </span>reports/diff.json<span class="w"> </span>--quiet
+</pre></div>
+</div>
+<p>It exits <code class="docutils literal notranslate"><span class="pre">0</span></code> when the datasets match, <code class="docutils literal notranslate"><span class="pre">1</span></code> when they differ, and <code class="docutils literal notranslate"><span class="pre">2</span></code> on error.
+CSV, Parquet, and JSON inputs are supported on the pandas, polars, and Spark
+backends, including tab separated CSV via a <code class="docutils literal notranslate"><span class="pre">.tsv</span></code> extension, and Snowflake
+tables can be compared in place.</p>
+</section>
 <section id="programmatic-report-access">
 <h2>Programmatic Report Access<a class="headerlink" href="#programmatic-report-access" title="Link to this heading">¶</a></h2>
 <p>Every compare object exposes <code class="docutils literal notranslate"><span class="pre">build_report_data()</span></code> which returns a typed
@@ -310,19 +333,19 @@ the string report:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datacompy</span><span class="w"> </span><span class="kn">import</span> <span class="n">PandasCompare</span>
 
-<span class="n">df1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">]})</span>
-<span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">99</span><span class="p">,</span> <span class="mi">30</span><span class="p">]})</span>
+<span class="n">df1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"id"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s2">"val"</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">]})</span>
+<span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"id"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s2">"val"</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">99</span><span class="p">,</span> <span class="mi">30</span><span class="p">]})</span>
 
-<span class="n">compare</span> <span class="o">=</span> <span class="n">PandasCompare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">)</span>
+<span class="n">compare</span> <span class="o">=</span> <span class="n">PandasCompare</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">,</span> <span class="n">join_columns</span><span class="o">=</span><span class="s2">"id"</span><span class="p">)</span>
 
 <span class="c1"># Access structured data directly</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">compare</span><span class="o">.</span><span class="n">build_report_data</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">row_summary</span><span class="o">.</span><span class="n">unequal_rows</span><span class="p">)</span>  <span class="c1"># 1</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">mismatch_stats</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">column</span><span class="p">)</span>  <span class="c1"># &#39;val&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">mismatch_stats</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">column</span><span class="p">)</span>  <span class="c1"># 'val'</span>
 
 <span class="c1"># Render / export — methods live on ReportData itself</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">render</span><span class="p">())</span>  <span class="c1"># same text as compare.report()</span>
-<span class="n">data</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;report.html&quot;</span><span class="p">)</span>  <span class="c1"># HTML file</span>
+<span class="n">data</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"report.html"</span><span class="p">)</span>  <span class="c1"># HTML file</span>
 <span class="n">data</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>  <span class="c1"># JSON-serializable dict</span>
 </pre></div>
 </div>
@@ -342,8 +365,24 @@ By participating, you are expected to honor this code.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="install.html#pypi-basic">PyPI (basic)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#installing-extras">Installing extras</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#spark">Spark</a></li>
 <li class="toctree-l2"><a class="reference internal" href="install.html#conda-installs-dependencies-from-conda-forge">conda (installs dependencies from Conda Forge)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="install.html#virtualenv-install-dependencies-from-pypi">virtualenv (install dependencies from PyPI)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#quick-start">Quick start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#exit-codes">Exit codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#choosing-a-backend">Choosing a backend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#inputs">Inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#join-keys">Join keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#tolerances">Tolerances</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#normalisation">Normalisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#reports">Reports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#failing-a-build">Failing a build</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#backend-credentials">Backend credentials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#full-option-list">Full option list</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="comparator_usage.html">Comparator Framework Usage</a><ul>
@@ -364,6 +403,7 @@ By participating, you are expected to honor this code.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="spark_usage.html">Spark Usage</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="spark_usage.html#sparksqlcompare">SparkSQLCompare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spark_usage.html#spark-connect">Spark Connect</a></li>
 <li class="toctree-l2"><a class="reference internal" href="spark_usage.html#reports">Reports</a></li>
 <li class="toctree-l2"><a class="reference internal" href="spark_usage.html#convenience-methods">Convenience Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="spark_usage.html#duplicate-rows">Duplicate rows</a></li>
@@ -429,6 +469,7 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l1"><a class="reference internal" href="api/modules.html">datacompy</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="api/datacompy.html">datacompy package</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.cli.html">datacompy.cli package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.comparator.html">datacompy.comparator package</a></li>
 </ul>
 </li>
@@ -436,7 +477,9 @@ By participating, you are expected to honor this code.</p>
 <li class="toctree-l3"><a class="reference internal" href="api/datacompy.html#module-datacompy.base">datacompy.base module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.BaseCompare"><code class="docutils literal notranslate"><span class="pre">BaseCompare</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.ColumnStat"><code class="docutils literal notranslate"><span class="pre">ColumnStat</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.TABLE_GUTTER"><code class="docutils literal notranslate"><span class="pre">TABLE_GUTTER</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.df_to_str"><code class="docutils literal notranslate"><span class="pre">df_to_str()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.fixed_width_table"><code class="docutils literal notranslate"><span class="pre">fixed_width_table()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.get_column_tolerance"><code class="docutils literal notranslate"><span class="pre">get_column_tolerance()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/datacompy.html#datacompy.base.save_html_report"><code class="docutils literal notranslate"><span class="pre">save_html_report()</span></code></a></li>
@@ -575,6 +618,7 @@ By participating, you are expected to honor this code.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#supported-backends">Supported backends</a></li>
+<li><a class="reference internal" href="#command-line-interface">Command Line Interface</a></li>
 <li><a class="reference internal" href="#programmatic-report-access">Programmatic Report Access</a></li>
 <li><a class="reference internal" href="#contributors">Contributors</a></li>
 </ul>
@@ -592,7 +636,7 @@ By participating, you are expected to honor this code.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=71272d9f"></script>
+</div><script src="_static/documentation_options.js?v=fc837d61"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
