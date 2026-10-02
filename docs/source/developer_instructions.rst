@@ -54,6 +54,74 @@ at it, which a non-interactive shell will not inherit::
     export JAVA_HOME=$CONDA_PREFIX/lib/jvm
 
 
+Local CI matrix with tox
+------------------------
+
+Running the matrix by hand means installing the right JDK per Spark version,
+switching between ``pytest.ini``, ``pytest-ansi.ini`` and ``pytest-connect.ini``,
+and re-pinning ``pyspark[connect]`` for each track. ``tox.ini`` does that for
+you: it mirrors ``.github/workflows/test-package.yml`` job for job, and pulls
+Java and PySpark from conda-forge via `tox-conda <https://github.com/tox-dev/tox-conda>`_
+so no system JDK is required.
+
+Using tox is optional. The plain ``pytest`` and ``make`` commands above still
+work and are what the individual test targets are for.
+
+Install the tooling, then run an environment::
+
+    pip install "tox<4" tox-conda
+
+    tox -e lint                      # ruff check + ruff format --check
+    tox -e py312-nospark             # no pyspark; spark tests skip
+    tox -e py312-spark4-pandas3     # Spark 4, ANSI mode, Spark Connect
+    tox -e typecheck                  # mypy (not run by CI)
+    tox                             # every env in envlist
+
+Each environment maps to a CI job:
+
+.. list-table::
+   :header-rows: 1
+
+   * - tox environment
+     - CI job
+     - What it covers
+   * - ``lint``
+     - ``lint-and-format``
+     - ``ruff check`` and ``ruff format --check``
+   * - ``py{310,311,312,313}-nospark``
+     - ``test-basic-install``
+     - pandas, polars, base, report and comparator tests; Spark and
+       Snowflake tests skip via ``importorskip``
+   * - ``py311-spark35-pandas2``
+     - ``test-with-spark-3-install``
+     - Spark 3.5 classic session, plus a second pass in ANSI mode
+   * - ``py310-spark4-pandas2``
+     - ``test-with-spark-4-install``
+     - Spark 4 classic session
+   * - ``py312-spark4-pandas3``
+     - ``test-with-spark-4-install``
+     - Spark 4 classic session, ANSI mode, and both Spark Connect suites
+
+The Spark environments are the entire cost of a run, roughly twenty minutes
+each, while the four no-Spark environments finish in under a minute. The
+matrix therefore covers the Python, pandas and Spark axes independently
+rather than as a cross product. Read the header of ``tox.ini`` before
+widening it: it records which combinations are left out and what adding one
+costs. Environments outside ``envlist`` still run on demand, so
+``tox -e py313-spark4-pandas3`` works without being part of the default set.
+
+Two constraints worth knowing before you edit ``tox.ini``:
+
+- The Spark environments pin ``openjdk>=17.0.8,<18``. conda-forge ships
+  GraalVM builds of openjdk 17 below that floor, and selecting one drags in
+  ``graalpy-graalvm``, which replaces CPython with GraalPy and breaks pip.
+  Do not relax the floor back to a bare ``openjdk=17``.
+- A classic Spark session and a Spark Connect session cannot coexist in one
+  pytest process: starting a local Connect server sets ``SPARK_LOCAL_REMOTE``,
+  after which every later ``SparkSession.builder.getOrCreate()`` returns the
+  Connect session. That is why the Connect suites are separate commands, and
+  why ``SPARK_LOCAL_REMOTE`` is deliberately absent from ``passenv``.
+
 Snowflake testing
 -----------------
 
@@ -93,6 +161,12 @@ edgetest
 
 edgetest is a utility to help keep requirements up to date and ensure a subset of testing requirements still work.
 More on edgetest `here <https://github.com/capitalone/edgetest>`_.
+
+edgetest and tox do not interfere with each other. edgetest creates its
+environments under ``.edgetest/`` in the repository root and tox creates
+its own under ``.tox/``; both directories are gitignored, and neither tool
+reads the other's configuration. The ``edgetest`` extra and the tox
+environments can be installed side by side.
 
 The ``pyproject.toml`` has configuration details on how to run edgetest. The process is automated by the
 ``edgetest`` GitHub Actions workflow, which opens a pull request with any dependency bumps it finds.
