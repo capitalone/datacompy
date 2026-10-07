@@ -1437,6 +1437,19 @@ def test_calculate_max_diff(column, expected):
     )
 
 
+@pytest.mark.parametrize(
+    "temporal",
+    [
+        pd.Series(pd.to_datetime(["2020-01-01", "2020-01-03"])),
+        pd.Series([date(2020, 1, 1), date(2020, 1, 3)]),
+    ],
+)
+def test_calculate_max_diff_mixed_temporal_numeric(temporal):
+    numeric = pd.Series([1, 2], dtype="int64")
+    assert calculate_max_diff(temporal, numeric) == 0
+    assert calculate_max_diff(numeric, temporal) == 0
+
+
 def test_dupes_with_nulls():
     df1 = pd.DataFrame(
         {
