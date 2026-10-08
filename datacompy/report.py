@@ -295,7 +295,7 @@ class ReportData:
         """
         text = self.render(template_path)
         return (
-            f"<html><head><title>DataComPy Report</title></head>"
+            f"<html><head><title>DataComPy Report</title><meta charset='UTF-8'/></head>"
             f"<body><pre>{text}</pre></body></html>"
         )
 
