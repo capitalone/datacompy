@@ -97,6 +97,15 @@ something||False
     assert (actual_out == expect_out).all()
 
 
+def test_large_integer_columns_compared_exactly():
+    df1 = pd.DataFrame({"id": [1, 2], "v": [2**60, 2**60 + 1]})
+    df2 = pd.DataFrame({"id": [1, 2], "v": [2**60 + 1, 2**60 + 1]})
+    assert columns_equal(df1["v"], df2["v"]).tolist() == [False, True]
+    compare = PandasCompare(df1, df2, join_columns="id")
+    assert not compare.matches()
+    assert compare.intersect_rows["v_match"].tolist() == [False, True]
+
+
 def test_string_columns_equal():
     data = """a|b|expected
 Hi|Hi|True
