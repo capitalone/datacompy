@@ -74,6 +74,15 @@ NULL|NULL|True"""
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
+def test_large_integer_columns_compared_exactly():
+    df1 = pl.DataFrame({"id": [1, 2], "v": [2**60, 2**60 + 1]})
+    df2 = pl.DataFrame({"id": [1, 2], "v": [2**60 + 1, 2**60 + 1]})
+    assert columns_equal(df1["v"], df2["v"]).to_list() == [False, True]
+    compare = PolarsCompare(df1, df2, join_columns="id")
+    assert not compare.matches()
+    assert compare.intersect_rows["v_match"].to_list() == [False, True]
+
+
 def test_string_columns_equal():
     data = """a|b|expected
 Hi|Hi|True
