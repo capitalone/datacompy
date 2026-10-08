@@ -76,6 +76,24 @@ def test_polars_numeric_comparator_error_handling():
     assert result is None
 
 
+def test_polars_numeric_comparator_large_integers_exact():
+    # Integers above 2**53 are not distinct as floats, so without a tolerance they must be
+    # compared exactly
+    comparator = PolarsNumericComparator()
+    col1 = pl.Series([2**60, 2**60 + 1, 5, None, None])
+    col2 = pl.Series([2**60 + 1, 2**60 + 1, 5, None, 1])
+    result = comparator.compare(col1, col2, rtol=0, atol=0)
+    assert result.to_list() == [False, True, True, True, False]
+
+
+def test_polars_numeric_comparator_large_integers_with_tolerance():
+    comparator = PolarsNumericComparator()
+    col1 = pl.Series([2**60])
+    col2 = pl.Series([2**60 + 1])
+    result = comparator.compare(col1, col2, rtol=1e-5, atol=0)
+    assert result.to_list() == [True]
+
+
 # tests for PandasNumericComparator
 def test_pandas_numeric_comparator_exact_match():
     comparator = PandasNumericComparator()
@@ -129,3 +147,26 @@ def test_pandas_numeric_comparator_error_handling():
     col2 = pd.Series([1.0, 2.5, 3.0, 4.0])
     result = comparator.compare(col1, col2)
     assert result is None
+
+
+def test_pandas_numeric_comparator_large_integers_exact():
+    # Integers above 2**53 are not distinct as floats, so without a tolerance they must be
+    # compared exactly
+    comparator = PandasNumericComparator()
+    col1 = pd.Series([2**60, 2**60 + 1, 5])
+    col2 = pd.Series([2**60 + 1, 2**60 + 1, 5])
+    result = comparator.compare(col1, col2, rtol=0, atol=0)
+    assert result.tolist() == [False, True, True]
+
+    col1 = pd.Series([2**60, None, None, 3], dtype="Int64")
+    col2 = pd.Series([2**60 + 1, None, 1, 3], dtype="Int64")
+    result = comparator.compare(col1, col2, rtol=0, atol=0)
+    assert result.tolist() == [False, True, False, True]
+
+
+def test_pandas_numeric_comparator_large_integers_with_tolerance():
+    comparator = PandasNumericComparator()
+    col1 = pd.Series([2**60])
+    col2 = pd.Series([2**60 + 1])
+    result = comparator.compare(col1, col2, rtol=1e-5, atol=0)
+    assert result.tolist() == [True]
