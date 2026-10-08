@@ -131,6 +131,11 @@ class SparkSQLCompare(BaseCompare):
     cache_intermediates : bool, optional
         Flag to enable/disable caching of intermediate DataFrames. Set to False when using
         Databricks Serverless or other environments that don't support caching. Defaults to True.
+    batch_column_stats : bool, optional
+        Flag to enable batched calculation of column statistics (max_diff and null_diff).
+        When True, all column statistics are calculated in a single aggregation pass instead
+        of separate Spark jobs per column. This significantly improves performance for DataFrames
+        with many columns (50+) but may use more memory. Defaults to False for backward compatibility.
     """
 
     def __init__(
@@ -148,10 +153,12 @@ class SparkSQLCompare(BaseCompare):
         cast_column_names_lower: bool = True,
         custom_comparators: List[BaseComparator] | None = None,
         cache_intermediates: bool = True,
+        batch_column_stats: bool = False,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
         self.cache_intermediates = cache_intermediates
+        self.batch_column_stats = batch_column_stats
         self._sensitive_columns: List[str] | None = None
 
         # Validate tolerance parameters first
@@ -595,6 +602,34 @@ class SparkSQLCompare(BaseCompare):
                 F.sum(F.when(F.col(c) == True, 1).otherwise(0)).alias(f"{c}_count")  # noqa: E712
                 for c in exprs
             ]
+            
+            # Add batched max_diff and null_diff calculations if enabled
+            if self.batch_column_stats:
+                for column in self.intersect_columns():
+                    if column in self.join_columns:
+                        continue
+                    col_1 = f"{column}_{self.df1_name}"
+                    col_2 = f"{column}_{self.df2_name}"
+                    
+                    # Max diff calculation
+                    agg_exprs.append(
+                        F.max(F.abs(
+                            F.expr(f"TRY_CAST(`{col_1}` AS DOUBLE)") - 
+                            F.expr(f"TRY_CAST(`{col_2}` AS DOUBLE)")
+                        )).alias(f"{column}_max_diff")
+                    )
+                    
+                    # Null diff calculation
+                    agg_exprs.append(
+                        F.sum(
+                            F.when(
+                                (F.col(col_1).isNull() & F.col(col_2).isNotNull()) |
+                                (F.col(col_1).isNotNull() & F.col(col_2).isNull()),
+                                1
+                            ).otherwise(0)
+                        ).alias(f"{column}_null_diff")
+                    )
+            
             match_counts = self.intersect_rows.agg(*agg_exprs).first()
         else:
             match_counts = {}
@@ -622,8 +657,14 @@ class SparkSQLCompare(BaseCompare):
                 # Lookup pre-calculated col_match_count instead of querying,
                 # with default 0 to avoid None for empty rows
                 match_cnt = match_counts[f"{col_match}_count"] or 0
-                max_diff = calculate_max_diff(self.intersect_rows, col_1, col_2)
-                null_diff = calculate_null_diff(self.intersect_rows, col_1, col_2)
+                
+                # Use batched stats if enabled, otherwise calculate per-column
+                if self.batch_column_stats:
+                    max_diff = match_counts.get(f"{column}_max_diff") or 0
+                    null_diff = match_counts.get(f"{column}_null_diff") or 0
+                else:
+                    max_diff = calculate_max_diff(self.intersect_rows, col_1, col_2)
+                    null_diff = calculate_null_diff(self.intersect_rows, col_1, col_2)
 
             if row_cnt > 0:
                 match_rate = float(match_cnt) / row_cnt
