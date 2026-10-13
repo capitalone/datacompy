@@ -547,3 +547,24 @@ def test_fixed_width_table_combining_marks_take_no_columns():
 def test_fixed_width_table_measures_printed_width(cell, width):
     """The separator under a column is as long as its widest cell prints."""
     assert fixed_width_table(["X"], [[cell]]).splitlines()[1] == "-" * width
+
+
+def test_fixed_width_table_right_aligns_non_ascii_cells_and_headers():
+    """Right alignment accounts for both wide characters and combining marks."""
+    table = fixed_width_table(
+        ["旧表", "N"], [["ab", "日本"], ["cafe\u0301", "x"]], "rr"
+    )
+    assert table.splitlines() == [
+        "旧表     N",
+        "----  ----",
+        "  ab  日本",
+        "cafe\u0301     x",
+    ]
+
+
+def test_fixed_width_table_sizes_non_ascii_headers_without_rows():
+    """The header's display width still controls an empty table's separator."""
+    assert fixed_width_table(["日本", "N"], []).splitlines() == [
+        "日本  N",
+        "----  -",
+    ]

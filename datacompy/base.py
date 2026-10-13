@@ -575,6 +575,9 @@ def _display_width(text: str) -> int:
     so an ``e`` followed by a separately stored acute accent is two code points
     that print as a single ``é``.
 
+    Ambiguous-width characters count as one column. Terminal-specific rendering
+    and multi-character emoji sequences may occupy a different width.
+
     Parameters
     ----------
     text : str
