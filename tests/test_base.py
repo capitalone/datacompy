@@ -22,6 +22,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from jinja2 import TemplateNotFound
 
 # Add parent directory to path to allow importing from datacompy
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -383,6 +384,66 @@ def test_resolve_with_subdirectories(tmp_path, monkeypatch):
 
     assert template_dir == str(templates_dir)
     assert resolved_name == "subdir/test_template.j2"
+
+
+@pytest.mark.parametrize(
+    ("requested", "filename"),
+    [
+        ("report.j2", "report.j2"),
+        ("report", "report.j2"),
+        ("report.txt", "report.j2"),
+        ("report.j2", "report"),
+    ],
+)
+def test_render_nested_relative_template(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    requested: str,
+    filename: str,
+) -> None:
+    """Keep nested paths through resolution and Jinja template loading."""
+    templates_dir = tmp_path / "templates"
+    nested_dir = templates_dir / "custom" / "summary"
+    nested_dir.mkdir(parents=True)
+    (nested_dir / filename).write_text(
+        '{% include "shared.j2" %}: {{ value }}', encoding="utf-8"
+    )
+    # A same-named root template must not hide a lost subdirectory.
+    (templates_dir / filename).write_text("Wrong template", encoding="utf-8")
+    (templates_dir / "shared.j2").write_text("Nested report", encoding="utf-8")
+    monkeypatch.setattr("datacompy.base.__file__", str(tmp_path / "base.py"))
+
+    # Native separators are accepted by Path; Jinja names always use slashes.
+    requested_path = str(Path("custom") / "summary" / requested)
+    assert render(requested_path, value=42) == "Nested report: 42"
+
+
+@pytest.mark.parametrize("requested", ["report", "report.j2"])
+def test_render_nested_template_prefers_exact_filename(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, requested: str
+) -> None:
+    """An existing exact path takes precedence over extension fallbacks."""
+    templates_dir = tmp_path / "templates"
+    nested_dir = templates_dir / "custom"
+    nested_dir.mkdir(parents=True)
+    (nested_dir / "report").write_text("Plain report", encoding="utf-8")
+    (nested_dir / "report.j2").write_text("Jinja report", encoding="utf-8")
+    monkeypatch.setattr("datacompy.base.__file__", str(tmp_path / "base.py"))
+
+    expected = "Plain report" if requested == "report" else "Jinja report"
+    assert render(f"custom/{requested}") == expected
+
+
+def test_render_relative_template_rejects_parent_traversal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Keep Jinja's rejection of paths outside the relative template root."""
+    (tmp_path / "templates").mkdir()
+    (tmp_path / "outside.j2").write_text("Outside report", encoding="utf-8")
+    monkeypatch.setattr("datacompy.base.__file__", str(tmp_path / "base.py"))
+
+    with pytest.raises(TemplateNotFound):
+        render("../outside.j2")
 
 
 def test_validate_tolerance_float() -> None:
