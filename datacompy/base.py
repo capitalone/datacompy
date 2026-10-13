@@ -694,6 +694,28 @@ def temp_column_name(*dataframes) -> str:
         i += 1
 
 
+def report_to_html(report: str) -> str:
+    """Wrap a text report in a minimal HTML page.
+
+    The page declares UTF-8, the encoding datacompy writes HTML reports in, so a
+    browser shows non-ASCII text as it is instead of guessing a legacy encoding.
+
+    Parameters
+    ----------
+    report : str
+        The text report to convert to HTML
+
+    Returns
+    -------
+    str
+        HTML with the text report inside a ``<pre>`` block.
+    """
+    return (
+        "<html><head><title>DataComPy Report</title><meta charset='UTF-8'/></head>"
+        f"<body><pre>{report}</pre></body></html>"
+    )
+
+
 def save_html_report(report: str, html_file: str | Path) -> None:
     """Save a text report as an HTML file.
 
@@ -706,11 +728,7 @@ def save_html_report(report: str, html_file: str | Path) -> None:
     """
     html_file = Path(html_file)
     html_file.parent.mkdir(parents=True, exist_ok=True)
-
-    # Create a simple HTML template with the report in a pre tag
-    html_content = f"""<html><head><title>DataComPy Report</title></head><body><pre>{report}</pre></body></html>"""
-    # Save the HTML file
-    html_file.write_text(html_content, encoding="utf-8")
+    html_file.write_text(report_to_html(report), encoding="utf-8")
 
 
 def df_to_str(df: Any, sample_count: int | None = None, on_index: bool = False) -> str:

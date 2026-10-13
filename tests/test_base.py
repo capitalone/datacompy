@@ -195,6 +195,21 @@ def test_save_html_report_nonexistent_dir(tmp_path):
     assert temp_path.exists()
 
 
+def test_save_html_report_declares_utf8(tmp_path):
+    """The page declares UTF-8, the encoding it is written in.
+
+    Without the declaration a browser may guess a legacy encoding and show
+    ``café`` as ``cafÃ©``.
+    """
+    temp_file = tmp_path / "report.html"
+    save_html_report("café 日本語", temp_file)
+
+    raw = temp_file.read_bytes()
+    # Browsers only look for a charset declaration in the first 1024 bytes.
+    assert b"<meta charset='UTF-8'/>" in raw[:1024]
+    assert "café 日本語" in raw.decode("utf-8")
+
+
 class TestCompareImplementation(BaseCompare):
     """Test implementation of BaseCompare for testing."""
 

@@ -224,6 +224,14 @@ def test_save_writes_html_file(tmp_path):
     assert "<pre>" in dest.read_text()
 
 
+def test_save_writes_the_same_page_as_to_html(tmp_path):
+    """``save()`` and ``to_html()`` build the same page, charset included."""
+    data = _minimal_report_data("café", "日本")
+    dest = tmp_path / "report.html"
+    data.save(dest)
+    assert dest.read_text(encoding="utf-8") == data.to_html()
+
+
 def test_to_dict_json_serializable():
     d = _minimal_report_data(mismatch=True).to_dict()
     assert "df1_name" in json.dumps(d)
@@ -319,6 +327,25 @@ def test_pandas_html_file(tmp_path):
     text = PandasCompare(df1, df2, "id").report(html_file=html_path)
     assert isinstance(text, str)
     assert os.path.exists(html_path)
+
+
+@pytest.mark.parametrize(
+    "compare_class", [PandasCompare, PolarsCompare], ids=["pandas", "polars"]
+)
+def test_html_file_declares_utf8(compare_class, tmp_path):
+    """``report(html_file=...)`` declares UTF-8 and keeps non-ASCII text intact."""
+    df1 = pd.DataFrame({"id": [1, 2], "café": ["日本", "東京"]})
+    df2 = pd.DataFrame({"id": [1, 2], "café": ["日本", "大阪"]})
+    if compare_class is PolarsCompare:
+        df1, df2 = pl.from_pandas(df1), pl.from_pandas(df2)
+    html_path = tmp_path / "report.html"
+
+    text = compare_class(df1, df2, "id").report(html_file=str(html_path))
+
+    html = html_path.read_text(encoding="utf-8")
+    assert "<meta charset='UTF-8'/>" in html
+    assert "大阪" in text
+    assert text in html
 
 
 def test_polars_returns_report_data():
