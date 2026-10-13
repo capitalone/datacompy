@@ -529,7 +529,8 @@ def _resolve_template_path(template_name: str) -> tuple[str, str]:
 
     # Handle relative paths in templates directory
     template_dir = str(Path(__file__).parent / "templates")
-    template_file = str(template_path)
+    # Jinja template names use forward slashes, including on Windows.
+    template_file = template_path.as_posix()
     full_path = Path(template_dir) / template_file
 
     # Try different file variations in order:
@@ -541,12 +542,12 @@ def _resolve_template_path(template_name: str) -> tuple[str, str]:
 
     j2_path = full_path.with_suffix(".j2")
     if j2_path.exists():
-        return template_dir, j2_path.name
+        return template_dir, template_path.with_suffix(".j2").as_posix()
 
     if template_file.endswith(".j2"):
         base_path = full_path.with_suffix("")
         if base_path.exists():
-            return template_dir, base_path.name
+            return template_dir, template_path.with_suffix("").as_posix()
 
     # If we get here, no variation exists
     raise FileNotFoundError(
