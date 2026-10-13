@@ -22,6 +22,7 @@ two dataframes.
 """
 
 import logging
+import unicodedata
 from abc import ABC, abstractmethod
 from collections import Counter
 from collections.abc import Sequence
@@ -559,6 +560,38 @@ def _resolve_template_path(template_name: str) -> tuple[str, str]:
 #: Spaces between adjacent columns of a report table.
 TABLE_GUTTER = "  "
 
+#: Unicode general categories that print no width of their own: nonspacing and
+#: enclosing marks, which are drawn onto the character before them, and
+#: invisible format characters such as a zero width joiner or a byte order mark.
+_ZERO_WIDTH_CATEGORIES = frozenset({"Mn", "Me", "Cf"})
+
+
+def _display_width(text: str) -> int:
+    """Return how many columns *text* takes up when printed in a monospaced font.
+
+    This differs from ``len()``, which counts code points. East Asian wide and
+    fullwidth characters, such as Chinese or Japanese ideographs, print two
+    columns wide. Combining marks and invisible format characters print none,
+    so an ``e`` followed by a separately stored acute accent is two code points
+    that print as a single ``é``.
+
+    Parameters
+    ----------
+    text : str
+        The text to measure.
+
+    Returns
+    -------
+    int
+        The number of columns *text* occupies.
+    """
+    width = 0
+    for char in text:
+        if unicodedata.category(char) in _ZERO_WIDTH_CATEGORIES:
+            continue
+        width += 2 if unicodedata.east_asian_width(char) in ("W", "F") else 1
+    return width
+
 
 def fixed_width_table(
     headers: Sequence[str],
@@ -572,6 +605,10 @@ def fixed_width_table(
     presented and this function stays in charge only of how wide the column is.
     That split is what keeps the header rule, the separator, and the body
     aligned no matter how long a dataset name or dtype turns out to be.
+
+    Widths are measured in printed columns rather than characters, so names
+    written in Chinese or Japanese, or with separately stored accents, line up
+    with everything else.
 
     Parameters
     ----------
@@ -611,17 +648,19 @@ def fixed_width_table(
             )
 
     widths = [
-        max(len(header), *(len(row[column]) for row in body)) if body else len(header)
+        max(_display_width(header), *(_display_width(row[column]) for row in body))
+        if body
+        else _display_width(header)
         for column, header in enumerate(headers)
     ]
 
     def lay_out(cells: Sequence[str]) -> str:
-        padded = [
-            cell.rjust(width)
-            if align[column : column + 1] == "r"
-            else cell.ljust(width)
-            for column, (cell, width) in enumerate(zip(cells, widths, strict=True))
-        ]
+        padded: list[str] = []
+        for column, (cell, width) in enumerate(zip(cells, widths, strict=True)):
+            # str.ljust and str.rjust pad to a character count, not a printed width.
+            padding = " " * (width - _display_width(cell))
+            right = align[column : column + 1] == "r"
+            padded.append(padding + cell if right else cell + padding)
         return TABLE_GUTTER.join(padded).rstrip()
 
     lines = [lay_out(headers), TABLE_GUTTER.join("-" * width for width in widths)]

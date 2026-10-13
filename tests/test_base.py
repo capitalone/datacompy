@@ -506,3 +506,44 @@ def test_fixed_width_table_has_no_trailing_whitespace():
     """Trailing padding is stripped so snapshots stay diff friendly."""
     table = fixed_width_table(["Name", "Note"], [["a", "x"], ["bbbb", "y"]], "ll")
     assert all(line == line.rstrip() for line in table.splitlines())
+
+
+def test_fixed_width_table_wide_characters_take_two_columns():
+    """CJK characters print two columns wide, so their column is sized to match."""
+    table = fixed_width_table(["Name", "N"], [["日本語", 1], ["ab", 22]], "lr")
+    assert table.splitlines() == [
+        "Name     N",
+        "------  --",
+        "日本語   1",
+        "ab      22",
+    ]
+
+
+def test_fixed_width_table_combining_marks_take_no_columns():
+    """An accent stored as its own code point adds no width to its letter."""
+    decomposed = "cafe\u0301"  # "e" followed by COMBINING ACUTE ACCENT
+    table = fixed_width_table(["Name", "N"], [[decomposed, 1], ["abcdef", 2]], "lr")
+    assert table.splitlines() == [
+        "Name    N",
+        "------  -",
+        f"{decomposed}    1",
+        "abcdef  2",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("cell", "width"),
+    [
+        pytest.param("café", 4, id="precomposed_accent"),
+        pytest.param("cafe\u0301", 4, id="combining_accent"),
+        pytest.param("日本語", 6, id="cjk"),
+        pytest.param("\uff83\uff7d\uff84", 3, id="halfwidth_katakana"),
+        pytest.param("\uff21\uff22", 4, id="fullwidth_latin"),
+        pytest.param("\u0e01\u0e34\u0e19", 2, id="thai_vowel_sign"),
+        pytest.param("\ufeffid", 2, id="byte_order_mark"),
+        pytest.param("\U0001f642", 2, id="emoji"),
+    ],
+)
+def test_fixed_width_table_measures_printed_width(cell, width):
+    """The separator under a column is as long as its widest cell prints."""
+    assert fixed_width_table(["X"], [[cell]]).splitlines()[1] == "-" * width
