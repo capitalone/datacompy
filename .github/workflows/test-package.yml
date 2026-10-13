@@ -68,9 +68,16 @@ jobs:
         with:
           java-version: "17"
           distribution: "adopt"
+      # pyarrow 26 (released 2026-10-09) refuses to import under NumPy<2 while
+      # declaring no numpy requirement, so pip installs it into this numpy-1
+      # env and it dies at import; pandas then surfaces the generic
+      # "pyarrow>=10.0.1 is required" ImportError and tests/test_pandas.py
+      # fails at collection. 25.x is the last numpy-1-compatible series, and
+      # pyarrow 26 dropped python 3.10, which is why only this py3.11 leg
+      # trips on it.
       - name: Install pyspark
         run: |
-          python -m pip install pyspark[connect]==3.5.8
+          python -m pip install "pyspark[connect]==3.5.8" "pyarrow<26"
       - name: Install pandas
         run: |
           python -m pip install pandas==2.3.3
