@@ -565,6 +565,10 @@ TABLE_GUTTER = "  "
 #: invisible format characters such as a zero width joiner or a byte order mark.
 _ZERO_WIDTH_CATEGORIES = frozenset({"Mn", "Me", "Cf"})
 
+#: Hangul vowel and final consonant jamo. In decomposed Korean text they join
+#: the consonant before them into one syllable, so they print no width either.
+_HANGUL_JOINING_JAMO = (("\u1160", "\u11ff"), ("\ud7b0", "\ud7ff"))
+
 
 def _display_width(text: str) -> int:
     """Return how many columns *text* takes up when printed in a monospaced font.
@@ -573,7 +577,8 @@ def _display_width(text: str) -> int:
     fullwidth characters, such as Chinese or Japanese ideographs, print two
     columns wide. Combining marks and invisible format characters print none,
     so an ``e`` followed by a separately stored acute accent is two code points
-    that print as a single ``é``.
+    that print as a single ``é``. The same goes for the vowel and final
+    consonant of a decomposed Korean syllable.
 
     Ambiguous-width characters count as one column. Terminal-specific rendering
     and multi-character emoji sequences may occupy a different width.
@@ -590,7 +595,9 @@ def _display_width(text: str) -> int:
     """
     width = 0
     for char in text:
-        if unicodedata.category(char) in _ZERO_WIDTH_CATEGORIES:
+        if unicodedata.category(char) in _ZERO_WIDTH_CATEGORIES or any(
+            first <= char <= last for first, last in _HANGUL_JOINING_JAMO
+        ):
             continue
         width += 2 if unicodedata.east_asian_width(char) in ("W", "F") else 1
     return width

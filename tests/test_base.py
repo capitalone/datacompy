@@ -540,6 +540,8 @@ def test_fixed_width_table_combining_marks_take_no_columns():
         pytest.param("\uff83\uff7d\uff84", 3, id="halfwidth_katakana"),
         pytest.param("\uff21\uff22", 4, id="fullwidth_latin"),
         pytest.param("\u0e01\u0e34\u0e19", 2, id="thai_vowel_sign"),
+        # "한국" decomposed (NFD): six jamo that print as two syllables.
+        pytest.param("\u1112\u1161\u11ab\u1100\u116e\u11a8", 4, id="decomposed_hangul"),
         pytest.param("\ufeffid", 2, id="byte_order_mark"),
         pytest.param("\U0001f642", 2, id="emoji"),
     ],
