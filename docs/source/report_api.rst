@@ -37,11 +37,6 @@ The same method is available on all backends (``PolarsCompare``,
 Rendering and Export
 --------------------
 
-Fixed-width summary tables account for wide East Asian characters and combining
-marks when padding their columns. Ambiguous-width characters count as one column;
-terminal-specific rendering and multi-character emoji sequences may differ.
-Sample row tables use the backend's own formatter.
-
 Rendering methods live on :class:`~datacompy.report.ReportData` directly:
 
 .. code-block:: python
@@ -57,6 +52,12 @@ Rendering methods live on :class:`~datacompy.report.ReportData` directly:
     # JSON-serializable dict (for dashboards / APIs)
     import json
     payload = json.dumps(data.to_dict())
+
+The summary tables in the text report are padded by printed width, so names
+with wide East Asian characters or combining accents stay aligned.
+Ambiguous-width characters count as one column, and multi-character emoji
+sequences or terminal-specific rendering may still differ. The sample row
+tables come from the backend's own formatter and are not adjusted.
 
 Custom Templates
 ~~~~~~~~~~~~~~~~
