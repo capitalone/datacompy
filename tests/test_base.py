@@ -449,6 +449,22 @@ def test_render_nested_template_prefers_exact_filename(
     assert render(f"custom/{requested}") == expected
 
 
+def test_render_template_next_to_same_named_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A directory of partials does not hide the template it is named after."""
+    templates_dir = tmp_path / "templates"
+    partials_dir = templates_dir / "summary"
+    partials_dir.mkdir(parents=True)
+    (partials_dir / "header.j2").write_text("Header", encoding="utf-8")
+    (templates_dir / "summary.j2").write_text(
+        '{% include "summary/header.j2" %}: {{ value }}', encoding="utf-8"
+    )
+    monkeypatch.setattr("datacompy.base.__file__", str(tmp_path / "base.py"))
+
+    assert render("summary", value=42) == "Header: 42"
+
+
 def test_render_relative_template_rejects_parent_traversal(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
