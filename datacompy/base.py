@@ -536,16 +536,16 @@ def _resolve_template_path(template_name: str) -> tuple[str, str]:
     # 1. As given
     # 2. With .j2 extension
     # 3. Without .j2 extension (if input had it)
-    if full_path.exists():
+    if full_path.is_file():
         return template_dir, template_file
 
     j2_path = full_path.with_suffix(".j2")
-    if j2_path.exists():
+    if j2_path.is_file():
         return template_dir, template_path.with_suffix(".j2").as_posix()
 
     if template_file.endswith(".j2"):
         base_path = full_path.with_suffix("")
-        if base_path.exists():
+        if base_path.is_file():
             return template_dir, template_path.with_suffix("").as_posix()
 
     # If we get here, no variation exists
