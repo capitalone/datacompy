@@ -44,7 +44,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
-from datacompy.base import render, save_html_report
+from datacompy.base import render, report_to_html, save_html_report
 
 
 @dataclass(frozen=True)
@@ -293,11 +293,7 @@ class ReportData:
         str
             HTML string with the text report inside a ``<pre>`` block.
         """
-        text = self.render(template_path)
-        return (
-            f"<html><head><title>DataComPy Report</title><meta charset='UTF-8'/></head>"
-            f"<body><pre>{text}</pre></body></html>"
-        )
+        return report_to_html(self.render(template_path))
 
     def save(self, path: str | Path, template_path: str | None = None) -> None:
         """Save the report as an HTML file.
