@@ -53,6 +53,12 @@ Rendering methods live on :class:`~datacompy.report.ReportData` directly:
     import json
     payload = json.dumps(data.to_dict())
 
+The summary tables in the text report are padded by printed width, so names
+with wide East Asian characters or combining accents stay aligned.
+Ambiguous-width characters count as one column, and multi-character emoji
+sequences or terminal-specific rendering may still differ. The sample row
+tables come from the backend's own formatter and are not adjusted.
+
 Custom Templates
 ~~~~~~~~~~~~~~~~
 
