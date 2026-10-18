@@ -464,3 +464,32 @@ def test_report_truncates_overlong_column_names():
 
     assert f"{column[:17]}..." in report
     assert column not in report.split("Sample Rows")[0]
+
+
+@pytest.mark.parametrize(
+    "compare_class", [PandasCompare, PolarsCompare], ids=["pandas", "polars"]
+)
+def test_report_tables_align_non_ascii_names(compare_class):
+    """Dataset names line up by printed width, not by character count.
+
+    Each CJK character prints two columns wide, and a separately stored accent
+    prints none, so padding by ``len()`` pushed these rows out of line.
+    """
+    decomposed = "cafe\u0301"  # "e" followed by COMBINING ACUTE ACCENT
+    df1 = pd.DataFrame({"id": [1, 2], "val": [1.0, 2.0]})
+    df2 = pd.DataFrame({"id": [1, 2], "val": [1.0, 9.0]})
+    if compare_class is PolarsCompare:
+        df1, df2 = pl.from_pandas(df1), pl.from_pandas(df2)
+
+    report = compare_class(
+        df1, df2, "id", df1_name="旧表", df2_name=decomposed
+    ).report()
+
+    lines = report.splitlines()
+    head = lines.index("DataFrame  Columns  Rows")
+    assert lines[head : head + 4] == [
+        "DataFrame  Columns  Rows",
+        "---------  -------  ----",
+        "旧表             2     2",
+        f"{decomposed}             2     2",
+    ]
