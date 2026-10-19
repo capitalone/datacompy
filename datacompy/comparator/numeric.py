@@ -93,6 +93,44 @@ except ImportError:
     NUMERIC_SNOWFLAKE_TYPES = None
 
 
+def _pl_is_close(
+    col1: pl.Series,
+    col2: pl.Series,
+    rtol: float = 1e-5,
+    atol: float = 1e-8,
+) -> pl.Series:
+    """Polars implementation of the NumPy isclose logic.
+
+    NumPy logic differs from Polars' ``is_close`` expression, which mimics
+    the builtin ``math`` module. NumPy uses
+
+    ``absolute(a - b) <= (atol + rtol * absolute(b))``
+
+    Parameters
+    ----------
+    col1 : pl.Series
+        The first Polars Series to compare.
+    col2 : pl.Series
+        The second Polars Series to compare.
+    rtol : float, optional
+        The relative tolerance to use for comparison. Default is 1e-5.
+    atol : float, optional
+        The absolute tolerance to use for comparison. Default is 1e-8.
+
+    Returns
+    -------
+    pl.Series
+        A boolean polars series with the results
+    """
+    base_ = (col1 - col2).abs() <= (atol + rtol * col2.abs())
+    return (
+        (col1.is_finite() & col2.is_finite() & base_)
+        | (col1.is_null() & col2.is_null())
+        | (col1.is_nan() & col2.is_nan())
+        | (col1.is_infinite() & col2.is_infinite() & (col1.sign() == col2.sign()))
+    ).fill_null(False)
+
+
 class PolarsNumericComparator(BaseComparator):
     """Comparator for numeric columns in Polars.
 
@@ -142,19 +180,14 @@ class PolarsNumericComparator(BaseComparator):
 
         if col1.dtype.is_numeric() and col2.dtype.is_numeric():
             try:
-                return pl.Series(
-                    np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
-                )
+                return _pl_is_close(col1, col2, rtol, atol)
             except Exception:
                 try:
-                    return pl.Series(
-                        np.isclose(
-                            col1.cast(pl.Float64, strict=True),
-                            col2.cast(pl.Float64, strict=True),
-                            rtol=rtol,
-                            atol=atol,
-                            equal_nan=True,
-                        )
+                    return _pl_is_close(
+                        col1.cast(pl.Float64, strict=True),
+                        col2.cast(pl.Float64, strict=True),
+                        rtol,
+                        atol,
                     )
                 except Exception:
                     return pl.Series([False] * col1.shape[0])
