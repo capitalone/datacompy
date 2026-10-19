@@ -25,6 +25,7 @@ import sys
 import tempfile
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
+from textwrap import dedent
 from unittest import mock
 
 import numpy as np
@@ -39,6 +40,7 @@ from datacompy.polars import (
     generate_id_within_group,
     temp_column_name,
 )
+from packaging.version import parse
 from polars.exceptions import ComputeError, DuplicateError, SchemaError
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
@@ -47,27 +49,36 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 def test_numeric_columns_equal_abs():
-    data = """a|b|expected
-1|1|True
-2|2.1|True
-3|4|False
-4|NULL|False
-NULL|4|False
-NULL|NULL|True"""
+    data = dedent(
+        """
+        a|b|expected
+        1|1|True
+        2|2.1|True
+        3|4|False
+        4|NULL|False
+        NULL|4|False
+        NULL|NULL|True
+        """
+    )
     df = pl.read_csv(io.StringIO(data), separator="|", null_values=["NULL"])
+
     actual_out = columns_equal(df["a"], df["b"], abs_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
 def test_numeric_columns_equal_rel():
-    data = """a|b|expected
-1|1|True
-2|2.1|True
-3|4|False
-4|NULL|False
-NULL|4|False
-NULL|NULL|True"""
+    data = dedent(
+        """
+        a|b|expected
+        1|1|True
+        2|2.1|True
+        3|4|False
+        4|NULL|False
+        NULL|4|False
+        NULL|NULL|True
+        """
+    )
     df = pl.read_csv(io.StringIO(data), separator="|", null_values=["NULL"])
     actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2)
     expect_out = df["expected"]
@@ -75,78 +86,116 @@ NULL|NULL|True"""
 
 
 def test_string_columns_equal():
-    data = """a|b|expected
-Hi|Hi|True
-Yo|Yo|True
-Hey|Hey |False
-résumé|resume|False
-résumé|résumé|True
-💩|💩|True
-💩|🤔|False
-" "|" "|True
-"  "|" "|False
-datacompy|DataComPy|False
-something|NULL|False
-NULL|something|False
-NULL|NULL|True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
+    data = dedent(
+        """
+        a|b|expected
+        Hi|Hi|True
+        Yo|Yo|True
+        Hey|Hey |False
+        résumé|resume|False
+        résumé|résumé|True
+        💩|💩|True
+        💩|🤔|False
+        " "|" "|True
+        "  "|" "|False
+        datacompy|DataComPy|False
+        something|NULL|False
+        NULL|something|False
+        NULL|NULL|True
+        """
     )
+    if parse(pl.__version__) >= parse("1.43.0"):
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            empty_string_is_null=True,
+        )
+    else:
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            missing_utf8_is_empty_string=True,
+        )
     actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
 def test_string_columns_equal_with_ignore_spaces():
-    data = """a|b|expected
-Hi|Hi|True
-Yo|Yo|True
-Hey|Hey |True
-résumé|resume|False
-résumé|résumé|True
-💩|💩|True
-💩|🤔|False
-" "|" "|True
-"  "|"       "|True
-datacompy|DataComPy|False
-something||False
-NULL|something|False
-NULL|NULL|True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
+    data = dedent(
+        """
+        a|b|expected
+        Hi|Hi|True
+        Yo|Yo|True
+        Hey|Hey |True
+        résumé|resume|False
+        résumé|résumé|True
+        💩|💩|True
+        💩|🤔|False
+        " "|" "|True
+        "  "|"       "|True
+        datacompy|DataComPy|False
+        something||False
+        NULL|something|False
+        NULL|NULL|True
+        """
     )
+    if parse(pl.__version__) >= parse("1.43.0"):
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            empty_string_is_null=True,
+        )
+    else:
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            missing_utf8_is_empty_string=True,
+        )
+
     actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
 
 
 def test_string_columns_equal_with_ignore_spaces_and_case():
-    data = """a|b|expected
-Hi|Hi|True
-Yo|Yo|True
-Hey|Hey |True
-résumé|resume|False
-résumé|résumé|True
-💩|💩|True
-💩|🤔|False
-" "|" "|True
-"  "|"       "|True
-datacompy|DataComPy|True
-something||False
-NULL|something|False
-NULL|NULL|True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
+    data = dedent(
+        """
+        a|b|expected
+        Hi|Hi|True
+        Yo|Yo|True
+        Hey|Hey |True
+        résumé|resume|False
+        résumé|résumé|True
+        💩|💩|True
+        💩|🤔|False
+        " "|" "|True
+        "  "|"       "|True
+        datacompy|DataComPy|True
+        something||False
+        NULL|something|False
+        NULL|NULL|True
+        """
     )
+    if parse(pl.__version__) >= parse("1.43.0"):
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            empty_string_is_null=True,
+        )
+    else:
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            missing_utf8_is_empty_string=True,
+        )
+
     actual_out = columns_equal(
         df["a"], df["b"], rel_tol=0.2, ignore_spaces=True, ignore_case=True
     )
@@ -155,19 +204,32 @@ NULL|NULL|True"""
 
 
 def test_date_columns_equal():
-    data = """a|b|expected
-2017-01-01|2017-01-01|True
-2017-01-02|2017-01-02|True
-2017-10-01|2017-10-10|False
-2017-01-01||False
-|2017-01-01|False
-||True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
+    data = dedent(
+        """
+        a|b|expected
+        2017-01-01|2017-01-01|True
+        2017-01-02|2017-01-02|True
+        2017-10-01|2017-10-10|False
+        2017-01-01||False
+        |2017-01-01|False
+        ||True
+        """
     )
+    if parse(pl.__version__) >= parse("1.43.0"):
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            empty_string_is_null=True,
+        )
+    else:
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            missing_utf8_is_empty_string=True,
+        )
+
     # First compare just the strings
     actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2)
     expect_out = df["expected"]
@@ -182,19 +244,32 @@ def test_date_columns_equal():
 
 
 def test_date_columns_equal_with_ignore_spaces():
-    data = """a|b|expected
-2017-01-01|2017-01-01   |True
-2017-01-02  |2017-01-02|True
-2017-10-01  |2017-10-10   |False
-2017-01-01||False
-|2017-01-01|False
-||True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
+    data = dedent(
+        """
+        a|b|expected
+        2017-01-01|2017-01-01   |True
+        2017-01-02  |2017-01-02|True
+        2017-10-01  |2017-10-10   |False
+        2017-01-01||False
+        |2017-01-01|False
+        ||True
+        """
     )
+    if parse(pl.__version__) >= parse("1.43.0"):
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            empty_string_is_null=True,
+        )
+    else:
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            missing_utf8_is_empty_string=True,
+        )
+
     # First compare just the strings
     actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
@@ -210,19 +285,32 @@ def test_date_columns_equal_with_ignore_spaces():
 
 
 def test_date_columns_equal_with_ignore_spaces_and_case():
-    data = """a|b|expected
-2017-01-01|2017-01-01   |True
-2017-01-02  |2017-01-02|True
-2017-10-01  |2017-10-10   |False
-2017-01-01||False
-|2017-01-01|False
-||True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
+    data = dedent(
+        """
+        a|b|expected
+        2017-01-01|2017-01-01   |True
+        2017-01-02  |2017-01-02|True
+        2017-10-01  |2017-10-10   |False
+        2017-01-01||False
+        |2017-01-01|False
+        ||True
+        """
     )
+    if parse(pl.__version__) >= parse("1.43.0"):
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            empty_string_is_null=True,
+        )
+    else:
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            missing_utf8_is_empty_string=True,
+        )
+
     # First compare just the strings
     actual_out = columns_equal(
         df["a"], df["b"], rel_tol=0.2, ignore_spaces=True, ignore_case=True
@@ -463,6 +551,7 @@ def test_columns_maintain_order_through_set_operations():
             (("A"), (0), (1), (2), (3), (4), (-2)),
             (("B"), (0), (2), (2), (3), (4), (-3)),
         ],
+        orient="row",
         schema=["join", "f", "g", "b", "h", "a", "c"],
     )
     df2 = pl.DataFrame(
@@ -470,6 +559,7 @@ def test_columns_maintain_order_through_set_operations():
             (("A"), (0), (1), (2), (-1), (4), (-3)),
             (("B"), (1), (2), (3), (-1), (4), (-2)),
         ],
+        orient="row",
         schema=["join", "e", "h", "b", "a", "g", "d"],
     )
     compare = PolarsCompare(df1, df2, ["join"])
@@ -680,27 +770,31 @@ def test_simple_dupes_one_field_three_to_two_vals():
 
 
 def test_dupes_from_real_data():
-    data = """acct_id,acct_sfx_num,trxn_post_dt,trxn_post_seq_num,trxn_amt,trxn_dt,debit_cr_cd,cash_adv_trxn_comn_cntry_cd,mrch_catg_cd,mrch_pstl_cd,visa_mail_phn_cd,visa_rqstd_pmt_svc_cd,mc_pmt_facilitator_idn_num
-100,0,2017-06-17,1537019,30.64,2017-06-15,D,CAN,5812,M2N5P5,,,0.0
-200,0,2017-06-24,1022477,485.32,2017-06-22,D,USA,4511,7114,7.0,1,
-100,0,2017-06-17,1537039,2.73,2017-06-16,D,CAN,5812,M4J 1M9,,,0.0
-200,0,2017-06-29,1049223,22.41,2017-06-28,D,USA,4789,21211,,A,
-100,0,2017-06-17,1537029,34.05,2017-06-16,D,CAN,5812,M4E 2C7,,,0.0
-200,0,2017-06-29,1049213,9.12,2017-06-28,D,CAN,5814,0,,,
-100,0,2017-06-19,1646426,165.21,2017-06-17,D,CAN,5411,M4M 3H9,,,0.0
-200,0,2017-06-30,1233082,28.54,2017-06-29,D,USA,4121,94105,7.0,G,
-100,0,2017-06-19,1646436,17.87,2017-06-18,D,CAN,5812,M4J 1M9,,,0.0
-200,0,2017-06-30,1233092,24.39,2017-06-29,D,USA,4121,94105,7.0,G,
-100,0,2017-06-19,1646446,5.27,2017-06-17,D,CAN,5200,M4M 3G6,,,0.0
-200,0,2017-06-30,1233102,61.8,2017-06-30,D,CAN,4121,0,,,
-100,0,2017-06-20,1607573,41.99,2017-06-19,D,CAN,5661,M4C1M9,,,0.0
-200,0,2017-07-01,1009403,2.31,2017-06-29,D,USA,5814,22102,,F,
-100,0,2017-06-20,1607553,86.88,2017-06-19,D,CAN,4812,H2R3A8,,,0.0
-200,0,2017-07-01,1009423,5.5,2017-06-29,D,USA,5812,2903,,F,
-100,0,2017-06-20,1607563,25.17,2017-06-19,D,CAN,5641,M4C 1M9,,,0.0
-200,0,2017-07-01,1009433,214.12,2017-06-29,D,USA,3640,20170,,A,
-100,0,2017-06-20,1607593,1.67,2017-06-19,D,CAN,5814,M2N 6L7,,,0.0
-200,0,2017-07-01,1009393,2.01,2017-06-29,D,USA,5814,22102,,F,"""
+    data = dedent(
+        """
+        acct_id,acct_sfx_num,trxn_post_dt,trxn_post_seq_num,trxn_amt,trxn_dt,debit_cr_cd,cash_adv_trxn_comn_cntry_cd,mrch_catg_cd,mrch_pstl_cd,visa_mail_phn_cd,visa_rqstd_pmt_svc_cd,mc_pmt_facilitator_idn_num
+        100,0,2017-06-17,1537019,30.64,2017-06-15,D,CAN,5812,M2N5P5,,,0.0
+        200,0,2017-06-24,1022477,485.32,2017-06-22,D,USA,4511,7114,7.0,1,
+        100,0,2017-06-17,1537039,2.73,2017-06-16,D,CAN,5812,M4J 1M9,,,0.0
+        200,0,2017-06-29,1049223,22.41,2017-06-28,D,USA,4789,21211,,A,
+        100,0,2017-06-17,1537029,34.05,2017-06-16,D,CAN,5812,M4E 2C7,,,0.0
+        200,0,2017-06-29,1049213,9.12,2017-06-28,D,CAN,5814,0,,,
+        100,0,2017-06-19,1646426,165.21,2017-06-17,D,CAN,5411,M4M 3H9,,,0.0
+        200,0,2017-06-30,1233082,28.54,2017-06-29,D,USA,4121,94105,7.0,G,
+        100,0,2017-06-19,1646436,17.87,2017-06-18,D,CAN,5812,M4J 1M9,,,0.0
+        200,0,2017-06-30,1233092,24.39,2017-06-29,D,USA,4121,94105,7.0,G,
+        100,0,2017-06-19,1646446,5.27,2017-06-17,D,CAN,5200,M4M 3G6,,,0.0
+        200,0,2017-06-30,1233102,61.8,2017-06-30,D,CAN,4121,0,,,
+        100,0,2017-06-20,1607573,41.99,2017-06-19,D,CAN,5661,M4C1M9,,,0.0
+        200,0,2017-07-01,1009403,2.31,2017-06-29,D,USA,5814,22102,,F,
+        100,0,2017-06-20,1607553,86.88,2017-06-19,D,CAN,4812,H2R3A8,,,0.0
+        200,0,2017-07-01,1009423,5.5,2017-06-29,D,USA,5812,2903,,F,
+        100,0,2017-06-20,1607563,25.17,2017-06-19,D,CAN,5641,M4C 1M9,,,0.0
+        200,0,2017-07-01,1009433,214.12,2017-06-29,D,USA,3640,20170,,A,
+        100,0,2017-06-20,1607593,1.67,2017-06-19,D,CAN,5814,M2N 6L7,,,0.0
+        200,0,2017-07-01,1009393,2.01,2017-06-29,D,USA,5814,22102,,F,
+        """
+    )
     df1 = pl.read_csv(io.StringIO(data), separator=",")
     df2 = df1.clone()
     compare_acct = PolarsCompare(df1, df2, join_columns=["acct_id"])
@@ -843,23 +937,29 @@ def test_integers_with_ignore_spaces_and_join_columns():
 
 
 def test_sample_mismatch():
-    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.1555,2017-01-01
-    10000001235,0.45,Michael Bluth,1,2017-01-01
-    10000001236,1345,George Bluth,,2017-01-01
-    10000001237,123456,Bob Loblaw,345.12,2017-01-01
-    10000001239,1.05,Lucille Bluth,,2017-01-01
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
+    data1 = dedent(
+        """
+        acct_id,dollar_amt,name,float_fld,date_fld
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    )
 
-    data2 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.4,George Michael Bluth,14530.155,
-    10000001235,0.45,Michael Bluth,,
-    10000001236,1345,George Bluth,1,
-    10000001237,123456,Robert Loblaw,345.12,
-    10000001238,1.05,Loose Seal Bluth,111,
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
+    data2 = dedent(
+        """
+        acct_id,dollar_amt,name,float_fld,date_fld
+        10000001234,123.4,George Michael Bluth,14530.155,
+        10000001235,0.45,Michael Bluth,,
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Robert Loblaw,345.12,
+        10000001238,1.05,Loose Seal Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    )
     df1 = pl.read_csv(io.StringIO(data1), separator=",")
     df2 = pl.read_csv(io.StringIO(data2), separator=",")
     compare = PolarsCompare(df1, df2, "acct_id")
@@ -878,23 +978,29 @@ def test_sample_mismatch():
 
 
 def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():
-    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.1555,2017-01-01
-    10000001235,0.45,Michael Bluth,1,2017-01-01
-    10000001236,1345,George Bluth,,2017-01-01
-    10000001237,123456,Bob Loblaw,345.12,2017-01-01
-    10000001239,1.05,Lucille Bluth,,2017-01-01
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
+    data1 = dedent(
+        """
+        acct_id,dollar_amt,name,float_fld,date_fld
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    )
 
-    data2 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.4,George Michael Bluth,14530.155,
-    10000001235,0.45,Michael Bluth,,
-    10000001236,1345,George Bluth,1,
-    10000001237,123456,Robert Loblaw,345.12,
-    10000001238,1.05,Loose Seal Bluth,111,
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
+    data2 = dedent(
+        """
+        acct_id,dollar_amt,name,float_fld,date_fld
+        10000001234,123.4,George Michael Bluth,14530.155,
+        10000001235,0.45,Michael Bluth,,
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Robert Loblaw,345.12,
+        10000001238,1.05,Loose Seal Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    )
     df1 = pl.read_csv(io.StringIO(data1), separator=",")
     df2 = pl.read_csv(io.StringIO(data2), separator=",")
     compare = PolarsCompare(df1, df2, "acct_id")
@@ -939,7 +1045,9 @@ def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():
 
 def test_all_mismatch_not_ignore_matching_cols_some_cols_matching():
     # Columns dollar_amt and name are matching
-    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
+    data1 = dedent(
+        """
+        acct_id,dollar_amt,name,float_fld,date_fld
         10000001234,123.45,George Maharis,14530.1555,2017-01-01
         10000001235,0.45,Michael Bluth,1,2017-01-01
         10000001236,1345,George Bluth,,2017-01-01
@@ -947,8 +1055,11 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching():
         10000001239,1.05,Lucille Bluth,,2017-01-01
         10000001240,123.45,George Maharis,14530.1555,2017-01-02
         """
+    )
 
-    data2 = """acct_id,dollar_amt,name,float_fld,date_fld
+    data2 = dedent(
+        """
+        acct_id,dollar_amt,name,float_fld,date_fld
         10000001234,123.45,George Maharis,14530.155,
         10000001235,0.45,Michael Bluth,,
         10000001236,1345,George Bluth,1,
@@ -956,6 +1067,7 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching():
         10000001238,1.05,Lucille Bluth,111,
         10000001240,123.45,George Maharis,14530.1555,2017-01-02
         """
+    )
     df1 = pl.read_csv(io.StringIO(data1), separator=",")
     df2 = pl.read_csv(io.StringIO(data2), separator=",")
     compare = PolarsCompare(df1, df2, "acct_id")
@@ -1001,23 +1113,29 @@ def test_all_mismatch_not_ignore_matching_cols_some_cols_matching():
 def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows():
     # Case where there are rows on either dataset which don't match up.
     # Columns dollar_amt and name are matching
-    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.1555,2017-01-01
-    10000001235,0.45,Michael Bluth,1,2017-01-01
-    10000001236,1345,George Bluth,,2017-01-01
-    10000001237,123456,Bob Loblaw,345.12,2017-01-01
-    10000001239,1.05,Lucille Bluth,,2017-01-01
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    10000001241,1111.05,Lucille Bluth,
-    """
+    data1 = dedent(
+        """
+        acct_id,dollar_amt,name,float_fld,date_fld
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        10000001241,1111.05,Lucille Bluth,
+        """
+    )
 
-    data2 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.155,
-    10000001235,0.45,Michael Bluth,,
-    10000001236,1345,George Bluth,1,
-    10000001237,123456,Bob Loblaw,345.12,
-    10000001238,1.05,Lucille Bluth,111,
-    """
+    data2 = dedent(
+        """
+        acct_id,dollar_amt,name,float_fld,date_fld
+        10000001234,123.45,George Maharis,14530.155,
+        10000001235,0.45,Michael Bluth,,
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Bob Loblaw,345.12,
+        10000001238,1.05,Lucille Bluth,111,
+        """
+    )
     df1 = pl.read_csv(io.StringIO(data1), separator=",")
     df2 = pl.read_csv(io.StringIO(data2), separator=",")
     compare = PolarsCompare(df1, df2, "acct_id")
@@ -1060,23 +1178,29 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching_diff_rows():
 
 def test_all_mismatch_ignore_matching_cols_some_cols_matching():
     # Columns dollar_amt and name are matching
-    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.1555,2017-01-01
-    10000001235,0.45,Michael Bluth,1,2017-01-01
-    10000001236,1345,George Bluth,,2017-01-01
-    10000001237,123456,Bob Loblaw,345.12,2017-01-01
-    10000001239,1.05,Lucille Bluth,,2017-01-01
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
+    data1 = dedent(
+        """
+        acct_id,dollar_amt,name,float_fld,date_fld
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    )
 
-    data2 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.155,
-    10000001235,0.45,Michael Bluth,,
-    10000001236,1345,George Bluth,1,
-    10000001237,123456,Bob Loblaw,345.12,
-    10000001238,1.05,Lucille Bluth,111,
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
+    data2 = dedent(
+        """
+        acct_id,dollar_amt,name,float_fld,date_fld
+        10000001234,123.45,George Maharis,14530.155,
+        10000001235,0.45,Michael Bluth,,
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Bob Loblaw,345.12,
+        10000001238,1.05,Lucille Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    )
     df1 = pl.read_csv(io.StringIO(data1), separator=",")
     df2 = pl.read_csv(io.StringIO(data2), separator=",")
     compare = PolarsCompare(df1, df2, "acct_id")
@@ -1118,23 +1242,29 @@ def test_all_mismatch_ignore_matching_cols_some_cols_matching():
 
 
 def test_all_mismatch_ignore_matching_cols_no_cols_matching():
-    data1 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.45,George Maharis,14530.1555,2017-01-01
-    10000001235,0.45,Michael Bluth,1,2017-01-01
-    10000001236,1345,George Bluth,,2017-01-01
-    10000001237,123456,Bob Loblaw,345.12,2017-01-01
-    10000001239,1.05,Lucille Bluth,,2017-01-01
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
+    data1 = dedent(
+        """
+        acct_id,dollar_amt,name,float_fld,date_fld
+        10000001234,123.45,George Maharis,14530.1555,2017-01-01
+        10000001235,0.45,Michael Bluth,1,2017-01-01
+        10000001236,1345,George Bluth,,2017-01-01
+        10000001237,123456,Bob Loblaw,345.12,2017-01-01
+        10000001239,1.05,Lucille Bluth,,2017-01-01
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    )
 
-    data2 = """acct_id,dollar_amt,name,float_fld,date_fld
-    10000001234,123.4,George Michael Bluth,14530.155,
-    10000001235,0.45,Michael Bluth,,
-    10000001236,1345,George Bluth,1,
-    10000001237,123456,Robert Loblaw,345.12,
-    10000001238,1.05,Loose Seal Bluth,111,
-    10000001240,123.45,George Maharis,14530.1555,2017-01-02
-    """
+    data2 = dedent(
+        """
+        acct_id,dollar_amt,name,float_fld,date_fld
+        10000001234,123.4,George Michael Bluth,14530.155,
+        10000001235,0.45,Michael Bluth,,
+        10000001236,1345,George Bluth,1,
+        10000001237,123456,Robert Loblaw,345.12,
+        10000001238,1.05,Loose Seal Bluth,111,
+        10000001240,123.45,George Maharis,14530.1555,2017-01-02
+        """
+    )
     df1 = pl.read_csv(io.StringIO(data1), separator=",")
     df2 = pl.read_csv(io.StringIO(data2), separator=",")
     compare = PolarsCompare(df1, df2, "acct_id")
@@ -1572,19 +1702,32 @@ def test_string_as_numeric():
 
 
 def test_single_date_columns_equal_to_string():
-    data = """a|b|expected
-2017-01-01|2017-01-01   |False
-2017-01-02  |2017-01-02|True
-2017-10-01  |2017-10-10   |False
-2017-01-01||False
-|2017-01-01|False
-||True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
+    data = dedent(
+        """
+        a|b|expected
+        2017-01-01|2017-01-01   |False
+        2017-01-02  |2017-01-02|True
+        2017-10-01  |2017-10-10   |False
+        2017-01-01||False
+        |2017-01-01|False
+        ||True
+        """
     )
+    if parse(pl.__version__) >= parse("1.43.0"):
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            empty_string_is_null=True,
+        )
+    else:
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            missing_utf8_is_empty_string=True,
+        )
+
     col_a = df["a"].str.strip_chars().str.to_date(strict=False)
     col_b = df["b"]
 
@@ -1596,19 +1739,32 @@ def test_single_date_columns_equal_to_string():
 
 
 def test_temporal_equal():
-    data = """a|b|expected
-2017-01-01|2017-01-01|True
-2017-01-02|2017-01-02|True
-2017-10-01|2017-10-10   |False
-2017-01-01||False
-|2017-01-01|False
-||True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
+    data = dedent(
+        """
+        a|b|expected
+        2017-01-01|2017-01-01|True
+        2017-01-02|2017-01-02|True
+        2017-10-01|2017-10-10   |False
+        2017-01-01||False
+        |2017-01-01|False
+        ||True
+        """
     )
+    if parse(pl.__version__) >= parse("1.43.0"):
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            empty_string_is_null=True,
+        )
+    else:
+        df = pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            missing_utf8_is_empty_string=True,
+        )
+
     expect_out = df["expected"]
 
     col_a = df["a"].str.to_date(strict=False)
@@ -1633,7 +1789,7 @@ def test_columns_equal_arrays():
         schema={"array_col": pl.Array(pl.Int64, 1)},
     )
     actual = columns_equal(df1["array_col"], df2["array_col"])
-    assert actual.explode().all()
+    assert actual.explode(empty_as_null=True).all()
 
     # all mismatch
     df1 = pl.DataFrame(
@@ -1645,7 +1801,7 @@ def test_columns_equal_arrays():
         schema={"array_col": pl.Array(pl.Int64, 1)},
     )
     actual = columns_equal(df1["array_col"], df2["array_col"])
-    assert not actual.explode().all()
+    assert not actual.explode(empty_as_null=True).all()
 
     # some equal
     df1 = pl.DataFrame(
@@ -1657,7 +1813,9 @@ def test_columns_equal_arrays():
         schema={"array_col": pl.Array(pl.Int64, 1)},
     )
     actual = columns_equal(df1["array_col"], df2["array_col"])
-    assert (actual.explode() == pl.Series([True, False, True, True, True])).all()
+    assert (
+        actual.explode(empty_as_null=True) == pl.Series([True, False, True, True, True])
+    ).all()
 
     # empty
     df1 = pl.DataFrame(
@@ -1669,7 +1827,7 @@ def test_columns_equal_arrays():
         schema={"array_col": pl.Array(pl.Int64, 0)},
     )
     actual = columns_equal(df1["array_col"], df2["array_col"])
-    assert actual.explode().all()
+    assert actual.explode(empty_as_null=True).all()
 
 
 def test_columns_equal_lists():
