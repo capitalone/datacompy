@@ -27,6 +27,7 @@ from typing import Any, Dict, List, cast
 
 import polars as pl
 from ordered_set import OrderedSet
+from packaging.version import parse
 
 from datacompy.base import (
     BaseCompare,
@@ -374,7 +375,14 @@ class PolarsCompare(BaseCompare):
         df1 = df1.with_columns(_merge_left=pl.lit(True))
         df2 = df2.with_columns(_merge_right=pl.lit(True))
 
-        outer_join = df1.join(df2, how="full", coalesce=True, join_nulls=True, **params)
+        if parse(pl.__version__) >= parse("1.24.0"):
+            outer_join = df1.join(
+                df2, how="full", coalesce=True, nulls_equal=True, **params
+            )
+        else:
+            outer_join = df1.join(
+                df2, how="full", coalesce=True, join_nulls=True, **params
+            )
 
         # process merge indicator
         outer_join = outer_join.with_columns(
