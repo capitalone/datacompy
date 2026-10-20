@@ -671,9 +671,12 @@ class PandasCompare(BaseCompare):
             LOG.info("Only join keys in data, returning mismatches based on unq_rows")
             return pd.concat([self.df1_unq_rows, self.df2_unq_rows])
 
-        for col in self.intersect_rows.columns:
-            if col.endswith("_match"):
-                orig_col_name = col[:-6]
+        # Walk the compared columns rather than every intersect_rows column
+        # ending in "_match": join columns and columns unique to one frame can
+        # have that suffix too, and are not compared.
+        for orig_col_name in self.intersect_columns():
+            if orig_col_name not in self.join_columns:
+                col = orig_col_name + "_match"
 
                 col_comparison = columns_equal(
                     col_1=self.intersect_rows[orig_col_name + "_" + self.df1_name],
