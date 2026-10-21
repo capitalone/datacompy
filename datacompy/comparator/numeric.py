@@ -209,7 +209,9 @@ class PandasNumericComparator(BaseComparator):
 
         Notes
         -----
-        - The comparison uses `np.isclose` to check for approximate equality.
+        - The comparison uses `np.isclose` to check for approximate equality, except
+          when both columns are integer types with zero tolerance, where values are
+          compared exactly because float64 cannot distinguish integers above 2**53.
         - If the series cannot be directly compared due to numeric type mismatches,
           If casting fails, a series of `False` values is returned.
         - If the Series shapes do not match, and neither type is numeric a `None`

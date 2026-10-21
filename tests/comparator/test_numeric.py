@@ -94,6 +94,18 @@ def test_polars_numeric_comparator_large_integers_with_tolerance():
     assert result.to_list() == [True]
 
 
+def test_polars_numeric_comparator_uint64_and_mixed_widths():
+    comparator = PolarsNumericComparator()
+    col1 = pl.Series([2**64 - 1, 2**31 - 1], dtype=pl.UInt64)
+    col2 = pl.Series([2**64 - 2, 2**31 - 1], dtype=pl.UInt64)
+    result = comparator.compare(col1, col2, rtol=0, atol=0)
+    assert result.to_list() == [False, True]
+    col1 = pl.Series([2**31 - 1], dtype=pl.Int32)
+    col2 = pl.Series([2**31 - 1], dtype=pl.Int64)
+    result = comparator.compare(col1, col2, rtol=0, atol=0)
+    assert result.to_list() == [True]
+
+
 # tests for PandasNumericComparator
 def test_pandas_numeric_comparator_exact_match():
     comparator = PandasNumericComparator()
@@ -170,3 +182,12 @@ def test_pandas_numeric_comparator_large_integers_with_tolerance():
     col2 = pd.Series([2**60 + 1])
     result = comparator.compare(col1, col2, rtol=1e-5, atol=0)
     assert result.tolist() == [True]
+
+
+def test_pandas_numeric_comparator_large_integers_uint64():
+    # UInt64 values near 2**64 are not distinct as floats either
+    comparator = PandasNumericComparator()
+    col1 = pd.Series([2**64 - 2, 5], dtype="UInt64")
+    col2 = pd.Series([2**64 - 3, 5], dtype="UInt64")
+    result = comparator.compare(col1, col2, rtol=0, atol=0)
+    assert result.tolist() == [False, True]
