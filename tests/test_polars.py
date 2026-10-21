@@ -2748,3 +2748,40 @@ def test_sensitive_columns_numeric_types_with_tolerance():
     assert compare.intersect_rows[0, "c_df1"] == "*******"
     assert compare.intersect_rows[0, "c_df2"] == "*******"
     assert compare.intersect_rows[0, "c_match"]
+
+
+@pytest.mark.parametrize(
+    ("df1", "df2", "join_columns"),
+    [
+        # a column only in df1 whose name ends in "_match"
+        (
+            pl.DataFrame({"id": [1, 2], "amt": [1, 2], "is_match": [True, False]}),
+            pl.DataFrame({"id": [1, 2], "amt": [1, 3]}),
+            ["id"],
+        ),
+        # a column only in df2 whose name ends in "_match"
+        (
+            pl.DataFrame({"id": [1, 2], "amt": [1, 2]}),
+            pl.DataFrame({"id": [1, 2], "amt": [1, 3], "is_match": [True, False]}),
+            ["id"],
+        ),
+        # a join column whose name ends in "_match"
+        (
+            pl.DataFrame({"id_match": [1, 2], "amt": [1, 2]}),
+            pl.DataFrame({"id_match": [1, 2], "amt": [1, 3]}),
+            ["id_match"],
+        ),
+    ],
+)
+@pytest.mark.parametrize("ignore_matching_cols", [False, True])
+def test_all_mismatch_column_name_ending_in_match(
+    df1, df2, join_columns, ignore_matching_cols
+):
+    compare = PolarsCompare(df1, df2, join_columns)
+
+    output = compare.all_mismatch(ignore_matching_cols=ignore_matching_cols)
+
+    assert output.columns == [*join_columns, "amt_df1", "amt_df2"]
+    assert output[join_columns[0]].to_list() == [2]
+    assert output["amt_df1"].to_list() == [2]
+    assert output["amt_df2"].to_list() == [3]

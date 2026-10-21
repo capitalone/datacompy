@@ -2928,3 +2928,40 @@ def test_columns_with_mismatches_on_index():
     result = compare.columns_with_mismatches()
     # When on_index=True, join_columns is empty, so all mismatching columns should be returned
     assert result == ["age"]
+
+
+@pytest.mark.parametrize(
+    ("df1", "df2", "join_columns"),
+    [
+        # a column only in df1 whose name ends in "_match"
+        (
+            pd.DataFrame({"id": [1, 2], "amt": [1, 2], "is_match": [True, False]}),
+            pd.DataFrame({"id": [1, 2], "amt": [1, 3]}),
+            ["id"],
+        ),
+        # a column only in df2 whose name ends in "_match"
+        (
+            pd.DataFrame({"id": [1, 2], "amt": [1, 2]}),
+            pd.DataFrame({"id": [1, 2], "amt": [1, 3], "is_match": [True, False]}),
+            ["id"],
+        ),
+        # a join column whose name ends in "_match"
+        (
+            pd.DataFrame({"id_match": [1, 2], "amt": [1, 2]}),
+            pd.DataFrame({"id_match": [1, 2], "amt": [1, 3]}),
+            ["id_match"],
+        ),
+    ],
+)
+@pytest.mark.parametrize("ignore_matching_cols", [False, True])
+def test_all_mismatch_column_name_ending_in_match(
+    df1, df2, join_columns, ignore_matching_cols
+):
+    compare = datacompy.PandasCompare(df1, df2, join_columns)
+
+    output = compare.all_mismatch(ignore_matching_cols=ignore_matching_cols)
+
+    assert list(output.columns) == [*join_columns, "amt_df1", "amt_df2"]
+    assert output[join_columns[0]].tolist() == [2]
+    assert output["amt_df1"].tolist() == [2]
+    assert output["amt_df2"].tolist() == [3]
