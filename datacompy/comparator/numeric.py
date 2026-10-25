@@ -141,6 +141,15 @@ class PolarsNumericComparator(BaseComparator):
             return None
 
         if col1.dtype.is_numeric() and col2.dtype.is_numeric():
+            if (
+                col1.dtype.is_integer()
+                and col2.dtype.is_integer()
+                and not rtol
+                and not atol
+            ):
+                # np.isclose compares as floats, which can't tell integers apart above 2**53
+                both_null = col1.is_null() & col2.is_null()
+                return ((col1 == col2) | both_null).fill_null(False)
             try:
                 return pl.Series(
                     np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
@@ -200,7 +209,9 @@ class PandasNumericComparator(BaseComparator):
 
         Notes
         -----
-        - The comparison uses `np.isclose` to check for approximate equality.
+        - The comparison uses `np.isclose` to check for approximate equality, except
+          when both columns are integer types with zero tolerance, where values are
+          compared exactly because float64 cannot distinguish integers above 2**53.
         - If the series cannot be directly compared due to numeric type mismatches,
           If casting fails, a series of `False` values is returned.
         - If the Series shapes do not match, and neither type is numeric a `None`
@@ -213,6 +224,16 @@ class PandasNumericComparator(BaseComparator):
             pd.api.types.infer_dtype(col1, skipna=True) in NUMERIC_PANDAS_TYPES
             and pd.api.types.infer_dtype(col2, skipna=True) in NUMERIC_PANDAS_TYPES
         ):
+            if (
+                pd.api.types.is_integer_dtype(col1.dtype)
+                and pd.api.types.is_integer_dtype(col2.dtype)
+                and not rtol
+                and not atol
+            ):
+                # np.isclose compares as floats, which can't tell integers apart above 2**53
+                both_null = col1.isna().to_numpy() & col2.isna().to_numpy()
+                equal = pd.array(col1.array == col2.array, dtype="boolean")
+                return pd.Series(equal.fillna(False).to_numpy(dtype=bool) | both_null)
             try:
                 return pd.Series(
                     np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
