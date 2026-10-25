@@ -144,7 +144,7 @@ overrides = [
 [edgetest.envs.core]
 python_version = "3.12"
 conda_install = [ "openjdk=17" ]
-extras = [ "spark, qa, tests, tests-spark" ]
+extras = [ "spark", "qa", "tests", "tests-spark" ]
 command = "pytest"
 upgrade = [
   "pandas",
