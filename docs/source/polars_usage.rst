@@ -198,7 +198,9 @@ Caveats and Limitations
 
 - Similar to Pandas the Polars version will try and be resilient to duplicate matching. See Pandas: :ref:`pandas-caveats`.
 - As mentioned above there is no indexing like in Pandas, so you must join on ``join_columns``
-- Polars ``join`` method uses ``join_nulls``. This tries to match `Pandas' behaviour <https://pandas.pydata.org/docs/reference/api/pandas.merge.html#pandas.merge>`_
-  but there might be unexpected results due to this.
+- Polars ``join`` matches nulls the way Pandas does, via ``join_nulls`` on polars
+  1.23 and earlier or ``nulls_equal`` on polars 1.24 and later (the argument was
+  renamed, and the old name was removed in polars 2.0). datacompy resolves whichever
+  the installed version accepts. There might be unexpected results due to this.
 - The Polars documentation has a good section on migrating from Pandas to Polars and some of the things to consider.
   See `Coming from Pandas <https://docs.pola.rs/user-guide/migration/pandas/>`_

@@ -17,6 +17,7 @@
 Testing out the datacompy functionality
 """
 
+import inspect
 import io
 import logging
 import os
@@ -44,6 +45,29 @@ from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+
+def read_fixture_csv(data: str) -> pl.DataFrame:
+    """Read a pipe-delimited fixture, keeping empty fields as empty strings.
+
+    ``missing_utf8_is_empty_string`` was renamed to ``empty_string_is_null`` in
+    polars 1.43 with the meaning inverted (``missing_utf8_is_empty_string=True``
+    is ``empty_string_is_null=False``) and removed in polars 2.0, so the keyword
+    has to follow whichever version is installed.
+    """
+    if "empty_string_is_null" in inspect.signature(pl.read_csv).parameters:
+        return pl.read_csv(
+            io.StringIO(data),
+            separator="|",
+            null_values=["NULL"],
+            empty_string_is_null=False,
+        )
+    return pl.read_csv(
+        io.StringIO(data),
+        separator="|",
+        null_values=["NULL"],
+        missing_utf8_is_empty_string=True,
+    )
 
 
 def test_numeric_columns_equal_abs():
@@ -98,12 +122,7 @@ datacompy|DataComPy|False
 something|NULL|False
 NULL|something|False
 NULL|NULL|True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
-    )
+    df = read_fixture_csv(data)
     actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -124,12 +143,7 @@ datacompy|DataComPy|False
 something||False
 NULL|something|False
 NULL|NULL|True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
-    )
+    df = read_fixture_csv(data)
     actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -150,12 +164,7 @@ datacompy|DataComPy|True
 something||False
 NULL|something|False
 NULL|NULL|True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
-    )
+    df = read_fixture_csv(data)
     actual_out = columns_equal(
         df["a"], df["b"], rel_tol=0.2, ignore_spaces=True, ignore_case=True
     )
@@ -171,12 +180,7 @@ def test_date_columns_equal():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
-    )
+    df = read_fixture_csv(data)
     # First compare just the strings
     actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2)
     expect_out = df["expected"]
@@ -198,12 +202,7 @@ def test_date_columns_equal_with_ignore_spaces():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
-    )
+    df = read_fixture_csv(data)
     # First compare just the strings
     actual_out = columns_equal(df["a"], df["b"], rel_tol=0.2, ignore_spaces=True)
     expect_out = df["expected"]
@@ -226,12 +225,7 @@ def test_date_columns_equal_with_ignore_spaces_and_case():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
-    )
+    df = read_fixture_csv(data)
     # First compare just the strings
     actual_out = columns_equal(
         df["a"], df["b"], rel_tol=0.2, ignore_spaces=True, ignore_case=True
@@ -1588,12 +1582,7 @@ def test_single_date_columns_equal_to_string():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
-    )
+    df = read_fixture_csv(data)
     col_a = df["a"].str.strip_chars().str.to_date(strict=False)
     col_b = df["b"]
 
@@ -1612,12 +1601,7 @@ def test_temporal_equal():
 2017-01-01||False
 |2017-01-01|False
 ||True"""
-    df = pl.read_csv(
-        io.StringIO(data),
-        separator="|",
-        null_values=["NULL"],
-        missing_utf8_is_empty_string=True,
-    )
+    df = read_fixture_csv(data)
     expect_out = df["expected"]
 
     col_a = df["a"].str.to_date(strict=False)
