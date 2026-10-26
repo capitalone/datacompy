@@ -28,14 +28,15 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 dynamic = [ "version" ]
 dependencies = [
   "jinja2>=3",
   "numpy>=1.26.4,<2.6",
   "ordered-set>=4.0.2,<=4.1",
-  "pandas>=2.2,<3.1",
-  "polars[pandas]>=0.20.4,<2.1",
+  "pandas>=2.2,<=3.1",
+  "polars[pandas]>=0.20.4,<=2.1",
 ]
 optional-dependencies.build = [ "build", "twine", "wheel" ]
 optional-dependencies.dev = [
