@@ -5,8 +5,8 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Template Customization Guide" href="template_guide.html"><link rel="prev" title="Snowpark/Snowflake Usage" href="snowflake_usage.html">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Polars Usage - datacompy 1.1.0 documentation</title>
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>Polars Usage - datacompy 1.2.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 1.2.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.2.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -442,8 +442,10 @@ and/or “df2”.):</p>
 <ul class="simple">
 <li><p>Similar to Pandas the Polars version will try and be resilient to duplicate matching. See Pandas: <a class="reference internal" href="pandas_usage.html#pandas-caveats"><span class="std std-ref">Caveats</span></a>.</p></li>
 <li><p>As mentioned above there is no indexing like in Pandas, so you must join on <code class="docutils literal notranslate"><span class="pre">join_columns</span></code></p></li>
-<li><p>Polars <code class="docutils literal notranslate"><span class="pre">join</span></code> method uses <code class="docutils literal notranslate"><span class="pre">join_nulls</span></code>. This tries to match <a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.merge.html#pandas.merge">Pandas’ behaviour</a>
-but there might be unexpected results due to this.</p></li>
+<li><p>Polars <code class="docutils literal notranslate"><span class="pre">join</span></code> matches nulls the way Pandas does, via <code class="docutils literal notranslate"><span class="pre">join_nulls</span></code> on polars
+1.23 and earlier or <code class="docutils literal notranslate"><span class="pre">nulls_equal</span></code> on polars 1.24 and later (the argument was
+renamed, and the old name was removed in polars 2.0). datacompy resolves whichever
+the installed version accepts. There might be unexpected results due to this.</p></li>
 <li><p>The Polars documentation has a good section on migrating from Pandas to Polars and some of the things to consider.
 See <a class="reference external" href="https://docs.pola.rs/user-guide/migration/pandas/">Coming from Pandas</a></p></li>
 </ul>
@@ -524,7 +526,7 @@ See <a class="reference external" href="https://docs.pola.rs/user-guide/migratio
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=fc837d61"></script>
+</div><script src="_static/documentation_options.js?v=6efca38a"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

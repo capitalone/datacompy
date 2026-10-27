@@ -5,8 +5,8 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="datacompy" href="api/modules.html"><link rel="prev" title="Benchmarks" href="benchmark.html">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Developer Instructions - datacompy 1.1.0 documentation</title>
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>Developer Instructions - datacompy 1.2.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
+      <a href="index.html"><div class="brand">datacompy 1.2.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.2.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -299,6 +299,80 @@ at it, which a non-interactive shell will not inherit:</p>
 </pre></div>
 </div>
 </section>
+<section id="local-ci-matrix-with-tox">
+<h2>Local CI matrix with tox<a class="headerlink" href="#local-ci-matrix-with-tox" title="Link to this heading">¶</a></h2>
+<p>Running the matrix by hand means installing the right JDK per Spark version,
+switching between <code class="docutils literal notranslate"><span class="pre">pytest.ini</span></code>, <code class="docutils literal notranslate"><span class="pre">pytest-ansi.ini</span></code> and <code class="docutils literal notranslate"><span class="pre">pytest-connect.ini</span></code>,
+and re-pinning <code class="docutils literal notranslate"><span class="pre">pyspark[connect]</span></code> for each track. <code class="docutils literal notranslate"><span class="pre">tox.ini</span></code> does that for
+you: it mirrors <code class="docutils literal notranslate"><span class="pre">.github/workflows/test-package.yml</span></code> job for job, and pulls
+Java and PySpark from conda-forge via <a class="reference external" href="https://github.com/tox-dev/tox-conda">tox-conda</a>
+so no system JDK is required.</p>
+<p>Using tox is optional. The plain <code class="docutils literal notranslate"><span class="pre">pytest</span></code> and <code class="docutils literal notranslate"><span class="pre">make</span></code> commands above still
+work and are what the individual test targets are for.</p>
+<p>Install the tooling, then run an environment:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="s2">"tox&lt;4"</span> <span class="n">tox</span><span class="o">-</span><span class="n">conda</span>
+
+<span class="n">tox</span> <span class="o">-</span><span class="n">e</span> <span class="n">lint</span>                      <span class="c1"># ruff check + ruff format --check</span>
+<span class="n">tox</span> <span class="o">-</span><span class="n">e</span> <span class="n">py312</span><span class="o">-</span><span class="n">nospark</span>             <span class="c1"># no pyspark; spark tests skip</span>
+<span class="n">tox</span> <span class="o">-</span><span class="n">e</span> <span class="n">py312</span><span class="o">-</span><span class="n">spark4</span><span class="o">-</span><span class="n">pandas3</span>     <span class="c1"># Spark 4, ANSI mode, Spark Connect</span>
+<span class="n">tox</span> <span class="o">-</span><span class="n">e</span> <span class="n">typecheck</span>                  <span class="c1"># mypy (not run by CI)</span>
+<span class="n">tox</span>                             <span class="c1"># every env in envlist</span>
+</pre></div>
+</div>
+<p>Each environment maps to a CI job:</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>tox environment</p></th>
+<th class="head"><p>CI job</p></th>
+<th class="head"><p>What it covers</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lint</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lint-and-format</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ruff</span> <span class="pre">check</span></code> and <code class="docutils literal notranslate"><span class="pre">ruff</span> <span class="pre">format</span> <span class="pre">--check</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">py{310,311,312,313}-nospark</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">test-basic-install</span></code></p></td>
+<td><p>pandas, polars, base, report and comparator tests; Spark and
+Snowflake tests skip via <code class="docutils literal notranslate"><span class="pre">importorskip</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">py311-spark35-pandas2</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">test-with-spark-3-install</span></code></p></td>
+<td><p>Spark 3.5 classic session, plus a second pass in ANSI mode</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">py310-spark4-pandas2</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">test-with-spark-4-install</span></code></p></td>
+<td><p>Spark 4 classic session</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">py312-spark4-pandas3</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">test-with-spark-4-install</span></code></p></td>
+<td><p>Spark 4 classic session, ANSI mode, and both Spark Connect suites</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The Spark environments are the entire cost of a run, roughly twenty minutes
+each, while the four no-Spark environments finish in under a minute. The
+matrix therefore covers the Python, pandas and Spark axes independently
+rather than as a cross product. Read the header of <code class="docutils literal notranslate"><span class="pre">tox.ini</span></code> before
+widening it: it records which combinations are left out and what adding one
+costs. Environments outside <code class="docutils literal notranslate"><span class="pre">envlist</span></code> still run on demand, so
+<code class="docutils literal notranslate"><span class="pre">tox</span> <span class="pre">-e</span> <span class="pre">py313-spark4-pandas3</span></code> works without being part of the default set.</p>
+<p>Two constraints worth knowing before you edit <code class="docutils literal notranslate"><span class="pre">tox.ini</span></code>:</p>
+<ul class="simple">
+<li><p>The Spark environments pin <code class="docutils literal notranslate"><span class="pre">openjdk&gt;=17.0.8,&lt;18</span></code>. conda-forge ships
+GraalVM builds of openjdk 17 below that floor, and selecting one drags in
+<code class="docutils literal notranslate"><span class="pre">graalpy-graalvm</span></code>, which replaces CPython with GraalPy and breaks pip.
+Do not relax the floor back to a bare <code class="docutils literal notranslate"><span class="pre">openjdk=17</span></code>.</p></li>
+<li><p>A classic Spark session and a Spark Connect session cannot coexist in one
+pytest process: starting a local Connect server sets <code class="docutils literal notranslate"><span class="pre">SPARK_LOCAL_REMOTE</span></code>,
+after which every later <code class="docutils literal notranslate"><span class="pre">SparkSession.builder.getOrCreate()</span></code> returns the
+Connect session. That is why the Connect suites are separate commands, and
+why <code class="docutils literal notranslate"><span class="pre">SPARK_LOCAL_REMOTE</span></code> is deliberately absent from <code class="docutils literal notranslate"><span class="pre">passenv</span></code>.</p></li>
+</ul>
+</section>
 <section id="snowflake-testing">
 <h2>Snowflake testing<a class="headerlink" href="#snowflake-testing" title="Link to this heading">¶</a></h2>
 <p>The Snowflake tests run either against a live Snowflake session or against
@@ -332,6 +406,11 @@ documentation, or code quality are added to <code class="docutils literal notran
 <h2>edgetest<a class="headerlink" href="#edgetest" title="Link to this heading">¶</a></h2>
 <p>edgetest is a utility to help keep requirements up to date and ensure a subset of testing requirements still work.
 More on edgetest <a class="reference external" href="https://github.com/capitalone/edgetest">here</a>.</p>
+<p>edgetest and tox do not interfere with each other. edgetest creates its
+environments under <code class="docutils literal notranslate"><span class="pre">.edgetest/</span></code> in the repository root and tox creates
+its own under <code class="docutils literal notranslate"><span class="pre">.tox/</span></code>; both directories are gitignored, and neither tool
+reads the other’s configuration. The <code class="docutils literal notranslate"><span class="pre">edgetest</span></code> extra and the tox
+environments can be installed side by side.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> has configuration details on how to run edgetest. The process is automated by the
 <code class="docutils literal notranslate"><span class="pre">edgetest</span></code> GitHub Actions workflow, which opens a pull request with any dependency bumps it finds.</p>
 <p>In order to execute edgetest locally you can run the following after install <code class="docutils literal notranslate"><span class="pre">edgetest</span></code>:</p>
@@ -453,6 +532,7 @@ from <a class="reference external" href="https://packaging.python.org/tutorials/
 <li><a class="reference internal" href="#pre-commit-hooks">Pre-Commit Hooks</a></li>
 <li><a class="reference internal" href="#generating-documentation">Generating Documentation</a></li>
 <li><a class="reference internal" href="#run-unit-tests">Run unit tests</a></li>
+<li><a class="reference internal" href="#local-ci-matrix-with-tox">Local CI matrix with tox</a></li>
 <li><a class="reference internal" href="#snowflake-testing">Snowflake testing</a></li>
 <li><a class="reference internal" href="#management-of-requirements">Management of Requirements</a></li>
 <li><a class="reference internal" href="#edgetest">edgetest</a></li>
@@ -469,7 +549,7 @@ from <a class="reference external" href="https://packaging.python.org/tutorials/
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=fc837d61"></script>
+</div><script src="_static/documentation_options.js?v=6efca38a"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

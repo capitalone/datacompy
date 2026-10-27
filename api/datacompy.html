@@ -5,8 +5,8 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="datacompy.cli package" href="datacompy.cli.html"><link rel="prev" title="datacompy" href="modules.html">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>datacompy package - datacompy 1.1.0 documentation</title>
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>datacompy package - datacompy 1.2.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">datacompy 1.1.0 documentation</div></a>
+      <a href="../index.html"><div class="brand">datacompy 1.2.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
-  <span class="sidebar-brand-text">datacompy 1.1.0 documentation</span>
+  <span class="sidebar-brand-text">datacompy 1.2.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -848,6 +848,9 @@ otherwise formatted, so the template stays in charge of how a number is
 presented and this function stays in charge only of how wide the column is.
 That split is what keeps the header rule, the separator, and the body
 aligned no matter how long a dataset name or dtype turns out to be.</p>
+<p>Widths are measured in printed columns rather than characters, so names
+written in Chinese or Japanese, or with separately stored accents, line up
+with everything else.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -923,6 +926,25 @@ Returns 0 if neither the column nor “default” is present in the dictionary.<
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>FileNotFoundError</strong> – If the template file cannot be found in any of the expected locations</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="datacompy.base.report_to_html">
+<span class="sig-prename descclassname"><span class="pre">datacompy.base.</span></span><span class="sig-name descname"><span class="pre">report_to_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">report</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#datacompy.base.report_to_html" title="Link to this definition">¶</a></dt>
+<dd><p>Wrap a text report in a minimal HTML page.</p>
+<p>The page declares UTF-8, the encoding datacompy writes HTML reports in, so a
+browser shows non-ASCII text as it is instead of guessing a legacy encoding.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>report</strong> (<em>str</em>) – The text report to convert to HTML</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>HTML with the text report inside a <code class="docutils literal notranslate"><span class="pre">&lt;pre&gt;</span></code> block.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
 </dd>
 </dl>
 </dd></dl>
@@ -4289,6 +4311,7 @@ shared columns.</p>
 <li><a class="reference internal" href="#datacompy.base.fixed_width_table"><code class="docutils literal notranslate"><span class="pre">fixed_width_table()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.base.get_column_tolerance"><code class="docutils literal notranslate"><span class="pre">get_column_tolerance()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.base.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
+<li><a class="reference internal" href="#datacompy.base.report_to_html"><code class="docutils literal notranslate"><span class="pre">report_to_html()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.base.save_html_report"><code class="docutils literal notranslate"><span class="pre">save_html_report()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.base.temp_column_name"><code class="docutils literal notranslate"><span class="pre">temp_column_name()</span></code></a></li>
 <li><a class="reference internal" href="#datacompy.base.validate_tolerance_parameter"><code class="docutils literal notranslate"><span class="pre">validate_tolerance_parameter()</span></code></a></li>
@@ -4651,7 +4674,7 @@ shared columns.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=fc837d61"></script>
+</div><script src="../_static/documentation_options.js?v=6efca38a"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
