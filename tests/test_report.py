@@ -493,3 +493,87 @@ def test_report_tables_align_non_ascii_names(compare_class):
         "旧表             2     2",
         f"{decomposed}             2     2",
     ]
+
+
+@pytest.mark.parametrize("backend", ["pandas", "polars"])
+def test_comparison_report_to_dict_json_serializable(backend):
+    left = {"id": [1, 2], "val": [10, 20]}
+    right = {"id": [1, 2], "val": [10, 21]}
+    if backend == "pandas":
+        compare = PandasCompare(
+            pd.DataFrame(left), pd.DataFrame(right), join_columns="id"
+        )
+    else:
+        compare = PolarsCompare(
+            pl.DataFrame(left), pl.DataFrame(right), join_columns="id"
+        )
+    result = json.loads(json.dumps(compare.build_report_data().to_dict()))
+    assert result["row_summary"]["unequal_rows"] == 1
+    assert result["column_comparison"]["unequal_values"] == 1
+
+
+def test_report_to_dict_preserves_native_types_for_numpy_scalars():
+    import numpy as np
+
+    original = _minimal_report_data()
+    nested = {
+        "integer": np.int64(42),
+        "unsigned": np.uint64(2**63 + 1),
+        "float": np.float32(0.5),
+        "boolean": np.bool_(True),
+        "nested": [np.int32(2), {"value": np.float64(1.5), "null": None}],
+    }
+    data = dataclasses.replace(
+        original,
+        row_summary=dataclasses.replace(original.row_summary, abs_tol=nested),
+    )
+    result = data.to_dict()
+    value = result["row_summary"]["abs_tol"]
+    assert type(value["integer"]) is int
+    assert type(value["unsigned"]) is int
+    assert type(value["float"]) is float
+    assert type(value["boolean"]) is bool
+    assert type(value["nested"][0]) is int
+    assert value["nested"][1]["null"] is None
+    assert json.loads(json.dumps(value)) == {
+        "integer": 42,
+        "unsigned": 2**63 + 1,
+        "float": 0.5,
+        "boolean": True,
+        "nested": [2, {"value": 1.5, "null": None}],
+    }
+    assert isinstance(data.row_summary.abs_tol["integer"], np.int64)
+    assert isinstance(result["row_summary"]["match_columns"], tuple)
+
+
+@pytest.mark.parametrize(
+    "scalar_name, native_type",
+    [
+        (name, int)
+        for name in (
+            "int8",
+            "int16",
+            "int32",
+            "int64",
+            "uint8",
+            "uint16",
+            "uint32",
+            "uint64",
+        )
+    ]
+    + [(name, float) for name in ("float16", "float32", "float64")]
+    + [("bool_", bool)],
+)
+def test_report_to_dict_numpy_numeric_scalar_types(scalar_name, native_type):
+    import numpy as np
+
+    original = _minimal_report_data()
+    data = dataclasses.replace(
+        original,
+        row_summary=dataclasses.replace(
+            original.row_summary, abs_tol={"val": getattr(np, scalar_name)(1)}
+        ),
+    )
+    result = data.to_dict()
+    assert type(result["row_summary"]["abs_tol"]["val"]) is native_type
+    json.dumps(result)

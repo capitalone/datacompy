@@ -44,6 +44,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
+import numpy as np
+
 from datacompy.base import render, report_to_html, save_html_report
 
 
@@ -314,9 +316,28 @@ class ReportData:
         Returns
         -------
         dict
-            ``dataclasses.asdict(self)`` — safe for ``json.dumps()``.
+            A copy of the report fields with NumPy numeric and Boolean scalars
+            converted to Python values, safe for ``json.dumps()``.
         """
-        return dataclasses.asdict(self)
+
+        def normalize(value: Any) -> Any:
+            if isinstance(value, dict):
+                return {key: normalize(item) for key, item in value.items()}
+            if isinstance(value, list):
+                return [normalize(item) for item in value]
+            if isinstance(value, tuple):
+                return tuple(normalize(item) for item in value)
+            if isinstance(value, np.bool_):
+                return bool(value)
+            if isinstance(value, np.integer):
+                return int(value)
+            if isinstance(value, np.floating):
+                return float(value)
+            return value
+
+        return {
+            key: normalize(value) for key, value in dataclasses.asdict(self).items()
+        }
 
     def __str__(self) -> str:
         """Return the rendered report as a string."""
