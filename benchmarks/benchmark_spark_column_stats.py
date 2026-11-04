@@ -71,6 +71,7 @@ def main():  # noqa: D103
         .config("spark.sql.ansi.enabled", "false")
         .config("spark.sql.shuffle.partitions", "8")
         .config("spark.ui.enabled", "false")
+        .config("spark.driver.memory", "4g")
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("ERROR")
