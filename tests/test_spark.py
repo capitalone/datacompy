@@ -21,6 +21,7 @@ import logging
 import os
 import re
 import tempfile
+import uuid
 from datetime import datetime
 from decimal import Decimal
 from io import StringIO
@@ -34,11 +35,15 @@ pytest.importorskip("pyspark")
 
 from datacompy.comparator.base import BaseComparator
 from datacompy.comparator.string import PYSPARK_STRING_TYPE
-from datacompy.comparator.utility import get_spark_column_dtypes
+from datacompy.comparator.utility import (
+    get_spark_column_dtypes,
+    is_spark_connect_object,
+)
 from datacompy.spark import (
     SparkSQLCompare,
     _generate_id_within_group,
     calculate_max_diff,
+    calculate_null_diff,
     columns_equal,
     temp_column_name,
 )
@@ -48,6 +53,7 @@ from pyspark.sql.types import (
     ArrayType,
     BooleanType,
     DateType,
+    DoubleType,
     IntegerType,
     StringType,
     StructField,
@@ -2935,3 +2941,148 @@ def test_unq_rows_clean_columns_regression_288(spark_session):
     assert set(compare.df1_unq_rows.columns) == set(df1.columns)
     assert "_merge_right" not in compare.df1_unq_rows.columns
     assert "_merge_left" not in compare.df1_unq_rows.columns
+
+
+def _wide_frames(spark_session, num_cols, num_rows=20):
+    rng = np.random.default_rng(0)
+    data1 = {"id": np.arange(num_rows)}
+    data2 = {"id": np.arange(num_rows)}
+    for i in range(num_cols):
+        values = rng.random(num_rows)
+        data1[f"c{i}"] = values
+        data2[f"c{i}"] = values + (rng.random(num_rows) > 0.5) * 0.1
+    return (
+        spark_session.createDataFrame(pd.DataFrame(data1)),
+        spark_session.createDataFrame(pd.DataFrame(data2)),
+    )
+
+
+def _count_jobs(spark_session, func):
+    if is_spark_connect_object(spark_session):
+        pytest.skip("Spark Connect sessions have no SparkContext status tracker")
+    tracker = spark_session.sparkContext.statusTracker()
+    group = f"datacompy-job-count-{uuid.uuid4()}"
+    spark_session.sparkContext.setJobGroup(group, group)
+    try:
+        func()
+    finally:
+        spark_session.sparkContext.setLocalProperty("spark.jobGroup.id", None)
+    return len(tracker.getJobIdsForGroup(group))
+
+
+def test_intersect_compare_job_count_does_not_grow_with_columns(spark_session):
+    """Column statistics are gathered in one aggregation, not per column."""
+    small1, small2 = _wide_frames(spark_session, 2)
+    wide1, wide2 = _wide_frames(spark_session, 30)
+
+    small_jobs = _count_jobs(
+        spark_session, lambda: SparkSQLCompare(spark_session, small1, small2, "id")
+    )
+    wide_jobs = _count_jobs(
+        spark_session, lambda: SparkSQLCompare(spark_session, wide1, wide2, "id")
+    )
+    assert small_jobs > 0
+    assert wide_jobs == small_jobs
+
+
+def test_intersect_compare_stats_match_per_column_helpers(spark_session):
+    """The batched column statistics agree with the standalone helpers."""
+    schema = StructType(
+        [
+            StructField("id", IntegerType()),
+            StructField("ints", IntegerType()),
+            StructField("floats", DoubleType()),
+            StructField("strs", StringType()),
+            StructField("flags", BooleanType()),
+            StructField("dates", DateType()),
+            StructField("arrs", ArrayType(IntegerType())),
+        ]
+    )
+    df1 = spark_session.createDataFrame(
+        [
+            (1, 1, 1.5, "a", True, datetime(2024, 1, 1).date(), [1, 2]),
+            (2, None, 2.0, "b", None, None, [3]),
+            (3, 5, None, None, False, datetime(2024, 1, 3).date(), None),
+            (4, 7, None, "d", True, datetime(2024, 1, 4).date(), [4]),
+            (5, 9, float("nan"), "e", True, datetime(2024, 1, 5).date(), []),
+        ],
+        schema,
+    )
+    df2 = spark_session.createDataFrame(
+        [
+            (1, 1, 1.25, "a", True, datetime(2024, 1, 1).date(), [1, 2]),
+            (2, 4, 2.0, "B", True, datetime(2024, 1, 2).date(), [3]),
+            (3, None, 3.0, "c", False, None, [9]),
+            (4, 10, 4.0, None, None, datetime(2024, 1, 4).date(), [4]),
+            (6, 0, 0.0, "f", False, None, None),
+        ],
+        schema,
+    )
+
+    compare = SparkSQLCompare(spark_session, df1, df2, "id", abs_tol=0.3)
+    intersect = compare.intersect_rows
+    stats = {s["column"]: s for s in compare.column_stats}
+
+    assert stats["id"]["match_cnt"] == 4
+    for column in ["ints", "floats", "strs", "flags", "dates", "arrs"]:
+        col_1, col_2 = f"{column}_df1", f"{column}_df2"
+        expected_match = intersect.filter(col(f"{column}_match") == True).count()  # noqa: E712
+        assert stats[column]["match_cnt"] == expected_match, column
+        assert stats[column]["unequal_cnt"] == 4 - expected_match, column
+        assert stats[column]["max_diff"] == calculate_max_diff(
+            intersect, col_1, col_2
+        ), column
+        assert stats[column]["null_diff"] == calculate_null_diff(
+            intersect, col_1, col_2
+        ), column
+
+    assert np.isclose(stats["ints"]["max_diff"], 3)
+    assert stats["ints"]["null_diff"] == 2
+    assert np.isclose(stats["floats"]["max_diff"], 0.25)
+    assert stats["floats"]["null_diff"] == 2
+    assert stats["strs"]["null_diff"] == 2
+    assert stats["arrs"]["max_diff"] == 0
+    assert stats["arrs"]["null_diff"] == 1
+    assert stats["dates"]["max_diff"] == 0
+    assert stats["dates"]["null_diff"] == 2
+
+
+def test_compare_date_columns(spark_session):
+    """DATE columns compare without casting them to double (rejected by Spark 4)."""
+    schema = StructType(
+        [StructField("id", IntegerType()), StructField("d", DateType())]
+    )
+    df1 = spark_session.createDataFrame(
+        [(1, datetime(2024, 1, 1).date()), (2, datetime(2024, 1, 2).date())], schema
+    )
+    df2 = spark_session.createDataFrame(
+        [(1, datetime(2024, 1, 1).date()), (2, datetime(2024, 1, 9).date())], schema
+    )
+    compare = SparkSQLCompare(spark_session, df1, df2, "id")
+    stats = {s["column"]: s for s in compare.column_stats}
+    assert stats["d"]["match_cnt"] == 1
+    assert stats["d"]["max_diff"] == 0
+    assert calculate_max_diff(compare.intersect_rows, "d_df1", "d_df2") == 0
+    assert not compare.matches()
+
+
+def test_intersect_compare_stats_with_no_overlapping_rows(spark_session):
+    df1 = spark_session.createDataFrame(pd.DataFrame({"id": [1, 2], "a": [1.0, 2.0]}))
+    df2 = spark_session.createDataFrame(pd.DataFrame({"id": [3, 4], "a": [1.0, 2.0]}))
+    compare = SparkSQLCompare(spark_session, df1, df2, "id")
+    stats = {s["column"]: s for s in compare.column_stats}
+    assert stats["a"]["match_cnt"] == 0
+    assert stats["a"]["unequal_cnt"] == 0
+    assert stats["a"]["max_diff"] == 0
+    assert stats["a"]["null_diff"] == 0
+    assert stats["id"]["match_cnt"] == 0
+
+
+def test_calculate_null_diff(spark_session):
+    df = spark_session.createDataFrame(
+        pd.DataFrame(
+            {"a": [1.0, None, 3.0, None, 5.0], "b": [1.0, 2.0, None, None, 5.0]}
+        )
+    )
+    assert calculate_null_diff(df, "a", "b") == 2
+    assert calculate_null_diff(df.limit(0), "a", "b") == 0
