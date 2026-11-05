@@ -125,9 +125,13 @@ class PolarsStringComparator(BaseComparator):
             col2_type in POLARS_DATE_TYPE and col1_type in POLARS_STRING_TYPE
         ):
             return polars_compare_string_and_date_columns(col1, col2)
-        # both are strings or both are temporal or both are categorical
+        # both are strings or both are temporal or both are categorical, treating
+        # an all-null column (Null dtype, no value to signal a type) as string-compatible
         elif (
-            (col1_type in POLARS_STRING_TYPE and col2_type in POLARS_STRING_TYPE)
+            (
+                (col1_type in POLARS_STRING_TYPE or col1_type == "Null")
+                and (col2_type in POLARS_STRING_TYPE or col2_type == "Null")
+            )
             or (col1.dtype.is_temporal() and col2.dtype.is_temporal())
             or (col1_type == "Categorical" and col2_type == "Categorical")
         ):
