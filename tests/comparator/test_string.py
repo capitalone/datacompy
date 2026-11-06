@@ -67,6 +67,31 @@ def test_polars_string_comparator_none_handling():
     assert result.to_list() == [True, True, True]
 
 
+def test_polars_string_comparator_all_null_columns():
+    comparator = PolarsStringComparator()
+    col1 = pl.Series([None, None, None])
+    col2 = pl.Series([None, None, None])
+    result = comparator.compare(col1, col2)
+    assert result.to_list() == [True, True, True]
+
+
+def test_polars_string_comparator_all_null_vs_string():
+    comparator = PolarsStringComparator()
+    col1 = pl.Series([None, None, None])
+    col2 = pl.Series(["a", None, "c"])
+    assert comparator.compare(col1, col2).to_list() == [False, True, False]
+    assert comparator.compare(col2, col1).to_list() == [False, True, False]
+
+
+def test_polars_string_comparator_empty_null_columns():
+    comparator = PolarsStringComparator()
+    col1 = pl.Series([], dtype=pl.Null)
+    col2 = pl.Series([], dtype=pl.Null)
+    result = comparator.compare(col1, col2)
+    assert result.dtype == pl.Boolean
+    assert result.to_list() == []
+
+
 def test_polars_string_comparator_mismatch():
     comparator = PolarsStringComparator()
     col1 = pl.Series(["a", "b", "c"])

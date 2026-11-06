@@ -1535,6 +1535,33 @@ def test_non_full_join_counts_some_matches():
     )
 
 
+def test_all_null_column_equal():
+    df = pl.DataFrame({"a": [None, None, None], "b": [None, None, None]})
+    assert columns_equal(df["a"], df["b"]).to_list() == [True, True, True]
+
+
+def test_all_null_column_compare_matches():
+    df1 = pl.DataFrame({"id": [1, 2, 3], "note": [None, None, None]})
+    df2 = pl.DataFrame({"id": [1, 2, 3], "note": [None, None, None]})
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    assert compare.matches()
+    assert compare.count_matching_rows() == 3
+
+
+def test_all_null_column_vs_string_column():
+    df1 = pl.DataFrame({"id": [1, 2, 3], "note": [None, None, None]})
+    df2 = pl.DataFrame({"id": [1, 2, 3], "note": [None, "b", None]})
+    compare = PolarsCompare(df1, df2, join_columns=["id"])
+    assert not compare.matches()
+    assert compare.count_matching_rows() == 2
+
+
+def test_all_null_column_empty_frames_report():
+    df = pl.DataFrame(schema={"id": pl.Int64, "note": pl.Null})
+    compare = PolarsCompare(df, df.clone(), join_columns=["id"])
+    assert "Number of rows in common: 0" in compare.report()
+
+
 def test_categorical_column():
     df = pl.DataFrame(
         {
