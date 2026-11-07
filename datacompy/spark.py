@@ -91,8 +91,9 @@ class SparkSQLCompare(BaseCompare):
     """Comparison class to be used to compare whether two Spark SQL dataframes are equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
-    with unique column names. Differences between values are compared to
-    abs_tol + rel_tol * abs(df2['value']).
+    with unique column names. Numeric differences use ``math.isclose``
+    semantics: values match when
+    ``|a - b| <= max(rel_tol * max(|a|, |b|), abs_tol)``.
 
     Parameters
     ----------

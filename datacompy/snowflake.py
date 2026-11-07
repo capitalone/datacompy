@@ -96,8 +96,8 @@ class SnowflakeCompare(BaseCompare):
 
     df1 and df2 can refer to either a Snowpark dataframe or the name of a valid Snowflake table.
     The data structures which df1 and df2 represent must contain all of the join_columns,
-    with unique column names. Differences between values are compared to
-    abs_tol + rel_tol * abs(df2['value']).
+    with unique column names. Numeric differences use ``math.isclose`` semantics:
+    values match when ``|a - b| <= max(rel_tol * max(|a|, |b|), abs_tol)``.
 
     Parameters
     ----------
