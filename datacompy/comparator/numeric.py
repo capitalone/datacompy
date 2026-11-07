@@ -209,9 +209,10 @@ class PandasNumericComparator(BaseComparator):
 
         Notes
         -----
-        - The comparison uses `np.isclose` to check for approximate equality, except
-          when both columns are integer types with zero tolerance, where values are
-          compared exactly because float64 cannot distinguish integers above 2**53.
+        - The comparison uses ``math.isclose`` semantics
+          (``|a - b| <= max(rtol * max(|a|, |b|), atol)``), except when both
+          columns are integer types with zero tolerance, where values are compared
+          exactly because float64 cannot distinguish integers above 2**53.
         - If the series cannot be directly compared due to numeric type mismatches,
           If casting fails, a series of `False` values is returned.
         - If the Series shapes do not match, and neither type is numeric a `None`
@@ -230,27 +231,28 @@ class PandasNumericComparator(BaseComparator):
                 and not rtol
                 and not atol
             ):
-                # np.isclose compares as floats, which can't tell integers apart above 2**53
+                # float comparison can't tell integers apart above 2**53
                 both_null = col1.isna().to_numpy() & col2.isna().to_numpy()
                 equal = pd.array(col1.array == col2.array, dtype="boolean")
                 return pd.Series(equal.fillna(False).to_numpy(dtype=bool) | both_null)
             try:
-                return pd.Series(
-                    np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
-                )
-            except TypeError:
+                a = np.asarray(col1, dtype=np.float64)
+                b = np.asarray(col2, dtype=np.float64)
+            except (TypeError, ValueError):
                 try:
-                    return pd.Series(
-                        np.isclose(
-                            col1.astype(float),
-                            col2.astype(float),
-                            rtol=rtol,
-                            atol=atol,
-                            equal_nan=True,
-                        )
-                    )
+                    a = np.asarray(col1.astype(float), dtype=np.float64)
+                    b = np.asarray(col2.astype(float), dtype=np.float64)
                 except Exception:
                     return pd.Series(False, index=col1.index)
+            # math.isclose: symmetric, combine tolerances with max; NaN/NaN matches.
+            close = a == b
+            close |= np.isnan(a) & np.isnan(b)
+            finite = np.isfinite(a) & np.isfinite(b)
+            tolerance = np.maximum(rtol * np.maximum(np.abs(a), np.abs(b)), atol)
+            diff = np.zeros_like(a)
+            np.subtract(a, b, out=diff, where=finite)
+            close |= finite & (np.abs(diff) <= tolerance)
+            return pd.Series(close)
         else:
             return None
 
@@ -301,7 +303,8 @@ class SparkNumericComparator(BaseComparator):
 
         Notes
         -----
-        - The comparison uses PySpark SQL functions to check for approximate equality.
+        - The comparison uses ``math.isclose`` semantics:
+          ``|a - b| <= max(rtol * max(|a|, |b|), atol)``.
         - Null-safe equality (`eqNullSafe`) is used to handle null values.
         - If either column contains NaN values, they are handled explicitly to avoid
           incorrect comparisons.
@@ -330,6 +333,11 @@ class SparkNumericComparator(BaseComparator):
             try:
                 nan_col1 = psf.isnan(col1_expr) if col1_can_be_nan else psf.lit(False)
                 nan_col2 = psf.isnan(col2_expr) if col2_can_be_nan else psf.lit(False)
+                within_tol = psf.abs(col1_expr - col2_expr) <= psf.greatest(
+                    psf.lit(rtol)
+                    * psf.greatest(psf.abs(col1_expr), psf.abs(col2_expr)),
+                    psf.lit(atol),
+                )
                 return (
                     psf.when(nan_col1 & nan_col2, psf.lit(True))  # NaN == NaN
                     .when(
@@ -338,11 +346,7 @@ class SparkNumericComparator(BaseComparator):
                     .when(
                         psf.col(col1).eqNullSafe(psf.col(col2)), psf.lit(True)
                     )  # NULL-safe equality
-                    .when(
-                        psf.abs(col1_expr - col2_expr)
-                        <= psf.lit(atol) + (psf.lit(rtol) * psf.abs(col2_expr)),
-                        psf.lit(True),  # within tolerance
-                    )
+                    .when(within_tol, psf.lit(True))
                     .otherwise(psf.lit(False))
                 )
             except Exception:
@@ -401,7 +405,8 @@ class SnowflakeNumericComparator(BaseComparator):
 
         Notes
         -----
-        - The comparison uses Snowpark SQL functions to check for approximate equality.
+        - The comparison uses ``math.isclose`` semantics:
+          ``|a - b| <= max(rtol * max(|a|, |b|), atol)``.
         - Null-safe equality (`eqNullSafe`) is used to handle null values.
         - If either column contains null values, they are handled explicitly to avoid
           incorrect comparisons.
@@ -415,14 +420,15 @@ class SnowflakeNumericComparator(BaseComparator):
         )
         if (base_numeric_type) and (compare_numeric_type):
             try:
+                within_tol = spf.abs(spf.col(col1) - spf.col(col2)) <= spf.greatest(
+                    spf.lit(rtol)
+                    * spf.greatest(spf.abs(spf.col(col1)), spf.abs(spf.col(col2))),
+                    spf.lit(atol),
+                )
                 return dataframe.withColumn(
                     col_match,
                     spf.when(
-                        (spf.col(col1).eqNullSafe(spf.col(col2)))
-                        | (
-                            spf.abs(spf.col(col1) - spf.col(col2))
-                            <= spf.lit(atol) + (spf.lit(rtol) * spf.abs(spf.col(col2)))
-                        ),
+                        (spf.col(col1).eqNullSafe(spf.col(col2))) | within_tol,
                         # corner case of col1 != null and col2 == null returns True incorrectly
                         spf.when(
                             (spf.is_null(spf.col(col1)) == False)  # noqa: E712
