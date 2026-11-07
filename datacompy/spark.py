@@ -588,21 +588,39 @@ class SparkSQLCompare(BaseCompare):
             # where classic Spark treats it as a no-op. This is reached when the
             # dataframes share nothing but the join columns.
             self.intersect_rows = self.intersect_rows.withColumns(exprs)
-        all_rows_count = self.intersect_rows.count()
 
-        if exprs:
-            agg_exprs = [
-                F.sum(F.when(F.col(c) == True, 1).otherwise(0)).alias(f"{c}_count")  # noqa: E712
-                for c in exprs
-            ]
-            match_counts = self.intersect_rows.agg(*agg_exprs).first()
-        else:
-            match_counts = {}
+        # Every per-column statistic (match count, max diff, null diff) plus the
+        # row count is gathered in a single aggregation, so the comparison runs
+        # one Spark job here no matter how many columns are compared. Computing
+        # them column by column used to cost 2 jobs per column on top of this.
+        # Results are read back by position, so no alias can collide with a
+        # user column name.
+        agg_exprs = [F.count(F.lit(1))]
+        stat_positions: Dict[str, Tuple[int, int | None, int]] = {}
+        for column in self.intersect_columns():
+            if column in self.join_columns:
+                continue
+            col_1 = f"{column}_{self.df1_name}"
+            col_2 = f"{column}_{self.df2_name}"
+            match_pos = len(agg_exprs)
+            agg_exprs.append(
+                F.sum(F.when(F.col(f"{column}_match") == True, 1).otherwise(0))  # noqa: E712
+            )
+            max_diff_agg = _max_diff_agg(self.intersect_rows, col_1, col_2)
+            max_diff_pos: int | None = None
+            if max_diff_agg is not None:
+                max_diff_pos = len(agg_exprs)
+                agg_exprs.append(max_diff_agg)
+            null_diff_pos = len(agg_exprs)
+            agg_exprs.append(_null_diff_agg(self.intersect_rows, col_1, col_2))
+            stat_positions[column] = (match_pos, max_diff_pos, null_diff_pos)
+
+        # A global aggregation always returns exactly one row.
+        stats = self.intersect_rows.agg(*agg_exprs).collect()[0]
+        all_rows_count = stats[0]
 
         # metric calculation
         for column in self.intersect_columns():
-            col_1 = f"{column}_{self.df1_name}"
-            col_2 = f"{column}_{self.df2_name}"
             col_match = f"{column}_match"
 
             if column in self.join_columns:
@@ -619,11 +637,15 @@ class SparkSQLCompare(BaseCompare):
                 null_diff = 0
             else:
                 row_cnt = all_rows_count
-                # Lookup pre-calculated col_match_count instead of querying,
-                # with default 0 to avoid None for empty rows
-                match_cnt = match_counts[f"{col_match}_count"] or 0
-                max_diff = calculate_max_diff(self.intersect_rows, col_1, col_2)
-                null_diff = calculate_null_diff(self.intersect_rows, col_1, col_2)
+                match_pos, max_diff_pos, null_diff_pos = stat_positions[column]
+                # default 0 to avoid None for empty rows
+                match_cnt = stats[match_pos] or 0
+                max_diff = (
+                    _max_diff_result(stats[max_diff_pos])
+                    if max_diff_pos is not None
+                    else 0
+                )
+                null_diff = stats[null_diff_pos] or 0
 
             if row_cnt > 0:
                 match_rate = float(match_cnt) / row_cnt
@@ -1049,6 +1071,58 @@ def get_merged_columns(
     return columns
 
 
+def _max_diff_agg(
+    dataframe: "pyspark.sql.DataFrame", col_1: str, col_2: str
+) -> "pyspark.sql.Column | None":
+    """Build the aggregate expression for the max absolute difference of two columns.
+
+    Values are cast to double with ``TRY_CAST`` so non-numeric strings become
+    null instead of raising under ANSI mode, and ``NaN`` differences are
+    ignored. Returns ``None`` for array-like columns, which have no max diff,
+    and for ``DATE`` columns: Spark 4 rejects ``CAST(DATE AS DOUBLE)`` at
+    analysis time even inside ``TRY_CAST``, while Spark 3.5 evaluated it to
+    NULL, so a max diff of 0 keeps the 3.5 result on both versions.
+    """
+    F = get_spark_functions(dataframe)
+    dtype1, dtype2 = get_spark_column_dtypes(dataframe, col_1, col_2)
+    if dtype1.startswith("array") and dtype2.startswith("array"):
+        LOG.warning(
+            f"Cannot calculate max_diff for array-like columns: {col_1}, {col_2}, defaulting to 0."
+        )
+        return None
+    if dtype1 == "date" or dtype2 == "date":
+        return None
+    abs_diff = F.abs(
+        F.expr(f"TRY_CAST(`{col_1}` AS DOUBLE)")
+        - F.expr(f"TRY_CAST(`{col_2}` AS DOUBLE)")
+    )
+    # NULL differences fall through the WHEN and are skipped by MAX as well.
+    max_diff: pyspark.sql.Column = F.max(F.when(~F.isnan(abs_diff), abs_diff))
+    return max_diff
+
+
+def _max_diff_result(max_diff: Any) -> float:
+    """Normalise the collected max diff, mapping no comparable values to 0."""
+    if max_diff is None or pd.isna(max_diff):
+        return 0
+    return max_diff  # type: ignore[no-any-return]
+
+
+def _null_diff_agg(
+    dataframe: "pyspark.sql.DataFrame", col_1: str, col_2: str
+) -> "pyspark.sql.Column":
+    """Build the aggregate expression counting rows where exactly one side is null."""
+    F = get_spark_functions(dataframe)
+    col_1_null = F.col(col_1).isNull()
+    col_2_null = F.col(col_2).isNull()
+    # COUNT ignores the NULLs produced by an unmatched WHEN, and is 0 (never
+    # NULL) on an empty frame.
+    null_diff: pyspark.sql.Column = F.count(
+        F.when((~col_1_null & col_2_null) | (col_1_null & ~col_2_null), 1)
+    )
+    return null_diff
+
+
 def calculate_max_diff(
     dataframe: "pyspark.sql.DataFrame", col_1: str, col_2: str
 ) -> float:
@@ -1068,30 +1142,10 @@ def calculate_max_diff(
     float
         max diff
     """
-    F = get_spark_functions(dataframe)
-    dtype1, dtype2 = get_spark_column_dtypes(dataframe, col_1, col_2)
-    if dtype1.startswith("array") and dtype2.startswith("array"):
-        LOG.warning(
-            f"Cannot calculate max_diff for array-like columns: {col_1}, {col_2}, defaulting to 0."
-        )
+    max_diff_agg = _max_diff_agg(dataframe, col_1, col_2)
+    if max_diff_agg is None:
         return 0
-    diff = dataframe.select(
-        (
-            F.expr(f"TRY_CAST(`{col_1}` AS DOUBLE)")
-            - F.expr(f"TRY_CAST(`{col_2}` AS DOUBLE)")
-        ).alias("diff")
-    )
-    abs_diff = diff.select(F.abs(F.col("diff")).alias("abs_diff"))
-    max_diff: float = (
-        abs_diff.where(F.isnan(F.col("abs_diff")) == False)  # noqa: E712
-        .agg({"abs_diff": "max"})
-        .collect()[0][0]
-    )
-
-    if pd.isna(max_diff) or pd.isnull(max_diff) or max_diff is None:
-        return 0
-    else:
-        return max_diff
+    return _max_diff_result(dataframe.agg(max_diff_agg).collect()[0][0])
 
 
 def calculate_null_diff(
@@ -1113,30 +1167,10 @@ def calculate_null_diff(
     int
         null diff
     """
-    F = get_spark_functions(dataframe)
-    nulls_df = dataframe.withColumn(
-        "col_1_null",
-        F.when(F.col(col_1).isNull() == True, F.lit(True)).otherwise(  # noqa: E712
-            F.lit(False)
-        ),
+    null_diff: int = (
+        dataframe.agg(_null_diff_agg(dataframe, col_1, col_2)).collect()[0][0] or 0
     )
-    nulls_df = nulls_df.withColumn(
-        "col_2_null",
-        F.when(F.col(col_2).isNull() == True, F.lit(True)).otherwise(  # noqa: E712
-            F.lit(False)
-        ),
-    ).select(["col_1_null", "col_2_null"])
-
-    # (not a and b) or (a and not b)
-    null_diff = nulls_df.where(
-        ((F.col("col_1_null") == False) & (F.col("col_2_null") == True))  # noqa: E712
-        | ((F.col("col_1_null") == True) & (F.col("col_2_null") == False))  # noqa: E712
-    ).count()
-
-    if pd.isna(null_diff) or pd.isnull(null_diff) or null_diff is None:
-        return 0
-    else:
-        return null_diff
+    return null_diff
 
 
 def _generate_id_within_group(
