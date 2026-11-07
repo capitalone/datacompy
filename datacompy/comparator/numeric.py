@@ -123,8 +123,8 @@ def _polars_is_close(
         return col1.is_close(col2, abs_tol=atol, rel_tol=rtol, nans_equal=True)
 
     # Fallback to custom implementation for older Polars versions
-    a = pl.lit(col1).cast(pl.Float64)
-    b = pl.lit(col2).cast(pl.Float64)
+    a = pl.col("a").cast(pl.Float64)
+    b = pl.col("b").cast(pl.Float64)
 
     is_close_expr = (
         pl.when(a.is_null() | b.is_null())
@@ -141,7 +141,11 @@ def _polars_is_close(
             )
         )
     )
-    return pl.select(is_close_expr.alias(col1.name)).to_series()
+    return (
+        pl.DataFrame({"a": col1, "b": col2})
+        .select(is_close_expr.alias("is_close"))
+        .to_series()
+    )
 
 
 class PolarsNumericComparator(BaseComparator):
