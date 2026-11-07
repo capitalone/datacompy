@@ -131,7 +131,8 @@ class PolarsNumericComparator(BaseComparator):
 
         Notes
         -----
-        - The comparison uses `np.isclose` to check for approximate equality.
+        - The comparison uses Polars ``Series.is_close`` (``math.isclose`` semantics)
+          to check for approximate equality.
         - If the series cannot be directly compared due to numeric type mismatches,
           If casting fails, a series of `False` values is returned.
         - If the Series shapes do not match, and neither type is numeric a `None`
@@ -147,24 +148,26 @@ class PolarsNumericComparator(BaseComparator):
                 and not rtol
                 and not atol
             ):
-                # np.isclose compares as floats, which can't tell integers apart above 2**53
+                # is_close compares as floats, which can't tell integers apart above 2**53
                 both_null = col1.is_null() & col2.is_null()
                 return ((col1 == col2) | both_null).fill_null(False)
             try:
-                return pl.Series(
-                    np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
-                )
+                both_null = col1.is_null() & col2.is_null()
+                return (
+                    col1.is_close(col2, abs_tol=atol, rel_tol=rtol, nans_equal=True)
+                    | both_null
+                ).fill_null(False)
             except Exception:
                 try:
-                    return pl.Series(
-                        np.isclose(
-                            col1.cast(pl.Float64, strict=True),
-                            col2.cast(pl.Float64, strict=True),
-                            rtol=rtol,
-                            atol=atol,
-                            equal_nan=True,
+                    col1_f = col1.cast(pl.Float64, strict=True)
+                    col2_f = col2.cast(pl.Float64, strict=True)
+                    both_null = col1_f.is_null() & col2_f.is_null()
+                    return (
+                        col1_f.is_close(
+                            col2_f, abs_tol=atol, rel_tol=rtol, nans_equal=True
                         )
-                    )
+                        | both_null
+                    ).fill_null(False)
                 except Exception:
                     return pl.Series([False] * col1.shape[0])
         else:
