@@ -202,5 +202,10 @@ Caveats and Limitations
   1.23 and earlier or ``nulls_equal`` on polars 1.24 and later (the argument was
   renamed, and the old name was removed in polars 2.0). datacompy resolves whichever
   the installed version accepts. There might be unexpected results due to this.
+- Numeric columns are compared with ``math.isclose()`` semantics, using Polars
+  ``Series.is_close`` on Polars 1.32 and later and an equivalent expression on older
+  versions. Two values match when ``|a - b| <= max(rel_tol * max(|a|, |b|), abs_tol)``.
+- Note that this behavior is different to ``numpy.isclose()``, which matches when
+  ``|a - b| <= abs_tol + rel_tol * |b|``.
 - The Polars documentation has a good section on migrating from Pandas to Polars and some of the things to consider.
   See `Coming from Pandas <https://docs.pola.rs/user-guide/migration/pandas/>`_
