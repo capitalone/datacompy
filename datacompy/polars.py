@@ -72,8 +72,9 @@ class PolarsCompare(BaseCompare):
     """Comparison class to be used to compare whether two dataframes as equal.
 
     Both df1 and df2 should be dataframes containing all of the join_columns,
-    with unique column names. Differences between values are compared to
-    abs_tol + rel_tol * abs(df2['value']).
+    with unique column names. Numeric values match when
+    ``abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``, following
+    ``math.isclose``.
 
     Parameters
     ----------
@@ -741,11 +742,11 @@ def columns_equal(
 
     - Two nulls (np.nan) will evaluate to True.
     - A null and a non-null value will evaluate to False.
-    - Numeric values will use the relative and absolute tolerances.
+    - Numeric values will use the relative and absolute tolerances, with
+      ``math.isclose`` semantics.
     - Decimal values (decimal.Decimal) will attempt to be converted to floats
       before comparing
-    - Non-numeric values (i.e. where np.isclose can't be used) will just
-      trigger True on two nulls or exact matches.
+    - Non-numeric values will just trigger True on two nulls or exact matches.
 
     Parameters
     ----------
