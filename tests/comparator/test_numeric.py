@@ -13,12 +13,71 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from decimal import Decimal
+
 import pandas as pd
 import polars as pl
+import pytest
 from datacompy.comparator.numeric import (
     PandasNumericComparator,
     PolarsNumericComparator,
+    _polars_is_close,
 )
+
+NAN = float("nan")
+INF = float("inf")
+
+
+@pytest.mark.parametrize(
+    ("col1", "col2", "rtol", "atol", "expected"),
+    [
+        (
+            [1.0, 1.0, 0.0, 100.0, 100.0],
+            [1.0 + 1e-9, 1.1, 1e-9, 100.001, 101.0],
+            1e-5,
+            1e-8,
+            [True, False, True, True, False],
+        ),
+        (
+            [NAN, NAN, 1.0, INF, INF, -INF, INF, 1e308],
+            [NAN, 1.0, NAN, INF, -INF, -INF, 1e308, INF],
+            1e-5,
+            1e-8,
+            [True, False, False, True, False, True, False, False],
+        ),
+        ([INF, 1.0], [1.0, 1.0], 0.0, 0.0, [False, True]),
+        ([None, 1.0, None], [1.0, None, None], 1e-5, 1e-8, [None, None, None]),
+        ([1, 2, 3], [1.0, 2.5, 3.00001], 1e-5, 0.0, [True, False, True]),
+        ([10, -10], [11, -8], 0.1, 0.0, [True, False]),
+        (
+            [Decimal("1.10"), Decimal("2.00")],
+            [Decimal("1.10"), Decimal("2.01")],
+            0.0,
+            0.0,
+            [True, False],
+        ),
+    ],
+)
+@pytest.mark.parametrize("native", [True, False])
+def test_polars_is_close_matches_math_isclose(
+    monkeypatch, native, col1, col2, rtol, atol, expected
+):
+    if native and not hasattr(pl.Series, "is_close"):
+        pytest.skip("native is_close requires polars>=1.32")
+    if not native:
+        monkeypatch.delattr(pl.Series, "is_close", raising=False)
+    result = _polars_is_close(pl.Series("x", col1), pl.Series("y", col2), rtol, atol)
+    assert result.dtype == pl.Boolean
+    assert result.to_list() == expected
+
+
+def test_polars_numeric_comparator_fallback(monkeypatch):
+    monkeypatch.delattr(pl.Series, "is_close", raising=False)
+    comparator = PolarsNumericComparator()
+    col1 = pl.Series([1.0, NAN, None, None, 2.0, 1])
+    col2 = pl.Series([1.0 + 1e-9, NAN, None, 1.0, 2.5, 1])
+    result = comparator.compare(col1, col2)
+    assert result.to_list() == [True, True, True, False, False, True]
 
 
 # tests for PolarsNumericComparator
