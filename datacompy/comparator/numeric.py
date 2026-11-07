@@ -93,6 +93,57 @@ except ImportError:
     NUMERIC_SNOWFLAKE_TYPES = None
 
 
+def _polars_is_close(
+    col1: pl.Series, col2: pl.Series, rtol: float, atol: float
+) -> pl.Series:
+    """Check two Polars Series for closeness with ``math.isclose`` semantics.
+
+    Uses the native ``Series.is_close`` where available and an equivalent
+    expression on older Polars versions. NaNs compare equal to each other, and
+    the result is null where either input is null.
+
+    Parameters
+    ----------
+    col1 : pl.Series
+        The first Polars Series to compare.
+    col2 : pl.Series
+        The second Polars Series to compare.
+    rtol : float
+        The relative tolerance, scaled by the larger absolute value.
+    atol : float
+        The absolute tolerance.
+
+    Returns
+    -------
+    pl.Series
+        A boolean Series indicating whether each pair of values is close.
+    """
+    # Series.is_close was added in polars 1.32
+    if hasattr(pl.Series, "is_close"):
+        return col1.is_close(col2, abs_tol=atol, rel_tol=rtol, nans_equal=True)
+
+    # Fallback to custom implementation for older Polars versions
+    a = pl.lit(col1).cast(pl.Float64)
+    b = pl.lit(col2).cast(pl.Float64)
+
+    is_close_expr = (
+        pl.when(a.is_null() | b.is_null())
+        .then(pl.lit(None, dtype=pl.Boolean))
+        .when(a.is_nan() | b.is_nan())
+        .then(a.is_nan() & b.is_nan())
+        # inf - inf is NaN and inf <= rtol * inf holds, so infinities need exact equality
+        .when(a.is_infinite() | b.is_infinite())
+        .then(a == b)
+        .otherwise(
+            (a - b).abs()
+            <= pl.max_horizontal(
+                pl.lit(rtol) * pl.max_horizontal(a.abs(), b.abs()), pl.lit(atol)
+            )
+        )
+    )
+    return pl.select(is_close_expr.alias(col1.name)).to_series()
+
+
 class PolarsNumericComparator(BaseComparator):
     """Comparator for numeric columns in Polars.
 
@@ -131,8 +182,8 @@ class PolarsNumericComparator(BaseComparator):
 
         Notes
         -----
-        - The comparison uses Polars ``Series.is_close`` (``math.isclose`` semantics)
-          to check for approximate equality.
+        - The comparison uses ``math.isclose`` semantics: Polars ``Series.is_close``
+          on Polars 1.32 and later, and an equivalent expression on older versions.
         - If the series cannot be directly compared due to numeric type mismatches,
           If casting fails, a series of `False` values is returned.
         - If the Series shapes do not match, and neither type is numeric a `None`
@@ -153,20 +204,16 @@ class PolarsNumericComparator(BaseComparator):
                 return ((col1 == col2) | both_null).fill_null(False)
             try:
                 both_null = col1.is_null() & col2.is_null()
-                return (
-                    col1.is_close(col2, abs_tol=atol, rel_tol=rtol, nans_equal=True)
-                    | both_null
-                ).fill_null(False)
+                return (_polars_is_close(col1, col2, rtol, atol) | both_null).fill_null(
+                    False
+                )
             except Exception:
                 try:
                     col1_f = col1.cast(pl.Float64, strict=True)
                     col2_f = col2.cast(pl.Float64, strict=True)
                     both_null = col1_f.is_null() & col2_f.is_null()
                     return (
-                        col1_f.is_close(
-                            col2_f, abs_tol=atol, rel_tol=rtol, nans_equal=True
-                        )
-                        | both_null
+                        _polars_is_close(col1_f, col2_f, rtol, atol) | both_null
                     ).fill_null(False)
                 except Exception:
                     return pl.Series([False] * col1.shape[0])
