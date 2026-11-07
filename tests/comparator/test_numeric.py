@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import pandas as pd
 import polars as pl
 from datacompy.comparator.numeric import (
@@ -191,3 +192,28 @@ def test_pandas_numeric_comparator_large_integers_uint64():
     col2 = pd.Series([2**64 - 3, 5], dtype="UInt64")
     result = comparator.compare(col1, col2, rtol=0, atol=0)
     assert result.tolist() == [False, True]
+
+
+def test_pandas_numeric_comparator_symmetric_tolerance():
+    # Asymmetric np.isclose(90, 100) is True while np.isclose(100, 90) is False
+    # with rtol=0.1, atol=0. math.isclose is True in both directions.
+    comparator = PandasNumericComparator()
+    forward = comparator.compare(
+        pd.Series([90.0]), pd.Series([100.0]), rtol=0.1, atol=0
+    )
+    reverse = comparator.compare(
+        pd.Series([100.0]), pd.Series([90.0]), rtol=0.1, atol=0
+    )
+    assert forward.tolist() == [True]
+    assert reverse.tolist() == [True]
+
+
+def test_pandas_numeric_comparator_max_not_sum_tolerances():
+    # NumPy allows atol + rtol*|b|; math.isclose uses max(...). With both set,
+    # |10-11|=1 is within NumPy's 1.05 but outside math's 0.55.
+    comparator = PandasNumericComparator()
+    result = comparator.compare(
+        pd.Series([10.0]), pd.Series([11.0]), rtol=0.05, atol=0.5
+    )
+    assert result.tolist() == [False]
+    assert np.isclose(10.0, 11.0, rtol=0.05, atol=0.5)

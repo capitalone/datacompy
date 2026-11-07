@@ -138,3 +138,26 @@ def test_spark_numeric_comparator_integer_isnan_safe(spark_session):
     assert result[0][0] is True
     assert result[1][0] is False
     assert result[2][0] is False
+
+
+def test_spark_numeric_comparator_symmetric_tolerance(spark_session):
+    """Tolerance comparison is symmetric (math.isclose), unlike numpy.isclose."""
+    comparator = SparkNumericComparator()
+    df = spark_session.createDataFrame([(90.0, 100.0), (100.0, 90.0)], ["col1", "col2"])
+    result_col = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", rtol=0.1, atol=0
+    )
+    result = df.withColumn("col_match", result_col).select("col_match").collect()
+    assert result[0][0] is True
+    assert result[1][0] is True
+
+
+def test_spark_numeric_comparator_max_not_sum_tolerances(spark_session):
+    """atol and rtol are combined with max, not addition."""
+    comparator = SparkNumericComparator()
+    df = spark_session.createDataFrame([(10.0, 11.0)], ["col1", "col2"])
+    result_col = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", rtol=0.05, atol=0.5
+    )
+    result = df.withColumn("col_match", result_col).select("col_match").collect()
+    assert result[0][0] is False
