@@ -236,22 +236,22 @@ class PandasNumericComparator(BaseComparator):
                 equal = pd.array(col1.array == col2.array, dtype="boolean")
                 return pd.Series(equal.fillna(False).to_numpy(dtype=bool) | both_null)
             try:
-                a = np.asarray(col1, dtype=np.float64)
-                b = np.asarray(col2, dtype=np.float64)
-            except (TypeError, ValueError):
-                try:
-                    a = np.asarray(col1.astype(float), dtype=np.float64)
-                    b = np.asarray(col2.astype(float), dtype=np.float64)
-                except Exception:
-                    return pd.Series(False, index=col1.index)
+                a = col1.to_numpy(dtype=np.float64, na_value=np.nan)
+                b = col2.to_numpy(dtype=np.float64, na_value=np.nan)
+            except Exception:
+                return pd.Series(False, index=col1.index)
             # math.isclose: symmetric, combine tolerances with max; NaN/NaN matches.
-            close = a == b
+            with np.errstate(invalid="ignore", over="ignore"):
+                abs_a, abs_b = np.abs(a), np.abs(b)
+                tolerance = np.maximum(abs_a, abs_b, out=abs_a)
+                tolerance *= rtol
+                np.maximum(tolerance, atol, out=tolerance)
+                diff = np.abs(np.subtract(a, b, out=abs_b), out=abs_b)
+                close = diff <= tolerance
+            # inf - inf and rtol * inf would otherwise pass the tolerance check
+            close &= np.isfinite(a) & np.isfinite(b)
+            close |= a == b
             close |= np.isnan(a) & np.isnan(b)
-            finite = np.isfinite(a) & np.isfinite(b)
-            tolerance = np.maximum(rtol * np.maximum(np.abs(a), np.abs(b)), atol)
-            diff = np.zeros_like(a)
-            np.subtract(a, b, out=diff, where=finite)
-            close |= finite & (np.abs(diff) <= tolerance)
             return pd.Series(close)
         else:
             return None
