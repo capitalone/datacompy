@@ -123,8 +123,8 @@ def _polars_is_close(
         return col1.is_close(col2, abs_tol=atol, rel_tol=rtol, nans_equal=True)
 
     # Fallback to custom implementation for older Polars versions
-    a = pl.col("a").cast(pl.Float64)
-    b = pl.col("b").cast(pl.Float64)
+    a = pl.col("a").cast(pl.Float64, strict=True)
+    b = pl.col("b").cast(pl.Float64, strict=True)
 
     is_close_expr = (
         pl.when(a.is_null() | b.is_null())
@@ -188,8 +188,7 @@ class PolarsNumericComparator(BaseComparator):
         -----
         - The comparison uses ``math.isclose`` semantics: Polars ``Series.is_close``
           on Polars 1.32 and later, and an equivalent expression on older versions.
-        - If the series cannot be directly compared due to numeric type mismatches,
-          If casting fails, a series of `False` values is returned.
+        - If the comparison fails, a series of `False` values is returned.
         - If the Series shapes do not match, and neither type is numeric a `None`
           values is returned.
         """
@@ -212,15 +211,7 @@ class PolarsNumericComparator(BaseComparator):
                     False
                 )
             except Exception:
-                try:
-                    col1_f = col1.cast(pl.Float64, strict=True)
-                    col2_f = col2.cast(pl.Float64, strict=True)
-                    both_null = col1_f.is_null() & col2_f.is_null()
-                    return (
-                        _polars_is_close(col1_f, col2_f, rtol, atol) | both_null
-                    ).fill_null(False)
-                except Exception:
-                    return pl.Series([False] * col1.shape[0])
+                return pl.Series([False] * col1.shape[0])
         else:
             return None
 
