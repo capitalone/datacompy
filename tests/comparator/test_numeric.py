@@ -217,3 +217,12 @@ def test_pandas_numeric_comparator_max_not_sum_tolerances():
     )
     assert result.tolist() == [False]
     assert np.isclose(10.0, 11.0, rtol=0.05, atol=0.5)
+
+
+def test_pandas_numeric_comparator_atol_dominates():
+    # Near zero rtol contributes nothing, so atol alone sets the bound.
+    comparator = PandasNumericComparator()
+    result = comparator.compare(
+        pd.Series([0.0, 0.0]), pd.Series([0.4, 0.6]), rtol=0.05, atol=0.5
+    )
+    assert result.tolist() == [True, False]

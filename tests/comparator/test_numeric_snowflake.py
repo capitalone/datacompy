@@ -103,6 +103,59 @@ def test_snowflake_numeric_comparator_mismatch(snowflake_session):
     ]
 
 
+def test_snowflake_numeric_comparator_symmetric_tolerance(snowflake_session):
+    """Tolerance comparison is symmetric (math.isclose), unlike numpy.isclose."""
+    comparator = SnowflakeNumericComparator()
+    df = snowflake_session.createDataFrame(
+        [(90.0, 100.0), (100.0, 90.0)], ["col1", "col2"]
+    )
+    result = comparator.compare(
+        dataframe=df,
+        col1="col1",
+        col2="col2",
+        col_match="col_match",
+        rtol=0.1,
+        atol=0,
+    )
+    assert result.select(["col_match"]).collect() == [
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=True),
+    ]
+
+
+def test_snowflake_numeric_comparator_max_not_sum_tolerances(snowflake_session):
+    """atol and rtol are combined with max, not addition."""
+    comparator = SnowflakeNumericComparator()
+    df = snowflake_session.createDataFrame([(10.0, 11.0)], ["col1", "col2"])
+    result = comparator.compare(
+        dataframe=df,
+        col1="col1",
+        col2="col2",
+        col_match="col_match",
+        rtol=0.05,
+        atol=0.5,
+    )
+    assert result.select(["col_match"]).collect() == [sf.Row(COL_MATCH=False)]
+
+
+def test_snowflake_numeric_comparator_atol_dominates(snowflake_session):
+    """Near zero rtol contributes nothing, so atol alone sets the bound."""
+    comparator = SnowflakeNumericComparator()
+    df = snowflake_session.createDataFrame([(0.0, 0.4), (0.0, 0.6)], ["col1", "col2"])
+    result = comparator.compare(
+        dataframe=df,
+        col1="col1",
+        col2="col2",
+        col_match="col_match",
+        rtol=0.05,
+        atol=0.5,
+    )
+    assert result.select(["col_match"]).collect() == [
+        sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=False),
+    ]
+
+
 def test_snowflake_numeric_comparator_error_handling(snowflake_session):
     comparator = SnowflakeNumericComparator()
     df = snowflake_session.createDataFrame(

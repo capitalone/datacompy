@@ -161,3 +161,15 @@ def test_spark_numeric_comparator_max_not_sum_tolerances(spark_session):
     )
     result = df.withColumn("col_match", result_col).select("col_match").collect()
     assert result[0][0] is False
+
+
+def test_spark_numeric_comparator_atol_dominates(spark_session):
+    """Near zero rtol contributes nothing, so atol alone sets the bound."""
+    comparator = SparkNumericComparator()
+    df = spark_session.createDataFrame([(0.0, 0.4), (0.0, 0.6)], ["col1", "col2"])
+    result_col = comparator.compare(
+        dataframe=df, col1="col1", col2="col2", rtol=0.05, atol=0.5
+    )
+    result = df.withColumn("col_match", result_col).select("col_match").collect()
+    assert result[0][0] is True
+    assert result[1][0] is False
