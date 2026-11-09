@@ -1821,6 +1821,25 @@ def test_non_full_join_counts_some_matches():
     )
 
 
+def test_full_join_null_key_sample_mismatch():
+    df1 = pd.DataFrame({"a": [1, None, 3], "b": ["x", "y", "z"]})
+    df2 = pd.DataFrame({"a": [1, None], "b": ["x", "y"]})
+    compare = datacompy.PandasCompare(df1, df2, ["a", "b"])
+    assert compare.count_matching_rows() == 2
+    assert_frame_equal(
+        compare.sample_mismatch(column="a").reset_index(drop=True),
+        pd.DataFrame([3.0], columns=["a"]),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="b").reset_index(drop=True),
+        pd.DataFrame(["z"], columns=["b"]),
+    )
+    assert "z" in compare.report()
+    # a null key without any unique rows gives an empty sample
+    same = datacompy.PandasCompare(df2, df2.copy(), ["a", "b"])
+    assert len(same.sample_mismatch(column="a")) == 0
+
+
 def test_string_as_numeric():
     df1 = pd.DataFrame({"ID": [1], "REFER_NR": ["9998700990704001708177961516923014"]})
     df2 = pd.DataFrame({"ID": [1], "REFER_NR": ["9998700990704001708177961516923015"]})

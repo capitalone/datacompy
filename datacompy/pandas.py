@@ -638,8 +638,7 @@ class PandasCompare(BaseCompare):
                 + len(self.df1_unq_rows)
                 + len(self.df2_unq_rows)
             )
-            col_match = self.intersect_rows[column]
-            match_cnt = col_match.count()
+            match_cnt = len(self.intersect_rows)
             sample_count = min(sample_count, row_cnt - match_cnt)
             sample = pd.concat(
                 [self.df1_unq_rows[[column]], self.df2_unq_rows[[column]]]
