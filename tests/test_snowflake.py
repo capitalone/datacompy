@@ -49,7 +49,9 @@ from snowflake.snowpark.exceptions import SnowparkSQLException
 from snowflake.snowpark.functions import col, length, lit, when
 from snowflake.snowpark.types import (
     ArrayType,
+    BooleanType,
     DecimalType,
+    DoubleType,
     IntegerType,
     StringType,
     StructField,
@@ -275,6 +277,32 @@ def test_rounded_date_columns(snowflake_session):
     actual = columns_equal(df, "A_DT", "B", "ACTUAL").toPandas()["ACTUAL"]
     expected = df.select("EXP").toPandas()["EXP"]
     assert_series_equal(actual, expected, check_names=False)
+
+
+def test_float_columns_equal_nan(snowflake_session):
+    """Pure DOUBLE NaN semantics, not NULL via Decimal/NUMBER coercion."""
+    schema = StructType(
+        [
+            StructField("A", DoubleType()),
+            StructField("B", DoubleType()),
+            StructField("EXPECTED", BooleanType()),
+        ]
+    )
+    data = [
+        [1.0, 1.0, True],
+        [float("nan"), float("nan"), True],
+        [float("nan"), 1.0, False],
+        [1.0, float("nan"), False],
+        [None, None, True],
+        [1.0, None, False],
+        [None, 1.0, False],
+    ]
+    df = snowflake_session.create_dataframe(data, schema=schema)
+    assert df.schema["A"].datatype == DoubleType()
+    assert df.schema["B"].datatype == DoubleType()
+    actual_out = columns_equal(df, "A", "B", "ACTUAL").toPandas()["ACTUAL"]
+    expect_out = df.select("EXPECTED").toPandas()["EXPECTED"]
+    assert_series_equal(expect_out, actual_out, check_names=False)
 
 
 def test_decimal_float_columns_equal(snowflake_session):

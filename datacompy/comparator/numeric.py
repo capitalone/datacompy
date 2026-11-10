@@ -339,13 +339,9 @@ class SparkNumericComparator(BaseComparator):
                     psf.lit(atol),
                 )
                 return (
-                    psf.when(nan_col1 & nan_col2, psf.lit(True))  # NaN == NaN
-                    .when(
-                        nan_col1 | nan_col2, psf.lit(False)
-                    )  # NaN != real, real != NaN
-                    .when(
-                        psf.col(col1).eqNullSafe(psf.col(col2)), psf.lit(True)
-                    )  # NULL-safe equality
+                    psf.when(nan_col1 & nan_col2, psf.lit(True))
+                    .when(nan_col1 | nan_col2, psf.lit(False))
+                    .when(psf.col(col1).eqNullSafe(psf.col(col2)), psf.lit(True))
                     .when(within_tol, psf.lit(True))
                     .otherwise(psf.lit(False))
                 )
@@ -408,7 +404,7 @@ class SnowflakeNumericComparator(BaseComparator):
         - The comparison uses ``math.isclose`` semantics:
           ``|a - b| <= max(rtol * max(|a|, |b|), atol)``.
         - Null-safe equality (`eqNullSafe`) is used to handle null values.
-        - If either column contains null values, they are handled explicitly to avoid
+        - If either column contains NaN values, they are handled explicitly to avoid
           incorrect comparisons.
         """
         base_dtype, compare_dtype = get_snowflake_column_dtypes(dataframe, col1, col2)
@@ -419,23 +415,29 @@ class SnowflakeNumericComparator(BaseComparator):
             compare_dtype.startswith(t) for t in NUMERIC_SNOWFLAKE_TYPES
         )
         if (base_numeric_type) and (compare_numeric_type):
+            col1_expr = spf.col(col1)
+            col2_expr = spf.col(col2)
+            col1_can_be_nan = base_dtype in {"float", "double"}
+            col2_can_be_nan = compare_dtype in {"float", "double"}
             try:
-                within_tol = spf.abs(spf.col(col1) - spf.col(col2)) <= spf.greatest(
+                nan_col1 = (
+                    spf.equal_nan(col1_expr) if col1_can_be_nan else spf.lit(False)
+                )
+                nan_col2 = (
+                    spf.equal_nan(col2_expr) if col2_can_be_nan else spf.lit(False)
+                )
+                within_tol = spf.abs(col1_expr - col2_expr) <= spf.greatest(
                     spf.lit(rtol)
-                    * spf.greatest(spf.abs(spf.col(col1)), spf.abs(spf.col(col2))),
+                    * spf.greatest(spf.abs(col1_expr), spf.abs(col2_expr)),
                     spf.lit(atol),
                 )
                 return dataframe.withColumn(
                     col_match,
-                    spf.when(
-                        (spf.col(col1).eqNullSafe(spf.col(col2))) | within_tol,
-                        # corner case of col1 != null and col2 == null returns True incorrectly
-                        spf.when(
-                            (spf.is_null(spf.col(col1)) == False)  # noqa: E712
-                            & (spf.is_null(spf.col(col2)) == True),  # noqa: E712
-                            spf.lit(False),
-                        ).otherwise(spf.lit(True)),
-                    ).otherwise(spf.lit(False)),
+                    spf.when(nan_col1 & nan_col2, spf.lit(True))
+                    .when(nan_col1 | nan_col2, spf.lit(False))
+                    .when(col1_expr.eqNullSafe(col2_expr), spf.lit(True))
+                    .when(within_tol, spf.lit(True))
+                    .otherwise(spf.lit(False)),
                 )
             except Exception:
                 return dataframe.withColumn(col_match, spf.lit(False))

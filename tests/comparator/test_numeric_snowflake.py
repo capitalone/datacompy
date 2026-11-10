@@ -76,7 +76,14 @@ def test_snowflake_numeric_comparator_type_casting(snowflake_session):
 def test_snowflake_numeric_comparator_nan_handling(snowflake_session):
     comparator = SnowflakeNumericComparator()
     df = snowflake_session.createDataFrame(
-        [(1.0, 1.0), (float("nan"), float("nan")), (3.0, 3.0)], ["col1", "col2"]
+        [
+            (1.0, 1.0),
+            (float("nan"), float("nan")),
+            (float("nan"), 1.0),
+            (1.0, float("nan")),
+            (3.0, 3.0),
+        ],
+        ["col1", "col2"],
     )
     result = comparator.compare(
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
@@ -84,6 +91,8 @@ def test_snowflake_numeric_comparator_nan_handling(snowflake_session):
     assert result.select(["col_match"]).collect() == [
         sf.Row(COL_MATCH=True),
         sf.Row(COL_MATCH=True),
+        sf.Row(COL_MATCH=False),
+        sf.Row(COL_MATCH=False),
         sf.Row(COL_MATCH=True),
     ]
 
