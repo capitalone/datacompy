@@ -259,7 +259,13 @@ class PolarsCompare(BaseCompare):
             raise TypeError(f"{index} must be a Polars DataFrame")
 
         if cast_column_names_lower:
-            dataframe.columns = [str(col).lower() for col in dataframe.columns]
+            # Assigning duplicate names raises polars.exceptions.DuplicateError
+            # before the uniqueness check below can run. Reject that case here
+            # with the same ValueError the other backends use.
+            columns = [str(col).lower() for col in dataframe.columns]
+            if len(set(columns)) < len(columns):
+                raise ValueError(f"{index} must have unique column names")
+            dataframe.columns = columns
 
         # Check if join_columns are present in the dataframe
         if not set(self.join_columns).issubset(set(dataframe.columns)):
