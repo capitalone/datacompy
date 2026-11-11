@@ -53,6 +53,10 @@ Rendering methods live on :class:`~datacompy.report.ReportData` directly:
     import json
     payload = json.dumps(data.to_dict())
 
+``to_dict()`` converts NumPy integer, floating-point and Boolean scalar values
+to their Python equivalents, including values in nested dictionaries, lists
+and tuples. It leaves the report data unchanged.
+
 The summary tables in the text report are padded by printed width, so names
 with wide East Asian characters or combining accents stay aligned.
 Ambiguous-width characters count as one column, and multi-character emoji
