@@ -1535,6 +1535,25 @@ def test_non_full_join_counts_some_matches():
     )
 
 
+def test_full_join_null_key_sample_mismatch():
+    df1 = pl.DataFrame({"a": [1, None, 3], "b": ["x", "y", "z"]})
+    df2 = pl.DataFrame({"a": [1, None], "b": ["x", "y"]})
+    compare = PolarsCompare(df1, df2, ["a", "b"])
+    assert compare.count_matching_rows() == 2
+    assert_frame_equal(
+        compare.sample_mismatch(column="a"),
+        pl.DataFrame({"a": [3]}),
+    )
+    assert_frame_equal(
+        compare.sample_mismatch(column="b"),
+        pl.DataFrame({"b": ["z"]}),
+    )
+    assert "z" in compare.report()
+    # a null key without any unique rows gives an empty sample
+    same = PolarsCompare(df2, df2.clone(), ["a", "b"])
+    assert len(same.sample_mismatch(column="a")) == 0
+
+
 def test_all_null_column_equal():
     df = pl.DataFrame({"a": [None, None, None], "b": [None, None, None]})
     assert columns_equal(df["a"], df["b"]).to_list() == [True, True, True]
