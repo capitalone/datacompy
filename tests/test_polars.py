@@ -40,7 +40,7 @@ from datacompy.polars import (
     generate_id_within_group,
     temp_column_name,
 )
-from polars.exceptions import ComputeError, DuplicateError, SchemaError
+from polars.exceptions import ComputeError, SchemaError
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
 
@@ -396,11 +396,15 @@ def test_compare_df_setter_bad():
         PolarsCompare("a", "a", ["a"])
     with raises(ValueError, match="df1 must have all columns from join_columns"):
         PolarsCompare(df, df.clone(), ["b"])
-    with raises(
-        DuplicateError, match="column with name 'a' has more than one occurrence"
-    ):
+    with raises(ValueError, match="df1 must have unique column names"):
         PolarsCompare(df_same_col_names, df_same_col_names.clone(), ["a"])
     assert PolarsCompare(df_dupe, df_dupe.clone(), ["a", "b"]).df1.equals(df_dupe)
+
+
+def test_columns_differing_only_by_case_raise_value_error():
+    df = pl.DataFrame({"A": [1, 2], "a": [3, 4]})
+    with raises(ValueError, match="df1 must have unique column names"):
+        PolarsCompare(df, df.clone(), ["a"])
 
 
 def test_compare_df_setter_good():
@@ -428,9 +432,7 @@ def test_compare_df_setter_bad_index():
     df = pl.DataFrame([{"a": 1, "A": 2}, {"a": 2, "A": 2}])
     with raises(TypeError, match="df1 must be a Polars DataFrame"):
         PolarsCompare("a", "a", join_columns="a")
-    with raises(
-        DuplicateError, match="column with name 'a' has more than one occurrence"
-    ):
+    with raises(ValueError, match="df1 must have unique column names"):
         PolarsCompare(df, df.clone(), join_columns="a")
 
 
