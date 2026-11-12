@@ -882,6 +882,18 @@ def test_sample_mismatch():
     assert (output["name_df2"] != ["name_df1"]).all()
 
 
+def test_sample_mismatch_non_intersecting_column(caplog):
+    df1 = pl.DataFrame({"id": [1, 2], "a": [1, 2], "only_df1": [5, 6]})
+    df2 = pl.DataFrame({"id": [1, 2], "a": [1, 3], "only_df2": [7, 8]})
+    compare = PolarsCompare(df1, df2, "id")
+
+    with caplog.at_level(logging.ERROR):
+        assert compare.sample_mismatch(column="missing") is None
+        assert compare.sample_mismatch(column="only_df1") is None
+        assert compare.sample_mismatch(column="only_df2") is None
+    assert "Column: missing is not an intersecting column" in caplog.text
+
+
 def test_all_mismatch_not_ignore_matching_cols_no_cols_matching():
     data1 = """acct_id,dollar_amt,name,float_fld,date_fld
     10000001234,123.45,George Maharis,14530.1555,2017-01-01

@@ -622,6 +622,11 @@ class PolarsCompare(BaseCompare):
             When the column being requested is not an intersecting column between dataframes.
         """
         if not self.only_join_columns() and column not in self.join_columns:
+            if f"{column}_match" not in self.intersect_rows.columns:
+                LOG.error(
+                    f"Column: {column} is not an intersecting column. No mismatches can be generated."
+                )
+                return None
             mismatch_cols = [
                 *self.join_columns,
                 f"{column}_{self.df1_name}",
