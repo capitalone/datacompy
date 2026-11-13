@@ -56,8 +56,19 @@ When comparing two columns, DataComPy iterates through a list of comparators and
 
 Returning ``None`` signals to the comparison engine that the comparator could not handle the columns,
 prompting the engine to try the next comparator in the pipeline. If a comparator successfully performs
-a comparison, it should return a boolean Series (for Pandas/Polars) or a boolean Column expression
-(for Spark/Snowflake) indicating which values are equal.
+a comparison, it should return a boolean result whose shape matches the backend:
+
+* **Pandas**: a boolean ``Series``
+* **Polars**: a boolean ``Expr``
+* **Spark / Snowflake**: a boolean Column expression
+
+.. note::
+
+   Polars comparators (built-in and custom) operate on expressions, not materialized
+   ``Series``. Because an ``Expr`` does not carry dtype the way a ``Series`` does,
+   Polars ``compare`` methods take the column dtypes as explicit arguments:
+   ``compare(col1, col2, dtype1, dtype2, **kwargs)``. Accept and ignore kwargs you
+   do not use.
 
 Comparator Pipeline
 -------------------
@@ -67,6 +78,7 @@ If you provide custom comparators via the ``custom_comparators`` parameter, they
 at the **beginning** of this pipeline.
 
 The order of execution is:
+
 1. Your list of custom comparators, in the order you provided them.
 2. DataComPy's built-in comparators (for arrays, booleans, numerics, and strings).
 
@@ -81,7 +93,8 @@ To create a custom comparator, you need to:
 2. Implement the ``compare`` method.
 3. Inside ``compare``, add logic to check if your comparator is applicable to the input columns.
    If not, return ``None``.
-4. Add your custom comparison logic and return the boolean result.
+4. Add your custom comparison logic and return the boolean result for that backend
+   (``Series`` for Pandas, ``Expr`` for Polars, Column expression for Spark/Snowflake).
 
 Example: A Custom Phone Number Comparator
 ------------------------------------------
@@ -212,3 +225,27 @@ is a mismatch only.
 
 This example demonstrates how you can easily extend DataComPy to handle your project's
 specific data comparison needs.
+
+Polars Custom Comparators
+=========================
+
+The same ``custom_comparators`` hook works with ``PolarsCompare``, but ``compare``
+receives expressions plus the two column dtypes instead of ``Series`` objects:
+
+.. code-block:: python
+
+    import polars as pl
+    from datacompy.comparator.base import BaseComparator
+
+    class PhoneNumberComparator(BaseComparator):
+        def compare(self, col1, col2, dtype1, dtype2, **kwargs):
+            string_types = {"String", "Utf8"}
+            if not (
+                str(dtype1.base_type()) in string_types
+                and str(dtype2.base_type()) in string_types
+            ):
+                return None
+            digits = r"[^0-9]"
+            norm1 = col1.str.replace_all(digits, "")
+            norm2 = col2.str.replace_all(digits, "")
+            return norm1.eq_missing(norm2)
