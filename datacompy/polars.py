@@ -160,6 +160,7 @@ class PolarsCompare(BaseCompare):
         self.df1_unq_rows: pl.DataFrame
         self.df2_unq_rows: pl.DataFrame
         self.intersect_rows: pl.DataFrame
+        self._matching_rows_count = 0
         self.column_stats: List[ColumnStat] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
@@ -273,7 +274,7 @@ class PolarsCompare(BaseCompare):
                 f"{index} must have all columns from join_columns: {missing_cols}"
             )
 
-        if len(dataframe.unique(subset=self.join_columns)) < len(dataframe):
+        if dataframe.select(self.join_columns).is_duplicated().any():
             self._any_dupes = True
 
     def _compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
@@ -405,17 +406,6 @@ class PolarsCompare(BaseCompare):
         null_equality: Dict[str, Any] = {_JOIN_NULLS_KWARG: True}
         outer_join = df1.join(df2, how="full", coalesce=True, **null_equality, **params)
 
-        # process merge indicator
-        outer_join = outer_join.with_columns(
-            pl.when(pl.col("_merge_left") & pl.col("_merge_right"))
-            .then(pl.lit("both"))
-            .when(pl.col("_merge_left") & pl.col("_merge_right").is_null())
-            .then(pl.lit("left_only"))
-            .when(pl.col("_merge_left").is_null() & pl.col("_merge_right"))
-            .then(pl.lit("right_only"))
-            .alias("_merge")
-        )
-
         # Clean up temp columns for duplicate row matching
         if self._any_dupes:
             outer_join = outer_join.drop(order_column)
@@ -425,13 +415,13 @@ class PolarsCompare(BaseCompare):
 
         LOG.debug("Selecting df1 unique rows")
         self.df1_unq_rows = outer_join.filter(
-            outer_join["_merge"] == "left_only"
+            pl.col("_merge_left").is_not_null() & pl.col("_merge_right").is_null()
         ).select(df1_cols)
         self.df1_unq_rows.columns = self.df1.columns
 
         LOG.debug("Selecting df2 unique rows")
         self.df2_unq_rows = outer_join.filter(
-            outer_join["_merge"] == "right_only"
+            pl.col("_merge_left").is_null() & pl.col("_merge_right").is_not_null()
         ).select(df2_cols)
         self.df2_unq_rows.columns = self.df2.columns
 
@@ -439,7 +429,9 @@ class PolarsCompare(BaseCompare):
         LOG.info(f"Number of rows in df2 and not in df1: {self.df2_unq_rows.height}")
 
         LOG.debug("Selecting intersecting rows")
-        self.intersect_rows = outer_join.filter(outer_join["_merge"] == "both")
+        self.intersect_rows = outer_join.filter(
+            pl.col("_merge_left").is_not_null() & pl.col("_merge_right").is_not_null()
+        ).drop("_merge_left", "_merge_right")
         LOG.info(
             f"Number of rows in df1 and df2 (not necessarily equal): {self.intersect_rows.height}"
         )
@@ -462,11 +454,13 @@ class PolarsCompare(BaseCompare):
 
         # Build comparison expressions for the columns to match on
         compare_exprs: List[pl.Expr] = []
+        match_columns: List[str] = []
         for column in intersect_columns:
             if column not in self.join_columns:
                 col_1 = column + "_" + self.df1_name
                 col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
+                match_columns.append(col_match)
                 compare_exprs.append(
                     columns_equal(
                         col_1=pl.col(col_1),
@@ -512,10 +506,19 @@ class PolarsCompare(BaseCompare):
                     .alias(null_diff_alias),
                 ]
             )
+        if match_columns:
+            stat_exprs.append(
+                pl.all_horizontal(match_columns).sum().alias("__matching_rows_count")
+            )
         aggregated_stats: Dict[str, Any] = (
             self.intersect_rows.select(stat_exprs).row(0, named=True)
             if stat_exprs
             else {}
+        )
+        self._matching_rows_count = (
+            int(aggregated_stats["__matching_rows_count"] or 0)
+            if match_columns
+            else self.intersect_rows.height
         )
 
         # Calculate the column stats for each column
@@ -592,24 +595,7 @@ class PolarsCompare(BaseCompare):
         int
             Number of matching rows
         """
-        match_columns = []
-        for column in self.intersect_columns():
-            if column not in self.join_columns:
-                match_columns.append(column + "_match")
-
-        if len(match_columns) > 0:
-            return int(
-                self.intersect_rows[match_columns]
-                .select(pl.all_horizontal(match_columns).alias("__sum"))
-                .sum()
-                .item()
-            )
-        else:
-            # corner case where it is just the join columns that make the dataframes
-            if len(self.intersect_rows) > 0:
-                return len(self.intersect_rows)
-            else:
-                return 0
+        return self._matching_rows_count
 
     def intersect_rows_match(self) -> bool:
         """Check whether the intersect rows all match."""
@@ -742,26 +728,14 @@ class PolarsCompare(BaseCompare):
         # Walk the compared columns rather than every intersect_rows column
         # ending in "_match": join columns and columns unique to one frame can
         # have that suffix too, and are not compared.
+        stats_by_column = {stat["column"]: stat for stat in self.column_stats}
         for orig_col_name in self.intersect_columns():
             if orig_col_name not in self.join_columns:
                 col = orig_col_name + "_match"
-                schema = self.intersect_rows.schema
 
-                col_comparison = self.intersect_rows.select(
-                    columns_equal(
-                        col_1=pl.col(orig_col_name + "_" + self.df1_name),
-                        col_2=pl.col(orig_col_name + "_" + self.df2_name),
-                        schema=schema,
-                        rel_tol=get_column_tolerance(orig_col_name, self._rel_tol_dict),
-                        abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
-                        ignore_spaces=self.ignore_spaces,
-                        ignore_case=self.ignore_case,
-                        comparators=self._get_comparators(),
-                    ).alias(col)
-                ).to_series()
-
-                if not ignore_matching_cols or (
-                    ignore_matching_cols and not col_comparison.all()
+                if (
+                    not ignore_matching_cols
+                    or stats_by_column[orig_col_name]["unequal_cnt"] > 0
                 ):
                     LOG.debug(f"Adding column {orig_col_name} to the result.")
                     match_list.append(col)
