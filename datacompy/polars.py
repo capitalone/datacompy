@@ -453,14 +453,16 @@ class PolarsCompare(BaseCompare):
         """
         match_cnt: int
         null_diff: int
+        max_diff: float | None
 
         LOG.debug("Comparing intersection")
 
         schema = self.intersect_rows.schema
+        intersect_columns = self.intersect_columns()
 
         # Build comparison expressions for the columns to match on
-        compare_exprs = []
-        for column in self.intersect_columns():
+        compare_exprs: List[pl.Expr] = []
+        for column in intersect_columns:
             if column not in self.join_columns:
                 col_1 = column + "_" + self.df1_name
                 col_2 = column + "_" + self.df2_name
@@ -479,8 +481,45 @@ class PolarsCompare(BaseCompare):
                 )
         self.intersect_rows = self.intersect_rows.with_columns(compare_exprs)
 
+        # Calculate all non-join column statistics in a single dataframe pass.
+        stat_exprs: List[pl.Expr] = []
+        stat_aliases: Dict[str, tuple[str, str, str]] = {}
+        for index, column in enumerate(intersect_columns):
+            if column in self.join_columns:
+                continue
+            col_1 = column + "_" + self.df1_name
+            col_2 = column + "_" + self.df2_name
+            col_match = column + "_match"
+            match_alias = f"__match_cnt_{index}"
+            max_diff_alias = f"__max_diff_{index}"
+            null_diff_alias = f"__null_diff_{index}"
+            stat_aliases[column] = (
+                match_alias,
+                max_diff_alias,
+                null_diff_alias,
+            )
+            stat_exprs.extend(
+                [
+                    pl.col(col_match).sum().alias(match_alias),
+                    _calculate_max_diff_expr(
+                        pl.col(col_1),
+                        pl.col(col_2),
+                        schema[col_1],
+                        schema[col_2],
+                    ).alias(max_diff_alias),
+                    (pl.col(col_1).is_null() ^ pl.col(col_2).is_null())
+                    .sum()
+                    .alias(null_diff_alias),
+                ]
+            )
+        aggregated_stats: Dict[str, Any] = (
+            self.intersect_rows.select(stat_exprs).row(0, named=True)
+            if stat_exprs
+            else {}
+        )
+
         # Calculate the column stats for each column
-        for column in self.intersect_columns():
+        for column in intersect_columns:
             if column in self.join_columns:
                 col_match = column + "_match"
                 match_cnt = self.intersect_rows.height
@@ -499,16 +538,10 @@ class PolarsCompare(BaseCompare):
                 col_1 = column + "_" + self.df1_name
                 col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
-                match_cnt = int(self.intersect_rows[col_match].sum())
-                max_diff = calculate_max_diff(
-                    self.intersect_rows[col_1], self.intersect_rows[col_2]
-                )
-                null_diff = int(
-                    (
-                        (self.intersect_rows[col_1].is_null())
-                        ^ (self.intersect_rows[col_2].is_null())
-                    ).sum()
-                )
+                match_alias, max_diff_alias, null_diff_alias = stat_aliases[column]
+                match_cnt = int(aggregated_stats[match_alias])
+                max_diff = cast(float | None, aggregated_stats[max_diff_alias])
+                null_diff = int(aggregated_stats[null_diff_alias])
             if row_cnt > 0:
                 match_rate = float(match_cnt) / row_cnt
             else:
@@ -872,33 +905,30 @@ def get_merged_columns(
     return columns
 
 
-def calculate_max_diff(col_1: pl.Series, col_2: pl.Series) -> float:
-    """Get a maximum difference between two columns.
+def _calculate_max_diff_expr(
+    col_1: pl.Expr,
+    col_2: pl.Expr,
+    dtype_1: pl.DataType,
+    dtype_2: pl.DataType,
+) -> pl.Expr:
+    """Build an aggregate expression for the maximum difference."""
+    if dtype_1.is_temporal() or dtype_2.is_temporal():
+        return pl.lit(0.0)
 
-    Parameters
-    ----------
-    col_1 : pl.Series
-        The first column
-    col_2 : pl.Series
-        The second column
+    castable_types = {*STRING_TYPE, "Boolean", "Null"}
+    if not (
+        (dtype_1.is_numeric() or str(dtype_1.base_type()) in castable_types)
+        and (dtype_2.is_numeric() or str(dtype_2.base_type()) in castable_types)
+    ):
+        return pl.lit(0.0)
 
-    Returns
-    -------
-    Numeric
-        Numeric field, or zero. Temporal columns give zero: cast to float they
-        count days or time units, so the difference would depend on the unit.
-    """
-    if col_1.dtype.is_temporal() or col_2.dtype.is_temporal():
-        return 0.0
-    try:
-        return cast(
-            float,
-            (col_1.cast(pl.Float64).fill_null(0) - col_2.cast(pl.Float64).fill_null(0))
-            .abs()
-            .max(),
-        )
-    except Exception:
-        return 0.0
+    cast_1 = col_1.cast(pl.Float64, strict=False)
+    cast_2 = col_2.cast(pl.Float64, strict=False)
+    cast_failed = (col_1.is_not_null() & cast_1.is_null()).any() | (
+        col_2.is_not_null() & cast_2.is_null()
+    ).any()
+    max_diff = (cast_1.fill_null(0.0) - cast_2.fill_null(0.0)).abs().max()
+    return pl.when(cast_failed).then(pl.lit(0.0)).otherwise(max_diff)
 
 
 def generate_id_within_group(

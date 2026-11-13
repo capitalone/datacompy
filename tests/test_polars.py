@@ -35,7 +35,6 @@ from datacompy.comparator.base import BaseComparator
 from datacompy.comparator.string import polars_normalize_string_column
 from datacompy.polars import (
     PolarsCompare,
-    calculate_max_diff,
     columns_equal,
     generate_id_within_group,
     temp_column_name,
@@ -1319,10 +1318,12 @@ MAX_DIFF_DF = pl.DataFrame(
         ("some_nulls", 9),
     ],
 )
-def test_calculate_max_diff(column, expected):
-    assert np.isclose(
-        calculate_max_diff(MAX_DIFF_DF["base"], MAX_DIFF_DF[column]), expected
-    )
+def test_max_diff_column_stat(column, expected):
+    df1 = pl.DataFrame({"id": range(MAX_DIFF_DF.height), "value": MAX_DIFF_DF["base"]})
+    df2 = pl.DataFrame({"id": range(MAX_DIFF_DF.height), "value": MAX_DIFF_DF[column]})
+    compare = PolarsCompare(df1, df2, join_columns="id")
+    stat = next(stat for stat in compare.column_stats if stat["column"] == "value")
+    assert np.isclose(stat["max_diff"], expected)
 
 
 @pytest.mark.parametrize(
@@ -1334,10 +1335,12 @@ def test_calculate_max_diff(column, expected):
         [time(1, 0), time(3, 0)],
     ],
 )
-def test_calculate_max_diff_temporal(values):
-    base = pl.Series([values[0], values[0]])
-    other = pl.Series(values)
-    assert calculate_max_diff(base, other) == 0
+def test_max_diff_column_stat_temporal(values):
+    df1 = pl.DataFrame({"id": [1, 2], "value": [values[0], values[0]]})
+    df2 = pl.DataFrame({"id": [1, 2], "value": values})
+    compare = PolarsCompare(df1, df2, join_columns="id")
+    stat = next(stat for stat in compare.column_stats if stat["column"] == "value")
+    assert stat["max_diff"] == 0
 
 
 @pytest.mark.parametrize(
@@ -1348,10 +1351,14 @@ def test_calculate_max_diff_temporal(values):
         pl.Series([time(1, 0), time(3, 0)]),
     ],
 )
-def test_calculate_max_diff_mixed_temporal_numeric(temporal):
+def test_max_diff_column_stat_mixed_temporal_numeric(temporal):
     numeric = pl.Series([1, 2], dtype=pl.Int64)
-    assert calculate_max_diff(temporal, numeric) == 0
-    assert calculate_max_diff(numeric, temporal) == 0
+    for left, right in ((temporal, numeric), (numeric, temporal)):
+        df1 = pl.DataFrame({"id": [1, 2], "value": left})
+        df2 = pl.DataFrame({"id": [1, 2], "value": right})
+        compare = PolarsCompare(df1, df2, join_columns="id")
+        stat = next(stat for stat in compare.column_stats if stat["column"] == "value")
+        assert stat["max_diff"] == 0
 
 
 def test_dupes_with_nulls():
