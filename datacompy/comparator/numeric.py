@@ -105,17 +105,24 @@ class PolarsNumericComparator(BaseComparator):
     """
 
     def compare(
-        self, col1: pl.Series, col2: pl.Series, rtol=1e-5, atol=1e-8
-    ) -> pl.Series | None:
+        self,
+        col1: pl.Expr,
+        col2: pl.Expr,
+        schema: pl.Schema,
+        rtol=1e-5,
+        atol=1e-8,
+    ) -> pl.Expr | None:
         """
-        Compare two Polars Series for approximate equality within specified tolerances `rtol` and `atol`.
+        Compare two Polars column for approximate equality within specified tolerances `rtol` and `atol`.
 
         Parameters
         ----------
-        col1 : pl.Series
-            The first Polars Series to compare.
-        col2 : pl.Series
-            The second Polars Series to compare.
+        col1 : pl.Expr
+            The first Polars column to compare.
+        col2 : pl.Expr
+            The second Polars column to compare.
+        schema : pl.Schema
+            The schema of the columns to compare.
         rtol : float, optional
             The relative tolerance to use for comparison. Default is 1e-5.
         atol : float, optional
@@ -123,52 +130,54 @@ class PolarsNumericComparator(BaseComparator):
 
         Returns
         -------
-        pl.Series
-            A Polars Series of booleans indicating whether the values in `col1` and `col2`
+        pl.Expr
+            A Polars column of booleans indicating whether the values in `col1` and `col2`
             are approximately equal within the given tolerances.
         None
             if the columns are not comparable.
 
         Notes
         -----
-        - The comparison uses `np.isclose` to check for approximate equality.
-        - If the series cannot be directly compared due to numeric type mismatches,
-          If casting fails, a series of `False` values is returned.
-        - If the Series shapes do not match, and neither type is numeric a `None`
-          values is returned.
+        - The comparison uses `np.isclose` semantics to check for approximate equality.
+        - If the columns cannot be directly compared due to numeric type mismatches,
+          If casting fails, a column of `False` values is returned.
+        - If neither type is numeric a `None` value is returned.
         """
-        if col1.shape != col2.shape:
-            return None
+        dtype1 = schema[col1.meta.output_name()]
+        dtype2 = schema[col2.meta.output_name()]
+        if dtype1.is_numeric() and dtype2.is_numeric():
+            if dtype1.is_integer() and dtype2.is_integer() and not rtol and not atol:
+                # isclose semantics compares as floats, which can't tell integers apart above 2**53
+                return col1.eq_missing(col2)
 
-        if col1.dtype.is_numeric() and col2.dtype.is_numeric():
-            if (
-                col1.dtype.is_integer()
-                and col2.dtype.is_integer()
-                and not rtol
-                and not atol
-            ):
-                # np.isclose compares as floats, which can't tell integers apart above 2**53
-                both_null = col1.is_null() & col2.is_null()
-                return ((col1 == col2) | both_null).fill_null(False)
-            try:
-                return pl.Series(
-                    np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
-                )
-            except Exception:
-                try:
-                    return pl.Series(
-                        np.isclose(
-                            col1.cast(pl.Float64, strict=True),
-                            col2.cast(pl.Float64, strict=True),
-                            rtol=rtol,
-                            atol=atol,
-                            equal_nan=True,
-                        )
+            cast1 = col1.cast(pl.Float64, strict=False)
+            cast2 = col2.cast(pl.Float64, strict=False)
+            cast1_passed = ~(col1.is_not_null() & cast1.is_null())
+            cast2_passed = ~(col2.is_not_null() & cast2.is_null())
+
+            isclose = (cast1 - cast2).abs() <= atol + rtol * cast2.abs()
+            both_nan = cast1.is_nan() & cast2.is_nan()
+            either_nan = cast1.is_nan() | cast2.is_nan()
+            inf_eq = cast1.is_infinite() & cast2.is_infinite() & (cast1 == cast2)
+            both_null = col1.is_null() & col2.is_null()
+
+            return (
+                cast1_passed
+                & cast2_passed
+                & (
+                    both_null
+                    | both_nan
+                    | inf_eq
+                    | (
+                        isclose
+                        & ~either_nan
+                        & ~cast1.is_infinite()
+                        & ~cast2.is_infinite()
                     )
-                except Exception:
-                    return pl.Series([False] * col1.shape[0])
-        else:
-            return None
+                )
+            ).fill_null(False)
+
+        return None
 
 
 class PandasNumericComparator(BaseComparator):
