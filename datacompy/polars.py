@@ -365,9 +365,9 @@ class PolarsCompare(BaseCompare):
 
         schema1 = df1.schema
         schema2 = df2.schema
+        df1_exprs: List[pl.Expr] = []
+        df2_exprs: List[pl.Expr] = []
 
-        df1_exprs = []
-        df2_exprs = []
         if ignore_spaces:
             for column in self.join_columns:
                 df1_exprs.append(
@@ -848,7 +848,7 @@ def columns_equal(
         else:
             # for custom comparators pass all the available parameters
             # custom comparators can ignore what they don't need.
-            compare = comparator.compare(col_1, col_2, schema, **kwargs)
+            compare = comparator.compare(col_1, col_2, dtype1, dtype2, **kwargs)
 
         if compare is not None:
             LOG.info(
