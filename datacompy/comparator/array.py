@@ -110,7 +110,8 @@ class PolarsArrayLikeComparator(BaseComparator):
         self,
         col1: pl.Expr,
         col2: pl.Expr,
-        schema: pl.Schema,
+        dtype1: pl.DataType,
+        dtype2: pl.DataType,
     ) -> pl.Expr | None:
         """
         Compare two array like columns for equality.
@@ -121,8 +122,10 @@ class PolarsArrayLikeComparator(BaseComparator):
             The first Polars column to compare.
         col2 : pl.Expr
             The second Polars column to compare.
-        schema : pl.Schema
-            The schema of the columns to compare.
+        dtype1 : pl.DataType
+            The data type of the first column.
+        dtype2 : pl.DataType
+            The data type of the second column.
 
         Returns
         -------
@@ -132,10 +135,10 @@ class PolarsArrayLikeComparator(BaseComparator):
         None
             if the columns are not comparable.
         """
-        dtype1 = str(schema[col1.meta.output_name()].base_type())
-        dtype2 = str(schema[col2.meta.output_name()].base_type())
-
-        if dtype1 in POLARS_ARRAY_TYPE and dtype2 in POLARS_ARRAY_TYPE:
+        if (
+            str(dtype1.base_type()) in POLARS_ARRAY_TYPE
+            and str(dtype2.base_type()) in POLARS_ARRAY_TYPE
+        ):
             # For Polars list comparison, we can use the eq_missing operator
             # which handles null values correctly
             return col1.eq_missing(col2)

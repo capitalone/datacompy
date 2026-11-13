@@ -191,6 +191,15 @@ def test_pandas_boolean_comparator_ignores_mismatched_shapes():
 # --------------------------------------------------------------------------
 
 
+def _polars_boolean_compare(df, left, right):
+    return PolarsBooleanComparator().compare(
+        left,
+        right,
+        df.schema[left.meta.output_name()],
+        df.schema[right.meta.output_name()],
+    )
+
+
 def test_polars_boolean_columns_equal():
     df = pl.DataFrame(
         {"left": [True, False, True, False], "right": [True, False, False, True]}
@@ -232,7 +241,7 @@ def test_polars_boolean_comparator_claims_cross_type_comparisons():
 
     expected = [True, True, False, False]
 
-    direct_result = PolarsBooleanComparator().compare(boolean, integer, df.schema)
+    direct_result = _polars_boolean_compare(df, boolean, integer)
 
     assert direct_result is not None
     assert df.select(direct_result).to_series().to_list() == expected
@@ -253,10 +262,7 @@ def test_polars_boolean_comparator_claims_cross_type_comparisons():
 def test_polars_boolean_comparator_ignores_non_boolean_columns():
     df = pl.DataFrame({"left": [1, 2], "right": [1, 2]})
 
-    assert (
-        PolarsBooleanComparator().compare(pl.col("left"), pl.col("right"), df.schema)
-        is None
-    )
+    assert _polars_boolean_compare(df, pl.col("left"), pl.col("right")) is None
 
 
 def test_polars_boolean_comparator_falls_through_on_incomparable_dtypes():
@@ -269,7 +275,7 @@ def test_polars_boolean_comparator_falls_through_on_incomparable_dtypes():
     )
     boolean, dates = pl.col("boolean"), pl.col("dates")
 
-    assert PolarsBooleanComparator().compare(boolean, dates, df.schema) is None
+    assert _polars_boolean_compare(df, boolean, dates) is None
 
     # The pipeline still resolves to "not equal" rather than raising. The
     # fallback is a scalar literal, so it only takes the frame's height via
@@ -291,8 +297,8 @@ def test_polars_boolean_comparator_declines_boolean_against_text(dtype):
     )
     boolean, text = pl.col("boolean"), pl.col("text")
 
-    assert PolarsBooleanComparator().compare(boolean, text, df.schema) is None
-    assert PolarsBooleanComparator().compare(text, boolean, df.schema) is None
+    assert _polars_boolean_compare(df, boolean, text) is None
+    assert _polars_boolean_compare(df, text, boolean) is None
 
 
 def test_polars_boolean_against_text_does_not_match():

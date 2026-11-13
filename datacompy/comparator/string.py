@@ -81,7 +81,8 @@ class PolarsStringComparator(BaseComparator):
         self,
         col1: pl.Expr,
         col2: pl.Expr,
-        schema: pl.Schema,
+        dtype1: pl.DataType,
+        dtype2: pl.DataType,
         ignore_space: bool = True,
         ignore_case: bool = True,
     ) -> pl.Expr | None:
@@ -93,8 +94,10 @@ class PolarsStringComparator(BaseComparator):
             The first Polars column to compare.
         col2 : pl.Expr
             The second Polars column to compare.
-        schema : pl.Schema
-            The schema of the columns to compare.
+        dtype1 : pl.DataType
+            The data type of the first column.
+        dtype2 : pl.DataType
+            The data type of the second column.
         ignore_space : bool
             Whether to ignore leading and trailing whitespace when comparing strings.
         ignore_case : bool
@@ -133,8 +136,6 @@ class PolarsStringComparator(BaseComparator):
         - Two ``Categorical`` columns: compared directly, without the
           whitespace and case normalization.
         """
-        dtype1 = schema[col1.meta.output_name()]
-        dtype2 = schema[col2.meta.output_name()]
         base1 = dtype1.base_type()
         base2 = dtype2.base_type()
 
@@ -142,7 +143,7 @@ class PolarsStringComparator(BaseComparator):
         if (str(base1) in POLARS_DATE_TYPE and str(base2) in POLARS_STRING_TYPE) or (
             str(base2) in POLARS_DATE_TYPE and str(base1) in POLARS_STRING_TYPE
         ):
-            return polars_compare_string_and_date_columns(col1, col2, schema)
+            return polars_compare_string_and_date_columns(col1, col2, dtype1, dtype2)
         # both are strings, treating  an all-null column (Null dtype, no value to signal a type)
         # as string-compatible
         elif (str(base1) in POLARS_STRING_TYPE or dtype1 == pl.Null) and (
@@ -151,10 +152,10 @@ class PolarsStringComparator(BaseComparator):
             if not ignore_space and not ignore_case:
                 return col1.eq_missing(col2)
             col1 = polars_normalize_string_column(
-                col1, schema, ignore_space, ignore_case
+                col1, dtype1, ignore_space, ignore_case
             )
             col2 = polars_normalize_string_column(
-                col2, schema, ignore_space, ignore_case
+                col2, dtype2, ignore_space, ignore_case
             )
             return col1.eq_missing(col2)
         elif (dtype1.is_temporal() and dtype2.is_temporal()) or (
@@ -487,7 +488,7 @@ def pandas_normalize_string_column(
 
 def polars_normalize_string_column(
     column: pl.Expr,
-    schema: pl.Schema,
+    dtype: pl.DataType,
     ignore_spaces: bool,
     ignore_case: bool,
 ) -> pl.Expr:
@@ -497,8 +498,8 @@ def polars_normalize_string_column(
     ----------
     column : pl.Expr
         The column to normalize
-    schema : pl.Schema
-        The schema of the column
+    dtype : pl.DataType
+        The data type of the column
     ignore_spaces : bool
         Whether to ignore spaces when normalizing
     ignore_case : bool
@@ -513,8 +514,7 @@ def polars_normalize_string_column(
     -----
     Will not operate on categorical columns.
     """
-    col_dtype = str(schema[column.meta.output_name()].base_type())
-    if col_dtype in POLARS_STRING_TYPE:
+    if str(dtype.base_type()) in POLARS_STRING_TYPE:
         if ignore_spaces:
             column = column.str.strip_chars()
         if ignore_case:
@@ -629,7 +629,8 @@ def pandas_compare_string_and_date_columns(
 def polars_compare_string_and_date_columns(
     col_1: pl.Expr,
     col_2: pl.Expr,
-    schema: pl.Schema,
+    dtype1: pl.DataType,
+    dtype2: pl.DataType,
 ) -> pl.Expr:
     """Compare a string column and date column, value-wise.
 
@@ -641,8 +642,10 @@ def polars_compare_string_and_date_columns(
         The first column to look at
     col_2 : Polars.Expr
         The second column
-    schema : pl.Schema
-        The schema of the columns to compare.
+    dtype1 : pl.DataType
+        The data type of the first column.
+    dtype2 : pl.DataType
+        The data type of the second column.
 
     Returns
     -------
@@ -650,9 +653,6 @@ def polars_compare_string_and_date_columns(
         A column of Boolean values.  True == the values match, False == the
         values don't match.
     """
-    dtype1 = schema[col_1.meta.output_name()]
-    dtype2 = schema[col_2.meta.output_name()]
-
     if str(dtype1.base_type()) in POLARS_STRING_TYPE:
         str_column, date_column, date_dtype = col_1, col_2, dtype2
     else:

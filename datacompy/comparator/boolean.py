@@ -119,7 +119,8 @@ class PolarsBooleanComparator(BaseComparator):
         self,
         col1: pl.Expr,
         col2: pl.Expr,
-        schema: pl.Schema,
+        dtype1: pl.DataType,
+        dtype2: pl.DataType,
     ) -> pl.Expr | None:
         """Compare columns when either Polars dtype is Boolean.
 
@@ -133,8 +134,10 @@ class PolarsBooleanComparator(BaseComparator):
             The first Polars column to compare.
         col2 : pl.Expr
             The second Polars column to compare.
-        schema : pl.Schema
-            The schema of the columns to compare.
+        dtype1 : pl.DataType
+            The data type of the first column.
+        dtype2 : pl.DataType
+            The data type of the second column.
 
         Returns
         -------
@@ -156,9 +159,6 @@ class PolarsBooleanComparator(BaseComparator):
         casing rule is arbitrary enough to be a trap, and neither Pandas nor
         Spark reports a match here, so the pair is left to fall through.
         """
-        dtype1 = schema[col1.meta.output_name()]
-        dtype2 = schema[col2.meta.output_name()]
-
         if not (_pl_bool_compatible(dtype1) and _pl_bool_compatible(dtype2)):
             return None
         if dtype1 != pl.Boolean and dtype2 != pl.Boolean:

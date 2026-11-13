@@ -108,7 +108,8 @@ class PolarsNumericComparator(BaseComparator):
         self,
         col1: pl.Expr,
         col2: pl.Expr,
-        schema: pl.Schema,
+        dtype1: pl.DataType,
+        dtype2: pl.DataType,
         rtol=1e-5,
         atol=1e-8,
     ) -> pl.Expr | None:
@@ -121,8 +122,10 @@ class PolarsNumericComparator(BaseComparator):
             The first Polars column to compare.
         col2 : pl.Expr
             The second Polars column to compare.
-        schema : pl.Schema
-            The schema of the columns to compare.
+        dtype1 : pl.DataType
+            The data type of the first column.
+        dtype2 : pl.DataType
+            The data type of the second column.
         rtol : float, optional
             The relative tolerance to use for comparison. Default is 1e-5.
         atol : float, optional
@@ -143,8 +146,6 @@ class PolarsNumericComparator(BaseComparator):
           If casting fails, a column of `False` values is returned.
         - If neither type is numeric a `None` value is returned.
         """
-        dtype1 = schema[col1.meta.output_name()]
-        dtype2 = schema[col2.meta.output_name()]
         if dtype1.is_numeric() and dtype2.is_numeric():
             if dtype1.is_integer() and dtype2.is_integer() and not rtol and not atol:
                 # isclose semantics compares as floats, which can't tell integers apart above 2**53
