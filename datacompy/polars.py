@@ -348,7 +348,6 @@ class PolarsCompare(BaseCompare):
         df2 = self.df2.clone()
         temp_join_columns = deepcopy(self.join_columns)
 
-        # We keep the dedupe logic eager so the result is deterministic
         if self._any_dupes:
             LOG.debug("Duplicate rows found, deduping by order of remaining fields")
             # Create order column for uniqueness of match
@@ -366,9 +365,11 @@ class PolarsCompare(BaseCompare):
         schema1 = df1.schema
         schema2 = df2.schema
 
+        df1_exprs = []
+        df2_exprs = []
         if ignore_spaces:
             for column in self.join_columns:
-                df1 = df1.with_columns(
+                df1_exprs.append(
                     polars_normalize_string_column(
                         pl.col(column),
                         schema=schema1,
@@ -376,7 +377,7 @@ class PolarsCompare(BaseCompare):
                         ignore_case=False,
                     ).alias(column)
                 )
-                df2 = df2.with_columns(
+                df2_exprs.append(
                     polars_normalize_string_column(
                         pl.col(column),
                         schema=schema2,
@@ -384,6 +385,8 @@ class PolarsCompare(BaseCompare):
                         ignore_case=False,
                     ).alias(column)
                 )
+        df1 = df1.with_columns(df1_exprs)
+        df2 = df2.with_columns(df2_exprs)
 
         df1_non_join_columns = OrderedSet(schema1.names()) - OrderedSet(
             temp_join_columns
@@ -392,10 +395,8 @@ class PolarsCompare(BaseCompare):
             temp_join_columns
         )
 
-        for c in df1_non_join_columns:
-            df1 = df1.rename({c: c + "_" + self.df1_name})
-        for c in df2_non_join_columns:
-            df2 = df2.rename({c: c + "_" + self.df2_name})
+        df1 = df1.rename({c: f"{c}_{self.df1_name}" for c in df1_non_join_columns})
+        df2 = df2.rename({c: f"{c}_{self.df2_name}" for c in df2_non_join_columns})
 
         # generate merge indicator
         df1 = df1.with_columns(_merge_left=pl.lit(True))
@@ -458,12 +459,13 @@ class PolarsCompare(BaseCompare):
         schema = self.intersect_rows.schema
 
         # Build comparison expressions for the columns to match on
+        compare_exprs = []
         for column in self.intersect_columns():
             if column not in self.join_columns:
                 col_1 = column + "_" + self.df1_name
                 col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
-                self.intersect_rows = self.intersect_rows.with_columns(
+                compare_exprs.append(
                     columns_equal(
                         col_1=pl.col(col_1),
                         col_2=pl.col(col_2),
@@ -475,6 +477,7 @@ class PolarsCompare(BaseCompare):
                         comparators=self._get_comparators(),
                     ).alias(col_match)
                 )
+        self.intersect_rows = self.intersect_rows.with_columns(compare_exprs)
 
         # Calculate the column stats for each column
         for column in self.intersect_columns():
