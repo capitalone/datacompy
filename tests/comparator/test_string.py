@@ -26,12 +26,20 @@ from datacompy.comparator.string import (
 
 
 # tests for PolarsStringComparator
+def _polars_compare(comparator, df, left="a", right="b", **kwargs):
+    return comparator.compare(
+        pl.col(left),
+        pl.col(right),
+        df.schema[left],
+        df.schema[right],
+        **kwargs,
+    )
+
+
 def test_polars_string_comparator_exact_match():
     comparator = PolarsStringComparator()
     df = pl.DataFrame({"a": ["a", "b", "c"], "b": ["a", "b", "c"]})
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df)).to_series()
     assert result.to_list() == [True, True, True]
 
 
@@ -46,10 +54,9 @@ def test_polars_string_comparator_case_space_insensitivity():
         (False, False, [False, False, False]),
     ]:
         result = df.select(
-            comparator.compare(
-                pl.col("a"),
-                pl.col("b"),
-                df.schema,
+            _polars_compare(
+                comparator,
+                df,
                 ignore_case=ignore_case,
                 ignore_space=ignore_space,
             )
@@ -60,31 +67,23 @@ def test_polars_string_comparator_case_space_insensitivity():
 def test_polars_string_comparator_none_handling():
     comparator = PolarsStringComparator()
     df = pl.DataFrame({"a": ["a", "b", None], "b": ["a", "b", None]})
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df)).to_series()
     assert result.to_list() == [True, True, True]
 
 
 def test_polars_string_comparator_all_null_columns():
     comparator = PolarsStringComparator()
     df = pl.DataFrame({"a": [None, None, None], "b": [None, None, None]})
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df)).to_series()
     assert result.to_list() == [True, True, True]
 
 
 def test_polars_string_comparator_all_null_vs_string():
     comparator = PolarsStringComparator()
     df = pl.DataFrame({"a": [None, None, None], "b": ["a", None, "c"]})
-    result1 = (
-        df.select(comparator.compare(pl.col("a"), pl.col("b"), df.schema))
-        .to_series()
-        .to_list()
-    )
+    result1 = df.select(_polars_compare(comparator, df)).to_series().to_list()
     result2 = (
-        df.select(comparator.compare(pl.col("b"), pl.col("a"), df.schema))
+        df.select(_polars_compare(comparator, df, left="b", right="a"))
         .to_series()
         .to_list()
     )
@@ -97,9 +96,7 @@ def test_polars_string_comparator_empty_null_columns():
     df = pl.DataFrame(
         {"a": pl.Series([], dtype=pl.Null), "b": pl.Series([], dtype=pl.Null)}
     )
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df)).to_series()
     assert result.dtype == pl.Boolean
     assert result.to_list() == []
 
@@ -107,9 +104,7 @@ def test_polars_string_comparator_empty_null_columns():
 def test_polars_string_comparator_mismatch():
     comparator = PolarsStringComparator()
     df = pl.DataFrame({"a": ["a", "b", "c"], "b": ["a", "b", "d"]})
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df)).to_series()
     assert result.to_list() == [True, True, False]
 
 
@@ -121,7 +116,7 @@ def test_polars_string_comparator_error_handling():
             "b": [4, 5, 6],  # Invalid type for string comparison
         }
     )
-    result = comparator.compare(pl.col("a"), pl.col("b"), df.schema)
+    result = _polars_compare(comparator, df)
     assert result is None
 
 
@@ -135,7 +130,7 @@ def test_polars_string_comparator_mixed_temporal_types_cast_to_string():
     )
 
     result = df.select(
-        comparator.compare(pl.col("date"), pl.col("time"), df.schema)
+        _polars_compare(comparator, df, left="date", right="time")
     ).to_series()
 
     assert result.to_list() == [False, True]

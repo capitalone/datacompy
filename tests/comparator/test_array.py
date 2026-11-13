@@ -190,15 +190,17 @@ def test_pandas_compare_non_array_like():
 
 
 # Polars
+def _polars_compare(comparator, df):
+    return comparator.compare(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
+
+
 def test_polars_compare_equal_arrays():
     # Setup
     df = pl.DataFrame({"a": [[1, 2], [3, 4]], "b": [[1, 2], [3, 6]]})
     comparator = PolarsArrayLikeComparator()
 
     # Execute
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df)).to_series()
 
     # Assert
     assert result.to_list() == [True, False]
@@ -210,9 +212,7 @@ def test_polars_compare_unequal_arrays():
     comparator = PolarsArrayLikeComparator()
 
     # Execute
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df)).to_series()
 
     # Assert
     assert result.to_list() == [True, False]
@@ -224,9 +224,7 @@ def test_polars_compare_with_nulls():
     comparator = PolarsArrayLikeComparator()
 
     # Execute
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df)).to_series()
 
     # Assert
     assert result.to_list() == [True, True]
@@ -236,17 +234,17 @@ def test_polars_compare_non_array():
     # integers
     df = pl.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]})
     comparator = PolarsArrayLikeComparator()
-    result = comparator.compare(pl.col("a"), pl.col("b"), df.schema)
+    result = _polars_compare(comparator, df)
     assert result is None
 
     # floats
     df = pl.DataFrame({"a": [1.0, 2.0, 3.0], "b": [1.0, 2.0, 3.0]})
     comparator = PolarsArrayLikeComparator()
-    result = comparator.compare(pl.col("a"), pl.col("b"), df.schema)
+    result = _polars_compare(comparator, df)
     assert result is None
 
     # dicts
     df = pl.DataFrame({"a": [{"a": 1}, {"b": 2}], "b": [{"a": 1}, {"b": 2}]})
     comparator = PolarsArrayLikeComparator()
-    result = comparator.compare(pl.col("a"), pl.col("b"), df.schema)
+    result = _polars_compare(comparator, df)
     assert result is None

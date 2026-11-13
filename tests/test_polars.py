@@ -1972,7 +1972,7 @@ def test_normalize_string_column(input_data, ignore_spaces, ignore_case, expecte
     result = df.select(
         polars_normalize_string_column(
             pl.col("col"),
-            df.schema,
+            df.schema["col"],
             ignore_spaces=ignore_spaces,
             ignore_case=ignore_case,
         )

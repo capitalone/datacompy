@@ -22,12 +22,16 @@ from datacompy.comparator.numeric import (
 
 
 # tests for PolarsNumericComparator
+def _polars_compare(comparator, df, **kwargs):
+    return comparator.compare(
+        pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"], **kwargs
+    )
+
+
 def test_polars_numeric_comparator_exact_match():
     comparator = PolarsNumericComparator()
     df = pl.DataFrame({"a": [1.0, 2.0, 3.0], "b": [1.0, 2.0, 3.0]})
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df)).to_series()
     assert result.to_list() == [True, True, True]
 
 
@@ -35,7 +39,7 @@ def test_polars_numeric_comparator_approximate_match():
     comparator = PolarsNumericComparator()
     df = pl.DataFrame({"a": [1.0, 2.0, 3.0], "b": [1.001, 2.002, 3.003]})
     result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema, rtol=1e-3, atol=1e-3)
+        _polars_compare(comparator, df, rtol=1e-3, atol=1e-3)
     ).to_series()
     assert result.to_list() == [True, True, True]
 
@@ -48,27 +52,21 @@ def test_polars_numeric_comparator_type_casting():
             "b": [1.0, 2.0, 3.0],  # Float type
         }
     )
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df)).to_series()
     assert result.to_list() == [True, True, True]
 
 
 def test_polars_numeric_comparator_nan_handling():
     comparator = PolarsNumericComparator()
     df = pl.DataFrame({"a": [1.0, float("nan"), 3.0], "b": [1.0, float("nan"), 3.0]})
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df)).to_series()
     assert result.to_list() == [True, True, True]
 
 
 def test_polars_numeric_comparator_mismatch():
     comparator = PolarsNumericComparator()
     df = pl.DataFrame({"a": [1.0, 2.0, 3.0], "b": [1.0, 2.5, 3.0]})
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df)).to_series()
     assert result.to_list() == [True, False, True]
 
 
@@ -80,7 +78,7 @@ def test_polars_numeric_comparator_error_handling():
             "b": ["x", "y", "z"],  # Invalid type for numeric comparison
         }
     )
-    result = comparator.compare(pl.col("a"), pl.col("b"), df.schema)
+    result = _polars_compare(comparator, df)
     assert result is None
 
 
@@ -94,18 +92,14 @@ def test_polars_numeric_comparator_large_integers_exact():
             "b": [2**60 + 1, 2**60 + 1, 5, None, 1],
         }
     )
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema, rtol=0, atol=0)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df, rtol=0, atol=0)).to_series()
     assert result.to_list() == [False, True, True, True, False]
 
 
 def test_polars_numeric_comparator_large_integers_with_tolerance():
     comparator = PolarsNumericComparator()
     df = pl.DataFrame({"a": [2**60], "b": [2**60 + 1]})
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema, rtol=1e-5, atol=0)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df, rtol=1e-5, atol=0)).to_series()
     assert result.to_list() == [True]
 
 
@@ -117,9 +111,7 @@ def test_polars_numeric_comparator_uint64_and_mixed_widths():
             "b": pl.Series([2**64 - 2, 2**31 - 1], dtype=pl.UInt64),
         }
     )
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema, rtol=0, atol=0)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df, rtol=0, atol=0)).to_series()
     assert result.to_list() == [False, True]
     df = pl.DataFrame(
         {
@@ -127,9 +119,7 @@ def test_polars_numeric_comparator_uint64_and_mixed_widths():
             "b": pl.Series([2**31 - 1], dtype=pl.Int64),
         }
     )
-    result = df.select(
-        comparator.compare(pl.col("a"), pl.col("b"), df.schema, rtol=0, atol=0)
-    ).to_series()
+    result = df.select(_polars_compare(comparator, df, rtol=0, atol=0)).to_series()
     assert result.to_list() == [True]
 
 
