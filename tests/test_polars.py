@@ -2199,10 +2199,11 @@ def test_custom_comparator_polars():
     class StringLengthComparator(BaseComparator):
         """A custom comparator that matches strings based on length."""
 
-        def compare(self, col1, col2, schema, **kwargs):
+        def compare(self, col1, col2, dtype1, dtype2, **kwargs):
+            string_types = {"String", "Utf8"}
             if (
-                schema[col1.meta.output_name()] == pl.Utf8
-                and schema[col2.meta.output_name()] == pl.Utf8
+                str(dtype1.base_type()) in string_types
+                and str(dtype2.base_type()) in string_types
             ):
                 return col1.str.len_chars() == col2.str.len_chars()
             return None
