@@ -373,7 +373,7 @@ class PolarsCompare(BaseCompare):
                 df1_exprs.append(
                     polars_normalize_string_column(
                         pl.col(column),
-                        schema=schema1,
+                        dtype=schema1[column],
                         ignore_spaces=ignore_spaces,
                         ignore_case=False,
                     ).alias(column)
@@ -381,7 +381,7 @@ class PolarsCompare(BaseCompare):
                 df2_exprs.append(
                     polars_normalize_string_column(
                         pl.col(column),
-                        schema=schema2,
+                        dtype=schema2[column],
                         ignore_spaces=ignore_spaces,
                         ignore_case=False,
                     ).alias(column)
@@ -822,23 +822,29 @@ def columns_equal(
         # If no comparators are passed, behave as before.
         comparators_ = _POLARS_DEFAULT_COMPARATORS
 
+    col_1_name = col_1.meta.output_name()
+    col_2_name = col_2.meta.output_name()
+    dtype1 = schema[col_1_name]
+    dtype2 = schema[col_2_name]
+
     for comparator in comparators_:
         if isinstance(comparator, PolarsBooleanComparator):
-            compare = comparator.compare(col_1, col_2, schema)
+            compare = comparator.compare(col_1, col_2, dtype1, dtype2)
         elif isinstance(comparator, PolarsNumericComparator):
             compare = comparator.compare(
-                col_1, col_2, schema, rtol=rel_tol, atol=abs_tol
+                col_1, col_2, dtype1, dtype2, rtol=rel_tol, atol=abs_tol
             )
         elif isinstance(comparator, PolarsStringComparator):
             compare = comparator.compare(
                 col_1,
                 col_2,
-                schema,
+                dtype1,
+                dtype2,
                 ignore_space=ignore_spaces,
                 ignore_case=ignore_case,
             )
         elif isinstance(comparator, PolarsArrayLikeComparator):
-            compare = comparator.compare(col_1, col_2, schema)
+            compare = comparator.compare(col_1, col_2, dtype1, dtype2)
         else:
             # for custom comparators pass all the available parameters
             # custom comparators can ignore what they don't need.
@@ -846,7 +852,7 @@ def columns_equal(
 
         if compare is not None:
             LOG.info(
-                f"Using comparator: {comparator.__class__.__name__} for column ({col_1.meta.output_name()}, {col_2.meta.output_name()}) comparison."
+                f"Using comparator: {comparator.__class__.__name__} for column ({col_1_name}, {col_2_name}) comparison."
             )
             return compare
 
