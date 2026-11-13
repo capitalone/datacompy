@@ -406,6 +406,17 @@ class PolarsCompare(BaseCompare):
         null_equality: Dict[str, Any] = {_JOIN_NULLS_KWARG: True}
         outer_join = df1.join(df2, how="full", coalesce=True, **null_equality, **params)
 
+        # process merge indicator
+        outer_join = outer_join.with_columns(
+            pl.when(pl.col("_merge_left") & pl.col("_merge_right"))
+            .then(pl.lit("both"))
+            .when(pl.col("_merge_left") & pl.col("_merge_right").is_null())
+            .then(pl.lit("left_only"))
+            .when(pl.col("_merge_left").is_null() & pl.col("_merge_right"))
+            .then(pl.lit("right_only"))
+            .alias("_merge")
+        )
+
         # Clean up temp columns for duplicate row matching
         if self._any_dupes:
             outer_join = outer_join.drop(order_column)
@@ -415,13 +426,13 @@ class PolarsCompare(BaseCompare):
 
         LOG.debug("Selecting df1 unique rows")
         self.df1_unq_rows = outer_join.filter(
-            pl.col("_merge_left").is_not_null() & pl.col("_merge_right").is_null()
+            outer_join["_merge"] == "left_only"
         ).select(df1_cols)
         self.df1_unq_rows.columns = self.df1.columns
 
         LOG.debug("Selecting df2 unique rows")
         self.df2_unq_rows = outer_join.filter(
-            pl.col("_merge_left").is_null() & pl.col("_merge_right").is_not_null()
+            outer_join["_merge"] == "right_only"
         ).select(df2_cols)
         self.df2_unq_rows.columns = self.df2.columns
 
@@ -429,9 +440,7 @@ class PolarsCompare(BaseCompare):
         LOG.info(f"Number of rows in df2 and not in df1: {self.df2_unq_rows.height}")
 
         LOG.debug("Selecting intersecting rows")
-        self.intersect_rows = outer_join.filter(
-            pl.col("_merge_left").is_not_null() & pl.col("_merge_right").is_not_null()
-        ).drop("_merge_left", "_merge_right")
+        self.intersect_rows = outer_join.filter(outer_join["_merge"] == "both")
         LOG.info(
             f"Number of rows in df1 and df2 (not necessarily equal): {self.intersect_rows.height}"
         )
