@@ -259,7 +259,7 @@ class PolarsCompare(BaseCompare):
             raise TypeError(f"{index} must be a Polars DataFrame")
 
         if cast_column_names_lower:
-            # Assigning duplicate names raises polars.exceptions.DuplicateError.
+            # Assigning duplicate names raises pl.exceptions.DuplicateError.
             # Reject that case here with the same ValueError the other backends use.
             columns = [str(col).lower() for col in dataframe.columns]
             if len(set(columns)) < len(columns):
@@ -287,9 +287,9 @@ class PolarsCompare(BaseCompare):
         """
         LOG.debug("Checking equality")
         if self.df1.equals(self.df2):
-            LOG.info("df1 Polars.DataFrame.equals df2")
+            LOG.info("df1 pl.DataFrame.equals df2")
         else:
-            LOG.info("df1 does not Polars.DataFrame.equals df2")
+            LOG.info("df1 does not pl.DataFrame.equals df2")
         LOG.info(f"Number of columns in common: {len(self.intersect_columns())}")
         LOG.debug("Checking column overlap")
         for col in self.df1_unq_columns():
@@ -613,7 +613,7 @@ class PolarsCompare(BaseCompare):
 
         Returns
         -------
-        Polars.DataFrame
+        pl.DataFrame
             A sample of the intersection dataframe, containing only the
             "pertinent" columns, for rows that don't match on the provided
             column.
@@ -668,7 +668,7 @@ class PolarsCompare(BaseCompare):
 
         Returns
         -------
-        Polars.DataFrame
+        pl.DataFrame
             All rows of the intersection dataframe, containing any columns, that don't match.
         """
         match_list = []
@@ -813,9 +813,9 @@ def get_merged_columns(
 
     Parameters
     ----------
-    original_df : Polars.DataFrame
+    original_df : pl.DataFrame
         The original, pre-merge dataframe
-    merged_df : Polars.DataFrame
+    merged_df : pl.DataFrame
         Post-merge with another dataframe, with suffixes added in.
     suffix : str
         What suffix was used to distinguish when the original dataframe was
@@ -837,9 +837,9 @@ def calculate_max_diff(col_1: pl.Series, col_2: pl.Series) -> float:
 
     Parameters
     ----------
-    col_1 : Polars.Series
+    col_1 : pl.Series
         The first column
-    col_2 : Polars.Series
+    col_2 : pl.Series
         The second column
 
     Returns
@@ -871,14 +871,14 @@ def generate_id_within_group(
 
     Parameters
     ----------
-    dataframe : Polars.DataFrame
+    dataframe : pl.DataFrame
         The dataframe to operate on
     join_columns : list
         List of strings which are the join columns
 
     Returns
     -------
-    Polars.Series
+    pl.Series
         The ID column that's unique in each group.
     """
     default_value = "DATACOMPY_NULL"
