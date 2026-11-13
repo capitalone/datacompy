@@ -152,30 +152,21 @@ class PolarsNumericComparator(BaseComparator):
 
             cast1 = col1.cast(pl.Float64, strict=False)
             cast2 = col2.cast(pl.Float64, strict=False)
-            cast1_passed = ~(col1.is_not_null() & cast1.is_null())
-            cast2_passed = ~(col2.is_not_null() & cast2.is_null())
 
-            isclose = (cast1 - cast2).abs() <= atol + rtol * cast2.abs()
-            both_nan = cast1.is_nan() & cast2.is_nan()
-            either_nan = cast1.is_nan() | cast2.is_nan()
-            inf_eq = cast1.is_infinite() & cast2.is_infinite() & (cast1 == cast2)
-            both_null = col1.is_null() & col2.is_null()
+            # Avoid building the tolerance expression for the common exact
+            # comparison case. eq_missing treats nulls and NaNs as equal.
+            exact = cast1.eq_missing(cast2)
+            if not rtol and not atol:
+                return exact
 
-            return (
-                cast1_passed
-                & cast2_passed
-                & (
-                    both_null
-                    | both_nan
-                    | inf_eq
-                    | (
-                        isclose
-                        & ~either_nan
-                        & ~cast1.is_infinite()
-                        & ~cast2.is_infinite()
-                    )
-                )
-            ).fill_null(False)
+            # Only apply the tolerance to finite values. Exact comparison
+            # handles equal infinities, NaNs, and nulls.
+            isclose = (
+                cast1.is_finite()
+                & cast2.is_finite()
+                & ((cast1 - cast2).abs() <= atol + rtol * cast2.abs())
+            )
+            return (exact | isclose).fill_null(False)
 
         return None
 
