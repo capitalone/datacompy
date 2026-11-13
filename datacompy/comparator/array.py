@@ -106,35 +106,39 @@ def _array_equal(left: list[Any] | np.ndarray, right: list[Any] | np.ndarray) ->
 class PolarsArrayLikeComparator(BaseComparator):
     """Comparator for array-like columns in Polars."""
 
-    def compare(self, col1: pl.Series, col2: pl.Series) -> pl.Series | None:
+    def compare(
+        self,
+        col1: pl.Expr,
+        col2: pl.Expr,
+        schema: pl.Schema,
+    ) -> pl.Expr | None:
         """
         Compare two array like columns for equality.
 
         Parameters
         ----------
-        col1 : pl.Series
-            The first Polars Series to compare.
-        col2 : pl.Series
-            The second Polars Series to compare.
+        col1 : pl.Expr
+            The first Polars column to compare.
+        col2 : pl.Expr
+            The second Polars column to compare.
+        schema : pl.Schema
+            The schema of the columns to compare.
 
         Returns
         -------
-        pl.Series
-            A Polars Series of booleans indicating whether the values in `col1` and `col2`
+        pl.Expr
+            A Polars column of booleans indicating whether the values in `col1` and `col2`
             are equal.
         None
             if the columns are not comparable.
         """
-        if col1.shape != col2.shape:
-            return None
+        dtype1 = str(schema[col1.meta.output_name()].base_type())
+        dtype2 = str(schema[col2.meta.output_name()].base_type())
 
-        if (
-            str(col1.dtype.base_type()) in POLARS_ARRAY_TYPE
-            and str(col2.dtype.base_type()) in POLARS_ARRAY_TYPE
-        ):
+        if dtype1 in POLARS_ARRAY_TYPE and dtype2 in POLARS_ARRAY_TYPE:
             # For Polars list comparison, we can use the eq_missing operator
             # which handles null values correctly
-            return pl.Series(col1.eq_missing(col2))
+            return col1.eq_missing(col2)
         else:
             return None
 

@@ -107,15 +107,20 @@ class PandasBooleanComparator(BaseComparator):
         return (col1.eq(col2) | (col1.isna() & col2.isna())).fillna(False).astype(bool)
 
 
+def _pl_bool_compatible(dtype: pl.DataType) -> bool:
+    """Check if a Polars dtype is compatible with a Boolean (exluding strings)."""
+    return dtype == pl.Boolean or dtype.is_integer() or dtype.is_float()
+
+
 class PolarsBooleanComparator(BaseComparator):
     """Comparator for Boolean columns in Polars."""
 
     def compare(
         self,
-        col1: pl.Series,
-        col2: pl.Series,
-        **kwargs: Any,
-    ) -> pl.Series | None:
+        col1: pl.Expr,
+        col2: pl.Expr,
+        schema: pl.Schema,
+    ) -> pl.Expr | None:
         """Compare columns when either Polars dtype is Boolean.
 
         Boolean comparisons are exact and null-safe. When a Boolean column is
@@ -124,17 +129,17 @@ class PolarsBooleanComparator(BaseComparator):
 
         Parameters
         ----------
-        col1 : pl.Series
-            The first Polars Series to compare.
-        col2 : pl.Series
-            The second Polars Series to compare.
-        **kwargs : Any
-            Unused; accepted so this comparator matches the pipeline signature.
+        col1 : pl.Expr
+            The first Polars column to compare.
+        col2 : pl.Expr
+            The second Polars column to compare.
+        schema : pl.Schema
+            The schema of the columns to compare.
 
         Returns
         -------
-        pl.Series
-            A Polars Series of booleans indicating whether the values in `col1`
+        pl.Expr
+            A Polars column of booleans indicating whether the values in `col1`
             and `col2` are equal. Two nulls are treated as equal.
         None
             if the columns are not comparable.
@@ -151,22 +156,17 @@ class PolarsBooleanComparator(BaseComparator):
         casing rule is arbitrary enough to be a trap, and neither Pandas nor
         Spark reports a match here, so the pair is left to fall through.
         """
-        if col1.shape != col2.shape:
+        dtype1 = schema[col1.meta.output_name()]
+        dtype2 = schema[col2.meta.output_name()]
+
+        if not (_pl_bool_compatible(dtype1) and _pl_bool_compatible(dtype2)):
+            return None
+        if dtype1 != pl.Boolean and dtype2 != pl.Boolean:
+            return None  # leave int/int etc. to the numeric comparator
+        if dtype1 in STRING_POLARS_TYPES or dtype2 in STRING_POLARS_TYPES:
             return None
 
-        if not (col1.dtype == pl.Boolean or col2.dtype == pl.Boolean):
-            return None
-
-        if col1.dtype in STRING_POLARS_TYPES or col2.dtype in STRING_POLARS_TYPES:
-            return None
-
-        try:
-            return col1.eq_missing(col2)
-        except Exception:
-            # Polars raises when the dtypes have no comparison supertype (a
-            # Boolean against a List, Date, Struct, ...). Signal that this
-            # comparator cannot handle the pair so the pipeline continues.
-            return None
+        return col1.eq_missing(col2)
 
 
 class SparkBooleanComparator(BaseComparator):
