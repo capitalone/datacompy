@@ -389,12 +389,8 @@ class PolarsCompare(BaseCompare):
         df1 = df1.with_columns(df1_exprs)
         df2 = df2.with_columns(df2_exprs)
 
-        df1_non_join_columns = OrderedSet(schema1.names()) - OrderedSet(
-            temp_join_columns
-        )
-        df2_non_join_columns = OrderedSet(schema2.names()) - OrderedSet(
-            temp_join_columns
-        )
+        df1_non_join_columns = OrderedSet(df1.columns) - OrderedSet(temp_join_columns)
+        df2_non_join_columns = OrderedSet(df2.columns) - OrderedSet(temp_join_columns)
 
         df1 = df1.rename({c: f"{c}_{self.df1_name}" for c in df1_non_join_columns})
         df2 = df2.rename({c: f"{c}_{self.df2_name}" for c in df2_non_join_columns})
