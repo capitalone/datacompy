@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import date, time
 from unittest import mock
 
 import pandas as pd
@@ -122,6 +123,22 @@ def test_polars_string_comparator_error_handling():
     )
     result = comparator.compare(pl.col("a"), pl.col("b"), df.schema)
     assert result is None
+
+
+def test_polars_string_comparator_mixed_temporal_types_cast_to_string():
+    comparator = PolarsStringComparator()
+    df = pl.DataFrame(
+        {
+            "date": pl.Series([date(2023, 1, 1), None], dtype=pl.Date),
+            "time": pl.Series([time(12, 30), None], dtype=pl.Time),
+        }
+    )
+
+    result = df.select(
+        comparator.compare(pl.col("date"), pl.col("time"), df.schema)
+    ).to_series()
+
+    assert result.to_list() == [False, True]
 
 
 # tests for PandasStringComparator

@@ -148,6 +148,8 @@ class PolarsStringComparator(BaseComparator):
         elif (str(base1) in POLARS_STRING_TYPE or dtype1 == pl.Null) and (
             str(base2) in POLARS_STRING_TYPE or dtype2 == pl.Null
         ):
+            if not ignore_space and not ignore_case:
+                return col1.eq_missing(col2)
             col1 = polars_normalize_string_column(
                 col1, schema, ignore_space, ignore_case
             )
@@ -167,11 +169,7 @@ class PolarsStringComparator(BaseComparator):
             if (base1 == base2) or {base1, base2} <= {pl.Date, pl.Datetime}:
                 return col1.eq_missing(col2)
 
-            cast1 = col1.cast(pl.String)
-            cast2 = col2.cast(pl.String)
-            cast1_passed = ~(col1.is_not_null() & cast1.is_null())
-            cast2_passed = ~(col2.is_not_null() & cast2.is_null())
-            return cast1_passed & cast2_passed & cast1.eq_missing(cast2)
+            return col1.cast(pl.String).eq_missing(col2.cast(pl.String))
 
         return None
 
