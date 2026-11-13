@@ -79,7 +79,9 @@ NULL|4|False
 NULL|NULL|True"""
     df = pl.read_csv(io.StringIO(data), separator="|", null_values=["NULL"])
     actual_out = df.select(
-        columns_equal(pl.col("a"), pl.col("b"), df.schema, abs_tol=0.2)
+        columns_equal(
+            pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"], abs_tol=0.2
+        )
     ).to_series()
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -95,7 +97,9 @@ NULL|4|False
 NULL|NULL|True"""
     df = pl.read_csv(io.StringIO(data), separator="|", null_values=["NULL"])
     actual_out = df.select(
-        columns_equal(pl.col("a"), pl.col("b"), df.schema, rel_tol=0.2)
+        columns_equal(
+            pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"], rel_tol=0.2
+        )
     ).to_series()
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -103,7 +107,7 @@ NULL|NULL|True"""
 
 def test_columns_equal_returns_expression():
     df = pl.DataFrame({"a": [1, 2], "b": [1, 3]})
-    expr = columns_equal(pl.col("a"), pl.col("b"), df.schema)
+    expr = columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
     assert isinstance(expr, pl.Expr)
     assert df.select(expr).to_series().to_list() == [True, False]
 
@@ -133,7 +137,9 @@ NULL|something|False
 NULL|NULL|True"""
     df = read_fixture_csv(data)
     actual_out = df.select(
-        columns_equal(pl.col("a"), pl.col("b"), df.schema, rel_tol=0.2)
+        columns_equal(
+            pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"], rel_tol=0.2
+        )
     ).to_series()
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -157,7 +163,12 @@ NULL|NULL|True"""
     df = read_fixture_csv(data)
     actual_out = df.select(
         columns_equal(
-            pl.col("a"), pl.col("b"), df.schema, rel_tol=0.2, ignore_spaces=True
+            pl.col("a"),
+            pl.col("b"),
+            df.schema["a"],
+            df.schema["b"],
+            rel_tol=0.2,
+            ignore_spaces=True,
         )
     ).to_series()
     expect_out = df["expected"]
@@ -184,7 +195,8 @@ NULL|NULL|True"""
         columns_equal(
             pl.col("a"),
             pl.col("b"),
-            df.schema,
+            df.schema["a"],
+            df.schema["b"],
             rel_tol=0.2,
             ignore_spaces=True,
             ignore_case=True,
@@ -205,7 +217,9 @@ def test_date_columns_equal():
     df = read_fixture_csv(data)
     # First compare just the strings
     actual_out = df.select(
-        columns_equal(pl.col("a"), pl.col("b"), df.schema, rel_tol=0.2)
+        columns_equal(
+            pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"], rel_tol=0.2
+        )
     ).to_series()
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -216,7 +230,13 @@ def test_date_columns_equal():
         pl.col("b").str.to_datetime(strict=False).alias("b_dt"),
     )
     actual_out = df.select(
-        columns_equal(pl.col("a_dt"), pl.col("b_dt"), df.schema, rel_tol=0.2)
+        columns_equal(
+            pl.col("a_dt"),
+            pl.col("b_dt"),
+            df.schema["a_dt"],
+            df.schema["b_dt"],
+            rel_tol=0.2,
+        )
     ).to_series()
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -234,7 +254,12 @@ def test_date_columns_equal_with_ignore_spaces():
     # First compare just the strings
     actual_out = df.select(
         columns_equal(
-            pl.col("a"), pl.col("b"), df.schema, rel_tol=0.2, ignore_spaces=True
+            pl.col("a"),
+            pl.col("b"),
+            df.schema["a"],
+            df.schema["b"],
+            rel_tol=0.2,
+            ignore_spaces=True,
         )
     ).to_series()
     expect_out = df["expected"]
@@ -247,7 +272,12 @@ def test_date_columns_equal_with_ignore_spaces():
     )
     actual_out = df.select(
         columns_equal(
-            pl.col("a_dt"), pl.col("b_dt"), df.schema, rel_tol=0.2, ignore_spaces=True
+            pl.col("a_dt"),
+            pl.col("b_dt"),
+            df.schema["a_dt"],
+            df.schema["b_dt"],
+            rel_tol=0.2,
+            ignore_spaces=True,
         )
     ).to_series()
     expect_out = df["expected"]
@@ -268,7 +298,8 @@ def test_date_columns_equal_with_ignore_spaces_and_case():
         columns_equal(
             pl.col("a"),
             pl.col("b"),
-            df.schema,
+            df.schema["a"],
+            df.schema["b"],
             rel_tol=0.2,
             ignore_spaces=True,
             ignore_case=True,
@@ -284,7 +315,12 @@ def test_date_columns_equal_with_ignore_spaces_and_case():
     )
     actual_out = df.select(
         columns_equal(
-            pl.col("a_dt"), pl.col("b_dt"), df.schema, rel_tol=0.2, ignore_spaces=True
+            pl.col("a_dt"),
+            pl.col("b_dt"),
+            df.schema["a_dt"],
+            df.schema["b_dt"],
+            rel_tol=0.2,
+            ignore_spaces=True,
         )
     ).to_series()
     expect_out = df["expected"]
@@ -297,42 +333,74 @@ def test_date_columns_unequal():
     df = df.with_columns(df["a"].str.to_date().alias("a_dt"))
     df = df.with_columns(df["b"].str.to_date().alias("b_dt"))
     assert (
-        df.select(columns_equal(pl.col("a"), pl.col("a_dt"), df.schema))
+        df.select(
+            columns_equal(
+                pl.col("a"), pl.col("a_dt"), df.schema["a"], df.schema["a_dt"]
+            )
+        )
         .to_series()
         .all()
     )
     assert (
-        df.select(columns_equal(pl.col("b"), pl.col("b_dt"), df.schema))
+        df.select(
+            columns_equal(
+                pl.col("b"), pl.col("b_dt"), df.schema["b"], df.schema["b_dt"]
+            )
+        )
         .to_series()
         .all()
     )
     assert (
-        df.select(columns_equal(pl.col("a_dt"), pl.col("a"), df.schema))
+        df.select(
+            columns_equal(
+                pl.col("a_dt"), pl.col("a"), df.schema["a_dt"], df.schema["a"]
+            )
+        )
         .to_series()
         .all()
     )
     assert (
-        df.select(columns_equal(pl.col("b_dt"), pl.col("b"), df.schema))
+        df.select(
+            columns_equal(
+                pl.col("b_dt"), pl.col("b"), df.schema["b_dt"], df.schema["b"]
+            )
+        )
         .to_series()
         .all()
     )
     assert (
-        not df.select(columns_equal(pl.col("b_dt"), pl.col("a"), df.schema))
+        not df.select(
+            columns_equal(
+                pl.col("b_dt"), pl.col("a"), df.schema["b_dt"], df.schema["a"]
+            )
+        )
         .to_series()
         .any()
     )
     assert (
-        not df.select(columns_equal(pl.col("a_dt"), pl.col("b"), df.schema))
+        not df.select(
+            columns_equal(
+                pl.col("a_dt"), pl.col("b"), df.schema["a_dt"], df.schema["b"]
+            )
+        )
         .to_series()
         .any()
     )
     assert (
-        not df.select(columns_equal(pl.col("a"), pl.col("b_dt"), df.schema))
+        not df.select(
+            columns_equal(
+                pl.col("a"), pl.col("b_dt"), df.schema["a"], df.schema["b_dt"]
+            )
+        )
         .to_series()
         .any()
     )
     assert (
-        not df.select(columns_equal(pl.col("b"), pl.col("a_dt"), df.schema))
+        not df.select(
+            columns_equal(
+                pl.col("b"), pl.col("a_dt"), df.schema["b"], df.schema["a_dt"]
+            )
+        )
         .to_series()
         .any()
     )
@@ -350,12 +418,12 @@ def test_bad_date_columns():
         pl.col("b").str.to_date(strict=False).alias("b_dt"),
     )
     actual_out = df.select(
-        columns_equal(pl.col("a_dt"), pl.col("b"), df.schema)
+        columns_equal(pl.col("a_dt"), pl.col("b"), df.schema["a_dt"], df.schema["b"])
     ).to_series()
     assert actual_out.to_list() == [True, False]
 
     actual_out = df.select(
-        columns_equal(pl.col("a"), pl.col("b_dt"), df.schema)
+        columns_equal(pl.col("a"), pl.col("b_dt"), df.schema["a"], df.schema["b_dt"])
     ).to_series()
     assert actual_out.to_list() == [True, False]
 
@@ -375,7 +443,7 @@ def test_rounded_date_columns():
 
     df = df.with_columns(df["a"].str.to_date().alias("a_dt"))
     actual = df.select(
-        columns_equal(pl.col("a_dt"), pl.col("b"), df.schema)
+        columns_equal(pl.col("a_dt"), pl.col("b"), df.schema["a_dt"], df.schema["b"])
     ).to_series()
     expected = df["exp"]
     assert_series_equal(actual, expected, check_names=False)
@@ -395,7 +463,7 @@ def test_decimal_float_columns_equal():
         ]
     )
     actual_out = df.select(
-        columns_equal(pl.col("a"), pl.col("b"), df.schema)
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
     ).to_series()
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -415,7 +483,9 @@ def test_decimal_float_columns_equal_rel():
         ]
     )
     actual_out = df.select(
-        columns_equal(pl.col("a"), pl.col("b"), df.schema, abs_tol=0.001)
+        columns_equal(
+            pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"], abs_tol=0.001
+        )
     ).to_series()
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -439,7 +509,7 @@ def test_decimal_columns_equal():
         ]
     )
     actual_out = df.select(
-        columns_equal(pl.col("a"), pl.col("b"), df.schema)
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
     ).to_series()
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -463,7 +533,9 @@ def test_decimal_columns_equal_rel():
         ]
     )
     actual_out = df.select(
-        columns_equal(pl.col("a"), pl.col("b"), df.schema, abs_tol=0.001)
+        columns_equal(
+            pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"], abs_tol=0.001
+        )
     ).to_series()
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -481,7 +553,7 @@ def test_infinity_and_beyond():
         ]
     )
     actual_out = df.select(
-        columns_equal(pl.col("a"), pl.col("b"), df.schema)
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
     ).to_series()
     expect_out = df["expected"]
     assert_series_equal(expect_out, actual_out, check_names=False)
@@ -568,6 +640,7 @@ def test_columns_maintain_order_through_set_operations():
             (("B"), (0), (2), (2), (3), (4), (-3)),
         ],
         schema=["join", "f", "g", "b", "h", "a", "c"],
+        orient="row",
     )
     df2 = pl.DataFrame(
         [
@@ -575,6 +648,7 @@ def test_columns_maintain_order_through_set_operations():
             (("B"), (1), (2), (3), (-1), (4), (-2)),
         ],
         schema=["join", "e", "h", "b", "a", "g", "d"],
+        orient="row",
     )
     compare = PolarsCompare(df1, df2, ["join"])
     assert list(compare.df1_unq_columns()) == ["f", "c"]
@@ -1666,7 +1740,9 @@ def test_full_join_null_key_sample_mismatch():
 def test_all_null_column_equal():
     df = pl.DataFrame({"a": [None, None, None], "b": [None, None, None]})
     actual_out = (
-        df.select(columns_equal(pl.col("a"), pl.col("b"), df.schema))
+        df.select(
+            columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
+        )
         .to_series()
         .to_list()
     )
@@ -1716,7 +1792,8 @@ def test_categorical_column():
         columns_equal(
             pl.col("foo"),
             pl.col("bar"),
-            df.schema,
+            df.schema["foo"],
+            df.schema["bar"],
             ignore_spaces=True,
             ignore_case=True,
         )
@@ -1727,7 +1804,8 @@ def test_categorical_column():
         columns_equal(
             pl.col("foo"),
             pl.col("foo_bad"),
-            df.schema,
+            df.schema["foo"],
+            df.schema["foo_bad"],
             ignore_spaces=True,
             ignore_case=True,
         )
@@ -1747,7 +1825,7 @@ def test_string_as_numeric():
         }
     )
     actual_out = df.select(
-        columns_equal(pl.col("a"), pl.col("b"), df.schema)
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
     ).to_series()
     assert not actual_out.all()
 
@@ -1767,7 +1845,12 @@ def test_single_date_columns_equal_to_string():
 
     actual_out = df.select(
         columns_equal(
-            pl.col("a_dt"), pl.col("b"), df.schema, rel_tol=0.2, ignore_spaces=True
+            pl.col("a_dt"),
+            pl.col("b"),
+            df.schema["a_dt"],
+            df.schema["b"],
+            rel_tol=0.2,
+            ignore_spaces=True,
         )
     ).to_series()  # ignore_spaces is ignored
     expect_out = df["expected"]
@@ -1793,12 +1876,19 @@ def test_temporal_equal():
     )
 
     actual_out = df.select(
-        columns_equal(pl.col("a_date"), pl.col("b_date"), df.schema)
+        columns_equal(
+            pl.col("a_date"), pl.col("b_date"), df.schema["a_date"], df.schema["b_date"]
+        )
     ).to_series()
     assert_series_equal(expect_out, actual_out, check_names=False)
 
     actual_out = df.select(
-        columns_equal(pl.col("a_datetime"), pl.col("b_datetime"), df.schema)
+        columns_equal(
+            pl.col("a_datetime"),
+            pl.col("b_datetime"),
+            df.schema["a_datetime"],
+            df.schema["b_datetime"],
+        )
     ).to_series()
     assert_series_equal(expect_out, actual_out, check_names=False)
 
@@ -1809,7 +1899,9 @@ def test_columns_equal_arrays():
         {"a": [[1], [2], [3], [4], [5]], "b": [[1], [2], [3], [4], [5]]},
         schema={"a": pl.Array(pl.Int64, 1), "b": pl.Array(pl.Int64, 1)},
     )
-    actual = df.select(columns_equal(pl.col("a"), pl.col("b"), df.schema)).to_series()
+    actual = df.select(
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
+    ).to_series()
     assert actual.explode().all()
 
     # all mismatch
@@ -1817,7 +1909,9 @@ def test_columns_equal_arrays():
         {"a": [[1], [2], [3], [4], [5]], "b": [[2], [3], [4], [5], [6]]},
         schema={"a": pl.Array(pl.Int64, 1), "b": pl.Array(pl.Int64, 1)},
     )
-    actual = df.select(columns_equal(pl.col("a"), pl.col("b"), df.schema)).to_series()
+    actual = df.select(
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
+    ).to_series()
     assert not actual.explode().all()
 
     # some equal
@@ -1825,7 +1919,9 @@ def test_columns_equal_arrays():
         {"a": [[1], [2], [3], [4], [5]], "b": [[1], [1], [3], [4], [5]]},
         schema={"a": pl.Array(pl.Int64, 1), "b": pl.Array(pl.Int64, 1)},
     )
-    actual = df.select(columns_equal(pl.col("a"), pl.col("b"), df.schema)).to_series()
+    actual = df.select(
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
+    ).to_series()
     assert (actual.explode() == pl.Series([True, False, True, True, True])).all()
 
     # empty
@@ -1833,7 +1929,9 @@ def test_columns_equal_arrays():
         {"a": [[], [], [], [], []], "b": [[], [], [], [], []]},
         schema={"a": pl.Array(pl.Int64, 0), "b": pl.Array(pl.Int64, 0)},
     )
-    actual = df.select(columns_equal(pl.col("a"), pl.col("b"), df.schema)).to_series()
+    actual = df.select(
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
+    ).to_series()
     assert actual.explode().all()
 
 
@@ -1843,7 +1941,9 @@ def test_columns_equal_lists():
         {"a": [[1], [2], [3], [4], [5]], "b": [[1], [2], [3], [4], [5]]},
         schema={"a": pl.List(pl.Int64), "b": pl.List(pl.Int64)},
     )
-    actual = df.select(columns_equal(pl.col("a"), pl.col("b"), df.schema)).to_series()
+    actual = df.select(
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
+    ).to_series()
     assert actual.all()
 
     # all mismatch
@@ -1851,7 +1951,9 @@ def test_columns_equal_lists():
         {"a": [[1], [2], [3], [4], [5]], "b": [[2], [3], [4], [5], [6]]},
         schema={"a": pl.List(pl.Int64), "b": pl.List(pl.Int64)},
     )
-    actual = df.select(columns_equal(pl.col("a"), pl.col("b"), df.schema)).to_series()
+    actual = df.select(
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
+    ).to_series()
     assert not actual.all()
 
     # some equal
@@ -1859,7 +1961,9 @@ def test_columns_equal_lists():
         {"a": [[1], [2], [3], [4], [5]], "b": [[1], [1], [3], [4], [5]]},
         schema={"a": pl.List(pl.Int64), "b": pl.List(pl.Int64)},
     )
-    actual = df.select(columns_equal(pl.col("a"), pl.col("b"), df.schema)).to_series()
+    actual = df.select(
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
+    ).to_series()
     assert (actual == pl.Series([True, False, True, True, True])).all()
 
     # different shapes
@@ -1870,7 +1974,9 @@ def test_columns_equal_lists():
         },
         schema={"a": pl.List(pl.Float64), "b": pl.List(pl.Float64)},
     )
-    actual = df.select(columns_equal(pl.col("a"), pl.col("b"), df.schema)).to_series()
+    actual = df.select(
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
+    ).to_series()
     assert (actual == pl.Series([True, True, False, True, True, False])).all()
 
     # empty
@@ -1878,7 +1984,9 @@ def test_columns_equal_lists():
         {"a": [[], [], [], [], []], "b": [[], [], [], [], []]},
         schema={"a": pl.Array(pl.Int64, 0), "b": pl.Array(pl.Int64, 0)},
     )
-    actual = df.select(columns_equal(pl.col("a"), pl.col("b"), df.schema)).to_series()
+    actual = df.select(
+        columns_equal(pl.col("a"), pl.col("b"), df.schema["a"], df.schema["b"])
+    ).to_series()
     assert actual.all()
 
 

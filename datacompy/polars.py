@@ -470,7 +470,8 @@ class PolarsCompare(BaseCompare):
                     columns_equal(
                         col_1=pl.col(col_1),
                         col_2=pl.col(col_2),
-                        schema=schema,
+                        dtype1=schema[col_1],
+                        dtype2=schema[col_2],
                         rel_tol=get_column_tolerance(column, self._rel_tol_dict),
                         abs_tol=get_column_tolerance(column, self._abs_tol_dict),
                         ignore_spaces=ignore_spaces,
@@ -773,7 +774,8 @@ class PolarsCompare(BaseCompare):
 def columns_equal(
     col_1: pl.Expr,
     col_2: pl.Expr,
-    schema: pl.Schema,
+    dtype1: pl.DataType,
+    dtype2: pl.DataType,
     rel_tol: float = 0,
     abs_tol: float = 0,
     ignore_spaces: bool = False,
@@ -799,8 +801,10 @@ def columns_equal(
         The first column to look at
     col_2 : pl.Expr
         The second column
-    schema : pl.Schema
-        The schema of the columns to compare
+    dtype1 : pl.DataType
+        The data type of ``col_1``
+    dtype2 : pl.DataType
+        The data type of ``col_2``
     rel_tol : float, optional
         Relative tolerance
     abs_tol : float, optional
@@ -827,11 +831,6 @@ def columns_equal(
         # If no comparators are passed, behave as before.
         comparators_ = _POLARS_DEFAULT_COMPARATORS
 
-    col_1_name = col_1.meta.output_name()
-    col_2_name = col_2.meta.output_name()
-    dtype1 = schema[col_1_name]
-    dtype2 = schema[col_2_name]
-
     for comparator in comparators_:
         if isinstance(comparator, PolarsBooleanComparator):
             compare = comparator.compare(col_1, col_2, dtype1, dtype2)
@@ -857,7 +856,7 @@ def columns_equal(
 
         if compare is not None:
             LOG.info(
-                f"Using comparator: {comparator.__class__.__name__} for column ({col_1_name}, {col_2_name}) comparison."
+                f"Using comparator: {comparator.__class__.__name__} for column ({col_1.meta.output_name()}, {col_2.meta.output_name()}) comparison."
             )
             return compare
 

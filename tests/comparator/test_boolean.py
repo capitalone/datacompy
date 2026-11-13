@@ -206,7 +206,9 @@ def test_polars_boolean_columns_equal():
     )
 
     actual = df.select(
-        polars_columns_equal(pl.col("left"), pl.col("right"), df.schema)
+        polars_columns_equal(
+            pl.col("left"), pl.col("right"), df.schema["left"], df.schema["right"]
+        )
     ).to_series()
     assert actual.to_list() == [True, True, False, False]
 
@@ -218,7 +220,9 @@ def test_polars_boolean_columns_equal_with_nulls():
     )
 
     actual = df.select(
-        polars_columns_equal(pl.col("left"), pl.col("right"), df.schema)
+        polars_columns_equal(
+            pl.col("left"), pl.col("right"), df.schema["left"], df.schema["right"]
+        )
     ).to_series()
     assert actual.to_list() == [True, False, True, False]
 
@@ -230,7 +234,9 @@ def test_polars_all_null_boolean_columns_equal():
     )
 
     actual = df.select(
-        polars_columns_equal(pl.col("left"), pl.col("right"), df.schema)
+        polars_columns_equal(
+            pl.col("left"), pl.col("right"), df.schema["left"], df.schema["right"]
+        )
     ).to_series()
     assert actual.to_list() == [True, True]
 
@@ -246,13 +252,21 @@ def test_polars_boolean_comparator_claims_cross_type_comparisons():
     assert direct_result is not None
     assert df.select(direct_result).to_series().to_list() == expected
     assert (
-        df.select(polars_columns_equal(boolean, integer, df.schema))
+        df.select(
+            polars_columns_equal(
+                boolean, integer, df.schema["boolean"], df.schema["integer"]
+            )
+        )
         .to_series()
         .to_list()
         == expected
     )
     assert (
-        df.select(polars_columns_equal(integer, boolean, df.schema))
+        df.select(
+            polars_columns_equal(
+                integer, boolean, df.schema["integer"], df.schema["boolean"]
+            )
+        )
         .to_series()
         .to_list()
         == expected
@@ -281,7 +295,9 @@ def test_polars_boolean_comparator_falls_through_on_incomparable_dtypes():
     # fallback is a scalar literal, so it only takes the frame's height via
     # with_columns.
     actual = df.with_columns(
-        polars_columns_equal(boolean, dates, df.schema).alias("match")
+        polars_columns_equal(
+            boolean, dates, df.schema["boolean"], df.schema["dates"]
+        ).alias("match")
     )["match"]
     assert actual.to_list() == [False, False]
 
@@ -311,16 +327,22 @@ def test_polars_boolean_against_text_does_not_match():
         }
     )
     boolean = pl.col("boolean")
+    boolean_dtype = df.schema["boolean"]
 
     # No comparator claims the pair, so the result is the scalar fallback and
     # only takes the frame's height via with_columns.
-    for text in (pl.col("lower"), pl.col("title")):
+    for name in ("lower", "title"):
+        text, text_dtype = pl.col(name), df.schema[name]
         actual = df.with_columns(
-            polars_columns_equal(boolean, text, df.schema).alias("match")
+            polars_columns_equal(boolean, text, boolean_dtype, text_dtype).alias(
+                "match"
+            )
         )["match"]
         assert actual.to_list() == [False, False]
         actual = df.with_columns(
-            polars_columns_equal(text, boolean, df.schema).alias("match")
+            polars_columns_equal(text, boolean, text_dtype, boolean_dtype).alias(
+                "match"
+            )
         )["match"]
         assert actual.to_list() == [False, False]
 
