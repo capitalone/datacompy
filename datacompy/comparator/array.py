@@ -85,7 +85,11 @@ class PandasArrayLikeComparator(BaseComparator):
             and not any(not isinstance(item, list | np.ndarray) for item in col2)
         ):
             temp_df = pd.DataFrame({"col1": col1, "col2": col2})
-            return temp_df.apply(lambda row: _array_equal(row.col1, row.col2), axis=1)
+            equal = [
+                _array_equal(left, right)
+                for left, right in zip(temp_df["col1"], temp_df["col2"], strict=True)
+            ]
+            return pd.Series(equal, index=temp_df.index, dtype=bool)
         else:
             return None
 

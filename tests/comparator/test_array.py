@@ -95,6 +95,18 @@ def test_pandas_compare_with_nans():
     assert result.all()
 
 
+def test_pandas_compare_keeps_index():
+    col1 = pd.Series([[1, 2], [3, 4], [5]], index=[10, 30, 20])
+    col2 = pd.Series([[1, 2], [3, 5], [5]], index=[10, 30, 20])
+    comparator = PandasArrayLikeComparator()
+
+    result = comparator.compare(col1, col2)
+
+    pd.testing.assert_series_equal(
+        result, pd.Series([True, False, True], index=[10, 30, 20])
+    )
+
+
 def test_pandas_compare_string_lists():
     col1 = pd.Series([["a", "b"], ["c"]])
     col2 = pd.Series([["a", "b"], ["d"]])
