@@ -191,64 +191,115 @@ def test_pandas_boolean_comparator_ignores_mismatched_shapes():
 # --------------------------------------------------------------------------
 
 
-def test_polars_boolean_columns_equal():
-    left = pl.Series([True, False, True, False])
-    right = pl.Series([True, False, False, True])
+def _polars_boolean_compare(df, left, right):
+    return PolarsBooleanComparator().compare(
+        left,
+        right,
+        df.schema[left.meta.output_name()],
+        df.schema[right.meta.output_name()],
+    )
 
-    assert polars_columns_equal(left, right).to_list() == [True, True, False, False]
+
+def test_polars_boolean_columns_equal():
+    df = pl.DataFrame(
+        {"left": [True, False, True, False], "right": [True, False, False, True]}
+    )
+
+    actual = df.select(
+        polars_columns_equal(
+            pl.col("left"), pl.col("right"), df.schema["left"], df.schema["right"]
+        )
+    ).to_series()
+    assert actual.to_list() == [True, True, False, False]
 
 
 def test_polars_boolean_columns_equal_with_nulls():
-    left = pl.Series([True, False, None, None], dtype=pl.Boolean)
-    right = pl.Series([True, True, None, False], dtype=pl.Boolean)
+    df = pl.DataFrame(
+        {"left": [True, False, None, None], "right": [True, True, None, False]},
+        schema={"left": pl.Boolean, "right": pl.Boolean},
+    )
 
-    assert polars_columns_equal(left, right).to_list() == [True, False, True, False]
+    actual = df.select(
+        polars_columns_equal(
+            pl.col("left"), pl.col("right"), df.schema["left"], df.schema["right"]
+        )
+    ).to_series()
+    assert actual.to_list() == [True, False, True, False]
 
 
 def test_polars_all_null_boolean_columns_equal():
-    left = pl.Series([None, None], dtype=pl.Boolean)
-    right = pl.Series([None, None], dtype=pl.Boolean)
+    df = pl.DataFrame(
+        {"left": [None, None], "right": [None, None]},
+        schema={"left": pl.Boolean, "right": pl.Boolean},
+    )
 
-    assert polars_columns_equal(left, right).to_list() == [True, True]
+    actual = df.select(
+        polars_columns_equal(
+            pl.col("left"), pl.col("right"), df.schema["left"], df.schema["right"]
+        )
+    ).to_series()
+    assert actual.to_list() == [True, True]
 
 
 def test_polars_boolean_comparator_claims_cross_type_comparisons():
-    boolean = pl.Series([True, False, True, False])
-    integer = pl.Series([1, 0, 0, 1])
+    df = pl.DataFrame({"boolean": [True, False, True, False], "integer": [1, 0, 0, 1]})
+    boolean, integer = pl.col("boolean"), pl.col("integer")
 
     expected = [True, True, False, False]
 
-    direct_result = PolarsBooleanComparator().compare(boolean, integer)
+    direct_result = _polars_boolean_compare(df, boolean, integer)
 
     assert direct_result is not None
-    assert direct_result.to_list() == expected
-    assert polars_columns_equal(boolean, integer).to_list() == expected
-    assert polars_columns_equal(integer, boolean).to_list() == expected
+    assert df.select(direct_result).to_series().to_list() == expected
+    assert (
+        df.select(
+            polars_columns_equal(
+                boolean, integer, df.schema["boolean"], df.schema["integer"]
+            )
+        )
+        .to_series()
+        .to_list()
+        == expected
+    )
+    assert (
+        df.select(
+            polars_columns_equal(
+                integer, boolean, df.schema["integer"], df.schema["boolean"]
+            )
+        )
+        .to_series()
+        .to_list()
+        == expected
+    )
 
 
 def test_polars_boolean_comparator_ignores_non_boolean_columns():
-    left = pl.Series([1, 2])
-    right = pl.Series([1, 2])
+    df = pl.DataFrame({"left": [1, 2], "right": [1, 2]})
 
-    assert PolarsBooleanComparator().compare(left, right) is None
-
-
-def test_polars_boolean_comparator_ignores_mismatched_shapes():
-    left = pl.Series([True, False])
-    right = pl.Series([True])
-
-    assert PolarsBooleanComparator().compare(left, right) is None
+    assert _polars_boolean_compare(df, pl.col("left"), pl.col("right")) is None
 
 
 def test_polars_boolean_comparator_falls_through_on_incomparable_dtypes():
-    """Polars raises when there is no comparison supertype; do not claim the pair."""
-    boolean = pl.Series([True, False])
-    dates = pl.Series([datetime.date(2020, 1, 1), datetime.date(2020, 1, 2)])
+    """Polars has no comparison supertype for these; do not claim the pair."""
+    df = pl.DataFrame(
+        {
+            "boolean": [True, False],
+            "dates": [datetime.date(2020, 1, 1), datetime.date(2020, 1, 2)],
+        }
+    )
+    boolean, dates = pl.col("boolean"), pl.col("dates")
 
-    assert PolarsBooleanComparator().compare(boolean, dates) is None
+    assert _polars_boolean_compare(df, boolean, dates) is None
 
-    # The pipeline still resolves to "not equal" rather than raising.
-    assert polars_columns_equal(boolean, dates).to_list() == [False, False]
+    # The pipeline still resolves to "not equal" rather than raising. The
+    # fallback is a scalar literal, so it only takes the frame's height via
+    # with_columns.
+    actual = df.with_columns(
+        polars_columns_equal(
+            boolean, dates, df.schema["boolean"], df.schema["dates"]
+        ).alias("match")
+    )["match"]
+    assert actual.to_list() == [False, False]
 
 
 @pytest.mark.parametrize(
@@ -256,20 +307,44 @@ def test_polars_boolean_comparator_falls_through_on_incomparable_dtypes():
 )
 def test_polars_boolean_comparator_declines_boolean_against_text(dtype):
     """Polars parses the string, so 'true' would match but 'True' would not."""
-    boolean = pl.Series([True, False])
-    text = pl.Series(["true", "false"], dtype=dtype)
+    df = pl.DataFrame(
+        {"boolean": [True, False], "text": ["true", "false"]},
+        schema={"boolean": pl.Boolean, "text": dtype},
+    )
+    boolean, text = pl.col("boolean"), pl.col("text")
 
-    assert PolarsBooleanComparator().compare(boolean, text) is None
-    assert PolarsBooleanComparator().compare(text, boolean) is None
+    assert _polars_boolean_compare(df, boolean, text) is None
+    assert _polars_boolean_compare(df, text, boolean) is None
 
 
 def test_polars_boolean_against_text_does_not_match():
     """Pandas and Spark both report no match here; Polars must agree."""
-    boolean = pl.Series([True, False])
+    df = pl.DataFrame(
+        {
+            "boolean": [True, False],
+            "lower": ["true", "false"],
+            "title": ["True", "False"],
+        }
+    )
+    boolean = pl.col("boolean")
+    boolean_dtype = df.schema["boolean"]
 
-    for text in (pl.Series(["true", "false"]), pl.Series(["True", "False"])):
-        assert polars_columns_equal(boolean, text).to_list() == [False, False]
-        assert polars_columns_equal(text, boolean).to_list() == [False, False]
+    # No comparator claims the pair, so the result is the scalar fallback and
+    # only takes the frame's height via with_columns.
+    for name in ("lower", "title"):
+        text, text_dtype = pl.col(name), df.schema[name]
+        actual = df.with_columns(
+            polars_columns_equal(boolean, text, boolean_dtype, text_dtype).alias(
+                "match"
+            )
+        )["match"]
+        assert actual.to_list() == [False, False]
+        actual = df.with_columns(
+            polars_columns_equal(text, boolean, text_dtype, boolean_dtype).alias(
+                "match"
+            )
+        )["match"]
+        assert actual.to_list() == [False, False]
 
 
 def test_polars_compare_matches_identical_boolean_values():
@@ -286,9 +361,10 @@ def test_polars_compare_detects_boolean_mismatch():
     right = pl.DataFrame({"id": [1, 2], "flag": [False, False]})
 
     comparison = PolarsCompare(left, right, join_columns="id")
+    actual_out = comparison.intersect_rows.sort("id")["flag_match"].to_list()
 
     assert not comparison.matches()
-    assert comparison.intersect_rows["flag_match"].to_list() == [False, True]
+    assert actual_out == [False, True]
 
 
 def test_polars_compare_boolean_with_non_overlapping_join_keys():
@@ -316,6 +392,7 @@ def test_polars_compare_boolean_null_against_value_is_mismatch():
     right = pl.DataFrame({"id": [1, 2], "flag": [True, False]})
 
     comparison = PolarsCompare(left, right, join_columns="id")
+    actual_out = comparison.intersect_rows.sort("id")["flag_match"].to_list()
 
     assert not comparison.matches()
-    assert comparison.intersect_rows["flag_match"].to_list() == [True, False]
+    assert actual_out == [True, False]

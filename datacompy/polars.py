@@ -160,6 +160,7 @@ class PolarsCompare(BaseCompare):
         self.df1_unq_rows: pl.DataFrame
         self.df2_unq_rows: pl.DataFrame
         self.intersect_rows: pl.DataFrame
+        self._matching_rows_count = 0
         self.column_stats: List[ColumnStat] = []
         self._compare(ignore_spaces=ignore_spaces, ignore_case=ignore_case)
 
@@ -259,7 +260,7 @@ class PolarsCompare(BaseCompare):
             raise TypeError(f"{index} must be a Polars DataFrame")
 
         if cast_column_names_lower:
-            # Assigning duplicate names raises polars.exceptions.DuplicateError.
+            # Assigning duplicate names raises pl.exceptions.DuplicateError.
             # Reject that case here with the same ValueError the other backends use.
             columns = [str(col).lower() for col in dataframe.columns]
             if len(set(columns)) < len(columns):
@@ -273,7 +274,7 @@ class PolarsCompare(BaseCompare):
                 f"{index} must have all columns from join_columns: {missing_cols}"
             )
 
-        if len(dataframe.unique(subset=self.join_columns)) < len(dataframe):
+        if dataframe.select(self.join_columns).is_duplicated().any():
             self._any_dupes = True
 
     def _compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
@@ -287,9 +288,9 @@ class PolarsCompare(BaseCompare):
         """
         LOG.debug("Checking equality")
         if self.df1.equals(self.df2):
-            LOG.info("df1 Polars.DataFrame.equals df2")
+            LOG.info("df1 pl.DataFrame.equals df2")
         else:
-            LOG.info("df1 does not Polars.DataFrame.equals df2")
+            LOG.info("df1 does not pl.DataFrame.equals df2")
         LOG.info(f"Number of columns in common: {len(self.intersect_columns())}")
         LOG.debug("Checking column overlap")
         for col in self.df1_unq_columns():
@@ -362,26 +363,37 @@ class PolarsCompare(BaseCompare):
 
         params = {"on": temp_join_columns}
 
+        schema1 = df1.schema
+        schema2 = df2.schema
+        df1_exprs: List[pl.Expr] = []
+        df2_exprs: List[pl.Expr] = []
+
         if ignore_spaces:
             for column in self.join_columns:
-                df1 = df1.with_columns(
+                df1_exprs.append(
                     polars_normalize_string_column(
-                        df1[column], ignore_spaces=ignore_spaces, ignore_case=False
-                    )
+                        pl.col(column),
+                        dtype=schema1[column],
+                        ignore_spaces=ignore_spaces,
+                        ignore_case=False,
+                    ).alias(column)
                 )
-                df2 = df2.with_columns(
+                df2_exprs.append(
                     polars_normalize_string_column(
-                        df2[column], ignore_spaces=ignore_spaces, ignore_case=False
-                    )
+                        pl.col(column),
+                        dtype=schema2[column],
+                        ignore_spaces=ignore_spaces,
+                        ignore_case=False,
+                    ).alias(column)
                 )
+        df1 = df1.with_columns(df1_exprs)
+        df2 = df2.with_columns(df2_exprs)
 
         df1_non_join_columns = OrderedSet(df1.columns) - OrderedSet(temp_join_columns)
         df2_non_join_columns = OrderedSet(df2.columns) - OrderedSet(temp_join_columns)
 
-        for c in df1_non_join_columns:
-            df1 = df1.rename({c: c + "_" + self.df1_name})
-        for c in df2_non_join_columns:
-            df2 = df2.rename({c: c + "_" + self.df2_name})
+        df1 = df1.rename({c: f"{c}_{self.df1_name}" for c in df1_non_join_columns})
+        df2 = df2.rename({c: f"{c}_{self.df2_name}" for c in df2_non_join_columns})
 
         # generate merge indicator
         df1 = df1.with_columns(_merge_left=pl.lit(True))
@@ -420,13 +432,13 @@ class PolarsCompare(BaseCompare):
         ).select(df2_cols)
         self.df2_unq_rows.columns = self.df2.columns
 
-        LOG.info(f"Number of rows in df1 and not in df2: {len(self.df1_unq_rows)}")
-        LOG.info(f"Number of rows in df2 and not in df1: {len(self.df2_unq_rows)}")
+        LOG.info(f"Number of rows in df1 and not in df2: {self.df1_unq_rows.height}")
+        LOG.info(f"Number of rows in df2 and not in df1: {self.df2_unq_rows.height}")
 
         LOG.debug("Selecting intersecting rows")
         self.intersect_rows = outer_join.filter(outer_join["_merge"] == "both")
         LOG.info(
-            f"Number of rows in df1 and df2 (not necessarily equal): {len(self.intersect_rows)}"
+            f"Number of rows in df1 and df2 (not necessarily equal): {self.intersect_rows.height}"
         )
 
     def _intersect_compare(self, ignore_spaces: bool, ignore_case: bool) -> None:
@@ -438,31 +450,28 @@ class PolarsCompare(BaseCompare):
         """
         match_cnt: int
         null_diff: int
+        max_diff: float | None
 
         LOG.debug("Comparing intersection")
-        for column in self.intersect_columns():
-            if column in self.join_columns:
-                col_match = column + "_match"
-                match_cnt = len(self.intersect_rows)
-                if not self.only_join_columns():
-                    row_cnt = len(self.intersect_rows)
-                else:
-                    row_cnt = (
-                        len(self.intersect_rows)
-                        + len(self.df1_unq_rows)
-                        + len(self.df2_unq_rows)
-                    )
-                max_diff = 0.0
-                null_diff = 0
-            else:
-                row_cnt = len(self.intersect_rows)
+
+        schema = self.intersect_rows.schema
+        intersect_columns = self.intersect_columns()
+
+        # Build comparison expressions for the columns to match on
+        compare_exprs: List[pl.Expr] = []
+        match_columns: List[str] = []
+        for column in intersect_columns:
+            if column not in self.join_columns:
                 col_1 = column + "_" + self.df1_name
                 col_2 = column + "_" + self.df2_name
                 col_match = column + "_match"
-                self.intersect_rows = self.intersect_rows.with_columns(
+                match_columns.append(col_match)
+                compare_exprs.append(
                     columns_equal(
-                        col_1=self.intersect_rows[col_1],
-                        col_2=self.intersect_rows[col_2],
+                        col_1=pl.col(col_1),
+                        col_2=pl.col(col_2),
+                        dtype1=schema[col_1],
+                        dtype2=schema[col_2],
                         rel_tol=get_column_tolerance(column, self._rel_tol_dict),
                         abs_tol=get_column_tolerance(column, self._abs_tol_dict),
                         ignore_spaces=ignore_spaces,
@@ -470,16 +479,78 @@ class PolarsCompare(BaseCompare):
                         comparators=self._get_comparators(),
                     ).alias(col_match)
                 )
-                match_cnt = int(self.intersect_rows[col_match].sum())
-                max_diff = calculate_max_diff(
-                    self.intersect_rows[col_1], self.intersect_rows[col_2]
-                )
-                null_diff = int(
-                    (
-                        (self.intersect_rows[col_1].is_null())
-                        ^ (self.intersect_rows[col_2].is_null())
-                    ).sum()
-                )
+        self.intersect_rows = self.intersect_rows.with_columns(compare_exprs)
+
+        # Calculate all non-join column statistics in a single dataframe pass.
+        stat_exprs: List[pl.Expr] = []
+        stat_aliases: Dict[str, tuple[str, str, str]] = {}
+        for index, column in enumerate(intersect_columns):
+            if column in self.join_columns:
+                continue
+            col_1 = column + "_" + self.df1_name
+            col_2 = column + "_" + self.df2_name
+            col_match = column + "_match"
+            match_alias = f"__match_cnt_{index}"
+            max_diff_alias = f"__max_diff_{index}"
+            null_diff_alias = f"__null_diff_{index}"
+            stat_aliases[column] = (
+                match_alias,
+                max_diff_alias,
+                null_diff_alias,
+            )
+            stat_exprs.extend(
+                [
+                    pl.col(col_match).sum().alias(match_alias),
+                    _calculate_max_diff_expr(
+                        pl.col(col_1),
+                        pl.col(col_2),
+                        schema[col_1],
+                        schema[col_2],
+                    ).alias(max_diff_alias),
+                    (pl.col(col_1).is_null() ^ pl.col(col_2).is_null())
+                    .sum()
+                    .alias(null_diff_alias),
+                ]
+            )
+        if match_columns:
+            stat_exprs.append(
+                pl.all_horizontal(match_columns).sum().alias("__matching_rows_count")
+            )
+        aggregated_stats: Dict[str, Any] = (
+            self.intersect_rows.select(stat_exprs).row(0, named=True)
+            if stat_exprs
+            else {}
+        )
+        self._matching_rows_count = (
+            int(aggregated_stats["__matching_rows_count"] or 0)
+            if match_columns
+            else self.intersect_rows.height
+        )
+
+        # Calculate the column stats for each column
+        for column in intersect_columns:
+            if column in self.join_columns:
+                col_match = column + "_match"
+                match_cnt = self.intersect_rows.height
+                if not self.only_join_columns():
+                    row_cnt = self.intersect_rows.height
+                else:
+                    row_cnt = (
+                        self.intersect_rows.height
+                        + self.df1_unq_rows.height
+                        + self.df2_unq_rows.height
+                    )
+                max_diff = 0.0
+                null_diff = 0
+            else:
+                row_cnt = self.intersect_rows.height
+                col_1 = column + "_" + self.df1_name
+                col_2 = column + "_" + self.df2_name
+                col_match = column + "_match"
+                match_alias, max_diff_alias, null_diff_alias = stat_aliases[column]
+                match_cnt = int(aggregated_stats[match_alias])
+                max_diff = cast(float | None, aggregated_stats[max_diff_alias])
+                null_diff = int(aggregated_stats[null_diff_alias])
             if row_cnt > 0:
                 match_rate = float(match_cnt) / row_cnt
             else:
@@ -530,24 +601,7 @@ class PolarsCompare(BaseCompare):
         int
             Number of matching rows
         """
-        match_columns = []
-        for column in self.intersect_columns():
-            if column not in self.join_columns:
-                match_columns.append(column + "_match")
-
-        if len(match_columns) > 0:
-            return int(
-                self.intersect_rows[match_columns]
-                .select(pl.all_horizontal(match_columns).alias("__sum"))
-                .sum()
-                .item()
-            )
-        else:
-            # corner case where it is just the join columns that make the dataframes
-            if len(self.intersect_rows) > 0:
-                return len(self.intersect_rows)
-            else:
-                return 0
+        return self._matching_rows_count
 
     def intersect_rows_match(self) -> bool:
         """Check whether the intersect rows all match."""
@@ -613,7 +667,7 @@ class PolarsCompare(BaseCompare):
 
         Returns
         -------
-        Polars.DataFrame
+        pl.DataFrame
             A sample of the intersection dataframe, containing only the
             "pertinent" columns, for rows that don't match on the provided
             column.
@@ -668,7 +722,7 @@ class PolarsCompare(BaseCompare):
 
         Returns
         -------
-        Polars.DataFrame
+        pl.DataFrame
             All rows of the intersection dataframe, containing any columns, that don't match.
         """
         match_list = []
@@ -680,22 +734,14 @@ class PolarsCompare(BaseCompare):
         # Walk the compared columns rather than every intersect_rows column
         # ending in "_match": join columns and columns unique to one frame can
         # have that suffix too, and are not compared.
+        stats_by_column = {stat["column"]: stat for stat in self.column_stats}
         for orig_col_name in self.intersect_columns():
             if orig_col_name not in self.join_columns:
                 col = orig_col_name + "_match"
 
-                col_comparison = columns_equal(
-                    col_1=self.intersect_rows[orig_col_name + "_" + self.df1_name],
-                    col_2=self.intersect_rows[orig_col_name + "_" + self.df2_name],
-                    rel_tol=get_column_tolerance(orig_col_name, self._rel_tol_dict),
-                    abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
-                    ignore_spaces=self.ignore_spaces,
-                    ignore_case=self.ignore_case,
-                    comparators=self._get_comparators(),
-                )
-
-                if not ignore_matching_cols or (
-                    ignore_matching_cols and not col_comparison.all()
+                if (
+                    not ignore_matching_cols
+                    or stats_by_column[orig_col_name]["unequal_cnt"] > 0
                 ):
                     LOG.debug(f"Adding column {orig_col_name} to the result.")
                     match_list.append(col)
@@ -726,34 +772,39 @@ class PolarsCompare(BaseCompare):
 
 
 def columns_equal(
-    col_1: pl.Series,
-    col_2: pl.Series,
+    col_1: pl.Expr,
+    col_2: pl.Expr,
+    dtype1: pl.DataType,
+    dtype2: pl.DataType,
     rel_tol: float = 0,
     abs_tol: float = 0,
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     comparators: List[BaseComparator] | None = None,
     **kwargs,
-) -> pl.Series:
+) -> pl.Expr:
     """Compare two columns from a dataframe.
 
-    Returns a True/False series,
-    with the same index as column 1.
+    Returns a True/False column,
 
-    - Two nulls (np.nan) will evaluate to True.
+    - Two nulls (``np.nan``) will evaluate to True.
     - A null and a non-null value will evaluate to False.
     - Numeric values will use the relative and absolute tolerances.
-    - Decimal values (decimal.Decimal) will attempt to be converted to floats
+    - Decimal values (``decimal.Decimal``) will attempt to be converted to floats
       before comparing
-    - Non-numeric values (i.e. where np.isclose can't be used) will just
+    - Non-numeric values (i.e. where ``np.isclose`` semantics can't be used) will just
       trigger True on two nulls or exact matches.
 
     Parameters
     ----------
-    col_1 : Polars.Series
+    col_1 : pl.Expr
         The first column to look at
-    col_2 : Polars.Series
+    col_2 : pl.Expr
         The second column
+    dtype1 : pl.DataType
+        The data type of ``col_1``
+    dtype2 : pl.DataType
+        The data type of ``col_2``
     rel_tol : float, optional
         Relative tolerance
     abs_tol : float, optional
@@ -769,11 +820,11 @@ def columns_equal(
 
     Returns
     -------
-    Polars.Series
-        A series of Boolean values.  True == the values match, False == the
+    pl.Expr
+        A column of Boolean values.  True == the values match, False == the
         values don't match.
     """
-    compare: pl.Series
+    compare: pl.Expr
 
     comparators_ = comparators
     if not comparators_:
@@ -782,28 +833,34 @@ def columns_equal(
 
     for comparator in comparators_:
         if isinstance(comparator, PolarsBooleanComparator):
-            compare = comparator.compare(col_1, col_2)
+            compare = comparator.compare(col_1, col_2, dtype1, dtype2)
         elif isinstance(comparator, PolarsNumericComparator):
-            compare = comparator.compare(col_1, col_2, rtol=rel_tol, atol=abs_tol)
+            compare = comparator.compare(
+                col_1, col_2, dtype1, dtype2, rtol=rel_tol, atol=abs_tol
+            )
         elif isinstance(comparator, PolarsStringComparator):
             compare = comparator.compare(
-                col_1, col_2, ignore_space=ignore_spaces, ignore_case=ignore_case
+                col_1,
+                col_2,
+                dtype1,
+                dtype2,
+                ignore_space=ignore_spaces,
+                ignore_case=ignore_case,
             )
         elif isinstance(comparator, PolarsArrayLikeComparator):
-            compare = comparator.compare(col_1, col_2)
+            compare = comparator.compare(col_1, col_2, dtype1, dtype2)
         else:
             # for custom comparators pass all the available parameters
             # custom comparators can ignore what they don't need.
-            compare = comparator.compare(col_1, col_2, **kwargs)
+            compare = comparator.compare(col_1, col_2, dtype1, dtype2, **kwargs)
 
         if compare is not None:
             LOG.info(
-                f"Using comparator: {comparator.__class__.__name__} for column ({col_1.name}, {col_2.name}) comparison."
+                f"Using comparator: {comparator.__class__.__name__} for column ({col_1.meta.output_name()}, {col_2.meta.output_name()}) comparison."
             )
             return compare
 
-    compare = pl.Series([False] * col_1.shape[0])
-    return compare
+    return pl.lit(False, dtype=pl.Boolean)
 
 
 def get_merged_columns(
@@ -813,9 +870,9 @@ def get_merged_columns(
 
     Parameters
     ----------
-    original_df : Polars.DataFrame
+    original_df : pl.DataFrame
         The original, pre-merge dataframe
-    merged_df : Polars.DataFrame
+    merged_df : pl.DataFrame
         Post-merge with another dataframe, with suffixes added in.
     suffix : str
         What suffix was used to distinguish when the original dataframe was
@@ -832,33 +889,30 @@ def get_merged_columns(
     return columns
 
 
-def calculate_max_diff(col_1: pl.Series, col_2: pl.Series) -> float:
-    """Get a maximum difference between two columns.
+def _calculate_max_diff_expr(
+    col_1: pl.Expr,
+    col_2: pl.Expr,
+    dtype_1: pl.DataType,
+    dtype_2: pl.DataType,
+) -> pl.Expr:
+    """Build an aggregate expression for the maximum difference."""
+    if dtype_1.is_temporal() or dtype_2.is_temporal():
+        return pl.lit(0.0)
 
-    Parameters
-    ----------
-    col_1 : Polars.Series
-        The first column
-    col_2 : Polars.Series
-        The second column
+    castable_types = {*STRING_TYPE, "Boolean", "Null"}
+    if not (
+        (dtype_1.is_numeric() or str(dtype_1.base_type()) in castable_types)
+        and (dtype_2.is_numeric() or str(dtype_2.base_type()) in castable_types)
+    ):
+        return pl.lit(0.0)
 
-    Returns
-    -------
-    Numeric
-        Numeric field, or zero. Temporal columns give zero: cast to float they
-        count days or time units, so the difference would depend on the unit.
-    """
-    if col_1.dtype.is_temporal() or col_2.dtype.is_temporal():
-        return 0.0
-    try:
-        return cast(
-            float,
-            (col_1.cast(pl.Float64).fill_null(0) - col_2.cast(pl.Float64).fill_null(0))
-            .abs()
-            .max(),
-        )
-    except Exception:
-        return 0.0
+    cast_1 = col_1.cast(pl.Float64, strict=False)
+    cast_2 = col_2.cast(pl.Float64, strict=False)
+    cast_failed = (col_1.is_not_null() & cast_1.is_null()).any() | (
+        col_2.is_not_null() & cast_2.is_null()
+    ).any()
+    max_diff = (cast_1.fill_null(0.0) - cast_2.fill_null(0.0)).abs().max()
+    return pl.when(cast_failed).then(pl.lit(0.0)).otherwise(max_diff)
 
 
 def generate_id_within_group(
@@ -871,14 +925,14 @@ def generate_id_within_group(
 
     Parameters
     ----------
-    dataframe : Polars.DataFrame
+    dataframe : pl.DataFrame
         The dataframe to operate on
     join_columns : list
         List of strings which are the join columns
 
     Returns
     -------
-    Polars.Series
+    pl.Series
         The ID column that's unique in each group.
     """
     default_value = "DATACOMPY_NULL"

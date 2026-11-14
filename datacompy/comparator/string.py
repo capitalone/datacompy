@@ -79,19 +79,25 @@ class PolarsStringComparator(BaseComparator):
 
     def compare(
         self,
-        col1: pl.Series,
-        col2: pl.Series,
+        col1: pl.Expr,
+        col2: pl.Expr,
+        dtype1: pl.DataType,
+        dtype2: pl.DataType,
         ignore_space: bool = True,
         ignore_case: bool = True,
-    ) -> pl.Series | None:
-        """Compare two Polars Series column-wise, taking into account optional normalization for spaces and case sensitivity.
+    ) -> pl.Expr | None:
+        """Compare two Polars columns, taking into account optional normalization for spaces and case sensitivity.
 
         Parameters
         ----------
-        col1 : pl.Series
-            The first Polars Series to compare.
-        col2 : pl.Series
-            The second Polars Series to compare.
+        col1 : pl.Expr
+            The first Polars column to compare.
+        col2 : pl.Expr
+            The second Polars column to compare.
+        dtype1 : pl.DataType
+            The data type of the first column.
+        dtype2 : pl.DataType
+            The data type of the second column.
         ignore_space : bool
             Whether to ignore leading and trailing whitespace when comparing strings.
         ignore_case : bool
@@ -99,57 +105,74 @@ class PolarsStringComparator(BaseComparator):
 
         Returns
         -------
-        pl.Series
-            A Polars Series of boolean values where each element indicates
+        pl.Expr
+            A Polars column of boolean values where each element indicates
             whether the corresponding elements in `col1` and `col2` are equal.
             Handles missing values by treating nulls as equal.
         None
-            if the columns are not comparable.
+            If the columns are not comparable.
 
-        Raises
-        ------
-        Exception
-            If the comparison fails due to incompatible types or other issues,
-            attempts to cast both columns to strings for comparison. If this
-            also fails, returns a Series of `False` values with the same length
-            as `col1`.
+        Notes
+        -----
+        Casting depends on the pair of dtypes:
+
+        - String and ``Date`` / ``Datetime``: the string column is parsed with
+          ``str.to_datetime(strict=False)``, so a ``Date`` matches a string
+          with a midnight time component. A string that fails to parse is
+          treated as null, so it matches a null and nothing else. Parsed values
+          are time zone naive, so against a time zone aware ``Datetime`` every
+          row compares as ``False`` unless both values are null.
+        - String and String, or either side ``Null``: no cast is applied. String
+          columns are normalized according to ``ignore_space`` and
+          ``ignore_case`` before comparing.
+        - Two ``Datetime`` columns with different time zones (including time
+          zone aware versus naive): not reconciled. Every row compares as
+          ``False`` unless both values are null.
+        - Two temporal columns of the same base type, or ``Date`` and
+          ``Datetime``: compared directly, so Polars upcasts ``Date`` to
+          ``Datetime`` and aligns time units.
+        - Two temporal columns of different base types (for example ``Date``
+          and ``Time``): both are cast to ``String`` and compared as text.
+        - Two ``Categorical`` columns: compared directly, without the
+          whitespace and case normalization.
         """
-        if col1.shape != col2.shape:
-            return None
-
-        col1_type = str(col1.dtype.base_type())
-        col2_type = str(col2.dtype.base_type())
+        base1 = dtype1.base_type()
+        base2 = dtype2.base_type()
 
         # if one is a string and another is a date
-        if (col1_type in POLARS_DATE_TYPE and col2_type in POLARS_STRING_TYPE) or (
-            col2_type in POLARS_DATE_TYPE and col1_type in POLARS_STRING_TYPE
+        if (str(base1) in POLARS_DATE_TYPE and str(base2) in POLARS_STRING_TYPE) or (
+            str(base2) in POLARS_DATE_TYPE and str(base1) in POLARS_STRING_TYPE
         ):
-            return polars_compare_string_and_date_columns(col1, col2)
-        # both are strings or both are temporal or both are categorical, treating
-        # an all-null column (Null dtype, no value to signal a type) as string-compatible
-        elif (
-            (
-                (col1_type in POLARS_STRING_TYPE or col1_type == "Null")
-                and (col2_type in POLARS_STRING_TYPE or col2_type == "Null")
+            return polars_compare_string_and_date_columns(col1, col2, dtype1, dtype2)
+        # both are strings, treating  an all-null column (Null dtype, no value to signal a type)
+        # as string-compatible
+        elif (str(base1) in POLARS_STRING_TYPE or dtype1 == pl.Null) and (
+            str(base2) in POLARS_STRING_TYPE or dtype2 == pl.Null
+        ):
+            if not ignore_space and not ignore_case:
+                return col1.eq_missing(col2)
+            col1 = polars_normalize_string_column(
+                col1, dtype1, ignore_space, ignore_case
             )
-            or (col1.dtype.is_temporal() and col2.dtype.is_temporal())
-            or (col1_type == "Categorical" and col2_type == "Categorical")
+            col2 = polars_normalize_string_column(
+                col2, dtype2, ignore_space, ignore_case
+            )
+            return col1.eq_missing(col2)
+        elif (dtype1.is_temporal() and dtype2.is_temporal()) or (
+            base1 == pl.Categorical and base2 == pl.Categorical
         ):
-            col1 = polars_normalize_string_column(col1, ignore_space, ignore_case)
-            col2 = polars_normalize_string_column(col2, ignore_space, ignore_case)
-            try:
-                return pl.Series(
-                    (col1.eq_missing(col2)) | (col1.is_null() & col2.is_null())
-                )
-            except Exception:
-                try:
-                    return pl.Series(
-                        col1.cast(pl.String).eq_missing(col2.cast(pl.String))
-                    )
-                except Exception:
-                    return pl.Series([False] * col1.shape[0])
-        else:
-            return None
+            if (
+                isinstance(dtype1, pl.Datetime)
+                and isinstance(dtype2, pl.Datetime)
+                and (dtype1.time_zone != dtype2.time_zone)
+            ):
+                return col1.is_null() & col2.is_null()
+            if (base1 == base2) or {base1, base2} <= {pl.Date, pl.Datetime}:
+                return col1.eq_missing(col2)
+
+            return col1.cast(pl.String).eq_missing(col2.cast(pl.String))
+
+        return None
 
 
 class PandasStringComparator(BaseComparator):
@@ -464,14 +487,19 @@ def pandas_normalize_string_column(
 
 
 def polars_normalize_string_column(
-    column: pl.Series, ignore_spaces: bool, ignore_case: bool
-) -> pl.Series:
+    column: pl.Expr,
+    dtype: pl.DataType,
+    ignore_spaces: bool,
+    ignore_case: bool,
+) -> pl.Expr:
     """Normalize a string column by converting to upper case and stripping whitespace.
 
     Parameters
     ----------
-    column : pl.Series
+    column : pl.Expr
         The column to normalize
+    dtype : pl.DataType
+        The data type of the column
     ignore_spaces : bool
         Whether to ignore spaces when normalizing
     ignore_case : bool
@@ -479,14 +507,14 @@ def polars_normalize_string_column(
 
     Returns
     -------
-    pl.Series
+    pl.Expr
         The normalized column
 
     Notes
     -----
     Will not operate on categorical columns.
     """
-    if str(column.dtype.base_type()) in POLARS_STRING_TYPE:
+    if str(dtype.base_type()) in POLARS_STRING_TYPE:
         if ignore_spaces:
             column = column.str.strip_chars()
         if ignore_case:
@@ -599,41 +627,38 @@ def pandas_compare_string_and_date_columns(
 
 
 def polars_compare_string_and_date_columns(
-    col_1: pl.Series, col_2: pl.Series
-) -> pl.Series:
+    col_1: pl.Expr,
+    col_2: pl.Expr,
+    dtype1: pl.DataType,
+    dtype2: pl.DataType,
+) -> pl.Expr:
     """Compare a string column and date column, value-wise.
 
     This tries to convert a string column to a date column and compare that way.
 
     Parameters
     ----------
-    col_1 : Polars.Series
+    col_1 : Polars.Expr
         The first column to look at
-    col_2 : Polars.Series
+    col_2 : Polars.Expr
         The second column
+    dtype1 : pl.DataType
+        The data type of the first column.
+    dtype2 : pl.DataType
+        The data type of the second column.
 
     Returns
     -------
-    Polars.Series
-        A series of Boolean values.  True == the values match, False == the
+    Polars.Expr
+        A column of Boolean values.  True == the values match, False == the
         values don't match.
     """
-    if str(col_1.dtype) in POLARS_STRING_TYPE:
-        str_column = col_1
-        date_column = col_2
+    if str(dtype1.base_type()) in POLARS_STRING_TYPE:
+        str_column, date_column, date_dtype = col_1, col_2, dtype2
     else:
-        str_column = col_2
-        date_column = col_1
+        str_column, date_column, date_dtype = col_2, col_1, dtype1
 
-    try:  # datetime is inferred
-        return pl.Series(
-            (str_column.str.to_datetime(strict=False).eq_missing(date_column))
-            | (str_column.is_null() & date_column.is_null())
-        )
-    except Exception:
-        try:
-            return pl.Series(
-                str_column.cast(pl.String).eq_missing(date_column.cast(pl.String))
-            )
-        except Exception:
-            return pl.Series([False] * col_1.shape[0])
+    if isinstance(date_dtype, pl.Datetime) and date_dtype.time_zone is not None:
+        return str_column.is_null() & date_column.is_null()
+
+    return str_column.str.to_datetime(strict=False).eq_missing(date_column)
