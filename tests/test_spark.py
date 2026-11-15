@@ -3086,3 +3086,18 @@ def test_calculate_null_diff(spark_session):
     )
     assert calculate_null_diff(df, "a", "b") == 2
     assert calculate_null_diff(df.limit(0), "a", "b") == 0
+
+
+@pytest.mark.parametrize("column", ["arr", "m", "st", "bin", "iv", "ntz", "d"])
+def test_calculate_max_diff_uncastable_types(spark_session, column):
+    """Types TRY_CAST cannot turn into a double default to 0, alone or mixed."""
+    df = spark_session.sql(
+        "SELECT array(1, 2) AS arr, map('a', 1) AS m, named_struct('a', 1) AS st, "
+        "CAST('ab' AS BINARY) AS bin, INTERVAL 1 DAY AS iv, "
+        "TIMESTAMP_NTZ'2024-01-01 00:00:00' AS ntz, DATE'2024-01-01' AS d, "
+        "1.5D AS dbl, 2 AS i"
+    )
+    assert calculate_max_diff(df, column, column) == 0
+    assert calculate_max_diff(df, column, "i") == 0
+    assert calculate_max_diff(df, "dbl", column) == 0
+    assert np.isclose(calculate_max_diff(df, "dbl", "i"), 0.5)

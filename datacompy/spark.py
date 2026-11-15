@@ -1076,33 +1076,74 @@ def _max_diff_agg(
 ) -> "pyspark.sql.Column | None":
     """Build the aggregate expression for the max absolute difference of two columns.
 
-    Values are cast to double with ``TRY_CAST`` so non-numeric strings become
+    Values are cast to double with ``TRY_CAST``, so non-numeric strings become
     null instead of raising under ANSI mode, and ``NaN`` differences are
-    ignored. Returns ``None`` for array-like columns, which have no max diff,
-    and for ``DATE`` columns: Spark 4 rejects ``CAST(DATE AS DOUBLE)`` at
-    analysis time even inside ``TRY_CAST``, while Spark 3.5 evaluated it to
-    NULL, so a max diff of 0 keeps the 3.5 result on both versions.
+    ignored. Returns ``None`` when either column is a type that ``TRY_CAST``
+    cannot turn into a double: ``ARRAY``, ``MAP``, ``STRUCT``, ``BINARY``,
+    ``INTERVAL``, ``TIMESTAMP_NTZ`` and ``DATE``. Both Spark 3.5 and 4 reject
+    ``TRY_CAST(<type> AS DOUBLE)`` for these at analysis time (``TRY_CAST``
+    uses ``canTryCast``/``canAnsiCast``, which disallows e.g.
+    ``DateType -> NumericType``), and any one of them would abort the whole
+    aggregation, so this is a crash fix on both major versions rather than
+    preservation of 3.5 behavior. The legacy ``CAST`` returns NULL for
+    ``DATE`` on 3.5, but this path uses ``TRY_CAST``.
+
+    Parameters
+    ----------
+    dataframe : pyspark.sql.DataFrame
+        DataFrame containing the two columns.
+    col_1 : str
+        Name of the first column.
+    col_2 : str
+        Name of the second column.
+
+    Returns
+    -------
+    pyspark.sql.Column or None
+        Aggregate expression for the maximum absolute difference, or ``None``
+        when the column type has no numeric max diff.
     """
     F = get_spark_functions(dataframe)
     dtype1, dtype2 = get_spark_column_dtypes(dataframe, col_1, col_2)
-    if dtype1.startswith("array") and dtype2.startswith("array"):
+    uncastable = (
+        "array",
+        "date",
+        "map",
+        "struct",
+        "binary",
+        "interval",
+        "timestamp_ntz",
+    )
+    if dtype1.startswith(uncastable) or dtype2.startswith(uncastable):
         LOG.warning(
-            f"Cannot calculate max_diff for array-like columns: {col_1}, {col_2}, defaulting to 0."
+            f"Cannot calculate max_diff for non-castable columns: "
+            f"{col_1}, {col_2}, defaulting to 0."
         )
-        return None
-    if dtype1 == "date" or dtype2 == "date":
         return None
     abs_diff = F.abs(
         F.expr(f"TRY_CAST(`{col_1}` AS DOUBLE)")
         - F.expr(f"TRY_CAST(`{col_2}` AS DOUBLE)")
     )
-    # NULL differences fall through the WHEN and are skipped by MAX as well.
+    # abs_diff is null when either side is null (or the TRY_CAST fails); that
+    # null flows through the WHEN result (the condition itself is True), and
+    # MAX ignores it. NaN differences take the other branch.
     max_diff: pyspark.sql.Column = F.max(F.when(~F.isnan(abs_diff), abs_diff))
     return max_diff
 
 
 def _max_diff_result(max_diff: Any) -> float:
-    """Normalise the collected max diff, mapping no comparable values to 0."""
+    """Normalise the collected max diff, mapping no comparable values to 0.
+
+    Parameters
+    ----------
+    max_diff : Any
+        Value returned by the max-diff aggregation; may be ``None`` or ``NaN``.
+
+    Returns
+    -------
+    float
+        The max diff, or 0 when there is no comparable value.
+    """
     if max_diff is None or pd.isna(max_diff):
         return 0
     return max_diff  # type: ignore[no-any-return]
@@ -1111,7 +1152,23 @@ def _max_diff_result(max_diff: Any) -> float:
 def _null_diff_agg(
     dataframe: "pyspark.sql.DataFrame", col_1: str, col_2: str
 ) -> "pyspark.sql.Column":
-    """Build the aggregate expression counting rows where exactly one side is null."""
+    """Build the aggregate expression counting rows where exactly one side is null.
+
+    Parameters
+    ----------
+    dataframe : pyspark.sql.DataFrame
+        DataFrame containing the two columns.
+    col_1 : str
+        Name of the first column.
+    col_2 : str
+        Name of the second column.
+
+    Returns
+    -------
+    pyspark.sql.Column
+        Aggregate expression counting rows where exactly one of the two
+        columns is null.
+    """
     F = get_spark_functions(dataframe)
     col_1_null = F.col(col_1).isNull()
     col_2_null = F.col(col_2).isNull()
