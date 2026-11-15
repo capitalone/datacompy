@@ -18,8 +18,8 @@ import tempfile
 import time
 
 import datacompy
+from datacompy.comparator.utility import get_spark_functions
 from pyspark.sql import SparkSession
-from pyspark.sql import functions as F
 
 
 def emit(line):  # noqa: D103
@@ -28,6 +28,7 @@ def emit(line):  # noqa: D103
 
 def write_frames(spark, path, rows, cols):  # noqa: D103
     base = spark.range(rows)
+    F = get_spark_functions(base)
     data_cols = [F.rand(seed=i).alias(f"c{i}") for i in range(cols)]
     base = base.select("id", *data_cols)
     # Roughly 10% of the values in each column differ by 0.001.
