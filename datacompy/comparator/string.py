@@ -638,9 +638,9 @@ def polars_compare_string_and_date_columns(
 
     Parameters
     ----------
-    col_1 : Polars.Expr
+    col_1 : pl.Expr
         The first column to look at
-    col_2 : Polars.Expr
+    col_2 : pl.Expr
         The second column
     dtype1 : pl.DataType
         The data type of the first column.
@@ -649,7 +649,7 @@ def polars_compare_string_and_date_columns(
 
     Returns
     -------
-    Polars.Expr
+    pl.Expr
         A column of Boolean values.  True == the values match, False == the
         values don't match.
     """

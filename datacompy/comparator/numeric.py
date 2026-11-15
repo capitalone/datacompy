@@ -141,10 +141,11 @@ class PolarsNumericComparator(BaseComparator):
 
         Notes
         -----
-        - The comparison uses `np.isclose` semantics to check for approximate equality.
-        - If the columns cannot be directly compared due to numeric type mismatches,
-          If casting fails, a column of `False` values is returned.
-        - If neither type is numeric a `None` value is returned.
+        - The comparison uses ``np.isclose`` semantics for approximate equality.
+        - Numeric values are cast to ``Float64`` before comparing, except integer
+          columns with zero tolerances, which use ``eq_missing`` to avoid float
+          precision loss above ``2**53``.
+        - If either dtype is not numeric, ``None`` is returned.
         """
         if dtype1.is_numeric() and dtype2.is_numeric():
             if dtype1.is_integer() and dtype2.is_integer() and not rtol and not atol:
