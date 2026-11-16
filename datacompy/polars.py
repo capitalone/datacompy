@@ -462,9 +462,9 @@ class PolarsCompare(BaseCompare):
         match_columns: List[str] = []
         for column in intersect_columns:
             if column not in self.join_columns:
-                col_1 = column + "_" + self.df1_name
-                col_2 = column + "_" + self.df2_name
-                col_match = column + "_match"
+                col_1 = f"{column}_{self.df1_name}"
+                col_2 = f"{column}_{self.df2_name}"
+                col_match = f"{column}_match"
                 match_columns.append(col_match)
                 compare_exprs.append(
                     columns_equal(
@@ -487,9 +487,9 @@ class PolarsCompare(BaseCompare):
         for index, column in enumerate(intersect_columns):
             if column in self.join_columns:
                 continue
-            col_1 = column + "_" + self.df1_name
-            col_2 = column + "_" + self.df2_name
-            col_match = column + "_match"
+            col_1 = f"{column}_{self.df1_name}"
+            col_2 = f"{column}_{self.df2_name}"
+            col_match = f"{column}_match"
             match_alias = f"__match_cnt_{index}"
             max_diff_alias = f"__max_diff_{index}"
             null_diff_alias = f"__null_diff_{index}"
@@ -529,8 +529,8 @@ class PolarsCompare(BaseCompare):
 
         # Calculate the column stats for each column
         for column in intersect_columns:
+            col_match = f"{column}_match"
             if column in self.join_columns:
-                col_match = column + "_match"
                 match_cnt = self.intersect_rows.height
                 if not self.only_join_columns():
                     row_cnt = self.intersect_rows.height
@@ -544,9 +544,6 @@ class PolarsCompare(BaseCompare):
                 null_diff = 0
             else:
                 row_cnt = self.intersect_rows.height
-                col_1 = column + "_" + self.df1_name
-                col_2 = column + "_" + self.df2_name
-                col_match = column + "_match"
                 match_alias, max_diff_alias, null_diff_alias = stat_aliases[column]
                 match_cnt = int(aggregated_stats[match_alias])
                 max_diff = cast(float | None, aggregated_stats[max_diff_alias])
