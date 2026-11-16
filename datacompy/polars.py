@@ -622,33 +622,38 @@ class PolarsCompare(BaseCompare):
             When the column being requested is not an intersecting column between dataframes.
         """
         if not self.only_join_columns() and column not in self.join_columns:
-            row_cnt = self.intersect_rows.shape[0]
-            col_match = self.intersect_rows[column + "_match"]
-            match_cnt = col_match.sum()
+            row_cnt = self.intersect_rows.height
+            match_cnt = self.intersect_rows[f"{column}_match"].sum()
             sample_count = min(sample_count, row_cnt - match_cnt)  # type: ignore
-            sample = self.intersect_rows.filter(
-                pl.col(column + "_match") != True  # noqa: E712
-            ).sample(sample_count)
-            return_cols = [
+
+            sample_cols = [
                 *self.join_columns,
-                column + "_" + self.df1_name,
-                column + "_" + self.df2_name,
+                f"{column}_{self.df1_name}",
+                f"{column}_{self.df2_name}",
+                f"{column}_match",
             ]
-            to_return = sample[return_cols]
+            sample = (
+                self.intersect_rows.select(sample_cols)
+                .filter(pl.col(f"{column}_match") != True)  # noqa: E712
+                .drop(f"{column}_match")
+                .sample(sample_count)
+            )
+
             if for_display:
-                to_return.columns = [
-                    *self.join_columns,
-                    column + " (" + self.df1_name + ")",
-                    column + " (" + self.df2_name + ")",
-                ]
-            return to_return
+                sample = sample.rename(
+                    {
+                        f"{column}_{self.df1_name}": f"{column} ({self.df1_name})",
+                        f"{column}_{self.df2_name}": f"{column} ({self.df2_name})",
+                    }
+                )
+            return sample
         else:
             row_cnt = (
-                len(self.intersect_rows)
-                + len(self.df1_unq_rows)
-                + len(self.df2_unq_rows)
+                self.intersect_rows.height
+                + self.df1_unq_rows.height
+                + self.df2_unq_rows.height
             )
-            match_cnt = len(self.intersect_rows)
+            match_cnt = self.intersect_rows.height
             sample_count = min(sample_count, row_cnt - match_cnt)
             sample = pl.concat(
                 [self.df1_unq_rows[[column]], self.df2_unq_rows[[column]]]
