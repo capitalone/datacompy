@@ -67,3 +67,32 @@ TLDR
   * It makes the Pandas on Spark implementation obsolete moving forward.
 
 * The native Pandas version is best for small and medium data
+
+SparkSQLCompare column statistics
+---------------------------------
+
+``SparkSQLCompare`` gathers the statistics for every compared column (match
+count, max diff, null diff) and the row count in a single aggregation, so the
+number of Spark jobs a comparison launches does not grow with the number of
+columns. ``benchmarks/benchmark_spark_column_stats.py`` times the construction
+of ``SparkSQLCompare`` (join plus column statistics) on synthetic float
+columns, with about 10% of the values differing:
+
+.. code-block:: bash
+
+    python benchmarks/benchmark_spark_column_stats.py --rows 1000000 --cols 10 50
+    python benchmarks/benchmark_spark_column_stats.py --rows 200000 --cols 200
+
+Median of 5 runs on ``local[*]`` (Apple Silicon laptop, PySpark 4.3), before
+and after the change:
+
+=========   =======   ==================   =================   =============
+rows        columns   before (s / jobs)    after (s / jobs)    speedup
+=========   =======   ==================   =================   =============
+1,000,000   10        3.85 / 78            2.82 / 36           1.4x
+1,000,000   50        19.79 / 238          5.22 / 36           3.8x
+200,000     200       95.48 / 838          12.07 / 36          7.9x
+=========   =======   ==================   =================   =============
+
+The machine was shared with other work while these ran, so the absolute times
+are noisy; the job counts are exact.
