@@ -280,6 +280,9 @@ class TestCompareImplementation(BaseCompare):
     def all_mismatch(self, ignore_matching_cols=False):
         return None
 
+    def hide_sensitive_columns(self, sensitive_columns):
+        pass
+
     def report(self, sample_count=10, column_count=10, html_file=None):
         return ""
 
