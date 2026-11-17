@@ -622,43 +622,31 @@ class PolarsCompare(BaseCompare):
             When the column being requested is not an intersecting column between dataframes.
         """
         if not self.only_join_columns() and column not in self.join_columns:
-            row_cnt = self.intersect_rows.height
-            match_cnt = self.intersect_rows[f"{column}_match"].sum()
-            sample_count = min(sample_count, row_cnt - match_cnt)  # type: ignore
-
-            sample_cols = [
+            mismatch_cols = [
                 *self.join_columns,
                 f"{column}_{self.df1_name}",
                 f"{column}_{self.df2_name}",
                 f"{column}_match",
             ]
-            sample = (
-                self.intersect_rows.select(sample_cols)
+            mismatch_df = (
+                self.intersect_rows.select(mismatch_cols)
                 .filter(pl.col(f"{column}_match") != True)  # noqa: E712
                 .drop(f"{column}_match")
-                .sample(sample_count)
             )
-
             if for_display:
-                sample = sample.rename(
+                mismatch_df = mismatch_df.rename(
                     {
                         f"{column}_{self.df1_name}": f"{column} ({self.df1_name})",
                         f"{column}_{self.df2_name}": f"{column} ({self.df2_name})",
                     }
                 )
-            return sample
         else:
-            row_cnt = (
-                self.intersect_rows.height
-                + self.df1_unq_rows.height
-                + self.df2_unq_rows.height
-            )
-            match_cnt = self.intersect_rows.height
-            sample_count = min(sample_count, row_cnt - match_cnt)
-            sample = pl.concat(
+            mismatch_df = pl.concat(
                 [self.df1_unq_rows[[column]], self.df2_unq_rows[[column]]]
-            ).sample(sample_count)
-            return sample
+            )
+
+        sample_count = min(sample_count, mismatch_df.height)
+        return mismatch_df.sample(sample_count)
 
     def all_mismatch(self, ignore_matching_cols: bool = False) -> pl.DataFrame:
         """Get all rows with any columns that have a mismatch.
