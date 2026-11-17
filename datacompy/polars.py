@@ -593,6 +593,41 @@ class PolarsCompare(BaseCompare):
             and self.intersect_rows_match()
         )
 
+    def _get_mismatch(
+        self,
+        column: str,
+        intersect_rows: pl.DataFrame | pl.LazyFrame,
+        df1_unq_rows: pl.DataFrame | pl.LazyFrame,
+        df2_unq_rows: pl.DataFrame | pl.LazyFrame,
+        for_display: bool = False,
+    ) -> pl.DataFrame | pl.LazyFrame:
+        """Get the mismatch dataframe from the intersection of the two dataframes."""
+        if not self.only_join_columns() and column not in self.join_columns:
+            mismatch_cols = [
+                *self.join_columns,
+                f"{column}_{self.df1_name}",
+                f"{column}_{self.df2_name}",
+                f"{column}_match",
+            ]
+            mismatch_df = (
+                intersect_rows.select(mismatch_cols)
+                .filter(pl.col(f"{column}_match") != True)  # noqa: E712
+                .drop(f"{column}_match")
+            )
+            if for_display:
+                mismatch_df = mismatch_df.rename(
+                    {
+                        f"{column}_{self.df1_name}": f"{column} ({self.df1_name})",
+                        f"{column}_{self.df2_name}": f"{column} ({self.df2_name})",
+                    }
+                )
+        else:
+            mismatch_df = pl.concat(
+                [df1_unq_rows.select(column), df2_unq_rows.select(column)]
+            )
+
+        return mismatch_df
+
     def sample_mismatch(
         self, column: str, sample_count: int = 10, for_display: bool = False
     ) -> pl.DataFrame | None:
@@ -621,30 +656,13 @@ class PolarsCompare(BaseCompare):
         None
             When the column being requested is not an intersecting column between dataframes.
         """
-        if not self.only_join_columns() and column not in self.join_columns:
-            mismatch_cols = [
-                *self.join_columns,
-                f"{column}_{self.df1_name}",
-                f"{column}_{self.df2_name}",
-                f"{column}_match",
-            ]
-            mismatch_df = (
-                self.intersect_rows.select(mismatch_cols)
-                .filter(pl.col(f"{column}_match") != True)  # noqa: E712
-                .drop(f"{column}_match")
-            )
-            if for_display:
-                mismatch_df = mismatch_df.rename(
-                    {
-                        f"{column}_{self.df1_name}": f"{column} ({self.df1_name})",
-                        f"{column}_{self.df2_name}": f"{column} ({self.df2_name})",
-                    }
-                )
-        else:
-            mismatch_df = pl.concat(
-                [self.df1_unq_rows[[column]], self.df2_unq_rows[[column]]]
-            )
-
+        mismatch_df = self._get_mismatch(
+            column,
+            self.intersect_rows,
+            self.df1_unq_rows,
+            self.df2_unq_rows,
+            for_display=for_display,
+        )
         sample_count = min(sample_count, mismatch_df.height)
         return mismatch_df.sample(sample_count)
 
@@ -716,6 +734,28 @@ class PolarsCompare(BaseCompare):
             .filter(pl.col("__all") != True)  # noqa: E712
             .select(self.join_columns + return_list)
         )
+
+    def _sample_mismatches_for_report(self, sample_count: int) -> List[pl.DataFrame]:
+        """Sample mismatches from the intersection of the two dataframes."""
+        intersect_rows = self.intersect_rows.lazy()
+        df1_unq_rows = self.df1_unq_rows.lazy()
+        df2_unq_rows = self.df2_unq_rows.lazy()
+
+        sample_list: List[pl.DataFrame | pl.LazyFrame] = []
+        for col in self.column_stats:
+            if col["unequal_cnt"] > 0:
+                sample_list.append(
+                    self._get_mismatch(
+                        col["column"],
+                        intersect_rows,
+                        df1_unq_rows,
+                        df2_unq_rows,
+                        for_display=True,
+                    )
+                )
+
+        sample_list = pl.collect_all(sample_list)
+        return [df.sample(min(sample_count, df.height)) for df in sample_list]
 
 
 def columns_equal(
