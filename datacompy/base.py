@@ -305,6 +305,16 @@ class BaseCompare(ABC):
     # Concrete report-building — shared across all backends
     # ------------------------------------------------------------------
 
+    def _sample_mismatches_for_report(self, sample_count: int) -> List[Any]:
+        """Sample mismatches from the intersection of the two dataframes."""
+        sample_list: List[Any] = []
+        for col in self.column_stats:
+            if col["unequal_cnt"] > 0:
+                sample_list.append(
+                    self.sample_mismatch(col["column"], sample_count, for_display=True)
+                )
+        return sample_list
+
     def build_report_data(
         self, sample_count: int = 10, column_count: int = 10
     ) -> "datacompy.report.ReportData":
@@ -385,7 +395,7 @@ class BaseCompare(ABC):
 
         # ---- mismatch stats ------------------------------------------
         stat_list: List[MismatchStat] = []
-        sample_list: List[Any] = []
+        sample_list: List[Any] = self._sample_mismatches_for_report(sample_count)
 
         for col in self.column_stats:
             if not col["all_match"]:
@@ -401,12 +411,6 @@ class BaseCompare(ABC):
                         abs_tol=col["abs_tol"],
                     )
                 )
-                if col["unequal_cnt"] > 0:
-                    sample_list.append(
-                        self.sample_mismatch(
-                            col["column"], sample_count, for_display=True
-                        )
-                    )
 
         if stat_list:
             mismatch_stats = MismatchStats(
