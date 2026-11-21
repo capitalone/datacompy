@@ -156,14 +156,14 @@ class BaseCompare(ABC):
         Parameters
         ----------
         sensitive_columns : List[str]
-           Column names to mask. An empty list is a no-op when no columns
-           are currently hidden.
+            Column names to mask. An empty list is a no-op when no columns
+            are currently hidden.
 
         Raises
         ------
         ValueError
-           If any columns are already hidden. Call
-           :meth:`reveal_sensitive_columns` before hiding a different set.
+            If any columns are already hidden. Call
+            :meth:`reveal_sensitive_columns` before hiding a different set.
         """
         pass
 
