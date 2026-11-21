@@ -149,12 +149,21 @@ class BaseCompare(ABC):
 
         Backends must mask values in ``df1_unq_rows``, ``df2_unq_rows``, and
         ``intersect_rows``, and call :meth:`_mask_sensitive_column_stats`.
-        Call :meth:`reveal_sensitive_columns` before hiding a different set.
+        The unique-row frames carry the original column names, while
+        ``intersect_rows`` carries the suffixed ``{col}_{df1_name}`` and
+        ``{col}_{df2_name}`` variants, so both forms need masking.
 
         Parameters
         ----------
         sensitive_columns : List[str]
-            Column names to mask. An empty list is a no-op.
+           Column names to mask. An empty list is a no-op when no columns
+           are currently hidden.
+
+        Raises
+        ------
+        ValueError
+           If any columns are already hidden. Call
+           :meth:`reveal_sensitive_columns` before hiding a different set.
         """
         pass
 
