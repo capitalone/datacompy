@@ -16,6 +16,7 @@
 """Numeric Comparator Class."""
 
 import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -30,6 +31,24 @@ NUMERIC_PANDAS_TYPES = [
 ]
 
 LOG = logging.getLogger(__name__)
+
+
+def _symmetric_isclose(col1: Any, col2: Any, rtol: float, atol: float) -> np.ndarray:
+    """Compare numeric arrays using the symmetric ``math.isclose`` tolerance rule."""
+    left = np.asarray(col1)
+    right = np.asarray(col2)
+    if left.dtype.kind in "iu" or right.dtype.kind in "iu":
+        left = left.astype(np.float64)
+        right = right.astype(np.float64)
+    with np.errstate(invalid="ignore", over="ignore"):
+        difference = np.abs(left - right)
+        tolerance = np.maximum(atol, rtol * np.maximum(np.abs(left), np.abs(right)))
+        both_finite_and_close = (
+            np.isfinite(left) & np.isfinite(right) & (difference <= tolerance)
+        )
+        return (
+            (left == right) | (np.isnan(left) & np.isnan(right)) | both_finite_and_close
+        )
 
 
 def decimal_comparator():
@@ -131,7 +150,7 @@ class PolarsNumericComparator(BaseComparator):
 
         Notes
         -----
-        - The comparison uses `np.isclose` to check for approximate equality.
+        - The comparison uses symmetric `math.isclose` tolerance semantics.
         - If the series cannot be directly compared due to numeric type mismatches,
           If casting fails, a series of `False` values is returned.
         - If the Series shapes do not match, and neither type is numeric a `None`
@@ -151,18 +170,15 @@ class PolarsNumericComparator(BaseComparator):
                 both_null = col1.is_null() & col2.is_null()
                 return ((col1 == col2) | both_null).fill_null(False)
             try:
-                return pl.Series(
-                    np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
-                )
+                return pl.Series(_symmetric_isclose(col1, col2, rtol=rtol, atol=atol))
             except Exception:
                 try:
                     return pl.Series(
-                        np.isclose(
+                        _symmetric_isclose(
                             col1.cast(pl.Float64, strict=True),
                             col2.cast(pl.Float64, strict=True),
                             rtol=rtol,
                             atol=atol,
-                            equal_nan=True,
                         )
                     )
                 except Exception:
@@ -209,7 +225,7 @@ class PandasNumericComparator(BaseComparator):
 
         Notes
         -----
-        - The comparison uses `np.isclose` to check for approximate equality, except
+        - The comparison uses symmetric `math.isclose` tolerance semantics, except
           when both columns are integer types with zero tolerance, where values are
           compared exactly because float64 cannot distinguish integers above 2**53.
         - If the series cannot be directly compared due to numeric type mismatches,
@@ -235,18 +251,15 @@ class PandasNumericComparator(BaseComparator):
                 equal = pd.array(col1.array == col2.array, dtype="boolean")
                 return pd.Series(equal.fillna(False).to_numpy(dtype=bool) | both_null)
             try:
-                return pd.Series(
-                    np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
-                )
+                return pd.Series(_symmetric_isclose(col1, col2, rtol=rtol, atol=atol))
             except TypeError:
                 try:
                     return pd.Series(
-                        np.isclose(
+                        _symmetric_isclose(
                             col1.astype(float),
                             col2.astype(float),
                             rtol=rtol,
                             atol=atol,
-                            equal_nan=True,
                         )
                     )
                 except Exception:
@@ -340,7 +353,11 @@ class SparkNumericComparator(BaseComparator):
                     )  # NULL-safe equality
                     .when(
                         psf.abs(col1_expr - col2_expr)
-                        <= psf.lit(atol) + (psf.lit(rtol) * psf.abs(col2_expr)),
+                        <= psf.greatest(
+                            psf.lit(atol),
+                            psf.lit(rtol)
+                            * psf.greatest(psf.abs(col1_expr), psf.abs(col2_expr)),
+                        ),
                         psf.lit(True),  # within tolerance
                     )
                     .otherwise(psf.lit(False))
@@ -421,7 +438,13 @@ class SnowflakeNumericComparator(BaseComparator):
                         (spf.col(col1).eqNullSafe(spf.col(col2)))
                         | (
                             spf.abs(spf.col(col1) - spf.col(col2))
-                            <= spf.lit(atol) + (spf.lit(rtol) * spf.abs(spf.col(col2)))
+                            <= spf.greatest(
+                                spf.lit(atol),
+                                spf.lit(rtol)
+                                * spf.greatest(
+                                    spf.abs(spf.col(col1)), spf.abs(spf.col(col2))
+                                ),
+                            )
                         ),
                         # corner case of col1 != null and col2 == null returns True incorrectly
                         spf.when(
@@ -435,3 +458,4 @@ class SnowflakeNumericComparator(BaseComparator):
                 return dataframe.withColumn(col_match, spf.lit(False))
         else:
             return None
+

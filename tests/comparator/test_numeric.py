@@ -38,6 +38,17 @@ def test_polars_numeric_comparator_approximate_match():
     assert result.to_list() == [True, True, True]
 
 
+def test_polars_numeric_comparator_symmetric_tolerance():
+    comparator = PolarsNumericComparator()
+    left = comparator.compare(
+        pl.Series([100.0]), pl.Series([101.005]), rtol=0.01, atol=0
+    )
+    right = comparator.compare(
+        pl.Series([101.005]), pl.Series([100.0]), rtol=0.01, atol=0
+    )
+    assert left.to_list() == right.to_list() == [True]
+
+
 def test_polars_numeric_comparator_type_casting():
     comparator = PolarsNumericComparator()
     col1 = pl.Series([1, 2, 3])  # Integer type
@@ -52,6 +63,17 @@ def test_polars_numeric_comparator_nan_handling():
     col2 = pl.Series([1.0, float("nan"), 3.0])
     result = comparator.compare(col1, col2)
     assert result.to_list() == [True, True, True]
+
+
+def test_polars_numeric_comparator_infinity_handling():
+    comparator = PolarsNumericComparator()
+    result = comparator.compare(
+        pl.Series([float("inf"), float("inf"), float("-inf")]),
+        pl.Series([float("inf"), float("-inf"), float("inf")]),
+        rtol=1.0,
+        atol=1.0,
+    )
+    assert result.to_list() == [True, False, False]
 
 
 def test_polars_numeric_comparator_mismatch():
@@ -123,6 +145,17 @@ def test_pandas_numeric_comparator_approximate_match():
     assert result.tolist() == [True, True, True]
 
 
+def test_pandas_numeric_comparator_symmetric_tolerance():
+    comparator = PandasNumericComparator()
+    left = comparator.compare(
+        pd.Series([100.0]), pd.Series([101.005]), rtol=0.01, atol=0
+    )
+    right = comparator.compare(
+        pd.Series([101.005]), pd.Series([100.0]), rtol=0.01, atol=0
+    )
+    assert left.tolist() == right.tolist() == [True]
+
+
 def test_pandas_numeric_comparator_type_casting():
     comparator = PandasNumericComparator()
     col1 = pd.Series([1, 2, 3])  # Integer type
@@ -137,6 +170,17 @@ def test_pandas_numeric_comparator_nan_handling():
     col2 = pd.Series([1.0, float("nan"), 3.0])
     result = comparator.compare(col1, col2)
     assert result.tolist() == [True, True, True]
+
+
+def test_pandas_numeric_comparator_infinity_handling():
+    comparator = PandasNumericComparator()
+    result = comparator.compare(
+        pd.Series([float("inf"), float("inf"), float("-inf")]),
+        pd.Series([float("inf"), float("-inf"), float("inf")]),
+        rtol=1.0,
+        atol=1.0,
+    )
+    assert result.tolist() == [True, False, False]
 
 
 def test_pandas_numeric_comparator_mismatch():
@@ -191,3 +235,4 @@ def test_pandas_numeric_comparator_large_integers_uint64():
     col2 = pd.Series([2**64 - 3, 5], dtype="UInt64")
     result = comparator.compare(col1, col2, rtol=0, atol=0)
     assert result.tolist() == [False, True]
+
