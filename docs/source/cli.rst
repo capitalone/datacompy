@@ -141,6 +141,11 @@ numeric column, or repeated ``COLUMN=VALUE`` pairs for per column tolerances:
 The two forms cannot be mixed on the same flag, because the library takes either
 a single tolerance or a per column mapping.
 
+By default a value matches when ``|left - right| <= abs_tol + rel_tol * |right|``,
+the same rule as ``numpy.isclose``, so swapping ``--left`` and ``--right`` can
+change the result. ``--symmetric-tolerance`` uses the ``math.isclose`` rule,
+``|left - right| <= max(rel_tol * max(|left|, |right|), abs_tol)``, instead.
+
 Normalisation
 -------------
 

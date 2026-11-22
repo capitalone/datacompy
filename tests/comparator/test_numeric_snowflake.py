@@ -112,3 +112,27 @@ def test_snowflake_numeric_comparator_error_handling(snowflake_session):
         dataframe=df, col1="col1", col2="col2", col_match="col_match"
     )
     assert result is None
+
+
+def test_snowflake_numeric_comparator_tolerance_order(snowflake_session):
+    comparator = SnowflakeNumericComparator()
+    df = snowflake_session.createDataFrame([(100.0, 101.005)], ["col1", "col2"])
+
+    def matches(col1, col2, symmetric):
+        result = comparator.compare(
+            dataframe=df,
+            col1=col1,
+            col2=col2,
+            col_match="col_match",
+            rtol=0.01,
+            atol=0,
+            symmetric=symmetric,
+        )
+        return result.select(["col_match"]).collect()[0]["COL_MATCH"]
+
+    # np.isclose semantics depend on the order of the columns
+    assert matches("col1", "col2", symmetric=False)
+    assert not matches("col2", "col1", symmetric=False)
+    # math.isclose semantics do not
+    assert matches("col1", "col2", symmetric=True)
+    assert matches("col2", "col1", symmetric=True)

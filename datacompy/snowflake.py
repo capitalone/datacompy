@@ -130,6 +130,11 @@ class SnowflakeCompare(BaseCompare):
         Flag to ignore the case of string columns
     custom_comparators : list of ``BaseComparator``, optional
         A list of custom comparator classes to use to compare columns.
+    symmetric_tolerance : bool, optional
+        If True, numeric columns are compared with symmetric ``math.isclose``
+        semantics, ``|a - b| <= max(rel_tol * max(|a|, |b|), abs_tol)``, so the
+        result does not depend on which dataframe is ``df1``. By default, the
+        ``np.isclose`` semantics ``|a - b| <= abs_tol + rel_tol * |b|`` are used.
     """
 
     def __init__(
@@ -145,8 +150,10 @@ class SnowflakeCompare(BaseCompare):
         ignore_spaces: bool = False,
         ignore_case: bool = False,
         custom_comparators: List[BaseComparator] | None = None,
+        symmetric_tolerance: bool = False,
     ) -> None:
         self.custom_comparators = custom_comparators or []
+        self.symmetric_tolerance = symmetric_tolerance
         # Validate tolerance parameters first
         self._abs_tol_dict = validate_tolerance_parameter(
             abs_tol, "abs_tol", case_mode="upper"
@@ -566,6 +573,7 @@ class SnowflakeCompare(BaseCompare):
                     ignore_spaces=ignore_spaces,
                     ignore_case=ignore_case,
                     comparators=self._get_comparators(),
+                    symmetric_tolerance=self.symmetric_tolerance,
                 )
 
         with ThreadPoolExecutor() as executor:
@@ -866,6 +874,7 @@ class SnowflakeCompare(BaseCompare):
                     abs_tol=get_column_tolerance(orig_col_name, self._abs_tol_dict),
                     ignore_spaces=self.ignore_spaces,
                     comparators=self._get_comparators(),
+                    symmetric_tolerance=self.symmetric_tolerance,
                 )
 
                 if not ignore_matching_cols or (
@@ -934,6 +943,7 @@ def columns_equal(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     comparators: List[BaseComparator] | None = None,
+    symmetric_tolerance: bool = False,
     **kwargs,
 ) -> "sp.DataFrame":
     """Compare two columns from a dataframe.
@@ -968,6 +978,9 @@ def columns_equal(
         Flag to ignore the case of string columns
     comparators: List[BaseComparator] | None = None,
         A list of custom comparator classes to use to compare columns.
+    symmetric_tolerance : bool, optional
+        If True, compare numeric columns with symmetric ``math.isclose``
+        semantics instead of ``np.isclose`` semantics. Default is False.
     **kwargs
         Additional keyword arguments to pass to custom comparators.
 
@@ -987,7 +1000,13 @@ def columns_equal(
             compare = comparator.compare(dataframe, col_1, col_2, col_match)
         elif isinstance(comparator, SnowflakeNumericComparator):
             compare = comparator.compare(
-                dataframe, col_1, col_2, col_match, rtol=rel_tol, atol=abs_tol
+                dataframe,
+                col_1,
+                col_2,
+                col_match,
+                rtol=rel_tol,
+                atol=abs_tol,
+                symmetric=symmetric_tolerance,
             )
         elif isinstance(comparator, SnowflakeStringComparator):
             compare = comparator.compare(

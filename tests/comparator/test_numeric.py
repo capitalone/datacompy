@@ -15,6 +15,7 @@
 
 import pandas as pd
 import polars as pl
+import pytest
 from datacompy.comparator.numeric import (
     PandasNumericComparator,
     PolarsNumericComparator,
@@ -38,7 +39,8 @@ def test_polars_numeric_comparator_approximate_match():
     assert result.to_list() == [True, True, True]
 
 
-def test_polars_numeric_comparator_symmetric_tolerance():
+def test_polars_numeric_comparator_default_tolerance_depends_on_order():
+    # np.isclose semantics: |a - b| <= atol + rtol * |b|
     comparator = PolarsNumericComparator()
     left = comparator.compare(
         pl.Series([100.0]), pl.Series([101.005]), rtol=0.01, atol=0
@@ -46,7 +48,40 @@ def test_polars_numeric_comparator_symmetric_tolerance():
     right = comparator.compare(
         pl.Series([101.005]), pl.Series([100.0]), rtol=0.01, atol=0
     )
-    assert left.to_list() == right.to_list() == [True]
+    assert left.to_list() == [True]
+    assert right.to_list() == [False]
+
+
+def test_polars_numeric_comparator_symmetric_tolerance():
+    # math.isclose semantics: |a - b| <= max(rtol * max(|a|, |b|), atol)
+    comparator = PolarsNumericComparator()
+    left = comparator.compare(
+        pl.Series([100.0, 1.0]),
+        pl.Series([101.005, 1.5]),
+        rtol=0.01,
+        atol=0,
+        symmetric=True,
+    )
+    right = comparator.compare(
+        pl.Series([101.005, 1.5]),
+        pl.Series([100.0, 1.0]),
+        rtol=0.01,
+        atol=0,
+        symmetric=True,
+    )
+    assert left.to_list() == right.to_list() == [True, False]
+
+
+def test_polars_numeric_comparator_symmetric_tolerance_nan():
+    comparator = PolarsNumericComparator()
+    result = comparator.compare(
+        pl.Series([float("nan"), float("nan"), 1.0]),
+        pl.Series([float("nan"), 1.0, float("nan")]),
+        rtol=0.1,
+        atol=0.1,
+        symmetric=True,
+    )
+    assert result.to_list() == [True, False, False]
 
 
 def test_polars_numeric_comparator_type_casting():
@@ -65,13 +100,15 @@ def test_polars_numeric_comparator_nan_handling():
     assert result.to_list() == [True, True, True]
 
 
-def test_polars_numeric_comparator_infinity_handling():
+@pytest.mark.parametrize("symmetric", [False, True])
+def test_polars_numeric_comparator_infinity_handling(symmetric):
     comparator = PolarsNumericComparator()
     result = comparator.compare(
         pl.Series([float("inf"), float("inf"), float("-inf")]),
         pl.Series([float("inf"), float("-inf"), float("inf")]),
         rtol=1.0,
         atol=1.0,
+        symmetric=symmetric,
     )
     assert result.to_list() == [True, False, False]
 
@@ -145,7 +182,8 @@ def test_pandas_numeric_comparator_approximate_match():
     assert result.tolist() == [True, True, True]
 
 
-def test_pandas_numeric_comparator_symmetric_tolerance():
+def test_pandas_numeric_comparator_default_tolerance_depends_on_order():
+    # np.isclose semantics: |a - b| <= atol + rtol * |b|
     comparator = PandasNumericComparator()
     left = comparator.compare(
         pd.Series([100.0]), pd.Series([101.005]), rtol=0.01, atol=0
@@ -153,7 +191,40 @@ def test_pandas_numeric_comparator_symmetric_tolerance():
     right = comparator.compare(
         pd.Series([101.005]), pd.Series([100.0]), rtol=0.01, atol=0
     )
-    assert left.tolist() == right.tolist() == [True]
+    assert left.tolist() == [True]
+    assert right.tolist() == [False]
+
+
+def test_pandas_numeric_comparator_symmetric_tolerance():
+    # math.isclose semantics: |a - b| <= max(rtol * max(|a|, |b|), atol)
+    comparator = PandasNumericComparator()
+    left = comparator.compare(
+        pd.Series([100.0, 1.0]),
+        pd.Series([101.005, 1.5]),
+        rtol=0.01,
+        atol=0,
+        symmetric=True,
+    )
+    right = comparator.compare(
+        pd.Series([101.005, 1.5]),
+        pd.Series([100.0, 1.0]),
+        rtol=0.01,
+        atol=0,
+        symmetric=True,
+    )
+    assert left.tolist() == right.tolist() == [True, False]
+
+
+def test_pandas_numeric_comparator_symmetric_tolerance_nan():
+    comparator = PandasNumericComparator()
+    result = comparator.compare(
+        pd.Series([float("nan"), float("nan"), 1.0]),
+        pd.Series([float("nan"), 1.0, float("nan")]),
+        rtol=0.1,
+        atol=0.1,
+        symmetric=True,
+    )
+    assert result.tolist() == [True, False, False]
 
 
 def test_pandas_numeric_comparator_type_casting():
@@ -172,13 +243,15 @@ def test_pandas_numeric_comparator_nan_handling():
     assert result.tolist() == [True, True, True]
 
 
-def test_pandas_numeric_comparator_infinity_handling():
+@pytest.mark.parametrize("symmetric", [False, True])
+def test_pandas_numeric_comparator_infinity_handling(symmetric):
     comparator = PandasNumericComparator()
     result = comparator.compare(
         pd.Series([float("inf"), float("inf"), float("-inf")]),
         pd.Series([float("inf"), float("-inf"), float("inf")]),
         rtol=1.0,
         atol=1.0,
+        symmetric=symmetric,
     )
     assert result.tolist() == [True, False, False]
 
@@ -235,4 +308,3 @@ def test_pandas_numeric_comparator_large_integers_uint64():
     col2 = pd.Series([2**64 - 3, 5], dtype="UInt64")
     result = comparator.compare(col1, col2, rtol=0, atol=0)
     assert result.tolist() == [False, True]
-

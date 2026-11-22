@@ -97,6 +97,11 @@ class PandasCompare(BaseCompare):
         Boolean indicator that controls of column names will be cast into lower case
     custom_comparators : list of ``BaseComparator``, optional
         A list of custom comparator classes to use to compare columns.
+    symmetric_tolerance : bool, optional
+        If True, numeric columns are compared with symmetric ``math.isclose``
+        semantics, ``|a - b| <= max(rel_tol * max(|a|, |b|), abs_tol)``, so the
+        result does not depend on which dataframe is ``df1``. By default, the
+        ``np.isclose`` semantics ``|a - b| <= abs_tol + rel_tol * |b|`` are used.
     """
 
     def __init__(
@@ -113,9 +118,11 @@ class PandasCompare(BaseCompare):
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
         custom_comparators: List[BaseComparator] | None = None,
+        symmetric_tolerance: bool = False,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
+        self.symmetric_tolerance = symmetric_tolerance
         self._sensitive_columns: List[str] | None = None
 
         # Validate tolerance parameters first
@@ -458,6 +465,7 @@ class PandasCompare(BaseCompare):
                     ignore_spaces=ignore_spaces,
                     ignore_case=ignore_case,
                     comparators=self._get_comparators(),
+                    symmetric_tolerance=self.symmetric_tolerance,
                 )
                 match_columns[col_match] = match_series
                 match_cnt = match_series.sum()
@@ -685,6 +693,7 @@ class PandasCompare(BaseCompare):
                     ignore_spaces=self.ignore_spaces,
                     ignore_case=self.ignore_case,
                     comparators=self._get_comparators(),
+                    symmetric_tolerance=self.symmetric_tolerance,
                 )
 
                 if not ignore_matching_cols or (
@@ -729,6 +738,7 @@ def columns_equal(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     comparators: List[BaseComparator] | None = None,
+    symmetric_tolerance: bool = False,
     **kwargs,
 ) -> "pd.Series[bool]":
     """Compare two columns from a dataframe.
@@ -759,6 +769,9 @@ def columns_equal(
         Flag to ignore the case of string columns
     comparators : list of ``BaseComparator``, optional
         A list of custom comparator classes to use to compare columns.
+    symmetric_tolerance : bool, optional
+        If True, compare numeric columns with symmetric ``math.isclose``
+        semantics instead of ``np.isclose`` semantics. Default is False.
     **kwargs
         Additional keyword arguments to pass to custom comparators.
 
@@ -797,7 +810,13 @@ def columns_equal(
         if isinstance(comparator, PandasBooleanComparator):
             compare = comparator.compare(col_1, col_2)
         elif isinstance(comparator, PandasNumericComparator):
-            compare = comparator.compare(col_1, col_2, rtol=rel_tol, atol=abs_tol)
+            compare = comparator.compare(
+                col_1,
+                col_2,
+                rtol=rel_tol,
+                atol=abs_tol,
+                symmetric=symmetric_tolerance,
+            )
         elif isinstance(comparator, PandasStringComparator):
             compare = comparator.compare(
                 col_1, col_2, ignore_space=ignore_spaces, ignore_case=ignore_case

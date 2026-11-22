@@ -51,6 +51,20 @@ def _symmetric_isclose(col1: Any, col2: Any, rtol: float, atol: float) -> np.nda
         )
 
 
+def _isclose(
+    col1: Any, col2: Any, rtol: float, atol: float, symmetric: bool = False
+) -> np.ndarray:
+    """Compare numeric arrays within tolerance.
+
+    By default this follows ``np.isclose``: ``|a - b| <= atol + rtol * |b|``,
+    which depends on the order of the arguments. With ``symmetric=True`` it
+    follows ``math.isclose``: ``|a - b| <= max(rtol * max(|a|, |b|), atol)``.
+    """
+    if symmetric:
+        return _symmetric_isclose(col1, col2, rtol=rtol, atol=atol)
+    return np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
+
+
 def decimal_comparator():
     """Check equality with decimal(X, Y) types.
 
@@ -124,7 +138,12 @@ class PolarsNumericComparator(BaseComparator):
     """
 
     def compare(
-        self, col1: pl.Series, col2: pl.Series, rtol=1e-5, atol=1e-8
+        self,
+        col1: pl.Series,
+        col2: pl.Series,
+        rtol=1e-5,
+        atol=1e-8,
+        symmetric: bool = False,
     ) -> pl.Series | None:
         """
         Compare two Polars Series for approximate equality within specified tolerances `rtol` and `atol`.
@@ -139,6 +158,11 @@ class PolarsNumericComparator(BaseComparator):
             The relative tolerance to use for comparison. Default is 1e-5.
         atol : float, optional
             The absolute tolerance to use for comparison. Default is 1e-8.
+        symmetric : bool, optional
+            Use symmetric ``math.isclose`` tolerance semantics,
+            ``|a - b| <= max(rtol * max(|a|, |b|), atol)``, instead of the default
+            ``np.isclose`` semantics, ``|a - b| <= atol + rtol * |b|``, which
+            depend on the order of the columns. Default is False.
 
         Returns
         -------
@@ -150,7 +174,8 @@ class PolarsNumericComparator(BaseComparator):
 
         Notes
         -----
-        - The comparison uses symmetric `math.isclose` tolerance semantics.
+        - The comparison uses `np.isclose` to check for approximate equality, or
+          symmetric `math.isclose` semantics when ``symmetric=True``.
         - If the series cannot be directly compared due to numeric type mismatches,
           If casting fails, a series of `False` values is returned.
         - If the Series shapes do not match, and neither type is numeric a `None`
@@ -170,15 +195,18 @@ class PolarsNumericComparator(BaseComparator):
                 both_null = col1.is_null() & col2.is_null()
                 return ((col1 == col2) | both_null).fill_null(False)
             try:
-                return pl.Series(_symmetric_isclose(col1, col2, rtol=rtol, atol=atol))
+                return pl.Series(
+                    _isclose(col1, col2, rtol=rtol, atol=atol, symmetric=symmetric)
+                )
             except Exception:
                 try:
                     return pl.Series(
-                        _symmetric_isclose(
+                        _isclose(
                             col1.cast(pl.Float64, strict=True),
                             col2.cast(pl.Float64, strict=True),
                             rtol=rtol,
                             atol=atol,
+                            symmetric=symmetric,
                         )
                     )
                 except Exception:
@@ -199,7 +227,12 @@ class PandasNumericComparator(BaseComparator):
     """
 
     def compare(
-        self, col1: pd.Series, col2: pd.Series, rtol=1e-5, atol=1e-8
+        self,
+        col1: pd.Series,
+        col2: pd.Series,
+        rtol=1e-5,
+        atol=1e-8,
+        symmetric: bool = False,
     ) -> pd.Series | None:
         """
         Compare two Pandas Series for approximate equality within specified tolerances  `rtol` and `atol`.
@@ -214,6 +247,11 @@ class PandasNumericComparator(BaseComparator):
             The relative tolerance to use for comparison. Default is 1e-5.
         atol : float, optional
             The absolute tolerance to use for comparison. Default is 1e-8.
+        symmetric : bool, optional
+            Use symmetric ``math.isclose`` tolerance semantics,
+            ``|a - b| <= max(rtol * max(|a|, |b|), atol)``, instead of the default
+            ``np.isclose`` semantics, ``|a - b| <= atol + rtol * |b|``, which
+            depend on the order of the columns. Default is False.
 
         Returns
         -------
@@ -225,7 +263,8 @@ class PandasNumericComparator(BaseComparator):
 
         Notes
         -----
-        - The comparison uses symmetric `math.isclose` tolerance semantics, except
+        - The comparison uses `np.isclose` (or `math.isclose` semantics when
+          ``symmetric=True``) to check for approximate equality, except
           when both columns are integer types with zero tolerance, where values are
           compared exactly because float64 cannot distinguish integers above 2**53.
         - If the series cannot be directly compared due to numeric type mismatches,
@@ -251,15 +290,18 @@ class PandasNumericComparator(BaseComparator):
                 equal = pd.array(col1.array == col2.array, dtype="boolean")
                 return pd.Series(equal.fillna(False).to_numpy(dtype=bool) | both_null)
             try:
-                return pd.Series(_symmetric_isclose(col1, col2, rtol=rtol, atol=atol))
+                return pd.Series(
+                    _isclose(col1, col2, rtol=rtol, atol=atol, symmetric=symmetric)
+                )
             except TypeError:
                 try:
                     return pd.Series(
-                        _symmetric_isclose(
+                        _isclose(
                             col1.astype(float),
                             col2.astype(float),
                             rtol=rtol,
                             atol=atol,
+                            symmetric=symmetric,
                         )
                     )
                 except Exception:
@@ -287,6 +329,7 @@ class SparkNumericComparator(BaseComparator):
         col2: str,
         rtol=1e-5,
         atol=1e-8,
+        symmetric: bool = False,
     ) -> "ps.sql.Column | None":
         """
         Compare two columns in a PySpark DataFrame for approximate equality within specified tolerances `rtol` and `atol`.
@@ -303,6 +346,11 @@ class SparkNumericComparator(BaseComparator):
             The relative tolerance to use for comparison. Default is 1e-5.
         atol : float, optional
             The absolute tolerance to use for comparison. Default is 1e-8.
+        symmetric : bool, optional
+            Use symmetric ``math.isclose`` tolerance semantics,
+            ``|a - b| <= max(rtol * max(|a|, |b|), atol)``, instead of the default
+            ``np.isclose`` semantics, ``|a - b| <= atol + rtol * |b|``, which
+            depend on the order of the columns. Default is False.
 
         Returns
         -------
@@ -338,6 +386,14 @@ class SparkNumericComparator(BaseComparator):
                 if compare_dtype in SPARK_INTEGER_TYPES
                 else psf.col(col2)
             )
+            if symmetric:
+                tolerance = psf.greatest(
+                    psf.lit(atol),
+                    psf.lit(rtol)
+                    * psf.greatest(psf.abs(col1_expr), psf.abs(col2_expr)),
+                )
+            else:
+                tolerance = psf.lit(atol) + (psf.lit(rtol) * psf.abs(col2_expr))
             col1_can_be_nan = base_dtype in {"float", "double"}
             col2_can_be_nan = compare_dtype in {"float", "double"}
             try:
@@ -352,12 +408,7 @@ class SparkNumericComparator(BaseComparator):
                         psf.col(col1).eqNullSafe(psf.col(col2)), psf.lit(True)
                     )  # NULL-safe equality
                     .when(
-                        psf.abs(col1_expr - col2_expr)
-                        <= psf.greatest(
-                            psf.lit(atol),
-                            psf.lit(rtol)
-                            * psf.greatest(psf.abs(col1_expr), psf.abs(col2_expr)),
-                        ),
+                        psf.abs(col1_expr - col2_expr) <= tolerance,
                         psf.lit(True),  # within tolerance
                     )
                     .otherwise(psf.lit(False))
@@ -388,6 +439,7 @@ class SnowflakeNumericComparator(BaseComparator):
         col_match: str,
         rtol=1e-5,
         atol=1e-8,
+        symmetric: bool = False,
     ) -> "sp.DataFrame | None":
         """
         Compare two columns in a Snowpark DataFrame for approximate equality within specified tolerances `rtol` and `atol`.
@@ -406,6 +458,11 @@ class SnowflakeNumericComparator(BaseComparator):
             The relative tolerance to use for comparison. Default is 1e-5.
         atol : float, optional
             The absolute tolerance to use for comparison. Default is 1e-8.
+        symmetric : bool, optional
+            Use symmetric ``math.isclose`` tolerance semantics,
+            ``|a - b| <= max(rtol * max(|a|, |b|), atol)``, instead of the default
+            ``np.isclose`` semantics, ``|a - b| <= atol + rtol * |b|``, which
+            depend on the order of the columns. Default is False.
 
         Returns
         -------
@@ -431,21 +488,22 @@ class SnowflakeNumericComparator(BaseComparator):
             compare_dtype.startswith(t) for t in NUMERIC_SNOWFLAKE_TYPES
         )
         if (base_numeric_type) and (compare_numeric_type):
+            if symmetric:
+                # float literals keep GREATEST from coercing the tolerance to an
+                # integer type when atol is an int such as 0
+                tolerance = spf.greatest(
+                    spf.lit(float(atol)),
+                    spf.lit(float(rtol))
+                    * spf.greatest(spf.abs(spf.col(col1)), spf.abs(spf.col(col2))),
+                )
+            else:
+                tolerance = spf.lit(atol) + (spf.lit(rtol) * spf.abs(spf.col(col2)))
             try:
                 return dataframe.withColumn(
                     col_match,
                     spf.when(
                         (spf.col(col1).eqNullSafe(spf.col(col2)))
-                        | (
-                            spf.abs(spf.col(col1) - spf.col(col2))
-                            <= spf.greatest(
-                                spf.lit(atol),
-                                spf.lit(rtol)
-                                * spf.greatest(
-                                    spf.abs(spf.col(col1)), spf.abs(spf.col(col2))
-                                ),
-                            )
-                        ),
+                        | (spf.abs(spf.col(col1) - spf.col(col2)) <= tolerance),
                         # corner case of col1 != null and col2 == null returns True incorrectly
                         spf.when(
                             (spf.is_null(spf.col(col1)) == False)  # noqa: E712
@@ -458,4 +516,3 @@ class SnowflakeNumericComparator(BaseComparator):
                 return dataframe.withColumn(col_match, spf.lit(False))
         else:
             return None
-
