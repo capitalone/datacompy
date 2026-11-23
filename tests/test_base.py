@@ -211,6 +211,15 @@ def test_save_html_report_declares_utf8(tmp_path):
     assert "café 日本語" in raw.decode("utf-8")
 
 
+def test_save_html_report_escapes_markup_characters(tmp_path):
+    """``<``, ``>`` and ``&`` in the report reach the page as text."""
+    temp_file = tmp_path / "report.html"
+    save_html_report("1 <NA> a<b x & y", temp_file)
+
+    content = temp_file.read_text(encoding="utf-8")
+    assert "<pre>1 &lt;NA&gt; a&lt;b x &amp; y</pre>" in content
+
+
 class TestCompareImplementation(BaseCompare):
     """Test implementation of BaseCompare for testing."""
 

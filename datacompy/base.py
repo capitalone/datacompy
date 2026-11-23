@@ -21,6 +21,7 @@ PROC COMPARE in SAS - i.e. human-readable reporting on the difference between
 two dataframes.
 """
 
+import html
 import logging
 import unicodedata
 from abc import ABC, abstractmethod
@@ -758,11 +759,11 @@ def report_to_html(report: str) -> str:
     Returns
     -------
     str
-        HTML with the text report inside a ``<pre>`` block.
+        HTML with the escaped text report inside a ``<pre>`` block.
     """
     return (
         "<html><head><title>DataComPy Report</title><meta charset='UTF-8'/></head>"
-        f"<body><pre>{report}</pre></body></html>"
+        f"<body><pre>{html.escape(report, quote=False)}</pre></body></html>"
     )
 
 
