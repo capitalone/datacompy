@@ -606,47 +606,34 @@ class PandasCompare(BaseCompare):
             When the column being requested is not an intersecting column between dataframes.
         """
         if not self.only_join_columns() and column not in self.join_columns:
-            row_cnt = self.intersect_rows.shape[0]
             try:
-                col_match = self.intersect_rows[column + "_match"]
+                col_match = self.intersect_rows[f"{column}_match"]
             except KeyError:
                 LOG.error(
                     f"Column: {column} is not an intersecting column. No mismatches can be generated."
                 )
                 return None
-            match_cnt = col_match.sum()
-            sample_count = min(sample_count, row_cnt - match_cnt)
-            sample = self.intersect_rows[~col_match].sample(sample_count)
-            return_cols = [
+
+            mismatch_cols = [
                 *self.join_columns,
-                column + "_" + self.df1_name,
-                column + "_" + self.df2_name,
+                f"{column}_{self.df1_name}",
+                f"{column}_{self.df2_name}",
             ]
-            to_return = sample[return_cols]
+            mismatch_df = self.intersect_rows.loc[~col_match, mismatch_cols]
             if for_display:
-                to_return.columns = pd.Index(
-                    [
-                        *self.join_columns,
-                        column + " (" + self.df1_name + ")",
-                        column + " (" + self.df2_name + ")",
-                    ]
+                mismatch_df = mismatch_df.rename(
+                    columns={
+                        f"{column}_{self.df1_name}": f"{column} ({self.df1_name})",
+                        f"{column}_{self.df2_name}": f"{column} ({self.df2_name})",
+                    }
                 )
-            return to_return
         else:
-            row_cnt = (
-                len(self.intersect_rows)
-                + len(self.df1_unq_rows)
-                + len(self.df2_unq_rows)
-            )
-            match_cnt = len(self.intersect_rows)
-            sample_count = min(sample_count, row_cnt - match_cnt)
-            sample = pd.concat(
+            mismatch_df = pd.concat(
                 [self.df1_unq_rows[[column]], self.df2_unq_rows[[column]]]
-            ).sample(sample_count)
-            to_return = sample
-            if for_display:
-                to_return.columns = pd.Index([column])
-            return to_return
+            )
+
+        sample_count = min(sample_count, mismatch_df.shape[0])
+        return mismatch_df.sample(sample_count)
 
     def all_mismatch(self, ignore_matching_cols: bool = False) -> pd.DataFrame:
         """Get all rows with any columns that have a mismatch.
