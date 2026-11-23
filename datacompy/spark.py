@@ -786,13 +786,15 @@ class SparkSQLCompare(BaseCompare):
         """
         F = get_spark_functions(self.intersect_rows)
         if not self.only_join_columns() and column not in self.join_columns:
-            mismatch_df = self.intersect_rows.where(
-                F.col(f"{column}_match") == False  # noqa: E712
-            ).select(
+            mismatch_cols = [
                 *[F.col(f"{c}_{self.df1_name}").alias(c) for c in self.join_columns],
                 f"{column}_{self.df1_name}",
                 f"{column}_{self.df2_name}",
-            )
+            ]
+            mismatch_df = self.intersect_rows.where(
+                F.col(f"{column}_match") == False  # noqa: E712
+            ).select(mismatch_cols)
+
             if for_display:
                 mismatch_df = mismatch_df.withColumnsRenamed(
                     {
