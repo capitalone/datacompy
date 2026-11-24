@@ -22,6 +22,7 @@ no templating of its own.
 """
 
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -97,7 +98,22 @@ def emit(
             raise OutputError(f"cannot write {output}: {exc}") from exc
 
     if not quiet:
+        _use_utf8_when_redirected(sys.stdout)
         print(rendered)
+
+
+def _use_utf8_when_redirected(stream: Any) -> None:
+    """Write UTF-8 to a redirected or piped stream, like ``--output``.
+
+    The text and HTML reports draw their tables with box-drawing characters,
+    which a redirected stream's locale encoding may not have (e.g. cp1252 on
+    Windows), so ``print`` raised UnicodeEncodeError. An encoding set with
+    PYTHONIOENCODING is kept, and a terminal is left as it is.
+    """
+    if os.environ.get("PYTHONIOENCODING") or not hasattr(stream, "reconfigure"):
+        return
+    if not stream.isatty():
+        stream.reconfigure(encoding="utf-8")
 
 
 def print_error(message: str) -> None:

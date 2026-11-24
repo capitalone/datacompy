@@ -19,7 +19,9 @@ Rendering (``--report-format``) and destination (``--output``) are independent
 axes, so the tests cover the combinations rather than a single flag each.
 """
 
+import io
 import json
+import sys
 
 import pytest
 
@@ -85,6 +87,43 @@ def test_html_rendering_wraps_the_text_report(cli, capsys):
     assert "DataComPy Comparison" in out
 
 
+def _redirected_stdout(encoding):
+    """Stand in for stdout redirected to a file or pipe, e.g. cp1252 on Windows."""
+    return io.TextIOWrapper(io.BytesIO(), encoding=encoding, write_through=True)
+
+
+@pytest.mark.parametrize("report_format", ["text", "html"])
+def test_redirected_stdout_gets_utf8(cli, monkeypatch, report_format):
+    """The report's box-drawing characters raised UnicodeEncodeError in cp1252."""
+    monkeypatch.delenv("PYTHONIOENCODING", raising=False)
+    stdout = _redirected_stdout("cp1252")
+    monkeypatch.setattr(sys, "stdout", stdout)
+
+    assert cli("--report-format", report_format) == MISMATCH
+    out = stdout.buffer.getvalue().decode("utf-8")
+    assert "DataComPy Comparison" in out
+    assert "─" in out
+
+
+def test_redirected_stdout_keeps_pythonioencoding(cli, monkeypatch):
+    monkeypatch.setenv("PYTHONIOENCODING", "utf-16")
+    stdout = _redirected_stdout("utf-16")
+    monkeypatch.setattr(sys, "stdout", stdout)
+
+    assert cli() == MISMATCH
+    assert "DataComPy Comparison" in stdout.buffer.getvalue().decode("utf-16")
+
+
+def test_terminal_stdout_is_left_as_is(cli, monkeypatch):
+    monkeypatch.delenv("PYTHONIOENCODING", raising=False)
+    stdout = _redirected_stdout("utf-16")
+    monkeypatch.setattr(stdout, "isatty", lambda: True)
+    monkeypatch.setattr(sys, "stdout", stdout)
+
+    assert cli() == MISMATCH
+    assert "DataComPy Comparison" in stdout.buffer.getvalue().decode("utf-16")
+
+
 # ---------------------------------------------------------------------------
 # Destination
 # ---------------------------------------------------------------------------
@@ -99,7 +138,7 @@ def test_output_writes_a_file_and_creates_parent_directories(
         cli("--report-format", report_format, "--output", str(destination)) == MISMATCH
     )
 
-    content = destination.read_text()
+    content = destination.read_text(encoding="utf-8")
     assert content
     if report_format == "json":
         assert json.loads(content)["row_summary"]["unequal_rows"] == UNEQUAL_ROWS
@@ -113,7 +152,7 @@ def test_output_still_prints_to_stdout_by_default(cli, tmp_path, capsys):
     destination = tmp_path / "report.txt"
     assert cli("--output", str(destination)) == MISMATCH
     assert "DataComPy Comparison" in capsys.readouterr().out
-    assert "DataComPy Comparison" in destination.read_text()
+    assert "DataComPy Comparison" in destination.read_text(encoding="utf-8")
 
 
 def test_quiet_suppresses_stdout_but_still_writes_the_file(cli, tmp_path, capsys):
@@ -123,7 +162,7 @@ def test_quiet_suppresses_stdout_but_still_writes_the_file(cli, tmp_path, capsys
         == MISMATCH
     )
     assert capsys.readouterr().out == ""
-    assert destination.read_text().lstrip().startswith("<html>")
+    assert destination.read_text(encoding="utf-8").lstrip().startswith("<html>")
 
 
 def test_quiet_without_output_prints_nothing_at_all(cli, capsys):
