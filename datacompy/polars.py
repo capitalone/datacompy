@@ -596,10 +596,10 @@ class PolarsCompare(BaseCompare):
     def _get_mismatch(
         self,
         column: str,
+        for_display: bool,
         intersect_rows: pl.DataFrame | pl.LazyFrame,
         df1_unq_rows: pl.DataFrame | pl.LazyFrame,
         df2_unq_rows: pl.DataFrame | pl.LazyFrame,
-        for_display: bool = False,
     ) -> pl.DataFrame | pl.LazyFrame:
         """Get the mismatch dataframe from the intersection of the two dataframes."""
         if not self.only_join_columns() and column not in self.join_columns:
@@ -657,11 +657,11 @@ class PolarsCompare(BaseCompare):
             When the column being requested is not an intersecting column between dataframes.
         """
         mismatch_df = self._get_mismatch(
-            column,
-            self.intersect_rows,
-            self.df1_unq_rows,
-            self.df2_unq_rows,
+            column=column,
             for_display=for_display,
+            intersect_rows=self.intersect_rows,
+            df1_unq_rows=self.df1_unq_rows,
+            df2_unq_rows=self.df2_unq_rows,
         )
         sample_count = min(sample_count, mismatch_df.height)
         return mismatch_df.sample(sample_count)
@@ -746,11 +746,11 @@ class PolarsCompare(BaseCompare):
             if col["unequal_cnt"] > 0:
                 sample_list.append(
                     self._get_mismatch(
-                        col["column"],
-                        intersect_rows,
-                        df1_unq_rows,
-                        df2_unq_rows,
+                        column=col["column"],
                         for_display=True,
+                        intersect_rows=intersect_rows,
+                        df1_unq_rows=df1_unq_rows,
+                        df2_unq_rows=df2_unq_rows,
                     )
                 )
 
