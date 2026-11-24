@@ -1041,6 +1041,30 @@ def test_strings_with_joins_with_ignore_case():
     assert compare.intersect_rows_match()
 
 
+@pytest.mark.parametrize("dtype", ["object", "string"])
+@pytest.mark.parametrize("keys", [["a ", " b"], ["a ", "a "]])
+def test_ignore_spaces_does_not_modify_input_join_columns(dtype, keys):
+    df1 = pd.DataFrame({"a": keys, "b": [1, 2]}).astype({"a": dtype})
+    df2 = pd.DataFrame({"a": [k.strip() for k in keys], "b": [1, 2]}).astype(
+        {"a": dtype}
+    )
+    df1_before = df1.copy()
+    df2_before = df2.copy()
+    compare = datacompy.PandasCompare(df1, df2, "a", ignore_spaces=True)
+    assert compare.matches()
+    pd.testing.assert_frame_equal(df1, df1_before)
+    pd.testing.assert_frame_equal(df2, df2_before)
+
+
+def test_failed_merge_leaves_no_temp_column_in_inputs():
+    df1 = pd.DataFrame({"a": [1, 1], "b": [1, 2]})
+    df2 = pd.DataFrame({"a": ["1", "1"], "b": [1, 2]})
+    with pytest.raises(ValueError):
+        datacompy.PandasCompare(df1, df2, "a")
+    assert list(df1.columns) == ["a", "b"]
+    assert list(df2.columns) == ["a", "b"]
+
+
 def test_decimal_with_joins_with_ignore_spaces():
     df1 = pd.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
     df2 = pd.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])

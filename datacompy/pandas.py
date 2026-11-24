@@ -338,26 +338,24 @@ class PandasCompare(BaseCompare):
         """
         params: Dict[str, Any]
         index_column: str
+        df1 = self.df1.copy(deep=False)
+        df2 = self.df2.copy(deep=False)
         LOG.debug("Outer joining")
         if self._any_dupes:
             LOG.debug("Duplicate rows found, deduping by order of remaining fields")
             # Bring index into a column
             if self.on_index:
-                index_column = temp_column_name(self.df1, self.df2)
-                self.df1[index_column] = self.df1.index
-                self.df2[index_column] = self.df2.index
+                index_column = temp_column_name(df1, df2)
+                df1[index_column] = df1.index
+                df2[index_column] = df2.index
                 temp_join_columns = [index_column]
             else:
                 temp_join_columns = list(self.join_columns)
 
             # Create order column for uniqueness of match
-            order_column = temp_column_name(self.df1, self.df2)
-            self.df1[order_column] = generate_id_within_group(
-                self.df1, temp_join_columns
-            )
-            self.df2[order_column] = generate_id_within_group(
-                self.df2, temp_join_columns
-            )
+            order_column = temp_column_name(df1, df2)
+            df1[order_column] = generate_id_within_group(df1, temp_join_columns)
+            df2[order_column] = generate_id_within_group(df2, temp_join_columns)
             temp_join_columns.append(order_column)
 
             params = {"on": temp_join_columns}
@@ -370,17 +368,17 @@ class PandasCompare(BaseCompare):
         # Arrow-backed column drops its chunks to zero, which causes pandas
         # merge to call pa.chunked_array([]) and raise ArrowInvalid when
         # multiple join columns are present. See issue #514.
-        if len(self.df1) > 0 or len(self.df2) > 0:
+        if len(df1) > 0 or len(df2) > 0:
             for column in self.join_columns:
-                self.df1[column] = pandas_normalize_string_column(
-                    self.df1[column], ignore_spaces=ignore_spaces, ignore_case=False
+                df1[column] = pandas_normalize_string_column(
+                    df1[column], ignore_spaces=ignore_spaces, ignore_case=False
                 )
-                self.df2[column] = pandas_normalize_string_column(
-                    self.df2[column], ignore_spaces=ignore_spaces, ignore_case=False
+                df2[column] = pandas_normalize_string_column(
+                    df2[column], ignore_spaces=ignore_spaces, ignore_case=False
                 )
 
-        outer_join = self.df1.merge(
-            self.df2,
+        outer_join = df1.merge(
+            df2,
             how="outer",
             suffixes=("_" + self.df1_name, "_" + self.df2_name),
             indicator=True,
@@ -391,11 +389,7 @@ class PandasCompare(BaseCompare):
         if self._any_dupes:
             if self.on_index:
                 outer_join.set_index(keys=index_column, drop=True, inplace=True)
-                self.df1.drop(index_column, axis=1, inplace=True)
-                self.df2.drop(index_column, axis=1, inplace=True)
             outer_join.drop(labels=order_column, axis=1, inplace=True)
-            self.df1.drop(order_column, axis=1, inplace=True)
-            self.df2.drop(order_column, axis=1, inplace=True)
 
         df1_cols = get_merged_columns(self.df1, outer_join, self.df1_name)
         df2_cols = get_merged_columns(self.df2, outer_join, self.df2_name)
