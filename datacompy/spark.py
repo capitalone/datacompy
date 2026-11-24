@@ -786,52 +786,26 @@ class SparkSQLCompare(BaseCompare):
         """
         F = get_spark_functions(self.intersect_rows)
         if not self.only_join_columns() and column not in self.join_columns:
-            row_cnt = self.intersect_rows.count()
-            col_match = self.intersect_rows.select(f"{column}_match")
-            match_cnt = col_match.where(
-                F.col(f"{column}_match") == True  # noqa: E712
-            ).count()
-            sample_count = min(sample_count, row_cnt - match_cnt)
-            sample = (
-                self.intersect_rows.where(F.col(f"{column}_match") == False)  # noqa: E712
-                .drop(f"{column}_match")
-                .limit(sample_count)
-            )
-
-            sample = sample.withColumnsRenamed(
-                {f"{c}_{self.df1_name}": c for c in self.join_columns}
-            )
-
-            return_cols = [
-                *self.join_columns,
+            mismatch_cols = [
+                *[F.col(f"{c}_{self.df1_name}").alias(c) for c in self.join_columns],
                 f"{column}_{self.df1_name}",
                 f"{column}_{self.df2_name}",
             ]
-            to_return = sample.select(return_cols)
+            mismatch_df = self.intersect_rows.where(
+                F.col(f"{column}_match") == False  # noqa: E712
+            ).select(mismatch_cols)
 
             if for_display:
-                return to_return.toDF(
-                    *[
-                        *self.join_columns,
-                        f"{column} ({self.df1_name})",
-                        f"{column} ({self.df2_name})",
-                    ]
+                mismatch_df = mismatch_df.withColumnsRenamed(
+                    {
+                        f"{column}_{self.df1_name}": f"{column} ({self.df1_name})",
+                        f"{column}_{self.df2_name}": f"{column} ({self.df2_name})",
+                    }
                 )
-            return to_return
         else:
-            row_cnt = (
-                self.intersect_rows.count()
-                + self.df1_unq_rows.count()
-                + self.df2_unq_rows.count()
-            )
-            match_cnt = self.intersect_rows.count()
-            sample_count = min(sample_count, row_cnt - match_cnt)
-            sample = (
-                self.df1_unq_rows[[column]]
-                .union(self.df2_unq_rows[[column]])
-                .limit(sample_count)
-            )
-            return sample.toDF(column)
+            mismatch_df = self.df1_unq_rows[[column]].union(self.df2_unq_rows[[column]])
+
+        return mismatch_df.limit(sample_count)
 
     def all_mismatch(
         self, ignore_matching_cols: bool = False
