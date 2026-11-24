@@ -3,6 +3,7 @@
 import dataclasses
 import json
 import os
+from html import unescape
 
 import pandas as pd
 import polars as pl
@@ -346,6 +347,35 @@ def test_html_file_declares_utf8(compare_class, tmp_path):
     assert "<meta charset='UTF-8'/>" in html
     assert "大阪" in text
     assert text in html
+
+
+@pytest.mark.parametrize(
+    "compare_class", [PandasCompare, PolarsCompare], ids=["pandas", "polars"]
+)
+def test_html_file_shows_markup_characters_as_text(compare_class, tmp_path):
+    """Values holding ``<``, ``>`` or ``&`` show in a browser as the text report has them."""
+    df1 = pd.DataFrame(
+        {"id": [1, 2, 3], "val": pd.array(["a<b", "<i>k</i>", None], dtype="string")}
+    )
+    df2 = pd.DataFrame(
+        {"id": [1, 2, 3], "val": pd.array(["a & b", "k", "x"], dtype="string")}
+    )
+    if compare_class is PolarsCompare:
+        df1, df2 = pl.from_pandas(df1), pl.from_pandas(df2)
+    html_path = tmp_path / "report.html"
+    compare = compare_class(df1, df2, "id")
+
+    text = compare.report(html_file=str(html_path))
+
+    page = html_path.read_text(encoding="utf-8")
+    body = page.split("<pre>")[1].split("</pre>")[0]
+    assert "<" not in body
+    assert unescape(body) == text
+
+    data = compare.build_report_data()
+    body = data.to_html().split("<pre>")[1].split("</pre>")[0]
+    assert "<" not in body
+    assert unescape(body) == data.render()
 
 
 def test_polars_returns_report_data():
