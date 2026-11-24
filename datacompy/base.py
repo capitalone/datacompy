@@ -144,6 +144,30 @@ class BaseCompare(ABC):
                 stat["null_diff"] = None
 
     @abstractmethod
+    def hide_sensitive_columns(self, sensitive_columns: List[str]) -> None:
+        """Mask sensitive columns in report and sample output.
+
+        Backends must mask values in ``df1_unq_rows``, ``df2_unq_rows``, and
+        ``intersect_rows``, and call :meth:`_mask_sensitive_column_stats`.
+        The unique-row frames carry the original column names, while
+        ``intersect_rows`` carries the suffixed ``{col}_{df1_name}`` and
+        ``{col}_{df2_name}`` variants, so both forms need masking.
+
+        Parameters
+        ----------
+        sensitive_columns : List[str]
+            Column names to mask. An empty list is a no-op when no columns
+            are currently hidden.
+
+        Raises
+        ------
+        ValueError
+            If any columns are already hidden. Call
+            :meth:`reveal_sensitive_columns` before hiding a different set.
+        """
+        pass
+
+    @abstractmethod
     def _validate_dataframe(
         self, index: str, cast_column_names_lower: bool = True
     ) -> None:
@@ -473,8 +497,8 @@ class BaseCompare(ABC):
         Notes
         -----
         - This re-runs the full comparison to restore original values.
-        - Revealing sensitive columns when there aren't any is treated as a NOP
-          to avoid redundant computations.
+        - Revealing sensitive columns when there aren't any is treated as a
+          no-op to avoid redundant computations.
         """
         # Don't do anything if there aren't any sensitive columns
         if not self.sensitive_columns:
