@@ -363,9 +363,11 @@ OPTIONS: tuple[Opt, ...] = (
     Opt(
         flags=("--symmetric-tolerance",),
         help=(
-            "Apply the tolerances symmetrically, like math.isclose, so the result "
-            "does not depend on which dataset is the left one. By default the "
-            "relative tolerance is scaled by the right dataset's values."
+            "Apply the tolerances symmetrically, like math.isclose: "
+            "|a - b| <= max(rel_tol * max(|a|, |b|), abs_tol), so the result does "
+            "not depend on which dataset is the left one. The default adds the two "
+            "tolerances (abs_tol + rel_tol * |b|), so with both set this flag can be "
+            "stricter."
         ),
         group=GROUP_COMPARISON,
         kwarg="symmetric_tolerance",

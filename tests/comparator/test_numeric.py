@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from decimal import Decimal
+
 import pandas as pd
 import polars as pl
 import pytest
@@ -225,6 +227,22 @@ def test_pandas_numeric_comparator_symmetric_tolerance_nan():
         symmetric=True,
     )
     assert result.tolist() == [True, False, False]
+
+
+@pytest.mark.parametrize("symmetric", [False, True])
+@pytest.mark.parametrize("tolerance", [0, 0.01])
+def test_pandas_numeric_comparator_decimal_nan(symmetric, tolerance):
+    # comparing Decimal("NaN") raises decimal.InvalidOperation, which must fall
+    # back to a float comparison instead of crashing
+    comparator = PandasNumericComparator()
+    result = comparator.compare(
+        pd.Series([Decimal("NaN"), Decimal("1.0"), Decimal("NaN")]),
+        pd.Series([Decimal("NaN"), Decimal("1.0"), Decimal("2.0")]),
+        rtol=tolerance,
+        atol=tolerance,
+        symmetric=symmetric,
+    )
+    assert result.tolist() == [True, True, False]
 
 
 def test_pandas_numeric_comparator_type_casting():

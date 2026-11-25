@@ -156,3 +156,24 @@ def test_spark_numeric_comparator_tolerance_order(spark_session):
     # math.isclose semantics do not
     assert matches("col1", "col2", symmetric=True)
     assert matches("col2", "col1", symmetric=True)
+
+
+@pytest.mark.parametrize("tolerance", [0.0, 0.01])
+def test_spark_numeric_comparator_symmetric_infinity(spark_session, tolerance):
+    # an inf or NaN tolerance must not let inf match a finite value or -inf
+    comparator = SparkNumericComparator()
+    inf = float("inf")
+    df = spark_session.createDataFrame(
+        [(inf, 5.0), (inf, -inf), (5.0, inf), (inf, inf), (1.0, 1.0)],
+        ["col1", "col2"],
+    )
+    result_col = comparator.compare(
+        dataframe=df,
+        col1="col1",
+        col2="col2",
+        rtol=tolerance,
+        atol=tolerance,
+        symmetric=True,
+    )
+    result = df.withColumn("col_match", result_col).select("col_match").collect()
+    assert [row[0] for row in result] == [False, False, False, True, True]

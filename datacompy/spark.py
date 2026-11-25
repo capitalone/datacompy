@@ -133,6 +133,8 @@ class SparkSQLCompare(BaseCompare):
         semantics, ``|a - b| <= max(rel_tol * max(|a|, |b|), abs_tol)``, so the
         result does not depend on which dataframe is ``df1``. By default, the
         ``np.isclose`` semantics ``|a - b| <= abs_tol + rel_tol * |b|`` are used.
+        The two tolerances combine with ``max`` instead of being added, so with
+        both set this can be stricter than the default.
     cache_intermediates : bool, optional
         Flag to enable/disable caching of intermediate DataFrames. Set to False when using
         Databricks Serverless or other environments that don't support caching. Defaults to True.
@@ -1017,6 +1019,9 @@ def columns_equal(
         # If no comparators are passed, behave as before.
         comparators_ = _SPARK_DEFAULT_COMPARATORS
 
+    # only pass symmetric when it is set, so custom comparators that override
+    # compare() with the older signature keep working
+    symmetric_kwargs = {"symmetric": True} if symmetric_tolerance else {}
     for comparator in comparators_:
         if isinstance(comparator, SparkBooleanComparator):
             compare = comparator.compare(dataframe, col_1, col_2)
@@ -1027,7 +1032,7 @@ def columns_equal(
                 col_2,
                 rtol=rel_tol,
                 atol=abs_tol,
-                symmetric=symmetric_tolerance,
+                **symmetric_kwargs,
             )
         elif isinstance(comparator, SparkStringComparator):
             compare = comparator.compare(

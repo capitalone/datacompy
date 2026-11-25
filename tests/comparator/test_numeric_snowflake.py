@@ -136,3 +136,32 @@ def test_snowflake_numeric_comparator_tolerance_order(snowflake_session):
     # math.isclose semantics do not
     assert matches("col1", "col2", symmetric=True)
     assert matches("col2", "col1", symmetric=True)
+
+
+@pytest.mark.parametrize("tolerance", [0.0, 0.01])
+def test_snowflake_numeric_comparator_symmetric_infinity(snowflake_session, tolerance):
+    # an inf or NaN tolerance must not let inf or NaN match any value
+    comparator = SnowflakeNumericComparator()
+    inf = float("inf")
+    nan = float("nan")
+    df = snowflake_session.createDataFrame(
+        [(inf, 5.0), (inf, -inf), (5.0, inf), (nan, 5.0), (inf, inf), (1.0, 1.0)],
+        ["col1", "col2"],
+    )
+    result = comparator.compare(
+        dataframe=df,
+        col1="col1",
+        col2="col2",
+        col_match="col_match",
+        rtol=tolerance,
+        atol=tolerance,
+        symmetric=True,
+    )
+    assert [row["COL_MATCH"] for row in result.select(["col_match"]).collect()] == [
+        False,
+        False,
+        False,
+        False,
+        True,
+        True,
+    ]

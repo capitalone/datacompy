@@ -135,6 +135,8 @@ class SnowflakeCompare(BaseCompare):
         semantics, ``|a - b| <= max(rel_tol * max(|a|, |b|), abs_tol)``, so the
         result does not depend on which dataframe is ``df1``. By default, the
         ``np.isclose`` semantics ``|a - b| <= abs_tol + rel_tol * |b|`` are used.
+        The two tolerances combine with ``max`` instead of being added, so with
+        both set this can be stricter than the default.
     """
 
     def __init__(
@@ -995,6 +997,9 @@ def columns_equal(
         # If no comparators are passed, behave as before.
         comparators_ = _SNOWFLAKE_DEFAULT_COMPARATORS
 
+    # only pass symmetric when it is set, so custom comparators that override
+    # compare() with the older signature keep working
+    symmetric_kwargs = {"symmetric": True} if symmetric_tolerance else {}
     for comparator in comparators_:
         if isinstance(comparator, SnowflakeBooleanComparator):
             compare = comparator.compare(dataframe, col_1, col_2, col_match)
@@ -1006,7 +1011,7 @@ def columns_equal(
                 col_match,
                 rtol=rel_tol,
                 atol=abs_tol,
-                symmetric=symmetric_tolerance,
+                **symmetric_kwargs,
             )
         elif isinstance(comparator, SnowflakeStringComparator):
             compare = comparator.compare(

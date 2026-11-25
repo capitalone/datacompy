@@ -15,6 +15,7 @@
 
 """Numeric Comparator Class."""
 
+import decimal
 import logging
 from typing import Any
 
@@ -46,9 +47,10 @@ def _symmetric_isclose(col1: Any, col2: Any, rtol: float, atol: float) -> np.nda
         both_finite_and_close = (
             np.isfinite(left) & np.isfinite(right) & (difference <= tolerance)
         )
-        return (
+        result: np.ndarray = (
             (left == right) | (np.isnan(left) & np.isnan(right)) | both_finite_and_close
         )
+    return result
 
 
 def _isclose(
@@ -62,7 +64,8 @@ def _isclose(
     """
     if symmetric:
         return _symmetric_isclose(col1, col2, rtol=rtol, atol=atol)
-    return np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
+    result: np.ndarray = np.isclose(col1, col2, rtol=rtol, atol=atol, equal_nan=True)
+    return result
 
 
 def decimal_comparator():
@@ -293,7 +296,8 @@ class PandasNumericComparator(BaseComparator):
                 return pd.Series(
                     _isclose(col1, col2, rtol=rtol, atol=atol, symmetric=symmetric)
                 )
-            except TypeError:
+            except (TypeError, decimal.InvalidOperation):
+                # comparing Decimal("NaN") raises InvalidOperation, so fall back to floats
                 try:
                     return pd.Series(
                         _isclose(
@@ -387,10 +391,15 @@ class SparkNumericComparator(BaseComparator):
                 else psf.col(col2)
             )
             if symmetric:
-                tolerance = psf.greatest(
-                    psf.lit(atol),
-                    psf.lit(rtol)
-                    * psf.greatest(psf.abs(col1_expr), psf.abs(col2_expr)),
+                # an inf or NaN tolerance would let inf match any value, so leave the
+                # tolerance null when the difference is not finite
+                tolerance = psf.when(
+                    psf.abs(col1_expr - col2_expr) < psf.lit(float("inf")),
+                    psf.greatest(
+                        psf.lit(atol),
+                        psf.lit(rtol)
+                        * psf.greatest(psf.abs(col1_expr), psf.abs(col2_expr)),
+                    ),
                 )
             else:
                 tolerance = psf.lit(atol) + (psf.lit(rtol) * psf.abs(col2_expr))
@@ -490,11 +499,16 @@ class SnowflakeNumericComparator(BaseComparator):
         if (base_numeric_type) and (compare_numeric_type):
             if symmetric:
                 # float literals keep GREATEST from coercing the tolerance to an
-                # integer type when atol is an int such as 0
-                tolerance = spf.greatest(
-                    spf.lit(float(atol)),
-                    spf.lit(float(rtol))
-                    * spf.greatest(spf.abs(spf.col(col1)), spf.abs(spf.col(col2))),
+                # integer type when atol is an int such as 0. An inf or NaN tolerance
+                # would let inf and NaN match any value, so leave the tolerance null
+                # when the difference is not finite
+                tolerance: sp.Column = spf.when(
+                    spf.abs(spf.col(col1) - spf.col(col2)) < spf.lit(float("inf")),
+                    spf.greatest(
+                        spf.lit(float(atol)),
+                        spf.lit(float(rtol))
+                        * spf.greatest(spf.abs(spf.col(col1)), spf.abs(spf.col(col2))),
+                    ),
                 )
             else:
                 tolerance = spf.lit(atol) + (spf.lit(rtol) * spf.abs(spf.col(col2)))

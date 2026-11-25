@@ -102,6 +102,8 @@ class PandasCompare(BaseCompare):
         semantics, ``|a - b| <= max(rel_tol * max(|a|, |b|), abs_tol)``, so the
         result does not depend on which dataframe is ``df1``. By default, the
         ``np.isclose`` semantics ``|a - b| <= abs_tol + rel_tol * |b|`` are used.
+        The two tolerances combine with ``max`` instead of being added, so with
+        both set this can be stricter than the default.
     """
 
     def __init__(
@@ -806,6 +808,9 @@ def columns_equal(
     if len(col_1) == len(col_2) and not col_1.index.equals(col_2.index):
         col_2 = col_2.set_axis(col_1.index)
 
+    # only pass symmetric when it is set, so custom comparators that override
+    # compare() with the older signature keep working
+    symmetric_kwargs = {"symmetric": True} if symmetric_tolerance else {}
     for comparator in comparators_:
         if isinstance(comparator, PandasBooleanComparator):
             compare = comparator.compare(col_1, col_2)
@@ -815,7 +820,7 @@ def columns_equal(
                 col_2,
                 rtol=rel_tol,
                 atol=abs_tol,
-                symmetric=symmetric_tolerance,
+                **symmetric_kwargs,
             )
         elif isinstance(comparator, PandasStringComparator):
             compare = comparator.compare(

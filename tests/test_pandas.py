@@ -3012,3 +3012,20 @@ def test_symmetric_tolerance():
         )
         assert compare.matches()
         assert compare.all_mismatch().empty
+
+
+def test_numeric_comparator_subclass_without_symmetric():
+    # custom comparators written against the old compare() signature must keep
+    # working when symmetric_tolerance is left off
+    from datacompy.comparator.numeric import PandasNumericComparator
+
+    class OldSignatureComparator(PandasNumericComparator):
+        def compare(self, col1, col2, rtol=1e-5, atol=1e-8):
+            return super().compare(col1, col2, rtol=rtol, atol=atol)
+
+    result = columns_equal(
+        pd.Series([1.0, 2.0]),
+        pd.Series([1.0, 2.5]),
+        comparators=[OldSignatureComparator()],
+    )
+    assert result.tolist() == [True, False]
