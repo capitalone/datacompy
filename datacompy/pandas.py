@@ -339,6 +339,27 @@ class PandasCompare(BaseCompare):
         params: Dict[str, Any]
         index_column: str
         LOG.debug("Outer joining")
+        # Skip normalization for empty frames: str.strip() on an empty
+        # Arrow-backed column drops its chunks to zero, which causes pandas
+        # merge to call pa.chunked_array([]) and raise ArrowInvalid when
+        # multiple join columns are present. See issue #514.
+        if len(self.df1) > 0 or len(self.df2) > 0:
+            for column in self.join_columns:
+                self.df1[column] = pandas_normalize_string_column(
+                    self.df1[column], ignore_spaces=ignore_spaces, ignore_case=False
+                )
+                self.df2[column] = pandas_normalize_string_column(
+                    self.df2[column], ignore_spaces=ignore_spaces, ignore_case=False
+                )
+
+        # Stripping spaces can make distinct join keys equal, so look for
+        # duplicates again on the normalized keys.
+        if ignore_spaces and not self.on_index and not self._any_dupes:
+            self._any_dupes = bool(
+                self.df1.duplicated(subset=self.join_columns).any()
+                or self.df2.duplicated(subset=self.join_columns).any()
+            )
+
         if self._any_dupes:
             LOG.debug("Duplicate rows found, deduping by order of remaining fields")
             # Bring index into a column
@@ -365,19 +386,6 @@ class PandasCompare(BaseCompare):
             params = {"left_index": True, "right_index": True}
         else:
             params = {"on": self.join_columns}
-
-        # Skip normalization for empty frames: str.strip() on an empty
-        # Arrow-backed column drops its chunks to zero, which causes pandas
-        # merge to call pa.chunked_array([]) and raise ArrowInvalid when
-        # multiple join columns are present. See issue #514.
-        if len(self.df1) > 0 or len(self.df2) > 0:
-            for column in self.join_columns:
-                self.df1[column] = pandas_normalize_string_column(
-                    self.df1[column], ignore_spaces=ignore_spaces, ignore_case=False
-                )
-                self.df2[column] = pandas_normalize_string_column(
-                    self.df2[column], ignore_spaces=ignore_spaces, ignore_case=False
-                )
 
         outer_join = self.df1.merge(
             self.df2,
