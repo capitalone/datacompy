@@ -859,7 +859,10 @@ def columns_equal(
 
         if compare is not None:
             LOG.info(
-                f"Using comparator: {comparator.__class__.__name__} for column ({col_1.meta.output_name()}, {col_2.meta.output_name()}) comparison."
+                "Using comparator: %s for column (%s, %s) comparison.",
+                comparator.__class__.__name__,
+                col_1.meta.output_name(raise_if_undetermined=False),
+                col_2.meta.output_name(raise_if_undetermined=False),
             )
             return compare
 
