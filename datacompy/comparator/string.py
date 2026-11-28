@@ -119,9 +119,10 @@ class PolarsStringComparator(BaseComparator):
         - String and ``Date`` / ``Datetime``: the string column is parsed with
           ``str.to_datetime(strict=False)``, so a ``Date`` matches a string
           with a midnight time component. A string that fails to parse is
-          treated as null, so it matches a null and nothing else. Parsed values
-          are time zone naive, so against a time zone aware ``Datetime`` every
-          row compares as ``False`` unless both values are null.
+          treated as null, so it matches a null and nothing else. Against a
+          time zone aware ``Datetime``, strings are parsed in that column's
+          time zone: strings with an offset are converted to it, and strings
+          without one are read as local times in it.
         - String and String, or either side ``Null``: no cast is applied. String
           columns are normalized according to ``ignore_space`` and
           ``ignore_case`` before comparing.
@@ -660,7 +661,7 @@ def polars_compare_string_and_date_columns(
     else:
         str_column, date_column, date_dtype = col_2, col_1, dtype1
 
-    if isinstance(date_dtype, pl.Datetime) and date_dtype.time_zone is not None:
-        return str_column.is_null() & date_column.is_null()
-
-    return str_column.str.to_datetime(strict=False).eq_missing(date_column)
+    time_zone = getattr(date_dtype, "time_zone", None)
+    return str_column.str.to_datetime(strict=False, time_zone=time_zone).eq_missing(
+        date_column
+    )
