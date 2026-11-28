@@ -866,7 +866,7 @@ def columns_equal(
             )
             return compare
 
-    return pl.lit(False, dtype=pl.Boolean)
+    return col_1.is_null() & col_2.is_null()
 
 
 def get_merged_columns(
