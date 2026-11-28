@@ -2375,6 +2375,145 @@ def test_custom_comparator_polars():
     assert not compare_string_custom_mismatch.matches()
 
 
+def test_failed_column_falls_back_to_string_compare(caplog):
+    class StrictIntCastComparator(BaseComparator):
+        """Claims string columns with an expression that raises on non-integers."""
+
+        def compare(self, col1, col2, dtype1, dtype2, **kwargs):
+            if dtype1 == pl.String and dtype2 == pl.String:
+                return col1.cast(pl.Int64, strict=True).eq_missing(
+                    col2.cast(pl.Int64, strict=True)
+                )
+            return None
+
+    caplog.set_level(logging.WARNING, logger="datacompy.polars")
+    df1 = pl.DataFrame({"id": [1, 2, 3], "s": ["1", "abc", None], "n": [1, 2, 3]})
+    df2 = pl.DataFrame({"id": [1, 2, 3], "s": ["1", "abd", None], "n": [1, 2, 4]})
+
+    PolarsCompare(df1, df2, join_columns="id")
+    assert "per-column comparison" not in caplog.text
+
+    compare = PolarsCompare(
+        df1, df2, join_columns="id", custom_comparators=[StrictIntCastComparator()]
+    )
+
+    rows = compare.intersect_rows.sort("id")
+    assert rows["s_match"].to_list() == [True, False, True]
+    assert rows["n_match"].to_list() == [True, True, False]
+    stats = {stat["column"]: stat for stat in compare.column_stats}
+    assert stats["s"]["match_cnt"] == 2
+    assert stats["n"]["match_cnt"] == 2
+    assert stats["n"]["max_diff"] == 1
+    assert compare.count_matching_rows() == 1
+    assert "falling back to slower per-column comparison" in caplog.text
+    assert "Column comparison failed for (s_df1, s_df2)" in caplog.text
+    assert "(n_df1, n_df2)" not in caplog.text
+
+
+@pytest.mark.parametrize(
+    ("strings", "other", "expected"),
+    [
+        (
+            ["abc", "def", None],
+            pl.Series([date(2020, 1, 1), date(2020, 1, 2), None]),
+            [False, False, True],
+        ),
+        (
+            ["2020-01-01T00:00:00+00:00", None],
+            pl.Series([datetime(2020, 1, 1), None]),
+            [False, True],
+        ),
+    ],
+)
+def test_unparseable_strings_vs_temporal_column_do_not_raise(strings, other, expected):
+    ids = list(range(len(strings)))
+    df1 = pl.DataFrame({"id": ids, "v": strings})
+    df2 = pl.DataFrame({"id": ids, "v": other})
+
+    compare = PolarsCompare(df1, df2, join_columns="id")
+
+    assert compare.intersect_rows.sort("id")["v_match"].to_list() == expected
+
+
+def test_null_vs_nan_float_columns_match():
+    df1 = pl.DataFrame({"id": [1, 2, 3], "v": [1.0, None, 3.0]})
+    df2 = pl.DataFrame({"id": [1, 2, 3], "v": [1.0, float("nan"), 3.0]})
+
+    compare = PolarsCompare(df1, df2, join_columns="id")
+
+    assert compare.matches()
+    assert compare.intersect_rows["v_match"].to_list() == [True, True, True]
+
+
+def test_strings_vs_tz_aware_datetime_column():
+    df1 = pl.DataFrame(
+        {
+            "id": [1, 2, 3, 4],
+            "v": [
+                "2020-01-01T00:00:00+00:00",
+                "2020-01-01T00:00:00-05:00",
+                "abc",
+                None,
+            ],
+        }
+    )
+    df2 = pl.DataFrame(
+        {
+            "id": [1, 2, 3, 4],
+            "v": pl.Series(
+                [
+                    datetime(2020, 1, 1),
+                    datetime(2020, 1, 1, 5),
+                    datetime(2020, 1, 1),
+                    None,
+                ]
+            ).dt.replace_time_zone("UTC"),
+        }
+    )
+
+    compare = PolarsCompare(df1, df2, join_columns="id")
+
+    actual = compare.intersect_rows.sort("id")["v_match"].to_list()
+    assert actual == [True, True, False, True]
+
+
+def test_high_precision_decimals_compared_exactly():
+    schema = {"id": pl.Int64, "v": pl.Decimal(38, 20)}
+    df1 = pl.DataFrame(
+        {"id": [1, 2], "v": [Decimal("1.00000000000000000001"), Decimal("2")]},
+        schema=schema,
+    )
+    df2 = pl.DataFrame(
+        {"id": [1, 2], "v": [Decimal("1.00000000000000000002"), Decimal("2")]},
+        schema=schema,
+    )
+
+    compare = PolarsCompare(df1, df2, join_columns="id")
+
+    assert not compare.matches()
+    assert compare.intersect_rows.sort("id")["v_match"].to_list() == [False, True]
+
+
+def test_columns_equal_logging_with_undetermined_output_name(caplog):
+    caplog.set_level(logging.INFO, logger="datacompy.polars")
+    df = pl.DataFrame({"a": [1, 2]})
+
+    expr = columns_equal(pl.all(), pl.all(), pl.Int64, pl.Int64)
+
+    assert df.select(expr).to_series().to_list() == [True, True]
+    assert "Using comparator: PolarsNumericComparator" in caplog.text
+
+
+def test_columns_equal_without_matching_comparator_is_null_safe():
+    df = pl.DataFrame({"flag": [True, None], "day": [date(2020, 1, 1), None]})
+
+    expr = columns_equal(
+        pl.col("flag"), pl.col("day"), df.schema["flag"], df.schema["day"]
+    )
+
+    assert df.select(expr).to_series().to_list() == [False, True]
+
+
 def test_array_comparator_polars():
     """Test that the PolarsCompare can handle array columns."""
     # all equal

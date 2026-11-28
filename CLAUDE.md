@@ -118,7 +118,7 @@ Each type has backend-specific implementations: `Pandas*Comparator`, `Polars*Com
 - All four backends accept `custom_comparators=[...]` on the constructor; `_get_comparators()` puts them **before** the defaults, so a custom comparator can pre-empt a built-in for a column type.
 - Return types are backend-specific: Pandas returns a boolean `Series`; Polars returns a boolean `Expr`; Spark/Snowflake return a boolean Column expression. Polars comparators take `pl.Expr` plus explicit `dtype1`/`dtype2` (an `Expr` has no `.dtype` like a `Series`); Polars `columns_equal` takes the same `dtype1`/`dtype2` and forwards them to each comparator.
 - The dispatch loop passes the built-ins their type-specific kwargs via `isinstance` branches (tolerances to numeric, `ignore_spaces`/`ignore_case` to string). Custom comparators get the same column args as the built-ins for that backend (for Polars: `col1, col2, dtype1, dtype2`) plus `**kwargs`. Custom comparators must therefore accept and ignore kwargs they don't use.
-- If every comparator returns `None`, the column compares as all-`False` rather than erroring.
+- If every comparator returns `None`, the column compares as `False` rather than erroring, except that two nulls compare as `True`. Polars implements this null-safe fallback; the other backends still return all-`False`.
 
 ### Spark Connect
 

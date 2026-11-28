@@ -13,11 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import date, time
+from datetime import date, datetime, time
 from unittest import mock
 
 import pandas as pd
 import polars as pl
+import pytest
 from datacompy.comparator.string import (
     PandasStringComparator,
     PolarsStringComparator,
@@ -134,6 +135,60 @@ def test_polars_string_comparator_mixed_temporal_types_cast_to_string():
     ).to_series()
 
     assert result.to_list() == [False, True]
+
+
+@pytest.mark.parametrize("time_zone", ["UTC", "America/New_York"])
+def test_polars_string_comparator_string_vs_tz_aware_datetime(time_zone):
+    comparator = PolarsStringComparator()
+    datetimes = pl.Series(
+        [datetime(2020, 1, 1), datetime(2020, 1, 1, 5), datetime(2020, 1, 1), None]
+    ).dt.replace_time_zone("UTC")
+    df = pl.DataFrame(
+        {
+            "str": [
+                "2020-01-01T00:00:00+00:00",
+                "2020-01-01T00:00:00-05:00",
+                "abc",
+                None,
+            ],
+            "dt": datetimes.dt.convert_time_zone(time_zone),
+        }
+    )
+
+    result = df.select(
+        _polars_compare(comparator, df, left="str", right="dt")
+    ).to_series()
+
+    assert result.to_list() == [True, True, False, True]
+
+
+def test_polars_string_comparator_plain_string_reads_as_column_time_zone():
+    comparator = PolarsStringComparator()
+    df = pl.DataFrame(
+        {
+            "str": ["2020-01-01 00:00:00", "2020-01-01 05:00:00"],
+            "dt": pl.Series(
+                [datetime(2020, 1, 1), datetime(2020, 1, 1)]
+            ).dt.replace_time_zone("America/New_York"),
+        }
+    )
+
+    result = df.select(
+        _polars_compare(comparator, df, left="str", right="dt")
+    ).to_series()
+
+    assert result.to_list() == [True, False]
+
+
+def test_polars_string_comparator_separately_built_categoricals():
+    comparator = PolarsStringComparator()
+    left = pl.Series(["x", "y", None, "z"], dtype=pl.Categorical)
+    right = pl.Series(["y", "y", None, "z"], dtype=pl.Categorical)
+    df = pl.DataFrame({"a": left, "b": right})
+
+    result = df.select(_polars_compare(comparator, df)).to_series()
+
+    assert result.to_list() == [False, True, True, True]
 
 
 # tests for PandasStringComparator

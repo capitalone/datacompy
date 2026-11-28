@@ -13,8 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from decimal import Decimal
+
 import pandas as pd
 import polars as pl
+import pytest
 from datacompy.comparator.numeric import (
     PandasNumericComparator,
     PolarsNumericComparator,
@@ -61,6 +64,28 @@ def test_polars_numeric_comparator_nan_handling():
     df = pl.DataFrame({"a": [1.0, float("nan"), 3.0], "b": [1.0, float("nan"), 3.0]})
     result = df.select(_polars_compare(comparator, df)).to_series()
     assert result.to_list() == [True, True, True]
+
+
+@pytest.mark.parametrize("tolerance", [{}, {"rtol": 0.1, "atol": 0.1}])
+def test_polars_numeric_comparator_null_matches_nan(tolerance):
+    comparator = PolarsNumericComparator()
+    df = pl.DataFrame({"a": [1.0, None, 3.0, None], "b": [1.0, float("nan"), 3.0, 4.0]})
+    result = df.select(_polars_compare(comparator, df, **tolerance)).to_series()
+    assert result.to_list() == [True, True, True, False]
+
+
+def test_polars_numeric_comparator_high_precision_decimals_exact():
+    # Float64 cannot tell these apart, so zero tolerance must compare exactly
+    comparator = PolarsNumericComparator()
+    df = pl.DataFrame(
+        {
+            "a": [Decimal("1.00000000000000000001"), Decimal("2.5"), None],
+            "b": [Decimal("1.00000000000000000002"), Decimal("2.5"), None],
+        },
+        schema={"a": pl.Decimal(38, 20), "b": pl.Decimal(38, 20)},
+    )
+    result = df.select(_polars_compare(comparator, df, rtol=0, atol=0)).to_series()
+    assert result.to_list() == [False, True, True]
 
 
 def test_polars_numeric_comparator_mismatch():
