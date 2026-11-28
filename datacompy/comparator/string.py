@@ -134,8 +134,10 @@ class PolarsStringComparator(BaseComparator):
           ``Datetime`` and aligns time units.
         - Two temporal columns of different base types (for example ``Date``
           and ``Time``): both are cast to ``String`` and compared as text.
-        - Two ``Categorical`` columns: compared directly, without the
-          whitespace and case normalization.
+        - Two ``Categorical`` columns: both are cast to ``String`` and compared
+          without the whitespace and case normalization. The cast avoids a
+          ``StringCacheMismatchError`` on older Polars when the columns were
+          built without a shared string cache.
         """
         base1 = dtype1.base_type()
         base2 = dtype2.base_type()
