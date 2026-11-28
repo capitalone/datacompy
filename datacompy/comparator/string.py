@@ -167,6 +167,8 @@ class PolarsStringComparator(BaseComparator):
                 and (dtype1.time_zone != dtype2.time_zone)
             ):
                 return col1.is_null() & col2.is_null()
+            if base1 == pl.Categorical:
+                return col1.cast(pl.String).eq_missing(col2.cast(pl.String))
             if (base1 == base2) or {base1, base2} <= {pl.Date, pl.Datetime}:
                 return col1.eq_missing(col2)
 
