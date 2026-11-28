@@ -163,8 +163,6 @@ class PolarsBooleanComparator(BaseComparator):
             return None
         if dtype1 != pl.Boolean and dtype2 != pl.Boolean:
             return None  # leave int/int etc. to the numeric comparator
-        if dtype1 in STRING_POLARS_TYPES or dtype2 in STRING_POLARS_TYPES:
-            return None
 
         return col1.eq_missing(col2)
 
