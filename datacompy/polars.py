@@ -457,30 +457,47 @@ class PolarsCompare(BaseCompare):
         schema = self.intersect_rows.schema
         intersect_columns = self.intersect_columns()
 
-        # Build comparison expressions for the columns to match on
+        # Build compare and stat expressions for non-join columns in one pass.
         compare_exprs: List[pl.Expr] = []
         match_columns: List[str] = []
         compare_cols: List[tuple[str, str]] = []
+        stat_exprs: List[pl.Expr] = []
         for column in intersect_columns:
-            if column not in self.join_columns:
-                col_1 = f"{column}_{self.df1_name}"
-                col_2 = f"{column}_{self.df2_name}"
-                col_match = f"{column}_match"
-                match_columns.append(col_match)
-                compare_cols.append((col_1, col_2))
-                compare_exprs.append(
-                    columns_equal(
-                        col_1=pl.col(col_1),
-                        col_2=pl.col(col_2),
-                        dtype1=schema[col_1],
-                        dtype2=schema[col_2],
-                        rel_tol=get_column_tolerance(column, self._rel_tol_dict),
-                        abs_tol=get_column_tolerance(column, self._abs_tol_dict),
-                        ignore_spaces=ignore_spaces,
-                        ignore_case=ignore_case,
-                        comparators=self._get_comparators(),
-                    ).alias(col_match)
-                )
+            if column in self.join_columns:
+                continue
+            col_1 = f"{column}_{self.df1_name}"
+            col_2 = f"{column}_{self.df2_name}"
+            col_match = f"{column}_match"
+            match_columns.append(col_match)
+            compare_cols.append((col_1, col_2))
+            compare_exprs.append(
+                columns_equal(
+                    col_1=pl.col(col_1),
+                    col_2=pl.col(col_2),
+                    dtype1=schema[col_1],
+                    dtype2=schema[col_2],
+                    rel_tol=get_column_tolerance(column, self._rel_tol_dict),
+                    abs_tol=get_column_tolerance(column, self._abs_tol_dict),
+                    ignore_spaces=ignore_spaces,
+                    ignore_case=ignore_case,
+                    comparators=self._get_comparators(),
+                ).alias(col_match)
+            )
+            stat_exprs.extend(
+                [
+                    pl.col(col_match).sum().alias(f"__match_cnt_{column}"),
+                    _calculate_max_diff_expr(
+                        pl.col(col_1),
+                        pl.col(col_2),
+                        schema[col_1],
+                        schema[col_2],
+                    ).alias(f"__max_diff_{column}"),
+                    (pl.col(col_1).is_null() ^ pl.col(col_2).is_null())
+                    .sum()
+                    .alias(f"__null_diff_{column}"),
+                ]
+            )
+
         try:
             self.intersect_rows = self.intersect_rows.with_columns(compare_exprs)
         except pl.exceptions.PolarsError:
@@ -509,37 +526,6 @@ class PolarsCompare(BaseCompare):
                     )
             self.intersect_rows = self.intersect_rows.with_columns(safe_exprs)
 
-        # Calculate all non-join column statistics in a single dataframe pass.
-        stat_exprs: List[pl.Expr] = []
-        stat_aliases: Dict[str, tuple[str, str, str]] = {}
-        for index, column in enumerate(intersect_columns):
-            if column in self.join_columns:
-                continue
-            col_1 = f"{column}_{self.df1_name}"
-            col_2 = f"{column}_{self.df2_name}"
-            col_match = f"{column}_match"
-            match_alias = f"__match_cnt_{index}"
-            max_diff_alias = f"__max_diff_{index}"
-            null_diff_alias = f"__null_diff_{index}"
-            stat_aliases[column] = (
-                match_alias,
-                max_diff_alias,
-                null_diff_alias,
-            )
-            stat_exprs.extend(
-                [
-                    pl.col(col_match).sum().alias(match_alias),
-                    _calculate_max_diff_expr(
-                        pl.col(col_1),
-                        pl.col(col_2),
-                        schema[col_1],
-                        schema[col_2],
-                    ).alias(max_diff_alias),
-                    (pl.col(col_1).is_null() ^ pl.col(col_2).is_null())
-                    .sum()
-                    .alias(null_diff_alias),
-                ]
-            )
         if match_columns:
             stat_exprs.append(
                 pl.all_horizontal(match_columns).sum().alias("__matching_rows_count")
@@ -572,10 +558,9 @@ class PolarsCompare(BaseCompare):
                 null_diff = 0
             else:
                 row_cnt = self.intersect_rows.height
-                match_alias, max_diff_alias, null_diff_alias = stat_aliases[column]
-                match_cnt = int(aggregated_stats[match_alias])
-                max_diff = cast(float | None, aggregated_stats[max_diff_alias])
-                null_diff = int(aggregated_stats[null_diff_alias])
+                match_cnt = int(aggregated_stats[f"__match_cnt_{column}"])
+                max_diff = cast(float | None, aggregated_stats[f"__max_diff_{column}"])
+                null_diff = int(aggregated_stats[f"__null_diff_{column}"])
             if row_cnt > 0:
                 match_rate = float(match_cnt) / row_cnt
             else:
