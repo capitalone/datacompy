@@ -109,7 +109,7 @@ class PandasBooleanComparator(BaseComparator):
 
 def _pl_bool_compatible(dtype: pl.DataType) -> bool:
     """Check if a Polars dtype is compatible with a Boolean (excluding strings)."""
-    return dtype == pl.Boolean or dtype.is_integer() or dtype.is_float()
+    return dtype in (pl.Boolean, pl.Null) or dtype.is_integer() or dtype.is_float()
 
 
 class PolarsBooleanComparator(BaseComparator):
