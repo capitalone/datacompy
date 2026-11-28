@@ -148,7 +148,10 @@ class PolarsNumericComparator(BaseComparator):
         - If either dtype is not numeric, ``None`` is returned.
         """
         if dtype1.is_numeric() and dtype2.is_numeric():
-            if dtype1.is_integer() and dtype2.is_integer() and not rtol and not atol:
+            exact_types = (dtype1.is_integer() and dtype2.is_integer()) or (
+                isinstance(dtype1, pl.Decimal) and isinstance(dtype2, pl.Decimal)
+            )
+            if exact_types and not rtol and not atol:
                 # isclose semantics compares as floats, which can't tell integers apart above 2**53
                 return col1.eq_missing(col2)
 
