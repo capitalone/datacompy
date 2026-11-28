@@ -2002,7 +2002,7 @@ def test_html_report_generation():
         assert os.path.exists(html_file)
 
         # Check that the file has content
-        with open(html_file) as f:
+        with open(html_file, encoding="utf-8") as f:
             content = f.read()
             assert len(content) > 0
             # Should contain some HTML tags
