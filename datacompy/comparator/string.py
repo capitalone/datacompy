@@ -144,7 +144,7 @@ class PolarsStringComparator(BaseComparator):
             str(base2) in POLARS_DATE_TYPE and str(base1) in POLARS_STRING_TYPE
         ):
             return polars_compare_string_and_date_columns(col1, col2, dtype1, dtype2)
-        # both are strings, treating  an all-null column (Null dtype, no value to signal a type)
+        # both are strings, treating an all-null column (Null dtype, no value to signal a type)
         # as string-compatible
         elif (str(base1) in POLARS_STRING_TYPE or dtype1 == pl.Null) and (
             str(base2) in POLARS_STRING_TYPE or dtype2 == pl.Null
