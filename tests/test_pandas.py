@@ -2993,3 +2993,39 @@ def test_all_mismatch_column_name_ending_in_match(
     assert output[join_columns[0]].tolist() == [2]
     assert output["amt_df1"].tolist() == [2]
     assert output["amt_df2"].tolist() == [3]
+
+
+def test_symmetric_tolerance():
+    df1 = pd.DataFrame({"id": [1, 2], "value": [100.0, 1.0]})
+    df2 = pd.DataFrame({"id": [1, 2], "value": [101.005, 1.0]})
+
+    # By default the relative tolerance is scaled by df2's values, so swapping
+    # the dataframes changes the result.
+    assert datacompy.PandasCompare(df1, df2, join_columns="id", rel_tol=0.01).matches()
+    assert not datacompy.PandasCompare(
+        df2, df1, join_columns="id", rel_tol=0.01
+    ).matches()
+
+    for left, right in [(df1, df2), (df2, df1)]:
+        compare = datacompy.PandasCompare(
+            left, right, join_columns="id", rel_tol=0.01, symmetric_tolerance=True
+        )
+        assert compare.matches()
+        assert compare.all_mismatch().empty
+
+
+def test_numeric_comparator_subclass_without_symmetric():
+    # custom comparators written against the old compare() signature must keep
+    # working when symmetric_tolerance is left off
+    from datacompy.comparator.numeric import PandasNumericComparator
+
+    class OldSignatureComparator(PandasNumericComparator):
+        def compare(self, col1, col2, rtol=1e-5, atol=1e-8):
+            return super().compare(col1, col2, rtol=rtol, atol=atol)
+
+    result = columns_equal(
+        pd.Series([1.0, 2.0]),
+        pd.Series([1.0, 2.5]),
+        comparators=[OldSignatureComparator()],
+    )
+    assert result.tolist() == [True, False]

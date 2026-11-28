@@ -361,6 +361,20 @@ OPTIONS: tuple[Opt, ...] = (
         options={"action": "append", "type": tolerance, "metavar": "N|COL=N"},
     ),
     Opt(
+        flags=("--symmetric-tolerance",),
+        help=(
+            "Apply the tolerances symmetrically, like math.isclose: "
+            "|a - b| <= max(rel_tol * max(|a|, |b|), abs_tol), so the result does "
+            "not depend on which dataset is the left one. The default adds the two "
+            "tolerances (abs_tol + rel_tol * |b|), so with both set this flag can be "
+            "stricter."
+        ),
+        group=GROUP_COMPARISON,
+        kwarg="symmetric_tolerance",
+        default=False,
+        options={"action": "store_true"},
+    ),
+    Opt(
         flags=("--ignore-spaces",),
         help="Ignore leading and trailing whitespace in string columns.",
         group=GROUP_COMPARISON,

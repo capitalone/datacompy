@@ -138,3 +138,42 @@ def test_spark_numeric_comparator_integer_isnan_safe(spark_session):
     assert result[0][0] is True
     assert result[1][0] is False
     assert result[2][0] is False
+
+
+def test_spark_numeric_comparator_tolerance_order(spark_session):
+    comparator = SparkNumericComparator()
+    df = spark_session.createDataFrame([(100.0, 101.005)], ["col1", "col2"])
+
+    def matches(col1, col2, symmetric):
+        result_col = comparator.compare(
+            dataframe=df, col1=col1, col2=col2, rtol=0.01, atol=0, symmetric=symmetric
+        )
+        return df.withColumn("col_match", result_col).collect()[0]["col_match"]
+
+    # np.isclose semantics depend on the order of the columns
+    assert matches("col1", "col2", symmetric=False)
+    assert not matches("col2", "col1", symmetric=False)
+    # math.isclose semantics do not
+    assert matches("col1", "col2", symmetric=True)
+    assert matches("col2", "col1", symmetric=True)
+
+
+@pytest.mark.parametrize("tolerance", [0.0, 0.01])
+def test_spark_numeric_comparator_symmetric_infinity(spark_session, tolerance):
+    # an inf or NaN tolerance must not let inf match a finite value or -inf
+    comparator = SparkNumericComparator()
+    inf = float("inf")
+    df = spark_session.createDataFrame(
+        [(inf, 5.0), (inf, -inf), (5.0, inf), (inf, inf), (1.0, 1.0)],
+        ["col1", "col2"],
+    )
+    result_col = comparator.compare(
+        dataframe=df,
+        col1="col1",
+        col2="col2",
+        rtol=tolerance,
+        atol=tolerance,
+        symmetric=True,
+    )
+    result = df.withColumn("col_match", result_col).select("col_match").collect()
+    assert [row[0] for row in result] == [False, False, False, True, True]

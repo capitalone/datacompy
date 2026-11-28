@@ -3101,3 +3101,19 @@ def test_calculate_max_diff_uncastable_types(spark_session, column):
     assert calculate_max_diff(df, column, "i") == 0
     assert calculate_max_diff(df, "dbl", column) == 0
     assert np.isclose(calculate_max_diff(df, "dbl", "i"), 0.5)
+
+
+def test_symmetric_tolerance(spark_session):
+    df1 = spark_session.createDataFrame([(1, 100.0), (2, 1.0)], ["id", "value"])
+    df2 = spark_session.createDataFrame([(1, 101.005), (2, 1.0)], ["id", "value"])
+
+    # By default the relative tolerance is scaled by df2's values, so swapping
+    # the dataframes changes the result.
+    assert SparkSQLCompare(spark_session, df1, df2, ["id"], rel_tol=0.01).matches()
+    assert not SparkSQLCompare(spark_session, df2, df1, ["id"], rel_tol=0.01).matches()
+
+    for left, right in [(df1, df2), (df2, df1)]:
+        compare = SparkSQLCompare(
+            spark_session, left, right, ["id"], rel_tol=0.01, symmetric_tolerance=True
+        )
+        assert compare.matches()

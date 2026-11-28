@@ -2561,3 +2561,30 @@ def test_sensitive_columns_numeric_types_with_tolerance(snowflake_session):
     assert intersect_rows.loc[0, "C_DF1"] == "*******"
     assert intersect_rows.loc[0, "C_DF2"] == "*******"
     assert intersect_rows.loc[0, "C_MATCH"]
+
+
+def test_symmetric_tolerance(snowflake_session):
+    df1 = snowflake_session.createDataFrame(
+        pd.DataFrame({"ID": [1, 2], "VALUE": [100.0, 1.0]})
+    )
+    df2 = snowflake_session.createDataFrame(
+        pd.DataFrame({"ID": [1, 2], "VALUE": [101.005, 1.0]})
+    )
+
+    # By default the relative tolerance is scaled by df2's values, so swapping
+    # the dataframes changes the result.
+    assert SnowflakeCompare(snowflake_session, df1, df2, ["ID"], rel_tol=0.01).matches()
+    assert not SnowflakeCompare(
+        snowflake_session, df2, df1, ["ID"], rel_tol=0.01
+    ).matches()
+
+    for left, right in [(df1, df2), (df2, df1)]:
+        compare = SnowflakeCompare(
+            snowflake_session,
+            left,
+            right,
+            ["ID"],
+            rel_tol=0.01,
+            symmetric_tolerance=True,
+        )
+        assert compare.matches()

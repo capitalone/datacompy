@@ -106,6 +106,13 @@ class PolarsCompare(BaseCompare):
         Boolean indicator that controls of column names will be cast into lower case
     custom_comparators : list of ``BaseComparator``, optional
         A list of custom comparator classes to use to compare columns.
+    symmetric_tolerance : bool, optional
+        If True, numeric columns are compared with symmetric ``math.isclose``
+        semantics, ``|a - b| <= max(rel_tol * max(|a|, |b|), abs_tol)``, so the
+        result does not depend on which dataframe is ``df1``. By default, the
+        ``np.isclose`` semantics ``|a - b| <= abs_tol + rel_tol * |b|`` are used.
+        The two tolerances combine with ``max`` instead of being added, so with
+        both set this can be stricter than the default.
     """
 
     def __init__(
@@ -121,9 +128,11 @@ class PolarsCompare(BaseCompare):
         ignore_case: bool = False,
         cast_column_names_lower: bool = True,
         custom_comparators: List[BaseComparator] | None = None,
+        symmetric_tolerance: bool = False,
     ) -> None:
         self.cast_column_names_lower = cast_column_names_lower
         self.custom_comparators = custom_comparators or []
+        self.symmetric_tolerance = symmetric_tolerance
         self._sensitive_columns: List[str] | None = None
 
         # Validate tolerance parameters first
@@ -468,6 +477,7 @@ class PolarsCompare(BaseCompare):
                         ignore_spaces=ignore_spaces,
                         ignore_case=ignore_case,
                         comparators=self._get_comparators(),
+                        symmetric_tolerance=self.symmetric_tolerance,
                     ).alias(col_match)
                 )
                 match_cnt = int(self.intersect_rows[col_match].sum())
@@ -685,6 +695,7 @@ class PolarsCompare(BaseCompare):
                     ignore_spaces=self.ignore_spaces,
                     ignore_case=self.ignore_case,
                     comparators=self._get_comparators(),
+                    symmetric_tolerance=self.symmetric_tolerance,
                 )
 
                 if not ignore_matching_cols or (
@@ -726,6 +737,7 @@ def columns_equal(
     ignore_spaces: bool = False,
     ignore_case: bool = False,
     comparators: List[BaseComparator] | None = None,
+    symmetric_tolerance: bool = False,
     **kwargs,
 ) -> pl.Series:
     """Compare two columns from a dataframe.
@@ -757,6 +769,9 @@ def columns_equal(
         Flag to ignore the case of string columns
     comparators : list of ``BaseComparator``, optional
         A list of custom comparator classes to use to compare columns.
+    symmetric_tolerance : bool, optional
+        If True, compare numeric columns with symmetric ``math.isclose``
+        semantics instead of ``np.isclose`` semantics. Default is False.
     **kwargs
         Additional keyword arguments to pass to custom comparators.
 
@@ -773,11 +788,20 @@ def columns_equal(
         # If no comparators are passed, behave as before.
         comparators_ = _POLARS_DEFAULT_COMPARATORS
 
+    # only pass symmetric when it is set, so custom comparators that override
+    # compare() with the older signature keep working
+    symmetric_kwargs = {"symmetric": True} if symmetric_tolerance else {}
     for comparator in comparators_:
         if isinstance(comparator, PolarsBooleanComparator):
             compare = comparator.compare(col_1, col_2)
         elif isinstance(comparator, PolarsNumericComparator):
-            compare = comparator.compare(col_1, col_2, rtol=rel_tol, atol=abs_tol)
+            compare = comparator.compare(
+                col_1,
+                col_2,
+                rtol=rel_tol,
+                atol=abs_tol,
+                **symmetric_kwargs,
+            )
         elif isinstance(comparator, PolarsStringComparator):
             compare = comparator.compare(
                 col_1, col_2, ignore_space=ignore_spaces, ignore_case=ignore_case

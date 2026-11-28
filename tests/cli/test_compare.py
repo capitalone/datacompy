@@ -21,6 +21,7 @@ code, so the assertions are on the contract a CI pipeline actually sees.
 
 import sys
 
+import pandas as pd
 import pytest
 from datacompy.cli import main
 
@@ -234,6 +235,36 @@ def test_relative_tolerance(cli, backend, capsys):
         )
         == MATCH
     )
+
+
+def test_symmetric_tolerance(cli, tmp_path, backend, capsys):
+    small = tmp_path / "small.csv"
+    large = tmp_path / "large.csv"
+    pd.DataFrame({"id": [1], "name": ["alice"], "amount": [100.0]}).to_csv(
+        small, index=False
+    )
+    pd.DataFrame({"id": [1], "name": ["alice"], "amount": [101.005]}).to_csv(
+        large, index=False
+    )
+
+    def run(left, right, *extra):
+        return cli(
+            "--left",
+            str(left),
+            "--right",
+            str(right),
+            "--rel-tol",
+            "0.01",
+            "--backend",
+            backend,
+            *extra,
+        )
+
+    # By default the relative tolerance is scaled by the right dataset.
+    assert run(small, large) == MATCH
+    assert run(large, small) == MISMATCH
+    assert run(small, large, "--symmetric-tolerance") == MATCH
+    assert run(large, small, "--symmetric-tolerance") == MATCH
 
 
 # ---------------------------------------------------------------------------
