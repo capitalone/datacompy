@@ -152,11 +152,10 @@ class PolarsNumericComparator(BaseComparator):
                 # isclose semantics compares as floats, which can't tell integers apart above 2**53
                 return col1.eq_missing(col2)
 
-            cast1 = col1.cast(pl.Float64, strict=False)
-            cast2 = col2.cast(pl.Float64, strict=False)
+            cast1 = col1.cast(pl.Float64, strict=False).fill_nan(None)
+            cast2 = col2.cast(pl.Float64, strict=False).fill_nan(None)
 
-            # Avoid building the tolerance expression for the common exact
-            # comparison case. eq_missing treats nulls and NaNs as equal.
+            # Avoid building the tolerance expression for the common exact comparison case.
             exact = cast1.eq_missing(cast2)
             if not rtol and not atol:
                 return exact
