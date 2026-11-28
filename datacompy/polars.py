@@ -460,12 +460,14 @@ class PolarsCompare(BaseCompare):
         # Build comparison expressions for the columns to match on
         compare_exprs: List[pl.Expr] = []
         match_columns: List[str] = []
+        compare_cols: List[tuple[str, str]] = []
         for column in intersect_columns:
             if column not in self.join_columns:
                 col_1 = f"{column}_{self.df1_name}"
                 col_2 = f"{column}_{self.df2_name}"
                 col_match = f"{column}_match"
                 match_columns.append(col_match)
+                compare_cols.append((col_1, col_2))
                 compare_exprs.append(
                     columns_equal(
                         col_1=pl.col(col_1),
@@ -479,7 +481,33 @@ class PolarsCompare(BaseCompare):
                         comparators=self._get_comparators(),
                     ).alias(col_match)
                 )
-        self.intersect_rows = self.intersect_rows.with_columns(compare_exprs)
+        try:
+            self.intersect_rows = self.intersect_rows.with_columns(compare_exprs)
+        except pl.exceptions.PolarsError:
+            # A column failed. Run each alone; failures compare as strings
+            LOG.warning(
+                "Batched column comparison failed; "
+                "falling back to slower per-column comparison."
+            )
+            safe_exprs = []
+            for expr, (col_1, col_2) in zip(compare_exprs, compare_cols, strict=True):
+                try:
+                    self.intersect_rows.select(expr)
+                    safe_exprs.append(expr)
+                except pl.exceptions.PolarsError:
+                    LOG.warning(
+                        "Column comparison failed for (%s, %s); "
+                        "falling back to string comparison.",
+                        col_1,
+                        col_2,
+                    )
+                    safe_exprs.append(
+                        pl.col(col_1)
+                        .cast(pl.String)
+                        .eq_missing(pl.col(col_2).cast(pl.String))
+                        .alias(expr.meta.output_name())
+                    )
+            self.intersect_rows = self.intersect_rows.with_columns(safe_exprs)
 
         # Calculate all non-join column statistics in a single dataframe pass.
         stat_exprs: List[pl.Expr] = []
