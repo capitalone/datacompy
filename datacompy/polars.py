@@ -348,6 +348,26 @@ class PolarsCompare(BaseCompare):
         df2 = self.df2.clone()
         temp_join_columns = deepcopy(self.join_columns)
 
+        if ignore_spaces:
+            for column in self.join_columns:
+                df1 = df1.with_columns(
+                    polars_normalize_string_column(
+                        df1[column], ignore_spaces=ignore_spaces, ignore_case=False
+                    )
+                )
+                df2 = df2.with_columns(
+                    polars_normalize_string_column(
+                        df2[column], ignore_spaces=ignore_spaces, ignore_case=False
+                    )
+                )
+            # Stripping spaces can make distinct join keys equal, so look for
+            # duplicates again on the normalized keys.
+            if not self._any_dupes:
+                self._any_dupes = any(
+                    len(df.unique(subset=self.join_columns)) < len(df)
+                    for df in (df1, df2)
+                )
+
         if self._any_dupes:
             LOG.debug("Duplicate rows found, deduping by order of remaining fields")
             # Create order column for uniqueness of match
@@ -361,19 +381,6 @@ class PolarsCompare(BaseCompare):
             temp_join_columns.append(order_column)
 
         params = {"on": temp_join_columns}
-
-        if ignore_spaces:
-            for column in self.join_columns:
-                df1 = df1.with_columns(
-                    polars_normalize_string_column(
-                        df1[column], ignore_spaces=ignore_spaces, ignore_case=False
-                    )
-                )
-                df2 = df2.with_columns(
-                    polars_normalize_string_column(
-                        df2[column], ignore_spaces=ignore_spaces, ignore_case=False
-                    )
-                )
 
         df1_non_join_columns = OrderedSet(df1.columns) - OrderedSet(temp_join_columns)
         df2_non_join_columns = OrderedSet(df2.columns) - OrderedSet(temp_join_columns)

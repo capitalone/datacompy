@@ -753,6 +753,22 @@ def test_strings_with_joins_with_ignore_case():
     assert compare.intersect_rows_match()
 
 
+@pytest.mark.parametrize(
+    "keys2",
+    [["hi", "hi"], ["hi", " hi"]],
+)
+def test_strings_with_joins_with_ignore_spaces_duplicate_keys(keys2):
+    # "hi" and "hi " are the same key once spaces are stripped
+    df1 = pl.DataFrame([{"a": "hi", "b": 1}, {"a": "hi ", "b": 2}])
+    df2 = pl.DataFrame([{"a": keys2[0], "b": 1}, {"a": keys2[1], "b": 2}])
+    compare = PolarsCompare(df1, df2, "a", ignore_spaces=True)
+    assert compare._any_dupes
+    assert len(compare.intersect_rows) == 2
+    assert len(compare.df1_unq_rows) == 0
+    assert len(compare.df2_unq_rows) == 0
+    assert compare.matches()
+
+
 def test_decimal_with_joins_with_ignore_spaces():
     df1 = pl.DataFrame([{"a": 1, "b": " A"}, {"a": 2, "b": "A"}])
     df2 = pl.DataFrame([{"a": 1, "b": "A"}, {"a": 2, "b": "A "}])
